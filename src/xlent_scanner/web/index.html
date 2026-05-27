@@ -132,6 +132,56 @@
       padding: 9px 13px; font-size: 13px; color: var(--warn); line-height: 1.5;
     }
 
+    /* ── Dybdeskann (Ollama) ──────────────────────────────────────── */
+    #deep-scan-section {
+      display: none; margin-top: 10px;
+      border: 1px solid var(--border); border-radius: 8px;
+      background: var(--panel); overflow: hidden;
+    }
+    #deep-scan-section.show { display: block; }
+    .ds-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 11px 16px; cursor: pointer; user-select: none;
+      border-bottom: 1px solid transparent; transition: background .15s;
+    }
+    .ds-header:hover { background: rgba(138,150,168,.07); }
+    .ds-header.open { border-bottom-color: var(--border); }
+    .ds-header-title { font-size: 13px; font-weight: 600; flex: 1; }
+    .ds-chevron { font-size: 11px; color: var(--muted); transition: transform .2s; }
+    .ds-header.open .ds-chevron { transform: rotate(90deg); }
+    .ds-body { padding: 14px 16px; display: none; }
+    .ds-body.open { display: block; }
+    .ds-status-row {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 12.5px; color: var(--muted); margin-bottom: 12px;
+    }
+    .ds-model-row {
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px;
+    }
+    .ds-model-row select {
+      flex: 1; min-width: 180px; max-width: 320px;
+      padding: 5px 8px; border-radius: 5px;
+      border: 1px solid var(--border); background: var(--bg); color: var(--fg); font-size: 13px;
+    }
+    .ds-progress { font-size: 12.5px; color: var(--muted); margin: 6px 0; min-height: 18px; }
+    .ds-findings-title { font-size: 12px; font-weight: 600; color: var(--muted); margin: 12px 0 6px; text-transform: uppercase; letter-spacing: .04em; }
+    .ds-finding {
+      display: flex; align-items: flex-start; gap: 8px;
+      padding: 7px 10px; border-radius: 5px; margin-bottom: 4px;
+      background: rgba(138,150,168,.06); font-size: 13px; line-height: 1.45;
+    }
+    .ds-finding-cat { font-weight: 600; min-width: 130px; flex-shrink: 0; }
+    .ds-finding-text { flex: 1; }
+    .ds-finding-ctx { color: var(--muted); font-size: 11.5px; margin-top: 2px; }
+    .ds-ollama-instructions {
+      font-size: 12.5px; color: var(--muted); line-height: 1.7;
+      background: rgba(138,150,168,.06); border-radius: 6px; padding: 10px 14px;
+    }
+    .ds-ollama-instructions code {
+      background: rgba(138,150,168,.15); border-radius: 3px;
+      padding: 1px 5px; font-family: monospace; font-size: 12px;
+    }
+
     /* NER-notice – vises i scanner-panelet når spaCy-modeller mangler */
     .ner-notice {
       display: none; align-items: center; gap: 10px;
@@ -351,6 +401,28 @@
       <div id="status"></div>
       <div id="result"></div>
 
+      <!-- Dybdeskann med Ollama -->
+      <div id="deep-scan-section">
+        <div class="ds-header" id="ds-header">
+          <span style="font-size:16px">🔬</span>
+          <span class="ds-header-title" data-i18n="deepScanTitle">Dybdeskann med AI</span>
+          <span class="ds-chevron">▶</span>
+        </div>
+        <div class="ds-body" id="ds-body">
+          <div class="ds-status-row" id="ds-status-row"></div>
+          <div id="ds-not-running" style="display:none" class="ds-ollama-instructions"></div>
+          <div id="ds-ready" style="display:none">
+            <div class="ds-model-row">
+              <select id="ds-model-select"></select>
+              <button id="ds-start-btn" class="ctrl-btn ctrl-btn-primary" data-i18n="deepScanStart">🔬 Start dybdeskann</button>
+              <button id="ds-cancel-btn" class="ctrl-btn" style="display:none" data-i18n="deepScanCancel">✕ Avbryt</button>
+            </div>
+            <div class="ds-progress" id="ds-progress"></div>
+            <div id="ds-findings-area"></div>
+          </div>
+        </div>
+      </div>
+
       <!-- Skannehistorikk -->
       <div id="history-section">
         <div class="section-heading" data-i18n="historyTitle">Siste skanninger</div>
@@ -533,6 +605,18 @@
         <div class="settings-note" id="ner-models-msg" style="margin-top:6px;"></div>
       </div>
 
+      <!-- Ollama / AI-dybdeskann -->
+      <div class="settings-section" id="section-ollama">
+        <div class="settings-section-title" data-i18n="settingsOllamaTitle">AI-dybdeskann (Ollama)</div>
+        <div class="settings-note" data-i18n="settingsOllamaNote">Dybdeskanning bruker en lokal Ollama-modell for å oppdage personopplysninger som regel-baserte detektorer kan misse. Krever at Ollama er installert på maskinen.</div>
+        <div class="settings-row" style="margin-top:10px; align-items:center; gap:10px;">
+          <span id="ollama-settings-status" style="font-size:13px;"></span>
+          <button id="btn-refresh-ollama" class="ctrl-btn" data-i18n="ollamaRefresh">↻ Sjekk status</button>
+        </div>
+        <div id="ollama-models-list" style="margin-top:8px;"></div>
+        <div id="ollama-instructions" style="display:none; margin-top:10px;" class="ds-ollama-instructions"></div>
+      </div>
+
       <!-- Filtrering -->
       <div class="settings-section">
         <div class="settings-section-title" data-i18n="settingsFilterTitle">Filtrering</div>
@@ -651,6 +735,25 @@
         nerErrFetch:         "Kunne ikke hente modellstatus:",
         nerNoticeMissing:    "Navnegjenkjenning er ikke aktiv – spaCy-modeller mangler ({models}). Last ned modellene under Innstillinger for å aktivere navnedeteksjon.",
         nerNoticeBtn:        "⚙ Innstillinger",
+        settingsOllamaTitle: "AI-dybdeskann (Ollama)",
+        settingsOllamaNote:  "Dybdeskanning bruker en lokal Ollama-modell for å oppdage personopplysninger som regel-baserte detektorer kan misse. Krever Ollama installert.",
+        ollamaRefresh:       "↻ Sjekk status",
+        ollamaRunning:       "✅ Ollama kjører",
+        ollamaNotRunning:    "❌ Ollama kjører ikke",
+        ollamaModelsLabel:   "Installerte modeller:",
+        ollamaNoModels:      "Ingen modeller funnet.",
+        ollamaInstallHint:   "Last ned Ollama fra <a href='https://ollama.ai' target='_blank'>ollama.ai</a>, og kjør deretter:<br><code>ollama pull llama3.2:3b</code><br>Anbefalt: <strong>llama3.2:3b</strong> (~1.9 GB) – rask og god på norsk.",
+        deepScanTitle:       "Dybdeskann med AI (Ollama)",
+        deepScanStart:       "🔬 Start dybdeskann",
+        deepScanCancel:      "✕ Avbryt",
+        deepScanModelLabel:  "Velg modell:",
+        deepScanRunning:     "Dybdeskanning pågår…",
+        deepScanDone:        "Dybdeskann ferdig",
+        deepScanNoFindings:  "Ingen ekstra funn fra AI-analyse.",
+        deepScanAIFindings:  "AI-funn ({n} nye):",
+        deepScanNotRunning:  "Ollama kjører ikke. Start Ollama og prøv igjen.",
+        deepScanNoModels:    "Ingen Ollama-modeller installert. Kjør: <code>ollama pull llama3.2:3b</code>",
+        deepScanError:       "Dybdeskann feilet:",
         settingsUpdateTitle: "Oppdateringer",
         settingsPersistNote: "Innstillinger lagres automatisk i nettleseren.",
         updateAvailable: "Ny versjon tilgjengelig:",
@@ -732,6 +835,25 @@
         nerErrFetch:         "Kunde inte hämta modellstatus:",
         nerNoticeMissing:    "Namnigenkänning är inaktiv – spaCy-modeller saknas ({models}). Ladda ned modellerna under Inställningar för att aktivera namndetektering.",
         nerNoticeBtn:        "⚙ Inställningar",
+        settingsOllamaTitle: "AI-djupskanning (Ollama)",
+        settingsOllamaNote:  "Djupskanning använder en lokal Ollama-modell för att hitta personuppgifter som regelbaserade detektorer kan missa. Kräver att Ollama är installerat.",
+        ollamaRefresh:       "↻ Kontrollera status",
+        ollamaRunning:       "✅ Ollama körs",
+        ollamaNotRunning:    "❌ Ollama körs inte",
+        ollamaModelsLabel:   "Installerade modeller:",
+        ollamaNoModels:      "Inga modeller hittades.",
+        ollamaInstallHint:   "Ladda ned Ollama från <a href='https://ollama.ai' target='_blank'>ollama.ai</a>, kör sedan:<br><code>ollama pull llama3.2:3b</code><br>Rekommenderat: <strong>llama3.2:3b</strong> (~1,9 GB) – snabb och bra på svenska.",
+        deepScanTitle:       "Djupskanning med AI (Ollama)",
+        deepScanStart:       "🔬 Starta djupskanning",
+        deepScanCancel:      "✕ Avbryt",
+        deepScanModelLabel:  "Välj modell:",
+        deepScanRunning:     "Djupskanning pågår…",
+        deepScanDone:        "Djupskanning klar",
+        deepScanNoFindings:  "Inga extra fynd från AI-analysen.",
+        deepScanAIFindings:  "AI-fynd ({n} nya):",
+        deepScanNotRunning:  "Ollama körs inte. Starta Ollama och försök igen.",
+        deepScanNoModels:    "Inga Ollama-modeller installerade. Kör: <code>ollama pull llama3.2:3b</code>",
+        deepScanError:       "Djupskanning misslyckades:",
         settingsUpdateTitle: "Uppdateringar",
         settingsPersistNote: "Inställningar sparas automatiskt i webbläsaren.",
         updateAvailable: "Ny version tillgänglig:",
@@ -813,6 +935,25 @@
         nerErrFetch:         "Could not fetch model status:",
         nerNoticeMissing:    "Name detection is inactive – spaCy models missing ({models}). Download the models under Settings to enable name detection.",
         nerNoticeBtn:        "⚙ Settings",
+        settingsOllamaTitle: "AI deep scan (Ollama)",
+        settingsOllamaNote:  "Deep scanning uses a local Ollama model to detect personal data that rule-based detectors may miss. Requires Ollama to be installed.",
+        ollamaRefresh:       "↻ Check status",
+        ollamaRunning:       "✅ Ollama is running",
+        ollamaNotRunning:    "❌ Ollama is not running",
+        ollamaModelsLabel:   "Installed models:",
+        ollamaNoModels:      "No models found.",
+        ollamaInstallHint:   "Download Ollama from <a href='https://ollama.ai' target='_blank'>ollama.ai</a>, then run:<br><code>ollama pull llama3.2:3b</code><br>Recommended: <strong>llama3.2:3b</strong> (~1.9 GB) – fast and capable.",
+        deepScanTitle:       "AI deep scan (Ollama)",
+        deepScanStart:       "🔬 Start deep scan",
+        deepScanCancel:      "✕ Cancel",
+        deepScanModelLabel:  "Select model:",
+        deepScanRunning:     "Deep scan in progress…",
+        deepScanDone:        "Deep scan complete",
+        deepScanNoFindings:  "No additional findings from AI analysis.",
+        deepScanAIFindings:  "AI findings ({n} new):",
+        deepScanNotRunning:  "Ollama is not running. Start Ollama and try again.",
+        deepScanNoModels:    "No Ollama models installed. Run: <code>ollama pull llama3.2:3b</code>",
+        deepScanError:       "Deep scan failed:",
         settingsUpdateTitle: "Updates",
         settingsPersistNote: "Settings are saved automatically in the browser.",
         updateAvailable: "New version available:",
@@ -1169,6 +1310,7 @@
       `;
 
       wireEvents(sorted, canPatch, ext);
+      if (!r.error) showDeepScanSection();
     }
 
     function buildFindingsHtml(sorted, canPatch, ext) {
@@ -1601,6 +1743,195 @@
       }
     });
 
+    /* ══════════════════════════════════════════════════════════════════
+       OLLAMA / DYBDESKANN
+    ══════════════════════════════════════════════════════════════════ */
+
+    let _dsOpen        = false;
+    let _dsPollTimer   = null;
+    let _dsLastJobId   = null;
+
+    // ── Innstillinger: Ollama-seksjon ────────────────────────────────
+    async function loadOllamaSettingsStatus() {
+      const statusEl = document.getElementById("ollama-settings-status");
+      const listEl   = document.getElementById("ollama-models-list");
+      const instrEl  = document.getElementById("ollama-instructions");
+      if (!statusEl) return;
+      try {
+        const s = await (await fetch(`${API}/ollama/status`)).json();
+        if (s.running) {
+          statusEl.innerHTML = `<span style="color:var(--ok)">${t("ollamaRunning")}</span>`;
+          if (s.models && s.models.length) {
+            listEl.innerHTML = `<div style="font-size:12px;color:var(--muted);margin-bottom:4px">${t("ollamaModelsLabel")}</div>` +
+              s.models.map(m => `<div style="font-size:13px;padding:3px 0;color:var(--fg)">${escapeHtml(m)}</div>`).join("");
+            instrEl.style.display = "none";
+          } else {
+            listEl.innerHTML = `<div style="font-size:12.5px;color:var(--muted)">${t("ollamaNoModels")}</div>`;
+            instrEl.innerHTML = t("ollamaInstallHint");
+            instrEl.style.display = "block";
+          }
+        } else {
+          statusEl.innerHTML = `<span style="color:var(--danger)">${t("ollamaNotRunning")}</span>`;
+          listEl.innerHTML = "";
+          instrEl.innerHTML = t("ollamaInstallHint");
+          instrEl.style.display = "block";
+        }
+      } catch (e) {
+        statusEl.innerHTML = `<span style="color:var(--danger)">${t("ollamaNotRunning")}</span>`;
+      }
+    }
+
+    document.getElementById("btn-refresh-ollama").addEventListener("click", loadOllamaSettingsStatus);
+
+    document.querySelectorAll(".tab-btn").forEach(btn => {
+      if (btn.dataset.tab === "settings") {
+        btn.addEventListener("click", loadOllamaSettingsStatus);
+      }
+    });
+
+    // ── Scanner: Dybdeskann-seksjon ──────────────────────────────────
+
+    function _dsToggle() {
+      _dsOpen = !_dsOpen;
+      const header = document.getElementById("ds-header");
+      const body   = document.getElementById("ds-body");
+      header.classList.toggle("open", _dsOpen);
+      body.classList.toggle("open", _dsOpen);
+      if (_dsOpen) renderDeepScanBody();
+    }
+
+    document.getElementById("ds-header").addEventListener("click", _dsToggle);
+
+    function showDeepScanSection() {
+      document.getElementById("deep-scan-section").classList.add("show");
+      // Tilbakestill state ved ny fil-skanning
+      document.getElementById("ds-findings-area").innerHTML = "";
+      document.getElementById("ds-progress").textContent = "";
+      document.getElementById("ds-cancel-btn").style.display = "none";
+      document.getElementById("ds-start-btn").style.display = "";
+      if (_dsPollTimer) { clearInterval(_dsPollTimer); _dsPollTimer = null; }
+      if (_dsOpen) renderDeepScanBody();
+    }
+
+    async function renderDeepScanBody() {
+      const statusRow   = document.getElementById("ds-status-row");
+      const notRunning  = document.getElementById("ds-not-running");
+      const readyDiv    = document.getElementById("ds-ready");
+      const modelSelect = document.getElementById("ds-model-select");
+      statusRow.innerHTML = `<span style="color:var(--muted);font-size:12px">Sjekker Ollama…</span>`;
+      try {
+        const s = await (await fetch(`${API}/ollama/status`)).json();
+        if (!s.running) {
+          statusRow.innerHTML  = `<span style="color:var(--danger)">${t("ollamaNotRunning")}</span>`;
+          notRunning.innerHTML = t("ollamaInstallHint");
+          notRunning.style.display = "block";
+          readyDiv.style.display   = "none";
+          return;
+        }
+        notRunning.style.display = "none";
+        if (!s.models || !s.models.length) {
+          statusRow.innerHTML = `<span style="color:var(--ok)">${t("ollamaRunning")}</span>
+            <span style="color:var(--danger);margin-left:8px">${t("ollamaNoModels")}</span>`;
+          readyDiv.style.display = "none";
+          return;
+        }
+        statusRow.innerHTML = `<span style="color:var(--ok)">${t("ollamaRunning")}</span>`;
+        // Bygg modell-dropdown
+        const current = modelSelect.value;
+        modelSelect.innerHTML = s.models.map(m => {
+          const rec = ["llama3.2:3b","llama3.2:1b","gemma2:2b","mistral:7b"].includes(m);
+          return `<option value="${escapeHtml(m)}">${escapeHtml(m)}${rec ? " ★" : ""}</option>`;
+        }).join("");
+        if (current && s.models.includes(current)) modelSelect.value = current;
+        readyDiv.style.display = "block";
+      } catch (e) {
+        statusRow.innerHTML  = `<span style="color:var(--danger)">${t("ollamaNotRunning")}</span>`;
+        notRunning.innerHTML = t("ollamaInstallHint");
+        notRunning.style.display = "block";
+        readyDiv.style.display   = "none";
+      }
+    }
+
+    async function startDeepScan() {
+      const model = document.getElementById("ds-model-select").value;
+      if (!model) return;
+      document.getElementById("ds-start-btn").style.display  = "none";
+      document.getElementById("ds-cancel-btn").style.display = "";
+      document.getElementById("ds-progress").textContent = t("deepScanRunning");
+      document.getElementById("ds-findings-area").innerHTML  = "";
+      try {
+        const r = await (await fetch(`${API}/ollama/deep-scan`, {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({model}),
+        })).json();
+        if (!r.ok) {
+          setDeepScanError(r.error || "Ukjent feil");
+          return;
+        }
+        _dsLastJobId = r.job_id;
+        _dsPollTimer = setInterval(pollDeepScan, 2000);
+      } catch (e) {
+        setDeepScanError(String(e));
+      }
+    }
+
+    async function cancelDeepScan() {
+      if (_dsPollTimer) { clearInterval(_dsPollTimer); _dsPollTimer = null; }
+      await fetch(`${API}/ollama/deep-scan/cancel`, {method:"POST"}).catch(()=>{});
+      document.getElementById("ds-cancel-btn").style.display = "none";
+      document.getElementById("ds-start-btn").style.display  = "";
+      document.getElementById("ds-progress").textContent = "Avbrutt.";
+    }
+
+    async function pollDeepScan() {
+      try {
+        const s = await (await fetch(`${API}/ollama/deep-scan/status`)).json();
+        document.getElementById("ds-progress").textContent = s.progress || "";
+        if (s.status === "done") {
+          clearInterval(_dsPollTimer); _dsPollTimer = null;
+          document.getElementById("ds-cancel-btn").style.display = "none";
+          document.getElementById("ds-start-btn").style.display  = "";
+          renderDeepFindings(s.findings || []);
+        } else if (s.status === "cancelled" || s.status === "error") {
+          clearInterval(_dsPollTimer); _dsPollTimer = null;
+          document.getElementById("ds-cancel-btn").style.display = "none";
+          document.getElementById("ds-start-btn").style.display  = "";
+        }
+      } catch (e) {
+        // stille feil – prøver igjen om 2 sek
+      }
+    }
+
+    function renderDeepFindings(findings) {
+      const area = document.getElementById("ds-findings-area");
+      if (!findings.length) {
+        area.innerHTML = `<p style="color:var(--muted);font-size:13px;margin-top:8px">${t("deepScanNoFindings")}</p>`;
+        return;
+      }
+      const title = t("deepScanAIFindings").replace("{n}", findings.length);
+      const rows  = findings.map(f => `
+        <div class="ds-finding">
+          <div class="ds-finding-cat">${escapeHtml(f.category || "AI-funn")}</div>
+          <div class="ds-finding-text">
+            <div>${escapeHtml(f.text || "")}</div>
+            ${f.context ? `<div class="ds-finding-ctx">${escapeHtml(f.context)}</div>` : ""}
+          </div>
+        </div>`).join("");
+      area.innerHTML = `<div class="ds-findings-title">${title}</div>${rows}`;
+    }
+
+    function setDeepScanError(msg) {
+      clearInterval(_dsPollTimer); _dsPollTimer = null;
+      document.getElementById("ds-cancel-btn").style.display = "none";
+      document.getElementById("ds-start-btn").style.display  = "";
+      document.getElementById("ds-progress").innerHTML =
+        `<span style="color:var(--danger)">${t("deepScanError")} ${escapeHtml(msg)}</span>`;
+    }
+
+    document.getElementById("ds-start-btn").addEventListener("click",  startDeepScan);
+    document.getElementById("ds-cancel-btn").addEventListener("click", cancelDeepScan);
+
     /* Init */
     loadSettings();
     syncAboutLang();
@@ -1613,6 +1944,7 @@
     loadWhitelistEditor();
     runUpdateCheck(false);
     loadNerStatus();
+    loadOllamaSettingsStatus();
   </script>
 </body>
 </html>

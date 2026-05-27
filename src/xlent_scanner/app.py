@@ -493,6 +493,49 @@ def models_download_endpoint():
     return jsonify({"ok": True, "model": model, "started": started})
 
 
+# ── Ollama / dybdeskann ─────────────────────────────────────────────────
+
+@flask_app.route("/ollama/status", methods=["GET"])
+def ollama_status_endpoint():
+    """Sjekk om Ollama kjører og hent tilgjengelige modeller."""
+    from xlent_scanner.deep_scanner import ollama_status  # noqa: PLC0415
+    return jsonify(ollama_status())
+
+
+@flask_app.route("/ollama/deep-scan", methods=["POST"])
+def ollama_deep_scan_endpoint():
+    """Start dybdeskanning med Ollama på sist skannede fil."""
+    from xlent_scanner.deep_scanner import start_deep_scan  # noqa: PLC0415
+    if _last_result is None:
+        return jsonify({"ok": False, "error": "Ingen fil er skannet ennå."})
+    text = getattr(_last_result, "original_text", "") or ""
+    if not text.strip():
+        return jsonify({"ok": False, "error": "Ingen tekst å analysere i sist skannede fil."})
+    data  = request.get_json(force=True)
+    model = (data.get("model") or "").strip()
+    if not model:
+        return jsonify({"ok": False, "error": "Ingen Ollama-modell oppgitt."})
+    lang = getattr(_last_result, "language", "nb") or "nb"
+    job_id = start_deep_scan(text, model, lang)
+    LOGGER.info("ollama/deep-scan started job=%s model=%s", job_id, model)
+    return jsonify({"ok": True, "job_id": job_id})
+
+
+@flask_app.route("/ollama/deep-scan/status", methods=["GET"])
+def ollama_deep_scan_status_endpoint():
+    """Hent status / fremdrift / funn for pågående dybdeskann."""
+    from xlent_scanner.deep_scanner import get_deep_scan_status  # noqa: PLC0415
+    return jsonify(get_deep_scan_status())
+
+
+@flask_app.route("/ollama/deep-scan/cancel", methods=["POST"])
+def ollama_deep_scan_cancel_endpoint():
+    """Avbryt pågående dybdeskann."""
+    from xlent_scanner.deep_scanner import cancel_deep_scan  # noqa: PLC0415
+    cancel_deep_scan()
+    return jsonify({"ok": True})
+
+
 @flask_app.route("/ignore/save", methods=["POST"])
 def ignore_save():
     data = request.get_json(force=True)
