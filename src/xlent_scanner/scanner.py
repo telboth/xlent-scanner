@@ -1,19 +1,20 @@
-"""Docling-wrapper og scan-orkestrering."""
+"""Tekstekstraksjon og scan-orkestrering."""
 from __future__ import annotations
 
+import html
+import re
 from pathlib import Path
 
-from docling.document_converter import DocumentConverter
 import fitz  # type: ignore[import-untyped]
 
 from xlent_scanner.detectors.clients import detect_clients
-from xlent_scanner.detectors.keywords import detect_keywords
-from xlent_scanner.detectors.ner_names import detect_names, get_load_error
 from xlent_scanner.detectors.creditcards import detect_creditcards
 from xlent_scanner.detectors.financials import detect_financials
 from xlent_scanner.detectors.iban import detect_iban
+from xlent_scanner.detectors.keywords import detect_keywords
+from xlent_scanner.detectors.ner_names import detect_names, get_load_error
 from xlent_scanner.detectors.regex_en import detect_en_specific
-from xlent_scanner.detectors.regex_no import find_emails, detect_no_specific
+from xlent_scanner.detectors.regex_no import detect_no_specific, find_emails
 from xlent_scanner.detectors.regex_sv import detect_sv_specific
 from xlent_scanner.detectors.secrets import detect_secrets
 from xlent_scanner.ignore import filter_findings, load_ignore_list
@@ -24,61 +25,12 @@ from xlent_scanner.whitelist import filter_by_whitelist
 
 SUPPORTED_SUFFIXES = {".pdf", ".docx", ".pptx", ".xlsx", ".md", ".txt", ".html"}
 
-_converter: DocumentConverter | None = None
 _ignore_list: dict | None = None
 
 
 def reset_ignore_cache() -> None:
     global _ignore_list
     _ignore_list = None
-
-
-def _patch_docling_picture_description() -> None:
-    """Bypass Docling picture-description factory when feature is disabled.
-
-    In packaged builds (PyInstaller), Docling plugin registration for picture
-    description classes can be empty, which raises:
-    "No class found with the name 'picture_description_vlm_engine' ...".
-    We do not use picture-description enrichment in this scanner, so when
-    `do_picture_description` is false we return `None` directly.
-    """
-    from docling.pipeline import base_pipeline as _bp
-    target_cls = _bp.ConvertPipeline
-
-    if getattr(target_cls, "_xlent_picture_patch", False):
-        return
-
-    _orig = target_cls._get_picture_description_model
-
-    def _safe_get_picture_description_model(self, artifacts_path=None):
-        enabled = bool(getattr(self.pipeline_options, "do_picture_description", False))
-        if not enabled:
-            from docling.datamodel.pipeline_options import PictureDescriptionApiOptions
-            from docling.models.stages.picture_description.picture_description_api_model import (
-                PictureDescriptionApiModel,
-            )
-
-            return PictureDescriptionApiModel(
-                enabled=False,
-                enable_remote_services=bool(
-                    getattr(self.pipeline_options, "enable_remote_services", False)
-                ),
-                artifacts_path=artifacts_path,
-                options=PictureDescriptionApiOptions(),
-                accelerator_options=self.pipeline_options.accelerator_options,
-            )
-        return _orig(self, artifacts_path=artifacts_path)
-
-    target_cls._get_picture_description_model = _safe_get_picture_description_model
-    target_cls._xlent_picture_patch = True
-
-
-def _get_converter() -> DocumentConverter:
-    global _converter
-    if _converter is None:
-        _patch_docling_picture_description()
-        _converter = DocumentConverter()
-    return _converter
 
 
 def _get_ignore_list() -> dict:
@@ -88,22 +40,102 @@ def _get_ignore_list() -> dict:
     return _ignore_list
 
 
-def extract_text(path: Path) -> str:
-    if path.suffix.lower() == ".pdf":
-        return _extract_text_pdf(path)
-    return _get_converter().convert(str(path)).document.export_to_markdown()
+def _read_text_file(path: Path) -> str:
+    for encoding in ("utf-8", "utf-8-sig", "cp1252", "latin-1"):
+        try:
+            return path.read_text(encoding=encoding)
+        except UnicodeDecodeError:
+            continue
+    return path.read_text(encoding="utf-8", errors="ignore")
 
 
 def _extract_text_pdf(path: Path) -> str:
-    """Extract text from PDF using PyMuPDF.
-
-    We prefer this path for stability in packaged desktop builds.
-    """
     chunks: list[str] = []
     with fitz.open(path) as doc:
         for page in doc:
             chunks.append(page.get_text("text"))
     return "\n".join(chunks).strip()
+
+
+def _extract_text_docx(path: Path) -> str:
+    from docx import Document as DocxDocument  # lazy import for packaged stability
+
+    doc = DocxDocument(str(path))
+    parts: list[str] = []
+    parts.extend(p.text for p in doc.paragraphs if p.text)
+    for table in doc.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                if cell.text:
+                    parts.append(cell.text)
+    return "\n".join(parts).strip()
+
+
+def _extract_text_pptx(path: Path) -> str:
+    from pptx import Presentation  # lazy import for packaged stability
+
+    prs = Presentation(str(path))
+    parts: list[str] = []
+    for slide in prs.slides:
+        for shape in slide.shapes:
+            if hasattr(shape, "text") and shape.text:
+                parts.append(shape.text)
+            if getattr(shape, "has_table", False):
+                for row in shape.table.rows:
+                    for cell in row.cells:
+                        if cell.text:
+                            parts.append(cell.text)
+        try:
+            notes = slide.notes_slide.notes_text_frame.text
+            if notes:
+                parts.append(notes)
+        except Exception:
+            pass
+    return "\n".join(parts).strip()
+
+
+def _extract_text_xlsx(path: Path) -> str:
+    from openpyxl import load_workbook  # lazy import for packaged stability
+
+    wb = load_workbook(filename=str(path), data_only=True, read_only=True)
+    try:
+        parts: list[str] = []
+        for ws in wb.worksheets:
+            parts.append(f"[{ws.title}]")
+            for row in ws.iter_rows(values_only=True):
+                vals = [str(v) for v in row if v is not None and str(v).strip()]
+                if vals:
+                    parts.append(" | ".join(vals))
+        return "\n".join(parts).strip()
+    finally:
+        wb.close()
+
+
+def _extract_text_html(path: Path) -> str:
+    content = _read_text_file(path)
+    content = re.sub(r"(?is)<script.*?>.*?</script>", " ", content)
+    content = re.sub(r"(?is)<style.*?>.*?</style>", " ", content)
+    content = re.sub(r"(?s)<[^>]+>", " ", content)
+    content = html.unescape(content)
+    content = re.sub(r"\s+", " ", content)
+    return content.strip()
+
+
+def extract_text(path: Path) -> str:
+    suffix = path.suffix.lower()
+    if suffix == ".pdf":
+        return _extract_text_pdf(path)
+    if suffix == ".docx":
+        return _extract_text_docx(path)
+    if suffix == ".pptx":
+        return _extract_text_pptx(path)
+    if suffix == ".xlsx":
+        return _extract_text_xlsx(path)
+    if suffix in {".md", ".txt"}:
+        return _read_text_file(path).strip()
+    if suffix == ".html":
+        return _extract_text_html(path)
+    raise ValueError(f"Filtype ikke støttet: {suffix}")
 
 
 def scan_file(path: str | Path, ignore_xlent: bool = False, language: str = "auto") -> ScanResult:
@@ -124,9 +156,7 @@ def scan_file(path: str | Path, ignore_xlent: bool = False, language: str = "aut
         text = extract_text(p)
     except Exception as exc:
         msg = str(exc)
-        # Gi brukervennlig melding for kjente XML-feil (PPTX/DOCX med ugyldige tegn)
-        if any(k in msg.lower() for k in ("illegal character", "not well-formed",
-                                           "invalid token", "xml", "expat")):
+        if any(k in msg.lower() for k in ("illegal character", "not well-formed", "invalid token", "xml", "expat")):
             friendly = (
                 "Filen inneholder ugyldige tegn og kunne ikke leses automatisk. "
                 "Dette skjer gjerne med innscannede eller redigerte PPTX/DOCX-filer. "
@@ -140,10 +170,9 @@ def scan_file(path: str | Path, ignore_xlent: bool = False, language: str = "aut
             error=friendly,
         )
 
-    preview = text   # full tekst – grensesnittet håndterer scrolling
+    preview = text
 
-    # Sjekk om dokumentet er tomt / kun bildebasert
-    _TEXT_MIN = 50    # tegn etter stripping – under dette regnes filen som tom
+    _TEXT_MIN = 50
     warning: str | None = None
     if len(text.strip()) < _TEXT_MIN:
         warning = (
@@ -166,18 +195,13 @@ def scan_file(path: str | Path, ignore_xlent: bool = False, language: str = "aut
 
     _run(detect_keywords, text)
     _run(detect_secrets, text)
-    # E-post er universelt – alltid aktivt
     _run(find_emails, text)
-    # Norske mønstre: fødselsnummer, orgnr, kontonummer, telefon
     if lang in ("nb", "en"):
         _run(detect_no_specific, text)
-    # Svenske mønstre: personnummer, samordningsnummer, org-nummer, telefon, bankgiro
     if lang in ("sv", "en"):
         _run(detect_sv_specific, text)
-    # Engelske mønstre: UK NI-nummer, US SSN
     if lang == "en":
         _run(detect_en_specific, text)
-    # Universelle mønstre (alle språk)
     _run(detect_iban, text)
     _run(detect_creditcards, text)
     _run(detect_financials, text)
