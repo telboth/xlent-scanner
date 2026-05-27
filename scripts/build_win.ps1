@@ -80,6 +80,11 @@ $pyiArgs = @(
     "--collect-data", "xlent_scanner",
     "--collect-data", "langdetect",
 
+    # Docling (PDF-parsing med layout-analyse og tabellgjenkjenning)
+    "--collect-all", "docling",
+    "--collect-all", "docling_core",
+    "--collect-data", "docling_ibm_models",
+
     # PyWebView Windows-backend (dynamisk importert – usynlig for PyInstaller)
     "--hidden-import", "webview.platforms.winforms",
     "--hidden-import", "webview.platforms.edgechromium",
@@ -120,11 +125,8 @@ $pyiArgs = @(
     "--hidden-import", "spacy.lang.sv",
     "--hidden-import", "spacy.lang.en",
 
-    # Ekskluder tunge pakker som ikke lenger er i bruk
-    "--exclude-module", "docling",
-    "--exclude-module", "torch",
+    # Ekskluder pakker som ikke er i bruk
     "--exclude-module", "torchvision",
-    "--exclude-module", "transformers",
 
     "--distpath", $DistDir,
     "--workpath", $BuildDir,

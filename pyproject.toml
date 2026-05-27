@@ -1,6 +1,6 @@
 [project]
 name = "xlent-scanner"
-version = "0.9.8"
+version = "0.9.9"
 description = "Lokal scanner som sjekker dokumenter for sensitiv kundeinfo før opplasting til online AI-verktøy"
 readme = "README.md"
 authors = [
@@ -8,6 +8,7 @@ authors = [
 ]
 requires-python = ">=3.13"
 dependencies = [
+    "docling>=2.0.0",
     "flask>=3.1.3",
     "langdetect>=1.0.9",
     "openpyxl>=3.1.0",

@@ -5,7 +5,9 @@ import html
 import re
 from pathlib import Path
 
-import fitz  # type: ignore[import-untyped]
+import fitz  # type: ignore[import-untyped]  # fallback PDF-parser
+
+_pdf_converter = None  # Docling DocumentConverter – lazy-initialisert ved første PDF-scan
 
 from xlent_scanner.detectors.clients import detect_clients
 from xlent_scanner.detectors.creditcards import detect_creditcards
@@ -49,12 +51,45 @@ def _read_text_file(path: Path) -> str:
     return path.read_text(encoding="utf-8", errors="ignore")
 
 
-def _extract_text_pdf(path: Path) -> str:
+def _get_pdf_converter():
+    """Returnerer (og cacher) en Docling DocumentConverter for PDF-parsing.
+    Raises RuntimeError hvis Docling eller en av dens avhengigheter ikke er tilgjengelig.
+    """
+    global _pdf_converter
+    if _pdf_converter is None:
+        from docling.document_converter import DocumentConverter, PdfFormatOption
+        from docling.datamodel.pipeline_options import PdfPipelineOptions
+        from docling.datamodel.base_models import InputFormat
+
+        opts = PdfPipelineOptions()
+        opts.do_ocr = False  # hopp over EasyOCR (tung avhengighet, ikke nødvendig her)
+        # Docling laster layout-modell automatisk ved første konvertering.
+        _pdf_converter = DocumentConverter(
+            format_options={InputFormat.PDF: PdfFormatOption(pipeline_options=opts)}
+        )
+    return _pdf_converter
+
+
+def _extract_text_pdf_fitz(path: Path) -> str:
+    """Fallback: enkel tekstekstraksjon via PyMuPDF."""
     chunks: list[str] = []
     with fitz.open(path) as doc:
         for page in doc:
             chunks.append(page.get_text("text"))
     return "\n".join(chunks).strip()
+
+
+def _extract_text_pdf(path: Path) -> str:
+    """Ekstraherer tekst fra PDF.
+
+    Prøver Docling først (bedre layout-rekonstruksjon og tabelldeteksjon).
+    Faller tilbake til PyMuPDF ved feil (f.eks. hvis Docling ikke er tilgjengelig i frozen build).
+    """
+    try:
+        converter = _get_pdf_converter()
+        return converter.convert(str(path)).document.export_to_markdown()
+    except Exception:
+        return _extract_text_pdf_fitz(path)
 
 
 def _extract_text_docx(path: Path) -> str:
