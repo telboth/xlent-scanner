@@ -12,7 +12,9 @@ param(
     [switch]$OverwriteAssets = $true,
     [string[]]$AssetGlobs = @(
         "artifacts/windows/installer/*",
-        "artifacts/macos/installer/*"
+        "artifacts/macos/installer/*",
+        "scripts/install_windows.ps1",
+        "scripts/install_macos.sh"
     )
 )
 
@@ -189,7 +191,7 @@ if ($statusLines -and -not $AutoCommit) {
     throw "Arbeidstreet er ikke rent. Kjør med -AutoCommit eller commit manuelt."
 }
 if ($statusLines -and $AutoCommit) {
-    Invoke-Git @("add", "-A")
+    Invoke-Git @("add", "-u")
     & git diff --cached --quiet
     if ($LASTEXITCODE -ne 0) {
         Invoke-Git @("commit", "-m", $CommitMessage)

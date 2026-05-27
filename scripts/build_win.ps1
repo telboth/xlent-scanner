@@ -16,11 +16,11 @@ function Assert-Command {
 function Invoke-External {
     param(
         [string]$Exe,
-        [string[]]$Args
+        [object[]]$ArgList = @()
     )
-    & $Exe @Args
+    & $Exe @ArgList
     if ($LASTEXITCODE -ne 0) {
-        throw "Kommando feilet: $Exe $($Args -join ' ')"
+        throw "Kommando feilet: $Exe $($ArgList -join ' ')"
     }
 }
 
@@ -61,7 +61,7 @@ if __name__ == "__main__":
     main()
 '@ | Set-Content -LiteralPath $EntryScript -Encoding UTF8
 
-Invoke-External "uv" @(
+Invoke-External -Exe "uv" -ArgList @(
     "pip", "install",
     "--python", $PythonExe,
     "pyinstaller>=6.0.0",
@@ -84,7 +84,7 @@ $pyiArgs = @(
     $EntryScript
 )
 
-Invoke-External $PythonExe $pyiArgs
+Invoke-External -Exe $PythonExe -ArgList $pyiArgs
 
 $OutputDir = Join-Path $DistDir $AppName
 if (-not (Test-Path $OutputDir)) {

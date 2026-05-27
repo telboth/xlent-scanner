@@ -10,11 +10,11 @@ $ErrorActionPreference = "Stop"
 function Invoke-External {
     param(
         [string]$Exe,
-        [string[]]$Args
+        [object[]]$ArgList = @()
     )
-    & $Exe @Args
+    & $Exe @ArgList
     if ($LASTEXITCODE -ne 0) {
-        throw "Kommando feilet: $Exe $($Args -join ' ')"
+        throw "Kommando feilet: $Exe $($ArgList -join ' ')"
     }
 }
 
@@ -89,6 +89,6 @@ $args = @(
     $IssPath
 )
 
-Invoke-External $iscc $args
+Invoke-External -Exe $iscc -ArgList $args
 
 Write-Host "Installer bygget i: $InstallerOutAbs"

@@ -96,6 +96,25 @@ From repository root:
 
 - `artifacts/windows/installer/*`
 - `artifacts/macos/installer/*`
+- `scripts/install_windows.ps1`
+- `scripts/install_macos.sh`
+
+## Install from release assets
+
+Windows (PowerShell):
+
+```powershell
+Invoke-WebRequest -Uri https://raw.githubusercontent.com/telboth/xlent-scanner/master/scripts/install_windows.ps1 -OutFile .\install_windows.ps1
+.\install_windows.ps1
+```
+
+macOS (Terminal):
+
+```bash
+curl -fsSL -o install_macos.sh https://raw.githubusercontent.com/telboth/xlent-scanner/master/scripts/install_macos.sh
+chmod +x install_macos.sh
+./install_macos.sh
+```
 
 ## Architecture
 
