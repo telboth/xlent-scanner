@@ -50,8 +50,8 @@ On first run, spaCy language models are downloaded automatically (~50 MB each).
 From repository root:
 
 ```powershell
-.\push_to_git.ps1 -Owner telboth -Visibility public -CommitMessage "chore: update"
-.\create_release.ps1 -Owner telboth -AutoCommit -CommitMessage "chore: prepare release"
+.\push_to_git.ps1 -Visibility public -CommitMessage "chore: update"
+.\create_release.ps1 -AutoCommit -CommitMessage "chore: prepare release"
 ```
 
 `create_release.ps1` reads version from `src/xlent_scanner/__init__.py`, creates tag `v<version>`, pushes tag, and creates a GitHub Release.

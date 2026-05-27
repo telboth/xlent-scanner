@@ -35,7 +35,12 @@ from xlent_scanner.patch import SUPPORTED_PATCH_SUFFIXES, patch_file
 from xlent_scanner.report import generate_html
 from xlent_scanner.scanner import scan_file
 from xlent_scanner.update_check import check_for_update
-from xlent_scanner.whitelist import add_to_whitelist
+from xlent_scanner.whitelist import (
+    add_to_whitelist,
+    get_whitelist_entries,
+    save_whitelist_entries,
+    whitelist_path_str,
+)
 
 _last_result = None
 _last_path: Path | None = None
@@ -304,6 +309,29 @@ def update_check():
     data = request.get_json(silent=True) or {}
     force = bool(data.get("force", False))
     return jsonify(check_for_update(current_version=__version__, force=force))
+
+
+@flask_app.route("/whitelist/get", methods=["POST"])
+def whitelist_get():
+    return jsonify({
+        "ok": True,
+        "path": whitelist_path_str(),
+        "texts": get_whitelist_entries(),
+    })
+
+
+@flask_app.route("/whitelist/save", methods=["POST"])
+def whitelist_save():
+    data = request.get_json(force=True)
+    texts = data.get("texts", [])
+    if not isinstance(texts, list):
+        return jsonify({"ok": False, "error": "Ugyldig format for whitelist."})
+    save_whitelist_entries([str(t) for t in texts])
+    return jsonify({
+        "ok": True,
+        "path": whitelist_path_str(),
+        "texts": get_whitelist_entries(),
+    })
 
 
 def _start_flask(port: int) -> None:

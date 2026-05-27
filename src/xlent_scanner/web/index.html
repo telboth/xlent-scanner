@@ -251,6 +251,20 @@
       border-radius: 5px; padding: 4px 10px; font-size: 13px; cursor: pointer;
     }
     .settings-note { font-size: 11px; color: var(--muted); margin-top: 8px; line-height: 1.5; }
+    .settings-textarea {
+      width: 100%;
+      min-height: 150px;
+      margin-top: 8px;
+      resize: vertical;
+      background: var(--panel2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-family: ui-monospace, monospace;
+      font-size: 12px;
+      line-height: 1.45;
+    }
 
     /* ── About panel ────────────────────────────────────────────────── */
     #panel-about { padding: 26px 30px; gap: 0; max-width: 820px; }
@@ -491,6 +505,17 @@
       </div>
 
       <div class="settings-section">
+        <div class="settings-section-title" data-i18n="settingsWhitelistTitle">Hviteliste</div>
+        <div class="settings-note" id="whitelist-path"></div>
+        <textarea id="whitelist-editor" class="settings-textarea" spellcheck="false"></textarea>
+        <div class="settings-row" style="margin-top:8px;">
+          <button id="btn-whitelist-reload" class="ctrl-btn" data-i18n="whitelistReload">Last inn</button>
+          <button id="btn-whitelist-save" class="ctrl-btn ctrl-btn-primary" data-i18n="whitelistSave">Lagre hviteliste</button>
+        </div>
+        <div class="settings-note" id="whitelist-msg"></div>
+      </div>
+
+      <div class="settings-section">
         <div class="settings-section-title" data-i18n="settingsUpdateTitle">Oppdateringer</div>
         <div class="settings-row">
           <button id="btn-check-updates" class="ctrl-btn" data-i18n="updateCheckNow">Se etter oppdateringer nå</button>
@@ -553,6 +578,14 @@
         settingsDocLangTitle:"Dokumentspråk",
         settingsDocLangNote: "Auto-detektering bestemmer dokumentspråket automatisk og velger riktige mønstre.",
         settingsFilterTitle: "Filtrering",
+        settingsWhitelistTitle: "Hviteliste",
+        whitelistReload: "Last inn",
+        whitelistSave: "Lagre hviteliste",
+        whitelistPathLabel: "Fil:",
+        whitelistHint: "Én verdi per linje. Tomme linjer ignoreres.",
+        whitelistSaved: "Hviteliste lagret.",
+        whitelistLoadErr: "Kunne ikke lese hviteliste:",
+        whitelistSaveErr: "Kunne ikke lagre hviteliste:",
         settingsUpdateTitle: "Oppdateringer",
         settingsPersistNote: "Innstillinger lagres automatisk i nettleseren.",
         updateAvailable: "Ny versjon tilgjengelig:",
@@ -606,6 +639,14 @@
         settingsDocLangTitle:"Dokumentspråk",
         settingsDocLangNote: "Automatisk identifiering väljer dokumentspråk och rätt mönster.",
         settingsFilterTitle: "Filtrering",
+        settingsWhitelistTitle: "Vitlista",
+        whitelistReload: "Ladda in",
+        whitelistSave: "Spara vitlista",
+        whitelistPathLabel: "Fil:",
+        whitelistHint: "En post per rad. Tomma rader ignoreras.",
+        whitelistSaved: "Vitlista sparad.",
+        whitelistLoadErr: "Kunde inte läsa vitlista:",
+        whitelistSaveErr: "Kunde inte spara vitlista:",
         settingsUpdateTitle: "Uppdateringar",
         settingsPersistNote: "Inställningar sparas automatiskt i webbläsaren.",
         updateAvailable: "Ny version tillgänglig:",
@@ -659,6 +700,14 @@
         settingsDocLangTitle:"Document language",
         settingsDocLangNote: "Auto-detection determines the document language and selects the right detection patterns.",
         settingsFilterTitle: "Filtering",
+        settingsWhitelistTitle: "Whitelist",
+        whitelistReload: "Reload",
+        whitelistSave: "Save whitelist",
+        whitelistPathLabel: "File:",
+        whitelistHint: "One value per line. Empty lines are ignored.",
+        whitelistSaved: "Whitelist saved.",
+        whitelistLoadErr: "Could not read whitelist:",
+        whitelistSaveErr: "Could not save whitelist:",
         settingsUpdateTitle: "Updates",
         settingsPersistNote: "Settings are saved automatically in the browser.",
         updateAvailable: "New version available:",
@@ -682,6 +731,9 @@
     const updateBannerMsgEl = document.getElementById("update-banner-msg");
     const updateBannerBtnEl = document.getElementById("update-banner-btn");
     const updateCheckMsgEl = document.getElementById("update-check-msg");
+    const whitelistPathEl = document.getElementById("whitelist-path");
+    const whitelistEditorEl = document.getElementById("whitelist-editor");
+    const whitelistMsgEl = document.getElementById("whitelist-msg");
 
     const LEVEL_COLOR = { grønn:"#4caf50", gul:"#ffb84d", rød:"#f44336", svart:"#9c27b0" };
     const LEVEL_ICON  = { grønn:"✅", gul:"⚠️", rød:"🚫", svart:"⛔" };
@@ -701,6 +753,7 @@
     let lastScan    = null;   // { type:"path"|"upload", path?:string, file?:File, name?:string }
     let scanHistory = [];     // [ { fileName, timestamp, riskLevel, rescanFn } ]
     let lastUpdateCheck = null;
+    let whitelistPath = "";
 
     /* ══════════════════════════════════════════════════════════════════
        UI LANGUAGE
@@ -735,6 +788,10 @@
       // Re-render history (button labels)
       renderHistory();
       renderUpdateBanner();
+      renderWhitelistPath();
+      if (!whitelistMsgEl.textContent || whitelistMsgEl.dataset.mode === "hint") {
+        setWhitelistMessage(t("whitelistHint"), "var(--muted)", "hint");
+      }
     }
 
     document.querySelectorAll(".ui-lang-btn").forEach(btn =>
@@ -813,6 +870,62 @@
         }
       } catch (e) {
         if (force) setUpdateCheckMessage(`${t("updateCheckFailed")} ${e}`, "#f44336");
+      }
+    }
+
+    function renderWhitelistPath() {
+      if (!whitelistPath) {
+        whitelistPathEl.textContent = "";
+        return;
+      }
+      whitelistPathEl.textContent = `${t("whitelistPathLabel")} ${whitelistPath}`;
+    }
+
+    function setWhitelistMessage(text, color = "var(--muted)", mode = "") {
+      whitelistMsgEl.textContent = text;
+      whitelistMsgEl.style.color = color;
+      whitelistMsgEl.dataset.mode = mode;
+    }
+
+    async function loadWhitelistEditor() {
+      setWhitelistMessage(t("processing"), "var(--muted)", "status");
+      try {
+        const d = await (await fetch(`${API}/whitelist/get`, { method:"POST" })).json();
+        if (!d.ok) {
+          setWhitelistMessage(`${t("whitelistLoadErr")} ${d.error || ""}`, "#f44336", "status");
+          return;
+        }
+        whitelistPath = String(d.path || "");
+        renderWhitelistPath();
+        whitelistEditorEl.value = (d.texts || []).join("\n");
+        setWhitelistMessage(t("whitelistHint"), "var(--muted)", "hint");
+      } catch (e) {
+        setWhitelistMessage(`${t("whitelistLoadErr")} ${e}`, "#f44336", "status");
+      }
+    }
+
+    async function saveWhitelistEditor() {
+      setWhitelistMessage(t("processing"), "var(--muted)", "status");
+      const texts = whitelistEditorEl.value
+        .split(/\r?\n/)
+        .map(v => v.trim())
+        .filter(v => v.length > 0);
+      try {
+        const d = await (await fetch(`${API}/whitelist/save`, {
+          method: "POST",
+          headers: {"Content-Type":"application/json"},
+          body: JSON.stringify({ texts }),
+        })).json();
+        if (!d.ok) {
+          setWhitelistMessage(`${t("whitelistSaveErr")} ${d.error || ""}`, "#f44336", "status");
+          return;
+        }
+        whitelistPath = String(d.path || whitelistPath);
+        renderWhitelistPath();
+        whitelistEditorEl.value = (d.texts || []).join("\n");
+        setWhitelistMessage(t("whitelistSaved"), "#4caf50", "status");
+      } catch (e) {
+        setWhitelistMessage(`${t("whitelistSaveErr")} ${e}`, "#f44336", "status");
       }
     }
 
@@ -1160,11 +1273,16 @@
     document.getElementById("ignoreXlent").addEventListener("change", saveSettings);
     document.getElementById("langSelect").addEventListener("change", saveSettings);
     document.getElementById("btn-check-updates").addEventListener("click", () => runUpdateCheck(true));
+    document.getElementById("btn-whitelist-reload").addEventListener("click", loadWhitelistEditor);
+    document.getElementById("btn-whitelist-save").addEventListener("click", saveWhitelistEditor);
 
     /* Init */
     loadSettings();
     syncAboutLang();
     setStatus(t("statusReady"));
+    setWhitelistMessage(t("whitelistHint"), "var(--muted)", "hint");
+    renderWhitelistPath();
+    loadWhitelistEditor();
     runUpdateCheck(false);
   </script>
 </body>

@@ -7,6 +7,9 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+$FixedRemoteUrl = "https://github.com/telboth/xlent-scanner.git"
+$Owner = "telboth"
+$RepoName = "xlent-scanner"
 
 function Invoke-Git {
     param(
@@ -86,10 +89,6 @@ function Ensure-GitHubRepo {
     }
 }
 
-if (-not $RepoName) {
-    $RepoName = Split-Path -Leaf (Get-Location)
-}
-
 Invoke-Git @("rev-parse", "--is-inside-work-tree") | Out-Null
 
 $headers = Get-GitHubHeaders
@@ -109,15 +108,14 @@ if (-not $branch) {
     throw "Fant ingen aktiv branch."
 }
 
-$remoteUrl = "https://github.com/$Owner/$RepoName.git"
 if ((& git remote) -contains "origin") {
     if ($LASTEXITCODE -ne 0) {
         throw "Kunne ikke lese git remotes."
     }
-    Invoke-Git @("remote", "set-url", "origin", $remoteUrl)
+    Invoke-Git @("remote", "set-url", "origin", $FixedRemoteUrl)
 } else {
-    Invoke-Git @("remote", "add", "origin", $remoteUrl)
+    Invoke-Git @("remote", "add", "origin", $FixedRemoteUrl)
 }
 
 Invoke-Git @("push", "-u", "origin", $branch)
-Write-Host "Push fullført: $remoteUrl ($branch)"
+Write-Host "Push fullført: $FixedRemoteUrl ($branch)"

@@ -11,6 +11,9 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+$FixedRemoteUrl = "https://github.com/telboth/xlent-scanner.git"
+$Owner = "telboth"
+$RepoName = "xlent-scanner"
 
 function Invoke-Git {
     param(
@@ -94,10 +97,6 @@ function Test-ReleaseExists {
     }
 }
 
-if (-not $RepoName) {
-    $RepoName = Split-Path -Leaf (Get-Location)
-}
-
 Invoke-Git @("rev-parse", "--is-inside-work-tree") | Out-Null
 
 if (-not $Version) {
@@ -130,8 +129,13 @@ if ($LASTEXITCODE -ne 0 -or -not $branch) {
     throw "Fant ingen aktiv branch."
 }
 
-if (-not ((& git remote) -contains "origin")) {
-    throw "Fant ikke remote 'origin'. Kjør push_to_git.ps1 først."
+if ((& git remote) -contains "origin") {
+    if ($LASTEXITCODE -ne 0) {
+        throw "Kunne ikke lese git remotes."
+    }
+    Invoke-Git @("remote", "set-url", "origin", $FixedRemoteUrl)
+} else {
+    Invoke-Git @("remote", "add", "origin", $FixedRemoteUrl)
 }
 
 Invoke-Git @("push", "origin", $branch)

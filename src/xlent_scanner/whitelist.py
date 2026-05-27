@@ -68,35 +68,62 @@ def load_whitelist() -> set[str]:
         return set()
 
 
-def add_to_whitelist(text: str) -> None:
-    """Legg til en verdi i hvitelisten. Ignorerer duplikater."""
+def whitelist_path_str() -> str:
+    return str(_whitelist_path())
+
+
+def get_whitelist_entries() -> list[str]:
+    """Returner whitelist-verdier i opprinnelig casing/rekkefølge."""
     p = _whitelist_path()
-    existing: list[str] = []
-    if p.exists():
+    if not p.exists():
+        return []
+    try:
+        with open(p, "rb") as f:
+            data = tomllib.load(f)
+        texts = data.get("texts", [])
+        return [str(t) for t in texts if isinstance(t, str)]
+    except tomllib.TOMLDecodeError:
+        bak = p.with_suffix(".toml.bak")
         try:
-            with open(p, "rb") as f:
-                data = tomllib.load(f)
-            existing = data.get("texts", [])
-        except tomllib.TOMLDecodeError:
-            bak = p.with_suffix(".toml.bak")
-            try:
-                p.rename(bak)
-            except OSError:
-                p.unlink(missing_ok=True)
-            existing = []
-    if text in existing:
-        return
-    existing.append(text)
+            p.rename(bak)
+        except OSError:
+            p.unlink(missing_ok=True)
+        return []
+
+
+def save_whitelist_entries(entries: list[str]) -> None:
+    """Overskriv whitelist med ny liste (deduplisert, tomme linjer fjernet)."""
+    seen: set[str] = set()
+    cleaned: list[str] = []
+    for raw in entries:
+        text = str(raw).strip()
+        if not text:
+            continue
+        if text in seen:
+            continue
+        seen.add(text)
+        cleaned.append(text)
+
+    p = _whitelist_path()
     lines = [
         "# Brukerdefinert hviteliste\n",
         "# Verdier her vil ikke varsles om i fremtidige skanninger\n",
         "# Rediger eller slett linjer manuelt for å fjerne oppføringer\n\n",
         "texts = [\n",
     ]
-    for t in existing:
+    for t in cleaned:
         lines.append(f"  {_toml_str(t)},\n")
     lines.append("]\n")
     p.write_text("".join(lines), encoding="utf-8")
+
+
+def add_to_whitelist(text: str) -> None:
+    """Legg til en verdi i hvitelisten. Ignorerer duplikater."""
+    existing = get_whitelist_entries()
+    if text in existing:
+        return
+    existing.append(text)
+    save_whitelist_entries(existing)
 
 
 def filter_by_whitelist(findings: list[Finding]) -> list[Finding]:
