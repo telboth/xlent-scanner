@@ -1,0 +1,7 @@
+# Kjente kundenavn — treff gir gul advarsel i rapporten.
+# Legg til nye kunder manuelt. Matching er case-insensitiv og ordgrense-basert.
+
+names = [
+  "Amesto Nextbridge",
+  "Fugro Geoteam",
+]

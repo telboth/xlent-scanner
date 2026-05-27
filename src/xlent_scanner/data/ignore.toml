@@ -1,0 +1,43 @@
+# XLENT-interne unntak
+# Legg til navn og domener som skal ignoreres under scanning.
+# Navn er case-insensitive og matcher hele ord (fornavn og etternavn separat).
+# Kilde: www.xlent.no (oslo, trondheim, alesund, om-oss) – hentet 2026-05-26
+
+email_domains = ["xlent.no", "xlent.se"]
+
+names = [
+  # Oslo
+  "Thomas Elboth",
+  "Jan Petter Hoel",
+  "Daniel Lovborn",
+  "Robert Lille-Rødberget",
+  "Vetle Hjelle",
+  "Rune Mydske Nielsen",
+  "Anne Rønning",
+  "Henrik Andreas Pedersen",
+  "Geir Arne Hjelle",
+  "Synne Byre",
+  "Fabian Legland Boe",
+  "Snorre Tang Duun",
+  "Lilia Amundsen",
+
+  # Trondheim
+  "Morten Moen",
+  "Erlend Østlie",
+  "Henning Morud",
+
+  # Ålesund
+  "Kristine Stokke Hoddevik",
+  "Alexander Dyb",
+  "Ingvild Janne Tørlen",
+  "Katinka Relling Bjørkavåg",
+  "Øystein Knotten",
+  "Petter Drønnen",
+  "Sindre Wollstad",
+
+  # Øvrige (funnet på forsiden/om-oss)
+  "Ingunn Moen",
+  "Tone Molnes",
+  "Maja Kosovare",
+  "Fabian Boe",
+]

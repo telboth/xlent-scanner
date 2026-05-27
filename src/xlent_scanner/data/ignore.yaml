@@ -1,0 +1,18 @@
+# XLENT-interne unntak
+# Legg til navn og domener som skal ignoreres under scanning.
+# Navn er case-insensitive og matcher hele ord.
+
+email_domains:
+  - xlent.no
+  - xlent.se
+
+# Navn hentet fra xlent.no (legg til flere manuelt)
+names:
+  - Thomas Elboth
+  - Jan Petter Hoel
+  - Daniel Lovborn
+  - Morten Moen
+  - Kristine Stokke Hoddevik
+  - Fabian Boe
+  - Ingunn Moen
+  - Tone Molnes
