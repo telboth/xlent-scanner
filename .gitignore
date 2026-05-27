@@ -1,13 +1,19 @@
 # Python-generated files
 __pycache__/
 *.py[oc]
-build/
 dist/
 wheels/
 *.egg-info
 
+# Python setuptools build output (ikke build/windows/ som er pakke-skript)
+build/lib/
+build/bdist*/
+build/temp*/
+
 # Virtual environments
 .venv
 
-# Build and release artifacts
+# PyInstaller / installer build-output
 artifacts/
+build/windows/dist/
+build/windows/work/

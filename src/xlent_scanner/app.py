@@ -55,6 +55,7 @@ from xlent_scanner.whitelist import (
 
 _last_result = None
 _last_path: Path | None = None
+_last_tmp_path: Path | None = None   # temp-fil fra forrige upload – ryddes opp ved neste upload
 
 _window: webview.Window | None = None
 flask_app = Flask(__name__, static_folder=None)
@@ -186,7 +187,7 @@ def scan():
 @flask_app.route("/scan-upload", methods=["POST"])
 def scan_upload():
     """Mottar fil som multipart-upload (brukes av drag-drop fallback)."""
-    global _last_result, _last_path
+    global _last_result, _last_path, _last_tmp_path
     try:
         f = request.files.get("file")
         if not f:
@@ -197,6 +198,14 @@ def scan_upload():
         suffix = Path(original_name).suffix.lower()
         LOGGER.info("scan-upload request name=%s suffix=%s lang=%s ignore_xlent=%s", original_name, suffix, language, ignore_xlent)
 
+        # Rydd opp forrige temp-fil (fra tidligere drag-drop/upload)
+        if _last_tmp_path and _last_tmp_path.exists():
+            try:
+                _last_tmp_path.unlink()
+            except OSError:
+                pass
+        _last_tmp_path = None
+
         # Lagre til midlertidig fil med riktig suffiks
         fd, tmp = tempfile.mkstemp(suffix=suffix, prefix="xlent-drop-")
         tmp_path = Path(tmp)
@@ -206,6 +215,7 @@ def scan_upload():
         result.file_name = original_name   # vis originalt filnavn, ikke temp-sti
         _last_result = result
         _last_path = tmp_path              # brukes av /patch hvis aktuelt
+        _last_tmp_path = tmp_path          # huskes for opprydding ved neste upload
         LOGGER.info("scan-upload result name=%s error=%s findings=%s", original_name, bool(result.error), len(result.findings))
         return jsonify(asdict(result))
     except Exception as exc:

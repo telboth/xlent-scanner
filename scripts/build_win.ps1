@@ -75,9 +75,55 @@ $pyiArgs = @(
     "--windowed",
     "--name", $AppName,
     "--paths", (Join-Path $RepoRoot "src"),
+
+    # Data-filer: web-grensesnitt + langdetect-profiler
     "--collect-data", "xlent_scanner",
+    "--collect-data", "langdetect",
+
+    # PyWebView Windows-backend (dynamisk importert – usynlig for PyInstaller)
     "--hidden-import", "webview.platforms.winforms",
     "--hidden-import", "webview.platforms.edgechromium",
+
+    # Dokumentlesere – lazy-importert inne i funksjoner i scanner.py / patch.py.
+    # PyInstaller utfører kun statisk analyse og ser IKKE disse importene.
+    "--hidden-import", "docx",
+    "--hidden-import", "docx.oxml",
+    "--hidden-import", "docx.oxml.ns",
+    "--hidden-import", "docx.enum.text",
+    "--hidden-import", "docx.shared",
+    "--hidden-import", "pptx",
+    "--hidden-import", "pptx.util",
+    "--hidden-import", "pptx.enum",
+    "--hidden-import", "pptx.enum.text",
+    "--hidden-import", "pptx.dml.color",
+    "--hidden-import", "openpyxl",
+    "--hidden-import", "openpyxl.styles",
+    "--hidden-import", "openpyxl.utils",
+    "--hidden-import", "openpyxl.utils.exceptions",
+
+    # Språkdeteksjon
+    "--hidden-import", "langdetect",
+    "--hidden-import", "langdetect.detector",
+    "--hidden-import", "langdetect.detector_factory",
+    "--hidden-import", "langdetect.language",
+    "--hidden-import", "langdetect.utils.lang_detect_exception",
+    "--hidden-import", "langdetect.utils.unicode_block",
+
+    # PDF-bibliotek
+    "--hidden-import", "fitz",
+
+    # spaCy (NER – selve modellene installeres separat av bruker)
+    "--hidden-import", "spacy",
+    "--hidden-import", "spacy.lang.nb",
+    "--hidden-import", "spacy.lang.sv",
+    "--hidden-import", "spacy.lang.en",
+
+    # Ekskluder tunge pakker som ikke lenger er i bruk
+    "--exclude-module", "docling",
+    "--exclude-module", "torch",
+    "--exclude-module", "torchvision",
+    "--exclude-module", "transformers",
+
     "--distpath", $DistDir,
     "--workpath", $BuildDir,
     "--specpath", $SpecDir,
