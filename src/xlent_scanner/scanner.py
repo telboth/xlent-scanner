@@ -27,9 +27,50 @@ _converter: DocumentConverter | None = None
 _ignore_list: dict | None = None
 
 
+def _patch_docling_picture_description() -> None:
+    """Bypass Docling picture-description factory when feature is disabled.
+
+    In packaged builds (PyInstaller), Docling plugin registration for picture
+    description classes can be empty, which raises:
+    "No class found with the name 'picture_description_vlm_engine' ...".
+    We do not use picture-description enrichment in this scanner, so when
+    `do_picture_description` is false we return `None` directly.
+    """
+    from docling.pipeline import base_pipeline as _bp
+    target_cls = _bp.ConvertPipeline
+
+    if getattr(target_cls, "_xlent_picture_patch", False):
+        return
+
+    _orig = target_cls._get_picture_description_model
+
+    def _safe_get_picture_description_model(self, artifacts_path=None):
+        enabled = bool(getattr(self.pipeline_options, "do_picture_description", False))
+        if not enabled:
+            from docling.datamodel.pipeline_options import PictureDescriptionApiOptions
+            from docling.models.stages.picture_description.picture_description_api_model import (
+                PictureDescriptionApiModel,
+            )
+
+            return PictureDescriptionApiModel(
+                enabled=False,
+                enable_remote_services=bool(
+                    getattr(self.pipeline_options, "enable_remote_services", False)
+                ),
+                artifacts_path=artifacts_path,
+                options=PictureDescriptionApiOptions(),
+                accelerator_options=self.pipeline_options.accelerator_options,
+            )
+        return _orig(self, artifacts_path=artifacts_path)
+
+    target_cls._get_picture_description_model = _safe_get_picture_description_model
+    target_cls._xlent_picture_patch = True
+
+
 def _get_converter() -> DocumentConverter:
     global _converter
     if _converter is None:
+        _patch_docling_picture_description()
         _converter = DocumentConverter()
     return _converter
 
