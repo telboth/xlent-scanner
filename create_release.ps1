@@ -138,6 +138,38 @@ function Resolve-AssetFiles {
     return $result | Sort-Object -Unique
 }
 
+function Filter-AssetsForVersion {
+    param(
+        [string[]]$Files,
+        [string]$Version
+    )
+
+    if (-not $Version) {
+        return $Files
+    }
+
+    $versionToken = "-$Version"
+    $filtered = New-Object System.Collections.Generic.List[string]
+    foreach ($f in $Files) {
+        $name = [IO.Path]::GetFileName($f)
+        # Keep installer assets only when they match current version.
+        # Keep helper scripts regardless of version.
+        if (
+            ($name -like "xlent-scanner-setup-*.exe") -or
+            ($name -like "xlent-scanner-macos-*.dmg") -or
+            ($name -like "xlent-scanner-macos-*.pkg")
+        ) {
+            if ($name.Contains($versionToken)) {
+                $filtered.Add($f)
+            }
+            continue
+        }
+        $filtered.Add($f)
+    }
+
+    return $filtered | Sort-Object -Unique
+}
+
 function Remove-ReleaseAssetIfExists {
     param(
         [hashtable]$Headers,
@@ -261,6 +293,7 @@ if (-not $release) {
 
 if ($UploadAssets) {
     $assetFiles = Resolve-AssetFiles -RepoRoot $RepoRoot -Globs $AssetGlobs
+    $assetFiles = Filter-AssetsForVersion -Files $assetFiles -Version $Version
     if (-not $assetFiles -or $assetFiles.Count -eq 0) {
         Write-Host "Ingen release-assets funnet for globs: $($AssetGlobs -join ', ')"
     } else {
