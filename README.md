@@ -37,6 +37,25 @@ uv run xlent-scanner
 
 On first run, spaCy language models are downloaded automatically (~50 MB each).
 
+## Windows installer (internal MVP)
+
+Build app bundle:
+
+```powershell
+.\scripts\build_win.ps1 -Clean
+```
+
+Package installer (`.exe`) with Inno Setup 6:
+
+```powershell
+.\scripts\package_win.ps1
+```
+
+Outputs:
+
+- App bundle: `artifacts\windows\app\dist\XLENTScanner`
+- Installer: `artifacts\windows\installer`
+
 ## Usage
 
 1. Start the app with `uv run xlent-scanner`
