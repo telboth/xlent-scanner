@@ -93,32 +93,48 @@ def index():
 @flask_app.route("/scan", methods=["POST"])
 def scan():
     global _last_result, _last_path
-    data = request.get_json(force=True)
-    file_path = data.get("file_path", "")
-    ignore_xlent = bool(data.get("ignore_xlent", False))
-    language = data.get("language", "auto")
-    result = scan_file(file_path, ignore_xlent=ignore_xlent, language=language)
-    _last_result = result
-    _last_path = Path(file_path) if file_path else None
-    return jsonify(asdict(result))
+    try:
+        data = request.get_json(force=True)
+        file_path = data.get("file_path", "")
+        ignore_xlent = bool(data.get("ignore_xlent", False))
+        language = data.get("language", "auto")
+        result = scan_file(file_path, ignore_xlent=ignore_xlent, language=language)
+        _last_result = result
+        _last_path = Path(file_path) if file_path else None
+        return jsonify(asdict(result))
+    except Exception as exc:
+        return jsonify({
+            "file_name": "",
+            "file_size": 0,
+            "text_length": 0,
+            "text_preview": "",
+            "findings": [],
+            "risk_level": "grønn",
+            "risk_summary": "",
+            "recommended_action": "",
+            "language": "auto",
+            "warning": None,
+            "original_text": "",
+            "error": f"Klarte ikke å lese fil: {exc}",
+        })
 
 
 @flask_app.route("/scan-upload", methods=["POST"])
 def scan_upload():
     """Mottar fil som multipart-upload (brukes av drag-drop fallback)."""
     global _last_result, _last_path
-    f = request.files.get("file")
-    if not f:
-        return jsonify({"error": "Ingen fil mottatt."})
-    ignore_xlent = request.form.get("ignore_xlent", "false").lower() == "true"
-    language = request.form.get("language", "auto")
-    original_name = f.filename or "ukjent"
-    suffix = Path(original_name).suffix.lower()
-
-    # Lagre til midlertidig fil med riktig suffiks
-    fd, tmp = tempfile.mkstemp(suffix=suffix, prefix="xlent-drop-")
-    tmp_path = Path(tmp)
     try:
+        f = request.files.get("file")
+        if not f:
+            return jsonify({"error": "Ingen fil mottatt."})
+        ignore_xlent = request.form.get("ignore_xlent", "false").lower() == "true"
+        language = request.form.get("language", "auto")
+        original_name = f.filename or "ukjent"
+        suffix = Path(original_name).suffix.lower()
+
+        # Lagre til midlertidig fil med riktig suffiks
+        fd, tmp = tempfile.mkstemp(suffix=suffix, prefix="xlent-drop-")
+        tmp_path = Path(tmp)
         os.close(fd)
         f.save(str(tmp_path))
         result = scan_file(tmp_path, ignore_xlent=ignore_xlent, language=language)
@@ -127,8 +143,24 @@ def scan_upload():
         _last_path = tmp_path              # brukes av /patch hvis aktuelt
         return jsonify(asdict(result))
     except Exception as exc:
-        tmp_path.unlink(missing_ok=True)
-        return jsonify({"error": str(exc)})
+        try:
+            tmp_path.unlink(missing_ok=True)  # type: ignore[name-defined]
+        except Exception:
+            pass
+        return jsonify({
+            "file_name": "",
+            "file_size": 0,
+            "text_length": 0,
+            "text_preview": "",
+            "findings": [],
+            "risk_level": "grønn",
+            "risk_summary": "",
+            "recommended_action": "",
+            "language": "auto",
+            "warning": None,
+            "original_text": "",
+            "error": f"Klarte ikke å lese fil: {exc}",
+        })
 
 
 @flask_app.route("/logo.svg")

@@ -4,6 +4,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from docling.document_converter import DocumentConverter
+import fitz  # type: ignore[import-untyped]
 
 from xlent_scanner.detectors.clients import detect_clients
 from xlent_scanner.detectors.keywords import detect_keywords
@@ -88,7 +89,21 @@ def _get_ignore_list() -> dict:
 
 
 def extract_text(path: Path) -> str:
+    if path.suffix.lower() == ".pdf":
+        return _extract_text_pdf(path)
     return _get_converter().convert(str(path)).document.export_to_markdown()
+
+
+def _extract_text_pdf(path: Path) -> str:
+    """Extract text from PDF using PyMuPDF.
+
+    We prefer this path for stability in packaged desktop builds.
+    """
+    chunks: list[str] = []
+    with fitz.open(path) as doc:
+        for page in doc:
+            chunks.append(page.get_text("text"))
+    return "\n".join(chunks).strip()
 
 
 def scan_file(path: str | Path, ignore_xlent: bool = False, language: str = "auto") -> ScanResult:
