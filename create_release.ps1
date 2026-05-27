@@ -25,12 +25,12 @@ $RepoName = "xlent-scanner"
 
 function Invoke-Git {
     param(
-        [Parameter(ValueFromRemainingArguments = $true)]
-        [string[]]$Args
+        [Parameter(Mandatory = $true)]
+        [object[]]$ArgList
     )
-    & git @Args
+    & git @ArgList
     if ($LASTEXITCODE -ne 0) {
-        throw "git-kommando feilet: git $($Args -join ' ')"
+        throw "git-kommando feilet: git $($ArgList -join ' ')"
     }
 }
 
@@ -175,7 +175,7 @@ function Upload-ReleaseAsset {
 }
 
 $RepoRoot = Resolve-Path (Get-Location)
-Invoke-Git @("rev-parse", "--is-inside-work-tree") | Out-Null
+Invoke-Git -ArgList @("rev-parse", "--is-inside-work-tree") | Out-Null
 
 if (-not $Version) {
     $Version = Get-VersionFromCode
@@ -195,10 +195,10 @@ if ($statusLines -and -not $AutoCommit) {
     throw "Arbeidstreet er ikke rent. Kjør med -AutoCommit eller commit manuelt."
 }
 if ($statusLines -and $AutoCommit) {
-    Invoke-Git @("add", "-u")
+    Invoke-Git -ArgList @("add", "-u")
     & git diff --cached --quiet
     if ($LASTEXITCODE -ne 0) {
-        Invoke-Git @("commit", "-m", $CommitMessage)
+        Invoke-Git -ArgList @("commit", "-m", $CommitMessage)
     }
 }
 
@@ -211,22 +211,22 @@ if ((& git remote) -contains "origin") {
     if ($LASTEXITCODE -ne 0) {
         throw "Kunne ikke lese git remotes."
     }
-    Invoke-Git @("remote", "set-url", "origin", $FixedRemoteUrl)
+    Invoke-Git -ArgList @("remote", "set-url", "origin", $FixedRemoteUrl)
 } else {
-    Invoke-Git @("remote", "add", "origin", $FixedRemoteUrl)
+    Invoke-Git -ArgList @("remote", "add", "origin", $FixedRemoteUrl)
 }
 
-Invoke-Git @("push", "origin", $branch)
+Invoke-Git -ArgList @("push", "origin", $branch)
 
 $localTag = (& git tag --list $Tag)
 if ($LASTEXITCODE -ne 0) {
     throw "Kunne ikke lese git tags."
 }
 if (-not $localTag) {
-    Invoke-Git @("tag", "-a", $Tag, "-m", "Release $Tag")
+    Invoke-Git -ArgList @("tag", "-a", $Tag, "-m", "Release $Tag")
 }
 
-Invoke-Git @("push", "origin", $Tag)
+Invoke-Git -ArgList @("push", "origin", $Tag)
 
 $headers = Get-GitHubHeaders
 Ensure-Owner -Headers $headers -Owner $Owner

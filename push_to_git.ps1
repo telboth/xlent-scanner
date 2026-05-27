@@ -13,12 +13,12 @@ $RepoName = "xlent-scanner"
 
 function Invoke-Git {
     param(
-        [Parameter(ValueFromRemainingArguments = $true)]
-        [string[]]$Args
+        [Parameter(Mandatory = $true)]
+        [object[]]$ArgList
     )
-    & git @Args
+    & git @ArgList
     if ($LASTEXITCODE -ne 0) {
-        throw "git-kommando feilet: git $($Args -join ' ')"
+        throw "git-kommando feilet: git $($ArgList -join ' ')"
     }
 }
 
@@ -89,15 +89,15 @@ function Ensure-GitHubRepo {
     }
 }
 
-Invoke-Git @("rev-parse", "--is-inside-work-tree") | Out-Null
+Invoke-Git -ArgList @("rev-parse", "--is-inside-work-tree") | Out-Null
 
 $headers = Get-GitHubHeaders
 Ensure-GitHubRepo -Headers $headers -Owner $Owner -RepoName $RepoName -Visibility $Visibility
 
-Invoke-Git @("add", "-A")
+Invoke-Git -ArgList @("add", "-A")
 & git diff --cached --quiet
 if ($LASTEXITCODE -ne 0) {
-    Invoke-Git @("commit", "-m", $CommitMessage)
+    Invoke-Git -ArgList @("commit", "-m", $CommitMessage)
 }
 
 $branch = ((& git branch --show-current).Trim())
@@ -112,10 +112,10 @@ if ((& git remote) -contains "origin") {
     if ($LASTEXITCODE -ne 0) {
         throw "Kunne ikke lese git remotes."
     }
-    Invoke-Git @("remote", "set-url", "origin", $FixedRemoteUrl)
+    Invoke-Git -ArgList @("remote", "set-url", "origin", $FixedRemoteUrl)
 } else {
-    Invoke-Git @("remote", "add", "origin", $FixedRemoteUrl)
+    Invoke-Git -ArgList @("remote", "add", "origin", $FixedRemoteUrl)
 }
 
-Invoke-Git @("push", "-u", "origin", $branch)
+Invoke-Git -ArgList @("push", "-u", "origin", $branch)
 Write-Host "Push fullført: $FixedRemoteUrl ($branch)"
