@@ -21,6 +21,7 @@
     header {
       padding: 10px 20px; border-bottom: 1px solid var(--border);
       background: var(--panel); display: flex; align-items: center; gap: 14px;
+      position: relative;
     }
     header img.logo { height: 30px; width: auto; }
     header .title-block { }
@@ -35,11 +36,13 @@
       border-left: 1px solid var(--border);
     }
     .app-version {
-      margin-left: auto;
+      position: absolute;
+      top: 10px;
+      right: 20px;
       color: var(--muted);
       font-size: 12px;
+      font-weight: 600;
       white-space: nowrap;
-      padding-left: 14px;
     }
     .update-banner {
       display: none;
@@ -298,13 +301,13 @@
       <h1>Compliance-scanner</h1>
       <div class="sub" data-i18n="subtitle">Sjekker dokumenter for sensitiv informasjon før opplasting til online AI-verktøy</div>
     </div>
+    <span class="app-version">v__APP_VERSION__</span>
   </header>
 
   <nav class="tab-nav">
     <button class="tab-btn active" data-tab="scanner" data-i18n="tabScanner">🔍 Scanner</button>
     <button class="tab-btn" data-tab="about" data-i18n="tabAbout">ℹ Om programmet</button>
     <button class="tab-btn" data-tab="settings" data-i18n="tabSettings">⚙️ Innstillinger</button>
-    <span class="app-version">v__APP_VERSION__</span>
     <div class="ui-lang-sel">
       <button class="ui-lang-btn active" data-uilang="nb"><span class="flag-em">🇳🇴</span> NO</button>
       <button class="ui-lang-btn" data-uilang="sv"><span class="flag-em">🇸🇪</span> SV</button>
@@ -384,6 +387,7 @@
           <p>Etter scanning kan du velge funn og generere en anonymisert versjon. For DOCX, PPTX, XLSX og PDF erstattes teksten direkte i filen. For andre formater genereres en renset .md-fil. Funn kan også eksporteres som JSON eller CSV.</p>
           <p style="color:var(--muted);font-size:12px;">⚠ PDF-redaktering erstatter tekst i innholdsstrømmen, men tekst i metadata eller bilder anonymiseres ikke. Kontroller resultatet.</p>
         </div>
+        <p style="color:var(--muted);font-size:12px;">Skrevet av thomas.elboth@xlent.no</p>
       </div>
 
       <!-- Swedish -->
@@ -430,6 +434,7 @@
           <p>Efter skanning kan du välja fynd och generera en anonymiserad version. För DOCX, PPTX, XLSX och PDF ersätts texten direkt i filen. Fynd kan också exporteras som JSON eller CSV.</p>
           <p style="color:var(--muted);font-size:12px;">⚠ PDF-redigering ersätter text i innehållsströmmen, men text i metadata eller bilder anonymiseras inte. Kontrollera resultatet.</p>
         </div>
+        <p style="color:var(--muted);font-size:12px;">Skriven av thomas.elboth@xlent.no</p>
       </div>
 
       <!-- English -->
@@ -476,6 +481,7 @@
           <p>After scanning you can select findings and generate an anonymised version. For DOCX, PPTX, XLSX, and PDF the text is replaced directly in the file. Findings can also be exported as JSON or CSV.</p>
           <p style="color:var(--muted);font-size:12px;">⚠ PDF redaction replaces text in the content stream, but text in metadata or images is not anonymised. Verify the result.</p>
         </div>
+        <p style="color:var(--muted);font-size:12px;">Written by thomas.elboth@xlent.no</p>
       </div>
     </div>
 
@@ -504,11 +510,18 @@
           <input type="checkbox" id="ignoreXlent" checked />
           <label for="ignoreXlent" data-i18n="ignoreLabel">Ignorer XLENT-interne (ansattes navn og @xlent.no / @xlent.se)</label>
         </div>
-        <div class="settings-note" data-i18n="ignoreHint">— redigér i ignore.toml</div>
+        <div class="settings-note" id="ignore-path"></div>
+        <textarea id="ignore-editor" class="settings-textarea" spellcheck="false"></textarea>
+        <div class="settings-row" style="margin-top:8px;">
+          <button id="btn-ignore-reload" class="ctrl-btn" data-i18n="ignoreReload">Last inn</button>
+          <button id="btn-ignore-save" class="ctrl-btn ctrl-btn-primary" data-i18n="ignoreSave">Lagre ignore.toml</button>
+        </div>
+        <div class="settings-note" id="ignore-msg"></div>
       </div>
 
       <div class="settings-section">
         <div class="settings-section-title" data-i18n="settingsWhitelistTitle">Hviteliste</div>
+        <div class="settings-note" data-i18n="whitelistPersonalNote">Denne hvitelisten er personlig og bygges opp av den enkelte bruker.</div>
         <div class="settings-note" id="whitelist-path"></div>
         <textarea id="whitelist-editor" class="settings-textarea" spellcheck="false"></textarea>
         <div class="settings-row" style="margin-top:8px;">
@@ -544,7 +557,13 @@
         dropFormats:  "PDF · DOCX · PPTX · XLSX · TXT · MD · HTML",
         dropBrowse:   "…eller velg fil",
         ignoreLabel:  "Ignorer XLENT-interne (ansattes navn og @xlent.no / @xlent.se)",
-        ignoreHint:   "— redigér i ignore.toml",
+        ignoreReload: "Last inn",
+        ignoreSave: "Lagre ignore.toml",
+        ignorePathLabel: "Fil:",
+        ignoreHint: "Rediger hele ignore.toml direkte. Lagres som personlig overstyring lokalt.",
+        ignoreSaved: "ignore.toml lagret.",
+        ignoreLoadErr: "Kunne ikke lese ignore.toml:",
+        ignoreSaveErr: "Kunne ikke lagre ignore.toml:",
         docLangLabel: "Dokumentspråk:",
         docLangAuto:  "🌐 Auto-detekter",
         statusReady:  "Klar. Slipp en fil eller velg fra disk.",
@@ -582,6 +601,7 @@
         settingsDocLangNote: "Auto-detektering bestemmer dokumentspråket automatisk og velger riktige mønstre.",
         settingsFilterTitle: "Filtrering",
         settingsWhitelistTitle: "Hviteliste",
+        whitelistPersonalNote: "Denne hvitelisten er personlig og bygges opp av den enkelte bruker.",
         whitelistReload: "Last inn",
         whitelistSave: "Lagre hviteliste",
         whitelistPathLabel: "Fil:",
@@ -605,7 +625,13 @@
         dropFormats:  "PDF · DOCX · PPTX · XLSX · TXT · MD · HTML",
         dropBrowse:   "…eller välj fil",
         ignoreLabel:  "Ignorera XLENT-interna (anställdas namn och @xlent.no / @xlent.se)",
-        ignoreHint:   "— redigera i ignore.toml",
+        ignoreReload: "Ladda in",
+        ignoreSave: "Spara ignore.toml",
+        ignorePathLabel: "Fil:",
+        ignoreHint: "Redigera hela ignore.toml direkt. Sparas som personlig lokal överstyrning.",
+        ignoreSaved: "ignore.toml sparad.",
+        ignoreLoadErr: "Kunde inte läsa ignore.toml:",
+        ignoreSaveErr: "Kunde inte spara ignore.toml:",
         docLangLabel: "Dokumentspråk:",
         docLangAuto:  "🌐 Auto-detektera",
         statusReady:  "Redo. Släpp en fil eller välj från disk.",
@@ -643,6 +669,7 @@
         settingsDocLangNote: "Automatisk identifiering väljer dokumentspråk och rätt mönster.",
         settingsFilterTitle: "Filtrering",
         settingsWhitelistTitle: "Vitlista",
+        whitelistPersonalNote: "Denna vitlista är personlig och byggs upp av varje enskild användare.",
         whitelistReload: "Ladda in",
         whitelistSave: "Spara vitlista",
         whitelistPathLabel: "Fil:",
@@ -666,7 +693,13 @@
         dropFormats:  "PDF · DOCX · PPTX · XLSX · TXT · MD · HTML",
         dropBrowse:   "…or browse for file",
         ignoreLabel:  "Ignore XLENT-internal (employee names and @xlent.no / @xlent.se)",
-        ignoreHint:   "— edit in ignore.toml",
+        ignoreReload: "Reload",
+        ignoreSave: "Save ignore.toml",
+        ignorePathLabel: "File:",
+        ignoreHint: "Edit the full ignore.toml directly. Saved as a local personal override.",
+        ignoreSaved: "ignore.toml saved.",
+        ignoreLoadErr: "Could not read ignore.toml:",
+        ignoreSaveErr: "Could not save ignore.toml:",
         docLangLabel: "Document language:",
         docLangAuto:  "🌐 Auto-detect",
         statusReady:  "Ready. Drop a file or browse from disk.",
@@ -704,6 +737,7 @@
         settingsDocLangNote: "Auto-detection determines the document language and selects the right detection patterns.",
         settingsFilterTitle: "Filtering",
         settingsWhitelistTitle: "Whitelist",
+        whitelistPersonalNote: "This whitelist is personal and built by each individual user.",
         whitelistReload: "Reload",
         whitelistSave: "Save whitelist",
         whitelistPathLabel: "File:",
@@ -734,6 +768,9 @@
     const updateBannerMsgEl = document.getElementById("update-banner-msg");
     const updateBannerBtnEl = document.getElementById("update-banner-btn");
     const updateCheckMsgEl = document.getElementById("update-check-msg");
+    const ignorePathEl = document.getElementById("ignore-path");
+    const ignoreEditorEl = document.getElementById("ignore-editor");
+    const ignoreMsgEl = document.getElementById("ignore-msg");
     const whitelistPathEl = document.getElementById("whitelist-path");
     const whitelistEditorEl = document.getElementById("whitelist-editor");
     const whitelistMsgEl = document.getElementById("whitelist-msg");
@@ -756,6 +793,7 @@
     let lastScan    = null;   // { type:"path"|"upload", path?:string, file?:File, name?:string }
     let scanHistory = [];     // [ { fileName, timestamp, riskLevel, rescanFn } ]
     let lastUpdateCheck = null;
+    let ignorePath = "";
     let whitelistPath = "";
 
     /* ══════════════════════════════════════════════════════════════════
@@ -791,7 +829,11 @@
       // Re-render history (button labels)
       renderHistory();
       renderUpdateBanner();
+      renderIgnorePath();
       renderWhitelistPath();
+      if (!ignoreMsgEl.textContent || ignoreMsgEl.dataset.mode === "hint") {
+        setIgnoreMessage(t("ignoreHint"), "var(--muted)", "hint");
+      }
       if (!whitelistMsgEl.textContent || whitelistMsgEl.dataset.mode === "hint") {
         setWhitelistMessage(t("whitelistHint"), "var(--muted)", "hint");
       }
@@ -882,6 +924,58 @@
         return;
       }
       whitelistPathEl.textContent = `${t("whitelistPathLabel")} ${whitelistPath}`;
+    }
+
+    function renderIgnorePath() {
+      if (!ignorePath) {
+        ignorePathEl.textContent = "";
+        return;
+      }
+      ignorePathEl.textContent = `${t("ignorePathLabel")} ${ignorePath}`;
+    }
+
+    function setIgnoreMessage(text, color = "var(--muted)", mode = "") {
+      ignoreMsgEl.textContent = text;
+      ignoreMsgEl.style.color = color;
+      ignoreMsgEl.dataset.mode = mode;
+    }
+
+    async function loadIgnoreEditor() {
+      setIgnoreMessage(t("processing"), "var(--muted)", "status");
+      try {
+        const d = await (await fetch(`${API}/ignore/get`, { method:"POST" })).json();
+        if (!d.ok) {
+          setIgnoreMessage(`${t("ignoreLoadErr")} ${d.error || ""}`, "#f44336", "status");
+          return;
+        }
+        ignorePath = String(d.path || "");
+        renderIgnorePath();
+        ignoreEditorEl.value = String(d.content || "");
+        setIgnoreMessage(t("ignoreHint"), "var(--muted)", "hint");
+      } catch (e) {
+        setIgnoreMessage(`${t("ignoreLoadErr")} ${e}`, "#f44336", "status");
+      }
+    }
+
+    async function saveIgnoreEditor() {
+      setIgnoreMessage(t("processing"), "var(--muted)", "status");
+      try {
+        const d = await (await fetch(`${API}/ignore/save`, {
+          method: "POST",
+          headers: {"Content-Type":"application/json"},
+          body: JSON.stringify({ content: ignoreEditorEl.value }),
+        })).json();
+        if (!d.ok) {
+          setIgnoreMessage(`${t("ignoreSaveErr")} ${d.error || ""}`, "#f44336", "status");
+          return;
+        }
+        ignorePath = String(d.path || ignorePath);
+        renderIgnorePath();
+        ignoreEditorEl.value = String(d.content || ignoreEditorEl.value);
+        setIgnoreMessage(t("ignoreSaved"), "#4caf50", "status");
+      } catch (e) {
+        setIgnoreMessage(`${t("ignoreSaveErr")} ${e}`, "#f44336", "status");
+      }
     }
 
     function setWhitelistMessage(text, color = "var(--muted)", mode = "") {
@@ -1276,6 +1370,8 @@
     document.getElementById("ignoreXlent").addEventListener("change", saveSettings);
     document.getElementById("langSelect").addEventListener("change", saveSettings);
     document.getElementById("btn-check-updates").addEventListener("click", () => runUpdateCheck(true));
+    document.getElementById("btn-ignore-reload").addEventListener("click", loadIgnoreEditor);
+    document.getElementById("btn-ignore-save").addEventListener("click", saveIgnoreEditor);
     document.getElementById("btn-whitelist-reload").addEventListener("click", loadWhitelistEditor);
     document.getElementById("btn-whitelist-save").addEventListener("click", saveWhitelistEditor);
 
@@ -1283,6 +1379,9 @@
     loadSettings();
     syncAboutLang();
     setStatus(t("statusReady"));
+    setIgnoreMessage(t("ignoreHint"), "var(--muted)", "hint");
+    renderIgnorePath();
+    loadIgnoreEditor();
     setWhitelistMessage(t("whitelistHint"), "var(--muted)", "hint");
     renderWhitelistPath();
     loadWhitelistEditor();

@@ -27,6 +27,11 @@ _converter: DocumentConverter | None = None
 _ignore_list: dict | None = None
 
 
+def reset_ignore_cache() -> None:
+    global _ignore_list
+    _ignore_list = None
+
+
 def _patch_docling_picture_description() -> None:
     """Bypass Docling picture-description factory when feature is disabled.
 

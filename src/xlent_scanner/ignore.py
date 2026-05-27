@@ -24,6 +24,37 @@ def _user_override_path() -> Path:
     return base / "xlent-scanner" / "ignore.toml"
 
 
+def ignore_path_str() -> str:
+    return str(_user_override_path())
+
+
+def get_ignore_toml_text() -> str:
+    """Return editable TOML text for ignore config.
+
+    Preference order:
+    1) user override file (if it exists)
+    2) bundled default file
+    """
+    user_path = _user_override_path()
+    if user_path.exists():
+        return user_path.read_text(encoding="utf-8")
+    return _BUNDLED.read_text(encoding="utf-8")
+
+
+def save_ignore_toml_text(content: str) -> None:
+    """Validate and save user override ignore.toml."""
+    parsed = tomllib.loads(content)
+    for key in ("email_domains", "names"):
+        if key in parsed:
+            value = parsed[key]
+            if not isinstance(value, list) or not all(isinstance(v, str) for v in value):
+                raise ValueError(f"Ugyldig format for '{key}'. Forventet liste med tekstverdier.")
+
+    user_path = _user_override_path()
+    user_path.parent.mkdir(parents=True, exist_ok=True)
+    user_path.write_text(content, encoding="utf-8")
+
+
 def load_ignore_list() -> dict:
     data: dict = {"email_domains": [], "names": []}
     for path in [_BUNDLED, _user_override_path()]:

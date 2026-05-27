@@ -31,9 +31,14 @@ from flask import Flask, jsonify, request
 
 from xlent_scanner import __version__
 from xlent_scanner.anonymize import anonymize_text, build_replacements
+from xlent_scanner.ignore import (
+    get_ignore_toml_text,
+    ignore_path_str,
+    save_ignore_toml_text,
+)
 from xlent_scanner.patch import SUPPORTED_PATCH_SUFFIXES, patch_file
 from xlent_scanner.report import generate_html
-from xlent_scanner.scanner import scan_file
+from xlent_scanner.scanner import reset_ignore_cache, scan_file
 from xlent_scanner.update_check import check_for_update
 from xlent_scanner.whitelist import (
     add_to_whitelist,
@@ -332,6 +337,36 @@ def whitelist_save():
         "path": whitelist_path_str(),
         "texts": get_whitelist_entries(),
     })
+
+
+@flask_app.route("/ignore/get", methods=["POST"])
+def ignore_get():
+    try:
+        return jsonify({
+            "ok": True,
+            "path": ignore_path_str(),
+            "content": get_ignore_toml_text(),
+        })
+    except Exception as exc:
+        return jsonify({"ok": False, "error": str(exc)})
+
+
+@flask_app.route("/ignore/save", methods=["POST"])
+def ignore_save():
+    data = request.get_json(force=True)
+    content = data.get("content", "")
+    if not isinstance(content, str):
+        return jsonify({"ok": False, "error": "Ugyldig format for ignore.toml."})
+    try:
+        save_ignore_toml_text(content)
+        reset_ignore_cache()
+        return jsonify({
+            "ok": True,
+            "path": ignore_path_str(),
+            "content": get_ignore_toml_text(),
+        })
+    except Exception as exc:
+        return jsonify({"ok": False, "error": str(exc)})
 
 
 def _start_flask(port: int) -> None:
