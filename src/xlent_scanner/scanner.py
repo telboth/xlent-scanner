@@ -190,8 +190,8 @@ def scan_file(path: str | Path, ignore_xlent: bool = False, language: str = "aut
     def _run(fn, *args):
         try:
             findings.extend(fn(*args))
-        except Exception as _e:
-            _detector_errors.append(f"{fn.__name__}: {_e}")
+        except BaseException as _e:   # fanger også SystemExit / KeyboardInterrupt
+            _detector_errors.append(f"{fn.__name__}: {type(_e).__name__}: {_e}")
 
     _run(detect_keywords, text)
     _run(detect_secrets, text)

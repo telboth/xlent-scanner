@@ -15,9 +15,13 @@ Filtrering for å redusere falske positiver:
 """
 from __future__ import annotations
 
+import sys
 from typing import Any, Iterator
 
 from xlent_scanner.language import SPACY_CONFIG
+
+# Er vi inne i en PyInstaller-bundle? Pip-basert nedlasting vil alltid feile der.
+_IS_FROZEN = getattr(sys, "frozen", False)
 from xlent_scanner.models import Finding
 
 # Modell-cache og feil-cache per språk
@@ -104,9 +108,16 @@ def _get_nlp(lang: str = "nb") -> Any | None:
         _nlp_cache[lang] = nlp
         return nlp
     except OSError:
-        # Modellen mangler — prøv automatisk nedlasting
+        # Modellen mangler.
+        # I en installert .exe (frozen) er pip utilgjengelig — skip nedlasting.
+        if _IS_FROZEN:
+            _load_errors[lang] = (
+                f"spaCy-modell ({model_name}) er ikke installert. "
+                f"Navnegjenkjenning (NER) er ikke tilgjengelig i denne versjonen."
+            )
+            return None
+        # I utviklingsmiljø: prøv automatisk nedlasting via pip.
         try:
-            import spacy  # type: ignore
             from spacy.cli import download as spacy_download  # type: ignore
             print(f"[ner] Laster ned manglende modell: {model_name}…", flush=True)
             spacy_download(model_name)
@@ -114,12 +125,12 @@ def _get_nlp(lang: str = "nb") -> Any | None:
             _nlp_cache[lang] = nlp
             print(f"[ner] ✓ {model_name} lastet.", flush=True)
             return nlp
-        except Exception as exc:
+        except BaseException as exc:   # fanger også SystemExit fra pip-subprosess
             _load_errors[lang] = (
                 f"Klarte ikke å laste ned spaCy-modell ({model_name}): {exc}"
             )
             return None
-    except Exception as exc:
+    except BaseException as exc:       # fanger SystemExit og andre BaseException
         _load_errors[lang] = f"Klarte ikke å laste spaCy-modell ({model_name}): {exc}"
         return None
 
