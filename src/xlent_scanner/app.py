@@ -8,6 +8,7 @@ Flask kjører i en bakgrunnstråd og eksponerer:
 from __future__ import annotations
 
 import faulthandler
+import json
 import logging
 import os
 import platform
@@ -146,7 +147,7 @@ def index():
     # Injiser port slik at JS kan bruke absolutte URL-er
     html = html.replace("__API_BASE__", f"http://127.0.0.1:{_port}")
     html = html.replace("__APP_VERSION__", __version__)
-    html = html.replace("__LOG_PATH__", str(LOG_PATH))
+    html = html.replace('"__LOG_PATH__"', json.dumps(str(LOG_PATH)))
     return html, 200, {"Content-Type": "text/html; charset=utf-8", **_NO_CACHE}
 
 
