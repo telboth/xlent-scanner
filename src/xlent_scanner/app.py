@@ -457,6 +457,7 @@ def whitelist_save():
     })
 
 
+
 @flask_app.route("/ignore/get", methods=["POST"])
 def ignore_get():
     try:
@@ -467,6 +468,29 @@ def ignore_get():
         })
     except Exception as exc:
         return jsonify({"ok": False, "error": str(exc)})
+
+
+@flask_app.route("/models/status", methods=["GET"])
+def models_status_endpoint():
+    """Returnerer installasjonsstatus for alle spaCy-modeller."""
+    from xlent_scanner.model_manager import models_status  # noqa: PLC0415
+    return jsonify(models_status())
+
+
+@flask_app.route("/models/download", methods=["POST"])
+def models_download_endpoint():
+    """Starter nedlasting av en spaCy-modell i bakgrunnstråd."""
+    from xlent_scanner.model_manager import (  # noqa: PLC0415
+        _MODEL_VERSIONS,
+        download_model_async,
+    )
+    data = request.get_json(force=True)
+    model = (data.get("model") or "").strip()
+    if not model or model not in _MODEL_VERSIONS:
+        return jsonify({"ok": False, "error": f"Ukjent modell: {model!r}"})
+    started = download_model_async(model)
+    LOGGER.info("models/download model=%s started=%s", model, started)
+    return jsonify({"ok": True, "model": model, "started": started})
 
 
 @flask_app.route("/ignore/save", methods=["POST"])

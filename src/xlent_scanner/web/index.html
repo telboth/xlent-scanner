@@ -503,6 +503,18 @@
         <div class="settings-note" data-i18n="settingsDocLangNote">Auto-detektering bestemmer dokumentspråket automatisk og velger riktige mønstre.</div>
       </div>
 
+      <!-- Navnemodeller (NER) -->
+      <div class="settings-section" id="section-ner-models">
+        <div class="settings-section-title" data-i18n="settingsNerTitle">Navnemodeller (NER)</div>
+        <div class="settings-note" data-i18n="settingsNerNote">Navnegjenkjenning krever spaCy-modeller som lastes ned én gang og lagres lokalt på maskinen. Nedlastingen krever internettforbindelse.</div>
+        <div id="ner-models-list" style="margin-top:10px;"></div>
+        <div class="settings-row" style="margin-top:10px;">
+          <button id="btn-download-all-models" class="ctrl-btn ctrl-btn-primary" data-i18n="nerDownloadAll">⬇ Last ned alle modeller</button>
+          <button id="btn-refresh-models" class="ctrl-btn" data-i18n="nerRefresh">↻ Oppdater</button>
+        </div>
+        <div class="settings-note" id="ner-models-msg" style="margin-top:6px;"></div>
+      </div>
+
       <!-- Filtrering -->
       <div class="settings-section">
         <div class="settings-section-title" data-i18n="settingsFilterTitle">Filtrering</div>
@@ -609,6 +621,16 @@
         whitelistSaved: "Hviteliste lagret.",
         whitelistLoadErr: "Kunne ikke lese hviteliste:",
         whitelistSaveErr: "Kunne ikke lagre hviteliste:",
+        settingsNerTitle:    "Navnemodeller (NER)",
+        settingsNerNote:     "Navnegjenkjenning krever spaCy-modeller som lastes ned én gang og lagres lokalt på maskinen. Nedlastingen krever internettforbindelse.",
+        nerDownloadAll:      "⬇ Last ned alle modeller",
+        nerRefresh:          "↻ Oppdater",
+        nerInstalled:        "✅ Installert",
+        nerNotInstalled:     "⚠️ Ikke installert",
+        nerDownload:         "⬇ Last ned",
+        nerRetry:            "↻ Prøv igjen",
+        nerAllInstalled:     "✓ Alle modeller er allerede installert.",
+        nerErrFetch:         "Kunne ikke hente modellstatus:",
         settingsUpdateTitle: "Oppdateringer",
         settingsPersistNote: "Innstillinger lagres automatisk i nettleseren.",
         updateAvailable: "Ny versjon tilgjengelig:",
@@ -678,6 +700,16 @@
         whitelistSaved: "Vitlista sparad.",
         whitelistLoadErr: "Kunde inte läsa vitlista:",
         whitelistSaveErr: "Kunde inte spara vitlista:",
+        settingsNerTitle:    "Namnigenkänning (NER)",
+        settingsNerNote:     "Namnigenkänning kräver spaCy-modeller som laddas ned en gång och sparas lokalt. Nedladdningen kräver internetanslutning.",
+        nerDownloadAll:      "⬇ Ladda ned alla modeller",
+        nerRefresh:          "↻ Uppdatera",
+        nerInstalled:        "✅ Installerad",
+        nerNotInstalled:     "⚠️ Ej installerad",
+        nerDownload:         "⬇ Ladda ned",
+        nerRetry:            "↻ Försök igen",
+        nerAllInstalled:     "✓ Alla modeller är redan installerade.",
+        nerErrFetch:         "Kunde inte hämta modellstatus:",
         settingsUpdateTitle: "Uppdateringar",
         settingsPersistNote: "Inställningar sparas automatiskt i webbläsaren.",
         updateAvailable: "Ny version tillgänglig:",
@@ -747,6 +779,16 @@
         whitelistSaved: "Whitelist saved.",
         whitelistLoadErr: "Could not read whitelist:",
         whitelistSaveErr: "Could not save whitelist:",
+        settingsNerTitle:    "Name models (NER)",
+        settingsNerNote:     "Name recognition requires spaCy models that are downloaded once and stored locally. An internet connection is required for the download.",
+        nerDownloadAll:      "⬇ Download all models",
+        nerRefresh:          "↻ Refresh",
+        nerInstalled:        "✅ Installed",
+        nerNotInstalled:     "⚠️ Not installed",
+        nerDownload:         "⬇ Download",
+        nerRetry:            "↻ Retry",
+        nerAllInstalled:     "✓ All models are already installed.",
+        nerErrFetch:         "Could not fetch model status:",
         settingsUpdateTitle: "Updates",
         settingsPersistNote: "Settings are saved automatically in the browser.",
         updateAvailable: "New version available:",
@@ -840,6 +882,7 @@
       renderUpdateBanner();
       renderIgnorePath();
       renderWhitelistPath();
+      loadNerStatus();
       if (!ignoreMsgEl.textContent || ignoreMsgEl.dataset.mode === "hint") {
         setIgnoreMessage(t("ignoreHint"), "var(--muted)", "hint");
       }
@@ -1384,6 +1427,130 @@
     document.getElementById("btn-whitelist-reload").addEventListener("click", loadWhitelistEditor);
     document.getElementById("btn-whitelist-save").addEventListener("click", saveWhitelistEditor);
 
+    /* ══════════════════════════════════════════════════════════════════
+       NER MODELS
+    ══════════════════════════════════════════════════════════════════ */
+    const nerModelsListEl = document.getElementById("ner-models-list");
+    const nerModelsMsgEl  = document.getElementById("ner-models-msg");
+    let _nerPollInterval  = null;
+
+    const NER_LANG_LABEL = { nb: "🇳🇴 Norsk", sv: "🇸🇪 Svensk", en: "🇬🇧 Engelsk" };
+
+    function setNerMsg(msg, color = "var(--muted)") {
+      nerModelsMsgEl.textContent = msg;
+      nerModelsMsgEl.style.color = color;
+    }
+
+    function renderNerModels(models) {
+      if (!models || !models.length) {
+        nerModelsListEl.innerHTML = `<div class="settings-note">—</div>`;
+        return;
+      }
+      let html = "";
+      for (const m of models) {
+        const label   = NER_LANG_LABEL[m.lang] || m.lang;
+        const sizeStr = m.size_mb ? `~${m.size_mb} MB` : "";
+        const prog    = m.progress || "";
+        const isActiveDownload = prog && !prog.startsWith("error") && prog !== "done" && !m.installed;
+
+        let badge, btnHtml = "";
+        if (m.installed) {
+          badge = `<span style="color:var(--ok)">${t("nerInstalled")}</span>`;
+        } else if (isActiveDownload) {
+          badge = `<span style="color:var(--warn)">⏳ ${escapeHtml(prog)}</span>`;
+        } else if (prog.startsWith("error:")) {
+          const errMsg = prog.slice(6);
+          badge = `<span style="color:var(--danger)" title="${escapeHtml(errMsg)}">⚠️ Feil</span>`;
+          btnHtml = `<button class="ctrl-btn" style="flex-shrink:0" onclick="nerDownload('${m.model}')">${t("nerRetry")}</button>`;
+        } else {
+          badge = `<span style="color:var(--muted)">${t("nerNotInstalled")}</span>`;
+          btnHtml = `<button class="ctrl-btn ctrl-btn-primary" style="flex-shrink:0" onclick="nerDownload('${m.model}')">${t("nerDownload")}</button>`;
+        }
+
+        html += `<div style="display:flex;align-items:center;gap:8px;padding:7px 2px;border-bottom:1px solid var(--border);font-size:13px">
+          <span style="min-width:105px;font-weight:500">${label}</span>
+          <span style="color:var(--muted);font-size:11px;flex:1">${escapeHtml(m.model)} ${sizeStr}</span>
+          ${badge}
+          ${btnHtml}
+        </div>`;
+      }
+      nerModelsListEl.innerHTML = html;
+    }
+
+    async function loadNerStatus() {
+      try {
+        const models = await (await fetch(`${API}/models/status`)).json();
+        renderNerModels(models);
+
+        const anyActive = models.some(m => {
+          const p = m.progress || "";
+          return !m.installed && p && !p.startsWith("error") && p !== "done";
+        });
+        if (anyActive && !_nerPollInterval) {
+          _nerPollInterval = setInterval(loadNerStatus, 2000);
+        } else if (!anyActive && _nerPollInterval) {
+          clearInterval(_nerPollInterval);
+          _nerPollInterval = null;
+        }
+      } catch (e) {
+        nerModelsListEl.innerHTML = `<div class="settings-note" style="color:var(--danger)">${t("nerErrFetch")} ${escapeHtml(String(e))}</div>`;
+      }
+    }
+
+    async function nerDownload(modelName) {
+      try {
+        const d = await (await fetch(`${API}/models/download`, {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({model: modelName}),
+        })).json();
+        if (!d.ok) {
+          setNerMsg(`Feil: ${d.error || "ukjent"}`, "var(--danger)");
+          return;
+        }
+        setNerMsg("");
+        if (!_nerPollInterval) {
+          _nerPollInterval = setInterval(loadNerStatus, 2000);
+        }
+        await loadNerStatus();
+      } catch (e) {
+        setNerMsg(`Feil: ${String(e)}`, "var(--danger)");
+      }
+    }
+
+    async function nerDownloadAll() {
+      try {
+        const models = await (await fetch(`${API}/models/status`)).json();
+        const missing = models.filter(m => {
+          const p = m.progress || "";
+          return !m.installed && (p === "" || p === "done" || p.startsWith("error"));
+        });
+        if (!missing.length) {
+          setNerMsg(t("nerAllInstalled"), "var(--ok)");
+          return;
+        }
+        setNerMsg("");
+        for (const m of missing) {
+          await nerDownload(m.model);
+        }
+      } catch (e) {
+        setNerMsg(`Feil: ${String(e)}`, "var(--danger)");
+      }
+    }
+
+    document.getElementById("btn-download-all-models").addEventListener("click", nerDownloadAll);
+    document.getElementById("btn-refresh-models").addEventListener("click", () => {
+      setNerMsg("");
+      loadNerStatus();
+    });
+
+    // Last NER-status når innstillinger-tabben åpnes
+    document.querySelectorAll(".tab-btn").forEach(btn => {
+      if (btn.dataset.tab === "settings") {
+        btn.addEventListener("click", loadNerStatus);
+      }
+    });
+
     /* Init */
     loadSettings();
     syncAboutLang();
@@ -1395,6 +1562,7 @@
     renderWhitelistPath();
     loadWhitelistEditor();
     runUpdateCheck(false);
+    loadNerStatus();
   </script>
 </body>
 </html>

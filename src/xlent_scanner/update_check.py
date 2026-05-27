@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any
 
 GITHUB_OWNER = "telboth"
-GITHUB_REPO = "compliance-scanner"
+GITHUB_REPO = "xlent-scanner"
 CHECK_INTERVAL_DAYS = 30
 
 

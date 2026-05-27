@@ -95,25 +95,61 @@ def _looks_like_name(name: str) -> bool:
 
 # ── Modellhåndtering ──────────────────────────────────────────────────────────
 
+def reset_cache_for_model(model_name: str) -> None:
+    """Tøm NER-cache for en gitt modell (kalles etter nedlasting).
+
+    Neste kall til _get_nlp() vil da laste modellen på nytt fra disk.
+    """
+    lang_for_model = {cfg["model"]: lang for lang, cfg in SPACY_CONFIG.items()}
+    lang = lang_for_model.get(model_name)
+    if lang:
+        _nlp_cache.pop(lang, None)
+        _load_errors.pop(lang, None)
+
+
 def _get_nlp(lang: str = "nb") -> Any | None:
     if lang in _nlp_cache:
         return _nlp_cache[lang]
-    if lang in _load_errors:
-        return None
+
     cfg = SPACY_CONFIG.get(lang, SPACY_CONFIG["nb"])
     model_name = cfg["model"]
+
+    # Sjekk om modellen er lastet ned til bruker-data-mappen.
+    # Gjøres før feil-cache-sjekk: hvis modellen ble lastet ned etter forrige forsøk,
+    # skal vi prøve igjen.
+    try:
+        from xlent_scanner.model_manager import model_path as _user_model_path  # noqa: PLC0415
+        user_path = _user_model_path(model_name)
+    except Exception:
+        user_path = None
+
+    # Hvis vi har en cachet feil, men modellen nå finnes via bruker-path → prøv igjen
+    if lang in _load_errors:
+        if user_path is not None:
+            del _load_errors[lang]  # Modell er nå tilgjengelig — prøv på nytt
+        else:
+            return None  # Fortsatt ikke tilgjengelig
+
     try:
         import spacy  # type: ignore
-        nlp = spacy.load(model_name)
+
+        if user_path is not None:
+            # Last fra bruker-data-mappen (nedlastet via UI)
+            nlp = spacy.load(str(user_path))
+        else:
+            # Last fra installert pakke (vanlig dev-miljø)
+            nlp = spacy.load(model_name)
+
         _nlp_cache[lang] = nlp
         return nlp
+
     except OSError:
         # Modellen mangler.
-        # I en installert .exe (frozen) er pip utilgjengelig — skip nedlasting.
+        # I en installert .exe (frozen) er pip utilgjengelig — brukeren må laste ned via UI.
         if _IS_FROZEN:
             _load_errors[lang] = (
                 f"spaCy-modell ({model_name}) er ikke installert. "
-                f"Navnegjenkjenning (NER) er ikke tilgjengelig i denne versjonen."
+                f"Gå til Innstillinger → Navnemodeller for å laste ned."
             )
             return None
         # I utviklingsmiljø: prøv automatisk nedlasting via pip.

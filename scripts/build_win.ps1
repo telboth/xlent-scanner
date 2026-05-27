@@ -112,6 +112,8 @@ $pyiArgs = @(
     # PDF-bibliotek
     "--hidden-import", "fitz",
 
+    # Modellnedlasting (lazy-importert fra app.py og ner_names.py)
+    "--hidden-import", "xlent_scanner.model_manager",
     # spaCy (NER – selve modellene installeres separat av bruker)
     "--hidden-import", "spacy",
     "--hidden-import", "spacy.lang.nb",
