@@ -29,6 +29,7 @@ warnings.filterwarnings(
 import webview
 from flask import Flask, jsonify, request
 
+from xlent_scanner import __version__
 from xlent_scanner.anonymize import anonymize_text, build_replacements
 from xlent_scanner.patch import SUPPORTED_PATCH_SUFFIXES, patch_file
 from xlent_scanner.report import generate_html
@@ -50,6 +51,17 @@ _NO_CACHE = {
 }
 
 
+def _validate_runtime_dependencies() -> None:
+    """Feil tidlig hvis obligatoriske runtime-avhengigheter mangler."""
+    try:
+        import fitz  # type: ignore[import-untyped]  # pymupdf
+    except Exception as exc:
+        raise RuntimeError(
+            "Mangler obligatorisk avhengighet: pymupdf (fitz). "
+            "Kjør 'uv sync' før oppstart."
+        ) from exc
+
+
 def _free_port() -> int:
     with socket.socket() as s:
         s.bind(("127.0.0.1", 0))
@@ -63,6 +75,7 @@ def index():
     html = idx.read_text("utf-8")
     # Injiser port slik at JS kan bruke absolutte URL-er
     html = html.replace("__API_BASE__", f"http://127.0.0.1:{_port}")
+    html = html.replace("__APP_VERSION__", __version__)
     return html, 200, {"Content-Type": "text/html; charset=utf-8", **_NO_CACHE}
 
 
@@ -304,6 +317,8 @@ def _wait_for_flask(port: int, timeout: float = 10.0) -> None:
 
 def main() -> None:
     global _window, _port
+
+    _validate_runtime_dependencies()
 
     _port = _free_port()
     t = threading.Thread(target=_start_flask, args=(_port,), daemon=True)

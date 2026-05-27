@@ -6,13 +6,20 @@ import tempfile
 from datetime import datetime
 from pathlib import Path
 
-from jinja2 import Template
+from jinja2 import Environment, select_autoescape
 
 from xlent_scanner.models import ScanResult
 
 _LEVEL_ORDER = {"grønn": 0, "gul": 1, "rød": 2, "svart": 3}
 
-_TEMPLATE = Template("""<!DOCTYPE html>
+_JINJA_ENV = Environment(
+    autoescape=select_autoescape(
+        enabled_extensions=("html", "htm", "xml"),
+        default_for_string=True,
+    )
+)
+
+_TEMPLATE = _JINJA_ENV.from_string("""<!DOCTYPE html>
 <html lang="nb">
 <head>
 <meta charset="UTF-8">

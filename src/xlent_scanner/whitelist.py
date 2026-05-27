@@ -73,9 +73,17 @@ def add_to_whitelist(text: str) -> None:
     p = _whitelist_path()
     existing: list[str] = []
     if p.exists():
-        with open(p, "rb") as f:
-            data = tomllib.load(f)
-        existing = data.get("texts", [])
+        try:
+            with open(p, "rb") as f:
+                data = tomllib.load(f)
+            existing = data.get("texts", [])
+        except tomllib.TOMLDecodeError:
+            bak = p.with_suffix(".toml.bak")
+            try:
+                p.rename(bak)
+            except OSError:
+                p.unlink(missing_ok=True)
+            existing = []
     if text in existing:
         return
     existing.append(text)
