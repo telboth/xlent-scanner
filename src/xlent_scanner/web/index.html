@@ -41,6 +41,24 @@
       white-space: nowrap;
       padding-left: 14px;
     }
+    .update-banner {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 20px;
+      background: rgba(79,158,255,.12);
+      border-bottom: 1px solid rgba(79,158,255,.35);
+      color: var(--text);
+      font-size: 12px;
+    }
+    .update-banner .msg { flex: 1; }
+    .update-banner .btn {
+      padding: 3px 9px; border-radius: 4px;
+      border: 1px solid var(--accent);
+      background: transparent; color: var(--accent);
+      cursor: pointer; font-size: 12px;
+    }
+    .update-banner .btn:hover { background: rgba(79,158,255,.12); }
     .ui-lang-btn {
       padding: 3px 9px; border-radius: 4px; border: 1px solid var(--border);
       background: transparent; color: var(--muted); cursor: pointer;
@@ -279,6 +297,10 @@
       <button class="ui-lang-btn" data-uilang="en"><span class="flag-em">🇬🇧</span> EN</button>
     </div>
   </nav>
+  <div id="update-banner" class="update-banner">
+    <span class="msg" id="update-banner-msg"></span>
+    <button class="btn" id="update-banner-btn"></button>
+  </div>
 
   <main>
     <!-- ── Scanner panel ──────────────────────────────────────────── -->
@@ -468,6 +490,14 @@
         <div class="settings-note" data-i18n="ignoreHint">— redigér i ignore.toml</div>
       </div>
 
+      <div class="settings-section">
+        <div class="settings-section-title" data-i18n="settingsUpdateTitle">Oppdateringer</div>
+        <div class="settings-row">
+          <button id="btn-check-updates" class="ctrl-btn" data-i18n="updateCheckNow">Se etter oppdateringer nå</button>
+        </div>
+        <div class="settings-note" id="update-check-msg"></div>
+      </div>
+
       <div class="settings-note" data-i18n="settingsPersistNote">Innstillinger lagres automatisk i nettleseren.</div>
     </div>
 
@@ -523,7 +553,13 @@
         settingsDocLangTitle:"Dokumentspråk",
         settingsDocLangNote: "Auto-detektering bestemmer dokumentspråket automatisk og velger riktige mønstre.",
         settingsFilterTitle: "Filtrering",
+        settingsUpdateTitle: "Oppdateringer",
         settingsPersistNote: "Innstillinger lagres automatisk i nettleseren.",
+        updateAvailable: "Ny versjon tilgjengelig:",
+        updateOpenRelease: "⬇ Åpne nedlasting",
+        updateCheckNow: "Se etter oppdateringer nå",
+        updateNoUpdate: "Du har nyeste versjon.",
+        updateCheckFailed: "Kunne ikke sjekke oppdateringer.",
       },
       sv: {
         subtitle:     "Kontrollerar dokument för känslig information innan uppladdning till online-AI-verktyg",
@@ -570,7 +606,13 @@
         settingsDocLangTitle:"Dokumentspråk",
         settingsDocLangNote: "Automatisk identifiering väljer dokumentspråk och rätt mönster.",
         settingsFilterTitle: "Filtrering",
+        settingsUpdateTitle: "Uppdateringar",
         settingsPersistNote: "Inställningar sparas automatiskt i webbläsaren.",
+        updateAvailable: "Ny version tillgänglig:",
+        updateOpenRelease: "⬇ Öppna nedladdning",
+        updateCheckNow: "Sök efter uppdateringar nu",
+        updateNoUpdate: "Du har senaste versionen.",
+        updateCheckFailed: "Kunde inte kontrollera uppdateringar.",
       },
       en: {
         subtitle:     "Checks documents for sensitive information before uploading to online AI tools",
@@ -617,7 +659,13 @@
         settingsDocLangTitle:"Document language",
         settingsDocLangNote: "Auto-detection determines the document language and selects the right detection patterns.",
         settingsFilterTitle: "Filtering",
+        settingsUpdateTitle: "Updates",
         settingsPersistNote: "Settings are saved automatically in the browser.",
+        updateAvailable: "New version available:",
+        updateOpenRelease: "⬇ Open download",
+        updateCheckNow: "Check for updates now",
+        updateNoUpdate: "You already have the latest version.",
+        updateCheckFailed: "Could not check for updates.",
       },
     };
 
@@ -625,10 +673,15 @@
     const t = key => I18N[uiLang][key] || key;
 
     const API      = "__API_BASE__";
+    const APP_VERSION = "__APP_VERSION__";
     const dz       = document.getElementById("dropzone");
     const browseBtn= document.getElementById("browse");
     const statusEl = document.getElementById("status");
     const resultEl = document.getElementById("result");
+    const updateBannerEl = document.getElementById("update-banner");
+    const updateBannerMsgEl = document.getElementById("update-banner-msg");
+    const updateBannerBtnEl = document.getElementById("update-banner-btn");
+    const updateCheckMsgEl = document.getElementById("update-check-msg");
 
     const LEVEL_COLOR = { grønn:"#4caf50", gul:"#ffb84d", rød:"#f44336", svart:"#9c27b0" };
     const LEVEL_ICON  = { grønn:"✅", gul:"⚠️", rød:"🚫", svart:"⛔" };
@@ -647,6 +700,7 @@
     let lastResult  = null;   // last ScanResult JSON
     let lastScan    = null;   // { type:"path"|"upload", path?:string, file?:File, name?:string }
     let scanHistory = [];     // [ { fileName, timestamp, riskLevel, rescanFn } ]
+    let lastUpdateCheck = null;
 
     /* ══════════════════════════════════════════════════════════════════
        UI LANGUAGE
@@ -680,6 +734,7 @@
 
       // Re-render history (button labels)
       renderHistory();
+      renderUpdateBanner();
     }
 
     document.querySelectorAll(".ui-lang-btn").forEach(btn =>
@@ -703,6 +758,63 @@
         if (btn.dataset.tab === "about") syncAboutLang();
       })
     );
+
+    /* ══════════════════════════════════════════════════════════════════
+       UPDATE CHECK
+    ══════════════════════════════════════════════════════════════════ */
+    function renderUpdateBanner() {
+      if (!lastUpdateCheck || !lastUpdateCheck.update_available) {
+        updateBannerEl.style.display = "none";
+        return;
+      }
+      const latest = String(lastUpdateCheck.latest_version || "");
+      updateBannerMsgEl.textContent = `${t("updateAvailable")} ${latest} (v${APP_VERSION})`;
+      updateBannerBtnEl.textContent = t("updateOpenRelease");
+      updateBannerBtnEl.onclick = () => {
+        const url = String(
+          lastUpdateCheck.release_url ||
+          "https://github.com/telboth/xlent-scanner/releases"
+        );
+        window.open(url, "_blank");
+      };
+      updateBannerEl.style.display = "flex";
+    }
+
+    function setUpdateCheckMessage(msg, color = "var(--muted)") {
+      updateCheckMsgEl.textContent = msg;
+      updateCheckMsgEl.style.color = color;
+    }
+
+    async function runUpdateCheck(force = false) {
+      if (force) setUpdateCheckMessage(t("processing"));
+      try {
+        const d = await (await fetch(`${API}/update-check`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ force }),
+        })).json();
+
+        lastUpdateCheck = d;
+        renderUpdateBanner();
+
+        if (force) {
+          if (d.ok) {
+            if (d.update_available) {
+              setUpdateCheckMessage(`${t("updateAvailable")} ${d.latest_version}`, "var(--ok)");
+            } else {
+              setUpdateCheckMessage(t("updateNoUpdate"), "var(--ok)");
+            }
+          } else {
+            setUpdateCheckMessage(
+              `${t("updateCheckFailed")} ${d.error ? "(" + d.error + ")" : ""}`,
+              "#f44336",
+            );
+          }
+        }
+      } catch (e) {
+        if (force) setUpdateCheckMessage(`${t("updateCheckFailed")} ${e}`, "#f44336");
+      }
+    }
 
     /* ══════════════════════════════════════════════════════════════════
        RENDERING
@@ -1047,11 +1159,13 @@
     // Lagre automatisk når innstillinger endres
     document.getElementById("ignoreXlent").addEventListener("change", saveSettings);
     document.getElementById("langSelect").addEventListener("change", saveSettings);
+    document.getElementById("btn-check-updates").addEventListener("click", () => runUpdateCheck(true));
 
     /* Init */
     loadSettings();
     syncAboutLang();
     setStatus(t("statusReady"));
+    runUpdateCheck(false);
   </script>
 </body>
 </html>

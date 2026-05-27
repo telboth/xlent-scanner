@@ -34,6 +34,7 @@ from xlent_scanner.anonymize import anonymize_text, build_replacements
 from xlent_scanner.patch import SUPPORTED_PATCH_SUFFIXES, patch_file
 from xlent_scanner.report import generate_html
 from xlent_scanner.scanner import scan_file
+from xlent_scanner.update_check import check_for_update
 from xlent_scanner.whitelist import add_to_whitelist
 
 _last_result = None
@@ -296,6 +297,13 @@ def open_dialog():
     )
     path = result[0] if result else None
     return jsonify({"path": path})
+
+
+@flask_app.route("/update-check", methods=["POST"])
+def update_check():
+    data = request.get_json(silent=True) or {}
+    force = bool(data.get("force", False))
+    return jsonify(check_for_update(current_version=__version__, force=force))
 
 
 def _start_flask(port: int) -> None:
