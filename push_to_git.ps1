@@ -8,6 +8,17 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+function Invoke-Git {
+    param(
+        [Parameter(ValueFromRemainingArguments = $true)]
+        [string[]]$Args
+    )
+    & git @Args
+    if ($LASTEXITCODE -ne 0) {
+        throw "git-kommando feilet: git $($Args -join ' ')"
+    }
+}
+
 function Get-GitHubHeaders {
     $credRequest = "protocol=https`nhost=github.com`n`n"
     $raw = $credRequest | git credential fill 2>$null
@@ -79,36 +90,34 @@ if (-not $RepoName) {
     $RepoName = Split-Path -Leaf (Get-Location)
 }
 
-git rev-parse --is-inside-work-tree | Out-Null
+Invoke-Git @("rev-parse", "--is-inside-work-tree") | Out-Null
 
 $headers = Get-GitHubHeaders
 Ensure-GitHubRepo -Headers $headers -Owner $Owner -RepoName $RepoName -Visibility $Visibility
 
-git add -A
-git diff --cached --quiet
+Invoke-Git @("add", "-A")
+& git diff --cached --quiet
 if ($LASTEXITCODE -ne 0) {
-    git commit -m $CommitMessage
+    Invoke-Git @("commit", "-m", $CommitMessage)
 }
 
-$branch = (git branch --show-current).Trim()
+$branch = ((& git branch --show-current).Trim())
+if ($LASTEXITCODE -ne 0) {
+    throw "Kunne ikke lese aktiv branch."
+}
 if (-not $branch) {
     throw "Fant ingen aktiv branch."
 }
 
 $remoteUrl = "https://github.com/$Owner/$RepoName.git"
-$hasOrigin = $false
-try {
-    git remote get-url origin | Out-Null
-    $hasOrigin = $true
-} catch {
-    $hasOrigin = $false
-}
-
-if ($hasOrigin) {
-    git remote set-url origin $remoteUrl
+if ((& git remote) -contains "origin") {
+    if ($LASTEXITCODE -ne 0) {
+        throw "Kunne ikke lese git remotes."
+    }
+    Invoke-Git @("remote", "set-url", "origin", $remoteUrl)
 } else {
-    git remote add origin $remoteUrl
+    Invoke-Git @("remote", "add", "origin", $remoteUrl)
 }
 
-git push -u origin $branch
+Invoke-Git @("push", "-u", "origin", $branch)
 Write-Host "Push fullført: $remoteUrl ($branch)"
