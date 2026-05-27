@@ -616,6 +616,7 @@
         updateCheckNow: "Se etter oppdateringer nå",
         updateNoUpdate: "Du har nyeste versjon.",
         updateCheckFailed: "Kunne ikke sjekke oppdateringer.",
+        logHint: "Se logg:",
       },
       sv: {
         subtitle:     "Kontrollerar dokument för känslig information innan uppladdning till online-AI-verktyg",
@@ -684,6 +685,7 @@
         updateCheckNow: "Sök efter uppdateringar nu",
         updateNoUpdate: "Du har senaste versionen.",
         updateCheckFailed: "Kunde inte kontrollera uppdateringar.",
+        logHint: "Se logg:",
       },
       en: {
         subtitle:     "Checks documents for sensitive information before uploading to online AI tools",
@@ -752,14 +754,17 @@
         updateCheckNow: "Check for updates now",
         updateNoUpdate: "You already have the latest version.",
         updateCheckFailed: "Could not check for updates.",
+        logHint: "See log:",
       },
     };
 
     let uiLang = "nb";
     const t = key => I18N[uiLang][key] || key;
 
-    const API      = "__API_BASE__";
+    // Bruk relativ API-base når siden kjøres fra http(s) for å unngå stale-port fra cachet HTML.
+    const API      = (window.location.origin && window.location.origin !== "null") ? "" : "__API_BASE__";
     const APP_VERSION = "__APP_VERSION__";
+    const LOG_PATH = "__LOG_PATH__";
     const dz       = document.getElementById("dropzone");
     const browseBtn= document.getElementById("browse");
     const statusEl = document.getElementById("status");
@@ -785,6 +790,10 @@
     function escapeHtml(s) {
       return String(s).replace(/[&<>"']/g, c =>
         ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+    }
+    function withLogHint(msg) {
+      if (!LOG_PATH || LOG_PATH === "__LOG_PATH__") return msg;
+      return `${msg} (${t("logHint")} ${LOG_PATH})`;
     }
     function setStatus(msg) { statusEl.textContent = msg; }
 
@@ -1276,7 +1285,7 @@
       } catch(e) {
         setStatus("");
         resultEl.classList.add("show");
-        resultEl.innerHTML = `<div class="err">${t("scanErr")} ${escapeHtml(String(e))}</div>`;
+        resultEl.innerHTML = `<div class="err">${escapeHtml(withLogHint(`${t("scanErr")} ${String(e)}`))}</div>`;
       }
     }
 
@@ -1298,7 +1307,7 @@
       } catch(e) {
         setStatus("");
         resultEl.classList.add("show");
-        resultEl.innerHTML = `<div class="err">${t("dragErr")} ${escapeHtml(String(e))}</div>`;
+        resultEl.innerHTML = `<div class="err">${escapeHtml(withLogHint(`${t("dragErr")} ${String(e)}`))}</div>`;
       }
     }
 
@@ -1339,7 +1348,7 @@
         if (data.path) scanPath(data.path);
       } catch(e) {
         resultEl.classList.add("show");
-        resultEl.innerHTML = `<div class="err">${t("dlgErr")} ${escapeHtml(String(e))}</div>`;
+        resultEl.innerHTML = `<div class="err">${escapeHtml(withLogHint(`${t("dlgErr")} ${String(e)}`))}</div>`;
       }
     });
 

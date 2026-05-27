@@ -7,11 +7,16 @@ Flask kjører i en bakgrunnstråd og eksponerer:
 """
 from __future__ import annotations
 
+import faulthandler
+import logging
 import os
+import platform
 import socket
+import sys
 import tempfile
 import threading
 import time
+import traceback
 import warnings
 import webbrowser
 from dataclasses import asdict
@@ -62,6 +67,60 @@ _NO_CACHE = {
 }
 
 
+def _app_data_dir() -> Path:
+    if platform.system() == "Windows":
+        base = Path(os.environ.get("APPDATA", Path.home()))
+    else:
+        base = Path.home() / "Library" / "Application Support"
+    d = base / "xlent-scanner"
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+def _setup_logging() -> tuple[logging.Logger, Path]:
+    log_dir = _app_data_dir() / "logs"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    log_path = log_dir / "app.log"
+
+    logger = logging.getLogger("xlent_scanner")
+    logger.setLevel(logging.INFO)
+    logger.propagate = False
+
+    if not logger.handlers:
+        fh = logging.FileHandler(log_path, encoding="utf-8")
+        fh.setFormatter(logging.Formatter("%(asctime)s | %(levelname)s | %(message)s"))
+        logger.addHandler(fh)
+
+    try:
+        global _FAULT_FILE_HANDLE
+        _FAULT_FILE_HANDLE = open(log_dir / "faulthandler.log", "a", encoding="utf-8")
+        faulthandler.enable(file=_FAULT_FILE_HANDLE, all_threads=True)
+    except Exception:
+        _FAULT_FILE_HANDLE = None
+
+    return logger, log_path
+
+
+LOGGER, LOG_PATH = _setup_logging()
+
+
+def _log_unhandled(exc_type, exc_value, exc_tb):
+    LOGGER.error("UNHANDLED EXCEPTION: %s", "".join(traceback.format_exception(exc_type, exc_value, exc_tb)))
+    sys.__excepthook__(exc_type, exc_value, exc_tb)
+
+
+def _log_thread_exception(args):
+    LOGGER.error(
+        "THREAD EXCEPTION in %s: %s",
+        getattr(args.thread, "name", "unknown"),
+        "".join(traceback.format_exception(args.exc_type, args.exc_value, args.exc_traceback)),
+    )
+
+
+sys.excepthook = _log_unhandled
+threading.excepthook = _log_thread_exception
+
+
 def _validate_runtime_dependencies() -> None:
     """Feil tidlig hvis obligatoriske runtime-avhengigheter mangler."""
     try:
@@ -87,6 +146,7 @@ def index():
     # Injiser port slik at JS kan bruke absolutte URL-er
     html = html.replace("__API_BASE__", f"http://127.0.0.1:{_port}")
     html = html.replace("__APP_VERSION__", __version__)
+    html = html.replace("__LOG_PATH__", str(LOG_PATH))
     return html, 200, {"Content-Type": "text/html; charset=utf-8", **_NO_CACHE}
 
 
@@ -98,11 +158,14 @@ def scan():
         file_path = data.get("file_path", "")
         ignore_xlent = bool(data.get("ignore_xlent", False))
         language = data.get("language", "auto")
+        LOGGER.info("scan request path=%s lang=%s ignore_xlent=%s", file_path, language, ignore_xlent)
         result = scan_file(file_path, ignore_xlent=ignore_xlent, language=language)
         _last_result = result
         _last_path = Path(file_path) if file_path else None
+        LOGGER.info("scan result path=%s error=%s findings=%s", file_path, bool(result.error), len(result.findings))
         return jsonify(asdict(result))
     except Exception as exc:
+        LOGGER.error("scan endpoint failed: %s", traceback.format_exc())
         return jsonify({
             "file_name": "",
             "file_size": 0,
@@ -131,6 +194,7 @@ def scan_upload():
         language = request.form.get("language", "auto")
         original_name = f.filename or "ukjent"
         suffix = Path(original_name).suffix.lower()
+        LOGGER.info("scan-upload request name=%s suffix=%s lang=%s ignore_xlent=%s", original_name, suffix, language, ignore_xlent)
 
         # Lagre til midlertidig fil med riktig suffiks
         fd, tmp = tempfile.mkstemp(suffix=suffix, prefix="xlent-drop-")
@@ -141,8 +205,10 @@ def scan_upload():
         result.file_name = original_name   # vis originalt filnavn, ikke temp-sti
         _last_result = result
         _last_path = tmp_path              # brukes av /patch hvis aktuelt
+        LOGGER.info("scan-upload result name=%s error=%s findings=%s", original_name, bool(result.error), len(result.findings))
         return jsonify(asdict(result))
     except Exception as exc:
+        LOGGER.error("scan-upload endpoint failed: %s", traceback.format_exc())
         try:
             tmp_path.unlink(missing_ok=True)  # type: ignore[name-defined]
         except Exception:
@@ -161,6 +227,15 @@ def scan_upload():
             "original_text": "",
             "error": f"Klarte ikke å lese fil: {exc}",
         })
+
+
+@flask_app.route("/diagnostics", methods=["GET"])
+def diagnostics():
+    return jsonify({
+        "ok": True,
+        "log_path": str(LOG_PATH),
+        "version": __version__,
+    })
 
 
 @flask_app.route("/logo.svg")
@@ -404,6 +479,7 @@ def ignore_save():
 def _start_flask(port: int) -> None:
     import logging
     logging.getLogger("werkzeug").setLevel(logging.ERROR)
+    LOGGER.info("Starting Flask on 127.0.0.1:%s", port)
     flask_app.run(host="127.0.0.1", port=port, threaded=True, use_reloader=False)
 
 
@@ -421,12 +497,21 @@ def _wait_for_flask(port: int, timeout: float = 10.0) -> None:
 def main() -> None:
     global _window, _port
 
+    LOGGER.info("App starting version=%s", __version__)
+    LOGGER.info(
+        "Runtime python=%s executable=%s platform=%s",
+        sys.version.split()[0],
+        sys.executable,
+        platform.platform(),
+    )
+    LOGGER.info("PyWebView version=%s", getattr(webview, "__version__", "unknown"))
     _validate_runtime_dependencies()
 
     _port = _free_port()
     t = threading.Thread(target=_start_flask, args=(_port,), daemon=True)
     t.start()
     _wait_for_flask(_port)
+    LOGGER.info("Flask is reachable on 127.0.0.1:%s", _port)
 
     webview_cache = tempfile.mkdtemp(prefix="xlent-scanner-wv-")
     fresh_url = f"http://127.0.0.1:{_port}/?_v={int(time.time())}"
@@ -446,6 +531,7 @@ def main() -> None:
         min_size=(700, 500),
     )
     threading.Thread(target=_force_fresh_load, daemon=True).start()
+    LOGGER.info("Window created. API base: http://127.0.0.1:%s", _port)
     webview.start(debug=False, storage_path=webview_cache)
 
 
