@@ -159,8 +159,12 @@ function Upload-ReleaseAsset {
         [string]$FilePath
     )
     $fileName = [IO.Path]::GetFileName($FilePath)
-    $baseUploadUrl = ($Release.upload_url -split "\{")[0]
-    $uploadUrl = "$baseUploadUrl?name=$([uri]::EscapeDataString($fileName))"
+    $uploadTemplate = [string]$Release.upload_url
+    $baseUploadUrl = $uploadTemplate.Split("{")[0].Trim()
+    if (-not $baseUploadUrl) {
+        throw "Ugyldig upload_url i release-data: '$uploadTemplate'"
+    }
+    $uploadUrl = "{0}?name={1}" -f $baseUploadUrl, [uri]::EscapeDataString($fileName)
     $contentType = Get-ContentTypeForFile -Path $FilePath
     Invoke-RestMethod `
         -Method POST `
