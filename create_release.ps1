@@ -7,7 +7,13 @@ param(
     [string]$ReleaseNotes = "",
     [switch]$AutoCommit,
     [string]$CommitMessage = "chore: prepare release",
-    [switch]$GenerateReleaseNotes = $true
+    [switch]$GenerateReleaseNotes = $true,
+    [switch]$UploadAssets = $true,
+    [switch]$OverwriteAssets = $true,
+    [string[]]$AssetGlobs = @(
+        "artifacts/windows/installer/*",
+        "artifacts/macos/installer/*"
+    )
 )
 
 $ErrorActionPreference = "Stop"
@@ -81,7 +87,7 @@ function Ensure-Owner {
     }
 }
 
-function Test-ReleaseExists {
+function Get-ReleaseByTag {
     param(
         [hashtable]$Headers,
         [string]$Owner,
@@ -90,13 +96,79 @@ function Test-ReleaseExists {
     )
     $uri = "https://api.github.com/repos/$Owner/$RepoName/releases/tags/$Tag"
     try {
-        $existing = Invoke-RestMethod -Method GET -Uri $uri -Headers $Headers
-        return $existing
+        return Invoke-RestMethod -Method GET -Uri $uri -Headers $Headers
     } catch {
         return $null
     }
 }
 
+function Get-ContentTypeForFile {
+    param([string]$Path)
+    $ext = [IO.Path]::GetExtension($Path).ToLowerInvariant()
+    switch ($ext) {
+        ".dmg" { return "application/x-apple-diskimage" }
+        ".pkg" { return "application/octet-stream" }
+        ".zip" { return "application/zip" }
+        ".exe" { return "application/vnd.microsoft.portable-executable" }
+        ".msi" { return "application/x-msi" }
+        default { return "application/octet-stream" }
+    }
+}
+
+function Resolve-AssetFiles {
+    param(
+        [string]$RepoRoot,
+        [string[]]$Globs
+    )
+    $result = New-Object System.Collections.Generic.List[string]
+    foreach ($pattern in $Globs) {
+        $fullPattern = Join-Path $RepoRoot $pattern
+        $parent = Split-Path -Path $fullPattern -Parent
+        $leaf = Split-Path -Path $fullPattern -Leaf
+        if (-not (Test-Path $parent)) {
+            continue
+        }
+        $files = Get-ChildItem -Path $parent -Filter $leaf -File -ErrorAction SilentlyContinue
+        foreach ($f in $files) {
+            $result.Add($f.FullName)
+        }
+    }
+    return $result | Sort-Object -Unique
+}
+
+function Remove-ReleaseAssetIfExists {
+    param(
+        [hashtable]$Headers,
+        [object]$Release,
+        [string]$AssetName
+    )
+    $existing = $Release.assets | Where-Object { $_.name -eq $AssetName } | Select-Object -First 1
+    if (-not $existing) {
+        return
+    }
+    $deleteUrl = "https://api.github.com/repos/$Owner/$RepoName/releases/assets/$($existing.id)"
+    Invoke-RestMethod -Method DELETE -Uri $deleteUrl -Headers $Headers | Out-Null
+}
+
+function Upload-ReleaseAsset {
+    param(
+        [hashtable]$Headers,
+        [object]$Release,
+        [string]$FilePath
+    )
+    $fileName = [IO.Path]::GetFileName($FilePath)
+    $baseUploadUrl = ($Release.upload_url -split "\{")[0]
+    $uploadUrl = "$baseUploadUrl?name=$([uri]::EscapeDataString($fileName))"
+    $contentType = Get-ContentTypeForFile -Path $FilePath
+    Invoke-RestMethod `
+        -Method POST `
+        -Uri $uploadUrl `
+        -Headers @{ Authorization = $Headers.Authorization; "User-Agent" = $Headers["User-Agent"] } `
+        -ContentType $contentType `
+        -InFile $FilePath | Out-Null
+}
+
+$RepoRoot = Resolve-Path (Get-Location)
 Invoke-Git @("rev-parse", "--is-inside-work-tree") | Out-Null
 
 if (-not $Version) {
@@ -153,31 +225,48 @@ Invoke-Git @("push", "origin", $Tag)
 $headers = Get-GitHubHeaders
 Ensure-Owner -Headers $headers -Owner $Owner
 
-$existingRelease = Test-ReleaseExists -Headers $headers -Owner $Owner -RepoName $RepoName -Tag $Tag
-if ($existingRelease) {
-    Write-Host "Release finnes allerede: $($existingRelease.html_url)"
-    exit 0
+$release = Get-ReleaseByTag -Headers $headers -Owner $Owner -RepoName $RepoName -Tag $Tag
+if (-not $release) {
+    $payload = @{
+        tag_name = $Tag
+        target_commitish = $branch
+        name = $ReleaseTitle
+        draft = $false
+        prerelease = $false
+    }
+
+    if ($GenerateReleaseNotes) {
+        $payload["generate_release_notes"] = $true
+    }
+    if ($ReleaseNotes) {
+        $payload["body"] = $ReleaseNotes
+    }
+
+    $release = Invoke-RestMethod `
+        -Method POST `
+        -Uri "https://api.github.com/repos/$Owner/$RepoName/releases" `
+        -Headers $headers `
+        -Body ($payload | ConvertTo-Json -Depth 10)
+
+    Write-Host "Release opprettet: $($release.html_url)"
+} else {
+    Write-Host "Release finnes allerede: $($release.html_url)"
 }
 
-$payload = @{
-    tag_name = $Tag
-    target_commitish = $branch
-    name = $ReleaseTitle
-    draft = $false
-    prerelease = $false
+if ($UploadAssets) {
+    $assetFiles = Resolve-AssetFiles -RepoRoot $RepoRoot -Globs $AssetGlobs
+    if (-not $assetFiles -or $assetFiles.Count -eq 0) {
+        Write-Host "Ingen release-assets funnet for globs: $($AssetGlobs -join ', ')"
+    } else {
+        foreach ($assetPath in $assetFiles) {
+            $assetName = [IO.Path]::GetFileName($assetPath)
+            if ($OverwriteAssets) {
+                Remove-ReleaseAssetIfExists -Headers $headers -Release $release -AssetName $assetName
+                $release = Get-ReleaseByTag -Headers $headers -Owner $Owner -RepoName $RepoName -Tag $Tag
+            }
+            Upload-ReleaseAsset -Headers $headers -Release $release -FilePath $assetPath
+            Write-Host "Asset lastet opp: $assetName"
+            $release = Get-ReleaseByTag -Headers $headers -Owner $Owner -RepoName $RepoName -Tag $Tag
+        }
+    }
 }
-
-if ($GenerateReleaseNotes) {
-    $payload["generate_release_notes"] = $true
-}
-if ($ReleaseNotes) {
-    $payload["body"] = $ReleaseNotes
-}
-
-$release = Invoke-RestMethod `
-    -Method POST `
-    -Uri "https://api.github.com/repos/$Owner/$RepoName/releases" `
-    -Headers $headers `
-    -Body ($payload | ConvertTo-Json -Depth 10)
-
-Write-Host "Release opprettet: $($release.html_url)"

@@ -56,6 +56,25 @@ Outputs:
 - App bundle: `artifacts\windows\app\dist\XLENTScanner`
 - Installer: `artifacts\windows\installer`
 
+## macOS installer (internal MVP)
+
+Build app bundle:
+
+```bash
+./scripts/build_mac.sh --clean
+```
+
+Package `.dmg`:
+
+```bash
+./scripts/package_mac.sh
+```
+
+Outputs:
+
+- App bundle: `artifacts/macos/app/dist/XLENTScanner.app`
+- Installer: `artifacts/macos/installer`
+
 ## Usage
 
 1. Start the app with `uv run xlent-scanner`
@@ -73,7 +92,10 @@ From repository root:
 .\create_release.ps1 -AutoCommit -CommitMessage "chore: prepare release"
 ```
 
-`create_release.ps1` reads version from `src/xlent_scanner/__init__.py`, creates tag `v<version>`, pushes tag, and creates a GitHub Release.
+`create_release.ps1` reads version from `src/xlent_scanner/__init__.py`, creates tag `v<version>`, pushes tag, creates/fetches GitHub Release, and uploads installer assets found in:
+
+- `artifacts/windows/installer/*`
+- `artifacts/macos/installer/*`
 
 ## Architecture
 
