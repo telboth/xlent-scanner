@@ -544,28 +544,53 @@ def ollama_deep_scan_endpoint():
 
 @flask_app.route("/ollama/anonymize-findings", methods=["POST"])
 def ollama_anonymize_findings():
-    """Anonymiser valgte AI-funn og lagre til fil."""
+    """Anonymiser valgte AI-funn og lagre til fil.
+
+    Produserer samme filformat som kilden (docx→docx, pptx→pptx, xlsx→xlsx, pdf→pdf).
+    Faller tilbake til .txt hvis formatet ikke støttes eller kildefilen mangler.
+    """
     if _last_result is None:
         return jsonify({"error": "Ingen fil skannet."})
-    text = getattr(_last_result, "original_text", "") or ""
-    if not text.strip():
-        return jsonify({"error": "Originaltekst ikke tilgjengelig. Re-skann filen."})
     data = request.get_json(force=True) or {}
-    texts_to_remove = [t for t in (data.get("texts") or []) if t and str(t).strip()]
-    result_text = text
-    for t in texts_to_remove:
-        result_text = result_text.replace(str(t), "[ANONYMISERT]")
+    texts_to_remove = [str(t).strip() for t in (data.get("texts") or []) if t and str(t).strip()]
+    if not texts_to_remove:
+        return jsonify({"error": "Ingen tekst valgt for anonymisering."})
+
     stem = Path(_last_result.file_name).stem if _last_result.file_name else "dokument"
+    suffix = _last_path.suffix.lower() if _last_path else ""
     downloads = Path.home() / "Downloads"
     if not downloads.exists():
         downloads = Path.home() / "Desktop"
+
+    # Bruk patch_file for støttede filformater når kildefilen er tilgjengelig
+    if _last_path and _last_path.exists() and suffix in SUPPORTED_PATCH_SUFFIXES:
+        replacements = {t: "[ANONYMISERT]" for t in texts_to_remove}
+        out = downloads / f"{stem}-ai-anonymisert{suffix}"
+        counter = 1
+        while out.exists():
+            out = downloads / f"{stem}-ai-anonymisert-{counter}{suffix}"
+            counter += 1
+        try:
+            patch_file(_last_path, replacements, out)
+            LOGGER.info("ollama/anonymize-findings patch: wrote %s (%d replacements)", out, len(texts_to_remove))
+            return jsonify({"ok": True, "path": str(out)})
+        except Exception as exc:
+            LOGGER.warning("patch_file feilet, faller tilbake til .txt: %s", exc)
+
+    # Fallback: teksterstatning i originalstreng → .txt
+    text = getattr(_last_result, "original_text", "") or ""
+    if not text.strip():
+        return jsonify({"error": "Originaltekst ikke tilgjengelig. Re-skann filen."})
+    result_text = text
+    for t_str in texts_to_remove:
+        result_text = result_text.replace(t_str, "[ANONYMISERT]")
     out = downloads / f"{stem}-ai-anonymisert.txt"
     counter = 1
     while out.exists():
         out = downloads / f"{stem}-ai-anonymisert-{counter}.txt"
         counter += 1
     out.write_text(result_text, encoding="utf-8")
-    LOGGER.info("ollama/anonymize-findings: wrote %s (%d replacements)", out, len(texts_to_remove))
+    LOGGER.info("ollama/anonymize-findings txt: wrote %s (%d replacements)", out, len(texts_to_remove))
     return jsonify({"ok": True, "path": str(out)})
 
 

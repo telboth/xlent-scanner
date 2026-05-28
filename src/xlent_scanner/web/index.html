@@ -528,7 +528,7 @@
           <button class="ctrl-btn" id="dst-sel-all" data-i18n="selAll">Velg alle</button>
           <button class="ctrl-btn" id="dst-sel-none" data-i18n="selNone">Fjern alle</button>
           <span class="ctrl-sep"></span>
-          <button class="ctrl-btn ctrl-btn-primary" id="dst-anon-btn" data-i18n="dstAnonBtn">Anonymiser valgte</button>
+          <button class="ctrl-btn ctrl-btn-primary" id="dst-anon-btn">Anonymiser valgte</button>
           <span class="dst-anon-msg" id="dst-anon-msg"></span>
         </div>
       </div>
@@ -1985,6 +1985,16 @@
     let _dstPollTimer   = null;
     let _dstFindings    = [];
     let _dstHwChecked   = false;
+    let _dstFileSuffix  = "";   // .docx / .pptx / .xlsx / .pdf / "" (txt-fallback)
+
+    const PATCH_SUFFIXES = new Set([".docx", ".pptx", ".xlsx", ".pdf"]);
+
+    function _updateAnonBtnLabel() {
+      const btn = document.getElementById("dst-anon-btn");
+      if (!btn) return;
+      const ext = PATCH_SUFFIXES.has(_dstFileSuffix) ? _dstFileSuffix : ".txt";
+      btn.textContent = `${t("dstAnonBtn")} → ${ext}`;
+    }
 
     async function loadDeepScanTab() {
       // Fil-info
@@ -1992,15 +2002,21 @@
         const info = await (await fetch(`${API}/ollama/last-file-info`)).json();
         const el = document.getElementById("dst-file-info");
         if (info.available) {
+          _dstFileSuffix = info.file_name.includes(".")
+            ? "." + info.file_name.split(".").pop().toLowerCase()
+            : "";
           el.innerHTML = `<span class="dst-filename">📄 ${escapeHtml(info.file_name)}</span>
             <span style="color:var(--muted);font-size:12px;margin-left:8px">${info.text_length.toLocaleString()} ${t("metaChars")}</span>`;
         } else {
+          _dstFileSuffix = "";
           el.innerHTML = `<span class="dst-no-file">${t("dstNoFile")}</span>`;
         }
       } catch (_) {
+        _dstFileSuffix = "";
         document.getElementById("dst-file-info").innerHTML =
           `<span class="dst-no-file">${t("dstNoFile")}</span>`;
       }
+      _updateAnonBtnLabel();
       // Ollama-status
       await loadDstOllamaStatus();
     }

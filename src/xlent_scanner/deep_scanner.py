@@ -142,15 +142,15 @@ E-postadresse – MÅ ha @-tegn og domenenavn:
   ❌ URL-er uten @  ❌ brukernavn uten @
 
 Telefon – 8-sifret norsk eller internasjonal med landkode:
-  ✅ «90123456»  ✅ «+47 901 23 456»
+  ✅ «90123456»  ✅ «+47 901 23 456»  ✅ «+47 91717678»  ✅ «0047 12345678»  ✅ «91 23 45 67»
   ❌ årstall  ❌ postnummer  ❌ 4-6 siffer  ❌ interne koder
 
 Personnummer – nøyaktig 11 siffer i norsk fødselsdatoformat:
-  ✅ «12034567891»
+  ✅ «12034567891»  ✅ «210572 34161»
   ❌ korte tall  ❌ kontonummer  ❌ datoer
 
 Bankkonto – 11-sifret norsk kontonummer eller IBAN:
-  ✅ «1234.56.78901»  ✅ «NO9386011117947»
+  ✅ «1234.56.78901»  ✅ «1730.1777.922»  ✅ «1730 1777 922»  ✅ «17301777922»  ✅ «NO9386011117947»
   ❌ telefonnummer  ❌ personnummer  ❌ korte tall
 
 Selskapsnavn – offisielt firma, org. eller stiftelse:
@@ -178,15 +178,15 @@ E-postadress – MÅSTE ha @-tecken och domännamn:
   ❌ URL-er utan @  ❌ användarnamn utan @
 
 Telefon – 8-siffrigt svenskt/norskt eller internationellt med landskod:
-  ✅ «070-123 45 67»  ✅ «+46 701 23 45 67»
+  ✅ «070-123 45 67»  ✅ «+46 701 23 45 67»  ✅ «+47 91717678»  ✅ «0047 12345678»
   ❌ årtal  ❌ postnummer  ❌ 4-6 siffror
 
 Personnummer – 10-11 siffror i personnummerformat:
-  ✅ «19900101-1234»
+  ✅ «19900101-1234»  ✅ «210572 34161»
   ❌ korta tal  ❌ kontonummer  ❌ datum
 
 Bankkonto – IBAN eller kontonummer:
-  ✅ «SE4550000000058398257466»
+  ✅ «SE4550000000058398257466»  ✅ «1730.1777.922»  ✅ «1730 1777 922»  ✅ «17301777922»
   ❌ telefonnummer  ❌ personnummer
 
 Företagsnamn – officiellt bolag, org. eller stiftelse:
@@ -214,15 +214,15 @@ Email address – MUST have @ sign and domain name:
   ❌ URLs without @  ❌ usernames without @
 
 Phone – 8-digit national or international with country code:
-  ✅ «+44 7911 123456»  ✅ «90123456»
+  ✅ «+44 7911 123456»  ✅ «90123456»  ✅ «+47 91717678»  ✅ «0047 12345678»
   ❌ years  ❌ postal codes  ❌ 4-6 digit numbers
 
 ID/SSN – national identity number format:
-  ✅ «12034567891»
+  ✅ «12034567891»  ✅ «210572 34161»
   ❌ short numbers  ❌ account numbers  ❌ dates
 
 Bank account – national account number or IBAN:
-  ✅ «GB29 NWBK 6016 1331 9268 19»
+  ✅ «GB29 NWBK 6016 1331 9268 19»  ✅ «1730.1777.922»  ✅ «1730 1777 922»  ✅ «17301777922»
   ❌ phone numbers  ❌ ID numbers
 
 Company name – official company, org., or foundation:

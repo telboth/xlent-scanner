@@ -169,13 +169,17 @@ def find_kontonummer(text: str) -> Iterator[Finding]:
 
 _PHONE_RE = re.compile(
     r"(?<!\d)"
-    r"(?:(?:\+47|0047)[\s\-]?)?"      # valgfri landkode
     r"(?:"
-        r"[49]\d{2}[\s\-]?\d{2}[\s\-]?\d{3}"          # mobil 3+2+3: 912 34 567
-        r"|[49]\d[\s\-]?\d{2}[\s\-]?\d{2}[\s\-]?\d{2}" # mobil 2+2+2+2: 91 23 45 67
-        r"|[49]\d{7}"                                   # mobil 8 siffer samlet
-        r"|[2357]\d[\s\-]?\d{2}[\s\-]?\d{2}[\s\-]?\d{2}" # fast 2+2+2+2: 22 34 56 78
-        r"|[2357]\d{7}"                                 # fast 8 siffer samlet
+        # Med eksplisitt landkode (+47 / 0047): alle 8-sifret varianter aksepteres
+        r"(?:\+47|0047)[\s\-]?\d{3}[\s\-]?\d{2}[\s\-]?\d{3}"               # 3+2+3: +47 912 34 567
+        r"|(?:\+47|0047)[\s\-]?\d{2}[\s\-]?\d{2}[\s\-]?\d{2}[\s\-]?\d{2}"  # 2+2+2+2: +47 91 23 45 67
+        r"|(?:\+47|0047)[\s\-]?\d{8}"                                         # 8 samlet: 0047 12345678
+        # Uten landkode: kun kjente norske prefixer
+        r"|[49]\d{2}[\s\-]?\d{2}[\s\-]?\d{3}"            # mobil 3+2+3: 912 34 567
+        r"|[49]\d[\s\-]?\d{2}[\s\-]?\d{2}[\s\-]?\d{2}"   # mobil 2+2+2+2: 91 23 45 67
+        r"|[49]\d{7}"                                     # mobil 8 samlet
+        r"|[2357]\d[\s\-]?\d{2}[\s\-]?\d{2}[\s\-]?\d{2}"  # fast 2+2+2+2: 22 34 56 78
+        r"|[2357]\d{7}"                                   # fast 8 samlet
     r")"
     r"(?!\d)",
 )
