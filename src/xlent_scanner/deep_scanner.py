@@ -34,6 +34,7 @@ RECOMMENDED_MODELS = [
 CATEGORIES: dict[str, str] = {
     "navn":          "personnavn – fornavn OG etternavn (ikke bynavn, titler eller CAPS-fraser)",
     "adresse":       "fysisk adresse – gatenavn OG husnummer (ikke bynavn alene eller tekniske termer)",
+    "epost":         "e-postadresser – format: navn@domene.tld",
     "telefon":       "telefonnumre – 8-sifret norsk eller internasjonal med landkode",
     "personnummer":  "norske fødselsnumre – nøyaktig 11 siffer",
     "bankkonto":     "bankkontonumre – 11-sifret norsk eller IBAN",
@@ -136,6 +137,10 @@ Adresse – MÅ ha gatenavn OG husnummer (eller postboks):
   ✅ «Storgata 14»  ✅ «Karl Johans gate 1, 0154 Oslo»  ✅ «Pb 123, 1234 Sted»
   ❌ «Oslo»  ❌ «Trondheim»  ❌ «Ålesund»  ❌ «Østersund/ÅRE»  ❌ «Azure App Service»  ❌ «Cosmos DB»  ❌ sky-tjenester  ❌ tekniske termer  ❌ bynavn alene
 
+E-postadresse – MÅ ha @-tegn og domenenavn:
+  ✅ «thomas@xlent.no»  ✅ «kontakt@firma.com»  ✅ «user.name+tag@example.co.uk»
+  ❌ URL-er uten @  ❌ brukernavn uten @
+
 Telefon – 8-sifret norsk eller internasjonal med landkode:
   ✅ «90123456»  ✅ «+47 901 23 456»
   ❌ årstall  ❌ postnummer  ❌ 4-6 siffer  ❌ interne koder
@@ -168,6 +173,10 @@ Adress – MÅSTE ha gatunamn OCH husnummer (eller postbox):
   ✅ «Storgatan 14»  ✅ «Kungsgatan 1, 111 43 Stockholm»
   ❌ «Stockholm»  ❌ «Göteborg»  ❌ «Östersund»  ❌ «Azure App Service»  ❌ molntjänster  ❌ stadsnamn ensamt
 
+E-postadress – MÅSTE ha @-tecken och domännamn:
+  ✅ «anna@xlent.se»  ✅ «kontakt@foretag.com»
+  ❌ URL-er utan @  ❌ användarnamn utan @
+
 Telefon – 8-siffrigt svenskt/norskt eller internationellt med landskod:
   ✅ «070-123 45 67»  ✅ «+46 701 23 45 67»
   ❌ årtal  ❌ postnummer  ❌ 4-6 siffror
@@ -199,6 +208,10 @@ Personal name – MUST have both first name AND last name of a real person:
 Address – MUST have a street name AND house/building number:
   ✅ «14 Baker Street»  ✅ «Karl Johans gate 1, Oslo»
   ❌ «Oslo»  ❌ «Trondheim»  ❌ «London»  ❌ «Azure App Service»  ❌ «Cosmos DB vector store»  ❌ cloud services  ❌ city name alone  ❌ technical terms
+
+Email address – MUST have @ sign and domain name:
+  ✅ «john@xlent.com»  ✅ «contact@company.co.uk»
+  ❌ URLs without @  ❌ usernames without @
 
 Phone – 8-digit national or international with country code:
   ✅ «+44 7911 123456»  ✅ «90123456»

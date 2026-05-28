@@ -488,6 +488,7 @@
         <div class="dst-cats-grid">
           <label class="dst-cat-label"><input type="checkbox" class="dst-cat" value="navn" checked> <span data-i18n="dstCatNavn">Navn</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="dst-cat" value="adresse" checked> <span data-i18n="dstCatAdresse">Adresse</span></label>
+          <label class="dst-cat-label"><input type="checkbox" class="dst-cat" value="epost" checked> <span data-i18n="dstCatEpost">E-post</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="dst-cat" value="telefon" checked> <span data-i18n="dstCatTelefon">Telefon</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="dst-cat" value="personnummer" checked> <span data-i18n="dstCatPersonnummer">Personnummer</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="dst-cat" value="bankkonto" checked> <span data-i18n="dstCatBankkonto">Bankkontonummer</span></label>
@@ -893,6 +894,7 @@
         dstCatsTitle:       "Søk etter",
         dstCatNavn:         "Navn",
         dstCatAdresse:      "Adresse",
+        dstCatEpost:        "E-post",
         dstCatTelefon:      "Telefon",
         dstCatPersonnummer: "Personnummer",
         dstCatBankkonto:    "Bankkontonummer",
@@ -1012,6 +1014,7 @@
         dstCatsTitle:       "Sök efter",
         dstCatNavn:         "Namn",
         dstCatAdresse:      "Adress",
+        dstCatEpost:        "E-post",
         dstCatTelefon:      "Telefon",
         dstCatPersonnummer: "Personnummer",
         dstCatBankkonto:    "Bankkontonummer",
@@ -1131,6 +1134,7 @@
         dstCatsTitle:       "Search for",
         dstCatNavn:         "Names",
         dstCatAdresse:      "Addresses",
+        dstCatEpost:        "Email addresses",
         dstCatTelefon:      "Phone numbers",
         dstCatPersonnummer: "National ID numbers",
         dstCatBankkonto:    "Bank account numbers",
@@ -2135,6 +2139,7 @@
           c.includes("identity")     || c.includes("account number")) return "svart";
       if (c.includes("navn") || c.includes("name") ||
           c.includes("adresse") || c.includes("address") ||
+          c.includes("e-post") || c.includes("email") || c.includes("mail") ||
           c.includes("telefon") || c.includes("phone")) return "rød";
       return "gul";
     }

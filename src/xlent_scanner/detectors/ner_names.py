@@ -35,7 +35,7 @@ _MAX_CHARS = 100_000
 
 _STOPWORDS: frozenset[str] = frozenset({
     # Generelle tekniske termer
-    "database", "audit", "check", "automatically", "blacklist", "green",
+    "xlent", "database", "audit", "check", "automatically", "blacklist", "green",
     "scoring", "threshold", "hybrid", "rag", "box", "entry", "custom",
     "consulting", "tune", "phase", "kick", "state", "country", "rigid",
     "officer", "model", "system", "service", "client", "server", "pipeline",
@@ -82,14 +82,28 @@ def _looks_like_name(name: str) -> bool:
     if len(parts) < 2:
         return False
     for part in parts:
-        if not part[0].isupper():
-            return False
-        if part.isupper() and len(part) > 2:
-            return False
         if len(part) < 2:
+            return False
+        # Forkast deler med apostrof/backtick (possessiver som "XLENT's", koderef)
+        if any(c in part for c in ("'", "’", "‘", "`")):
             return False
         if part.lower() in _STOPWORDS:
             return False
+        if "-" in part:
+            # Bindestreksnavn: sjekk hvert delord (f.eks. "Anne-Marie")
+            subparts = [sp for sp in part.split("-") if sp]
+            for sp in subparts:
+                if not sp[0].isupper():
+                    return False   # "RAG-based" → "based" starter med liten → forkast
+                if sp.isupper() and len(sp) > 2:
+                    return False   # "RAG-Based" → "RAG" er akronym → forkast
+                if sp.lower() in _STOPWORDS:
+                    return False
+        else:
+            if not part[0].isupper():
+                return False
+            if part.isupper() and len(part) > 2:
+                return False
     return True
 
 

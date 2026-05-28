@@ -42,7 +42,7 @@ _EMAIL_RE = re.compile(
     r"@"
     r"[\w\-]{1,63}"
     r"(?:\.[\w\-]{1,63})+"
-    r"(?![.\w@])",
+    r"(?![@\w])",           # tillater etterfølgende . (setningsavslutning)
     re.IGNORECASE,
 )
 
@@ -54,7 +54,10 @@ def find_emails(text: str) -> Iterator[Finding]:
 
 # ── fødselsnummer og D-nummer ─────────────────────────────────────────────────
 
-_FNR_RAW = re.compile(r"\b(\d{11})\b")
+_FNR_RAW = re.compile(
+    r"\b(\d{11})\b"           # 11 siffer uten mellomrom: 21057234161
+    r"|\b(\d{6})[ ](\d{5})\b"  # 6+space+5: 210572 34161
+)
 
 _K1_WEIGHTS = [3, 7, 6, 1, 8, 9, 4, 5, 2]
 _K2_WEIGHTS = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2]
@@ -87,9 +90,15 @@ def _validate_fnr_or_dnr(s: str) -> str | None:
 
 def find_fnr(text: str) -> Iterator[Finding]:
     for m in _FNR_RAW.finditer(text):
-        kind = _validate_fnr_or_dnr(m.group(1))
+        if m.group(1):
+            raw     = m.group(1)
+            display = m.group(1)
+        else:
+            raw     = m.group(2) + m.group(3)   # 6+5 uten mellomrom
+            display = m.group(0).strip()          # vis med mellomrom
+        kind = _validate_fnr_or_dnr(raw)
         if kind:
-            yield Finding(kind, m.group(1), _ctx(text, m.start(), m.end()))
+            yield Finding(kind, display, _ctx(text, m.start(), m.end()))
 
 
 # ── organisasjonsnummer ───────────────────────────────────────────────────────
@@ -122,7 +131,12 @@ def find_orgnr(text: str) -> Iterator[Finding]:
 # ── kontonummer ───────────────────────────────────────────────────────────────
 
 _KONTO_RAW = re.compile(
-    r"\b(\d{4})[\s.](\d{2})[\s.](\d{5})\b"
+    # 4-2-5 med punkt eller mellomrom: 1234.56.78901 / 1234 56 78901
+    r"\b(\d{4})[.\s](\d{2})[.\s](\d{5})\b"
+    # 4-4-3 med punkt: 1730.1777.922
+    r"|\b(\d{4})\.(\d{4})\.(\d{3})\b"
+    # 11 siffer uten skilletegn: 17301777922
+    r"|\b(\d{11})\b"
 )
 _KONTO_WEIGHTS = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2]
 
@@ -137,7 +151,12 @@ def _validate_konto(s: str) -> bool:
 
 def find_kontonummer(text: str) -> Iterator[Finding]:
     for m in _KONTO_RAW.finditer(text):
-        digits = m.group(1) + m.group(2) + m.group(3)
+        if m.group(1) is not None:
+            digits = m.group(1) + m.group(2) + m.group(3)   # 4-2-5
+        elif m.group(4) is not None:
+            digits = m.group(4) + m.group(5) + m.group(6)   # 4-4-3
+        else:
+            digits = m.group(7)                               # rå 11 siffer
         if _validate_konto(digits):
             yield Finding(
                 "kontonummer",
