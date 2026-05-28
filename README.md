@@ -1,6 +1,6 @@
 # XLENT Compliance-scanner
 
-> **v0.9.20** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
+> **v1.0.0** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
 
 Alt kjøres 100 % lokalt — ingen dokumenter, tekst eller funn sendes over internett.
 
@@ -203,6 +203,9 @@ src/xlent_scanner/
 ---
 
 ## Endringslogg
+
+### v1.0.0
+- Dansk NER bruker norsk bokmål-modell (nb_core_news_sm) — da_core_news_sm fjernet
 
 ### v0.9.20
 - **Test suite** — automatiske tester for alle detektorer (`tests/`); integrasjonstest mot `i_english.docx`
