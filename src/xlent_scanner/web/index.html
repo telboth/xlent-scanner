@@ -217,16 +217,10 @@
     .dst-progress { font-size: 12.5px; color: var(--muted); margin: 6px 0; min-height: 18px; }
     .dst-finding {
       display: flex; align-items: flex-start; gap: 8px;
-      padding: 7px 10px; border-radius: 5px; margin-bottom: 4px;
-      background: rgba(138,150,168,.06); font-size: 13px; line-height: 1.45;
+      padding: 7px 10px; border-radius: 4px; margin-bottom: 4px;
+      background: var(--panel2); font-size: 13px; line-height: 1.45;
+      border-left: 3px solid var(--warn);
     }
-    .dst-finding input[type=checkbox] {
-      width: 13px; height: 13px; margin-top: 3px; flex-shrink: 0;
-      cursor: pointer; accent-color: var(--ok);
-    }
-    .dst-finding-body { flex: 1; }
-    .dst-finding-cat { font-weight: 600; color: var(--accent); font-size: 11px; margin-bottom: 3px; text-transform: uppercase; letter-spacing: .03em; }
-    .dst-finding-ctx { color: var(--muted); font-size: 11.5px; margin-top: 2px; }
     .dst-anon-bar {
       display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
       background: var(--panel2); border: 1px solid var(--border);
@@ -431,7 +425,7 @@
   </header>
 
   <nav class="tab-nav">
-    <button class="tab-btn active" data-tab="scanner" data-i18n="tabScanner">🔍 Scanner</button>
+    <button class="tab-btn active" data-tab="scanner" data-i18n="tabScanner">🔍 Rask scanner</button>
     <button class="tab-btn" data-tab="deepscan" data-i18n="tabDeepScan">🔬 Dybdeskann</button>
     <button class="tab-btn" data-tab="about" data-i18n="tabAbout">ℹ Om programmet</button>
     <button class="tab-btn" data-tab="settings" data-i18n="tabSettings">⚙️ Innstillinger</button>
@@ -484,7 +478,7 @@
       <div class="dst-section">
         <div class="dst-section-title" data-i18n="dstFileInfoTitle">Fil å analysere</div>
         <div id="dst-file-info" class="dst-file-info">
-          <span class="dst-no-file" data-i18n="dstNoFile">Ingen fil skannet. Gå til Scanner-fanen og skann en fil først.</span>
+          <span class="dst-no-file" data-i18n="dstNoFile">Ingen fil skannet. Gå til Rask scanner-fanen og skann en fil først.</span>
         </div>
       </div>
 
@@ -796,7 +790,7 @@
     const I18N = {
       nb: {
         subtitle:     "Sjekker dokumenter for sensitiv informasjon før opplasting til online AI-verktøy",
-        tabScanner:   "🔍 Scanner",
+        tabScanner:   "🔍 Rask scanner",
         tabAbout:     "ℹ Om programmet",
         dropTitle:    "Dra og slipp et dokument her",
         dropFormats:  "PDF · DOCX · PPTX · XLSX · TXT · MD · HTML",
@@ -895,7 +889,7 @@
         logHint: "Se logg:",
         tabDeepScan:        "🔬 Dybdeskann",
         dstFileInfoTitle:   "Fil å analysere",
-        dstNoFile:          "Ingen fil skannet ennå. Gå til Scanner-fanen og skann en fil først.",
+        dstNoFile:          "Ingen fil skannet ennå. Gå til Rask scanner-fanen og skann en fil først.",
         dstCatsTitle:       "Søk etter",
         dstCatNavn:         "Navn",
         dstCatAdresse:      "Adresse",
@@ -915,7 +909,7 @@
       },
       sv: {
         subtitle:     "Kontrollerar dokument för känslig information innan uppladdning till online-AI-verktyg",
-        tabScanner:   "🔍 Scanner",
+        tabScanner:   "🔍 Snabb scanner",
         tabAbout:     "ℹ Om programmet",
         dropTitle:    "Dra och släpp ett dokument här",
         dropFormats:  "PDF · DOCX · PPTX · XLSX · TXT · MD · HTML",
@@ -1014,7 +1008,7 @@
         logHint: "Se logg:",
         tabDeepScan:        "🔬 Djupskanning",
         dstFileInfoTitle:   "Fil att analysera",
-        dstNoFile:          "Ingen fil skannad ännu. Gå till Scanner-fliken och skanna en fil först.",
+        dstNoFile:          "Ingen fil skannad ännu. Gå till Snabb scanner-fliken och skanna en fil först.",
         dstCatsTitle:       "Sök efter",
         dstCatNavn:         "Namn",
         dstCatAdresse:      "Adress",
@@ -1034,7 +1028,7 @@
       },
       en: {
         subtitle:     "Checks documents for sensitive information before uploading to online AI tools",
-        tabScanner:   "🔍 Scanner",
+        tabScanner:   "🔍 Quick scan",
         tabAbout:     "ℹ About",
         dropTitle:    "Drag and drop a document here",
         dropFormats:  "PDF · DOCX · PPTX · XLSX · TXT · MD · HTML",
@@ -1133,7 +1127,7 @@
         logHint: "See log:",
         tabDeepScan:        "🔬 Deep Scan",
         dstFileInfoTitle:   "File to analyse",
-        dstNoFile:          "No file scanned yet. Go to the Scanner tab and scan a file first.",
+        dstNoFile:          "No file scanned yet. Go to the Quick scan tab and scan a file first.",
         dstCatsTitle:       "Search for",
         dstCatNavn:         "Names",
         dstCatAdresse:      "Addresses",
@@ -2134,6 +2128,17 @@
       } catch (_) { /* stille – prøver igjen */ }
     }
 
+    function _dstSeverity(rawCat) {
+      const c = (rawCat || "").replace(/^🤖\s*/u, "").toLowerCase();
+      if (c.includes("personnummer") || c.includes("fødselsnummer") ||
+          c.includes("bankkonto")    || c.includes("iban")          ||
+          c.includes("identity")     || c.includes("account number")) return "svart";
+      if (c.includes("navn") || c.includes("name") ||
+          c.includes("adresse") || c.includes("address") ||
+          c.includes("telefon") || c.includes("phone")) return "rød";
+      return "gul";
+    }
+
     function renderDstFindings(findings) {
       const section = document.getElementById("dst-results-section");
       const area    = document.getElementById("dst-findings-area");
@@ -2147,15 +2152,29 @@
         return;
       }
       titleEl.textContent = t("deepScanAIFindings").replace("{n}", findings.length);
-      area.innerHTML = findings.map((f, i) => `
-        <div class="dst-finding">
-          <input type="checkbox" class="dst-cb" value="${i}" checked>
-          <div class="dst-finding-body">
-            <div class="dst-finding-cat">${escapeHtml(f.category || "AI-funn")}</div>
-            <div><strong>${escapeHtml(f.text || "")}</strong></div>
-            ${f.context ? `<div class="dst-finding-ctx">${escapeHtml(f.context)}</div>` : ""}
-          </div>
-        </div>`).join("");
+
+      // Sorter etter alvorlighetsgrad (svart → rød → gul)
+      const ORDER = { svart: 3, rød: 2, gul: 1 };
+      const sorted = findings
+        .map((f, i) => ({ f, i, sev: _dstSeverity(f.category) }))
+        .sort((a, b) => (ORDER[b.sev] || 0) - (ORDER[a.sev] || 0));
+
+      area.innerHTML = sorted.map(({ f, i, sev }) => {
+        const sc    = SEV_COLOR[sev] || "#ffb84d";
+        const light = sev === "gul";
+        return `
+          <div class="dst-finding" style="border-left-color:${sc}">
+            <input type="checkbox" class="dst-cb" value="${i}" checked style="margin-top:3px;flex-shrink:0;width:13px;height:13px;cursor:pointer;accent-color:var(--ok)">
+            <div class="finding-body">
+              <div>
+                <span class="cat" style="background:${sc};color:${light ? "#1a1a1a" : "#fff"}">${escapeHtml(f.category || "AI-funn")}</span>
+                <strong>${escapeHtml(f.text || "")}</strong>
+              </div>
+              ${f.context ? `<div class="ctx">${escapeHtml(f.context)}</div>` : ""}
+            </div>
+          </div>`;
+      }).join("");
+
       anonBar.style.display = "flex";
       document.getElementById("dst-sel-all").onclick  = () =>
         document.querySelectorAll(".dst-cb").forEach(cb => cb.checked = true);

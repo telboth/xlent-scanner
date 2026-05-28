@@ -30,15 +30,15 @@ RECOMMENDED_MODELS = [
     "phi3.5:mini",
 ]
 
-# Søkekategorier – nøkkel → norsk beskrivelse til LLM-prompt
+# Søkekategorier – nøkkel → kort beskrivelse (vises i UI og sendes til LLM som kontekst)
 CATEGORIES: dict[str, str] = {
-    "navn":          "personnavn – fornavn OG etternavn på virkelige enkeltpersoner",
-    "adresse":       "fullstendige fysiske adresser med gatenavn OG husnummer",
-    "telefon":       "telefonnumre (norske og internasjonale)",
-    "personnummer":  "norske fødselsnumre (11 siffer) og personnumre",
-    "bankkonto":     "bankkontonumre (11 siffer) og IBAN-numre",
-    "selskapsnavn":  "selskapsnavn, firmanavn og organisasjonsnavn",
-    "budsjett_tall": "konkrete pengebeløp med valutasymbol/kode (kr, NOK, EUR, USD, $, €) eller prosentandeler av verdi",
+    "navn":          "personnavn – fornavn OG etternavn (ikke bynavn, titler eller CAPS-fraser)",
+    "adresse":       "fysisk adresse – gatenavn OG husnummer (ikke bynavn alene eller tekniske termer)",
+    "telefon":       "telefonnumre – 8-sifret norsk eller internasjonal med landkode",
+    "personnummer":  "norske fødselsnumre – nøyaktig 11 siffer",
+    "bankkonto":     "bankkontonumre – 11-sifret norsk eller IBAN",
+    "selskapsnavn":  "offisielle firma- og organisasjonsnavn (ikke produkter eller teknologier)",
+    "budsjett_tall": "pengebeløp MED valutasymbol/-kode: kr, NOK, EUR, USD, $, € (ikke tidsuttrykk eller tall uten valuta)",
 }
 
 # Én aktiv jobb om gangen
@@ -119,31 +119,106 @@ def ollama_hardware_info() -> dict[str, Any]:
 # ── Prompt-builder (dynamisk basert på valgte kategorier) ───────────────
 
 _SYS = (
-    "Du er en GDPR-ekspert med høy presisjon. "
-    "Rapporter KUN funn du er sikker på. "
+    "Du er en personvernekspert med svært høy presisjon. "
+    "Rapporter KUN funn du er 100 % sikker på. "
     "Svar ALLTID med gyldig JSON, aldri med annen tekst."
 )
 
-# Eksplisitte eksklusjonsregler per kategori og språk
-_EXCLUSIONS_NB = """\
-Strenge regler – IKKE flag:
-- Personnavn: bynavn, selskapsnavn, produktnavn, fraser i store bokstaver (f.eks. «YARA PAYS FOR»), funksjonstitler, land, organisasjoner. Personnavn MÅ bestå av fornavn + etternavn.
-- Adresse: enkelt bynavn (Oslo, Bergen, Trondheim, Ålesund), land, regioner, destinasjonsnavn. Adresse MÅ ha gatenavn OG husnummer.
-- Budsjett/beløp: tidsuttrykk (uker, måneder, «4-6 week»), antall personer/enheter, generelle prosentandeler uten pengesammenheng, generelle tall. Beløp MÅ ha valutasymbol (kr, NOK, €, $) eller tydelig budsjett/prissammenheng.
+# Regler med ✅/❌ eksempler – mer effektivt enn rene tekstlige eksklusjoner
+_RULES_NB = """\
+Finn KUN personopplysninger som KONKRET identifiserer enkeltpersoner. Bruk disse reglene:
+
+Personnavn – MÅ ha fornavn OG etternavn på en virkelig person:
+  ✅ «Thomas Elboth»  ✅ «Maria Hansen»  ✅ «John Smith»
+  ❌ «YARA»  ❌ «YARA PAYS FOR»  ❌ «Oslo»  ❌ «CEO»  ❌ «Microsoft»  ❌ enkelt fornavn  ❌ enkelt etternavn
+
+Adresse – MÅ ha gatenavn OG husnummer (eller postboks):
+  ✅ «Storgata 14»  ✅ «Karl Johans gate 1, 0154 Oslo»  ✅ «Pb 123, 1234 Sted»
+  ❌ «Oslo»  ❌ «Trondheim»  ❌ «Ålesund»  ❌ «Østersund/ÅRE»  ❌ «Azure App Service»  ❌ «Cosmos DB»  ❌ sky-tjenester  ❌ tekniske termer  ❌ bynavn alene
+
+Telefon – 8-sifret norsk eller internasjonal med landkode:
+  ✅ «90123456»  ✅ «+47 901 23 456»
+  ❌ årstall  ❌ postnummer  ❌ 4-6 siffer  ❌ interne koder
+
+Personnummer – nøyaktig 11 siffer i norsk fødselsdatoformat:
+  ✅ «12034567891»
+  ❌ korte tall  ❌ kontonummer  ❌ datoer
+
+Bankkonto – 11-sifret norsk kontonummer eller IBAN:
+  ✅ «1234.56.78901»  ✅ «NO9386011117947»
+  ❌ telefonnummer  ❌ personnummer  ❌ korte tall
+
+Selskapsnavn – offisielt firma, org. eller stiftelse:
+  ✅ «XLENT AS»  ✅ «Equinor ASA»  ✅ «DNB Bank»
+  ❌ produktnavn  ❌ teknologier («Azure», «Terraform», «Python»)  ❌ generelle termer  ❌ prosjektnavn
+
+Pengebeløp – MÅ ha valutasymbol ELLER -kode (kr / NOK / EUR / USD / $ / €):
+  ✅ «500 000 kr»  ✅ «NOK 1 200»  ✅ «€50 000»  ✅ «3 MNOK»  ✅ «15 mill kr»
+  ❌ «4-6 week pilot»  ❌ «4-6 weeks»  ❌ «Q1 2025»  ❌ «50 ansatte»  ❌ «15 %»  ❌ tidsuttrykk  ❌ tall uten valuta
 """
 
-_EXCLUSIONS_SV = """\
-Strikta regler – flagga INTE:
-- Personnamn: stadsnamn, företagsnamn, produktnamn, fraser med versaler, titlar, länder. Personnamn MÅSTE bestå av förnamn + efternamn.
-- Adress: enbart stadsnamn (Stockholm, Göteborg, Oslo), länder, regioner. Adress MÅSTE ha gatunamn OCH husnummer.
-- Budget/belopp: tidsuttryck (veckor, månader), antal personer/enheter, allmänna procentsatser utan penningsammanhang. Belopp MÅSTE ha valutasymbol (kr, SEK, €, $) eller tydligt pris-/budgetsammanhang.
+_RULES_SV = """\
+Hitta BARA personuppgifter som KONKRET identifierar enskilda personer. Använd dessa regler:
+
+Personnamn – MÅSTE ha förnamn OCH efternamn på en verklig person:
+  ✅ «Anna Svensson»  ✅ «Erik Lindqvist»
+  ❌ «Stockholm»  ❌ «YARA PAYS FOR»  ❌ «CEO»  ❌ «Azure»  ❌ enbart förnamn  ❌ enbart efternamn
+
+Adress – MÅSTE ha gatunamn OCH husnummer (eller postbox):
+  ✅ «Storgatan 14»  ✅ «Kungsgatan 1, 111 43 Stockholm»
+  ❌ «Stockholm»  ❌ «Göteborg»  ❌ «Östersund»  ❌ «Azure App Service»  ❌ molntjänster  ❌ stadsnamn ensamt
+
+Telefon – 8-siffrigt svenskt/norskt eller internationellt med landskod:
+  ✅ «070-123 45 67»  ✅ «+46 701 23 45 67»
+  ❌ årtal  ❌ postnummer  ❌ 4-6 siffror
+
+Personnummer – 10-11 siffror i personnummerformat:
+  ✅ «19900101-1234»
+  ❌ korta tal  ❌ kontonummer  ❌ datum
+
+Bankkonto – IBAN eller kontonummer:
+  ✅ «SE4550000000058398257466»
+  ❌ telefonnummer  ❌ personnummer
+
+Företagsnamn – officiellt bolag, org. eller stiftelse:
+  ✅ «Volvo AB»  ✅ «Ericsson AB»
+  ❌ produktnamn  ❌ teknologier  ❌ projektnamn
+
+Penningbelopp – MÅSTE ha valutasymbol ELLER -kod (kr / SEK / EUR / USD / $ / €):
+  ✅ «500 000 kr»  ✅ «SEK 1 200»  ✅ «€50 000»
+  ❌ «4-6 veckor»  ❌ «Q1 2025»  ❌ «50 anställda»  ❌ tidsuttryck  ❌ tal utan valuta
 """
 
-_EXCLUSIONS_EN = """\
-Strict rules – do NOT flag:
-- Personal names: city names, company names, product names, ALL-CAPS phrases (e.g. «YARA PAYS FOR»), job titles, countries, organisations. Personal names MUST have both first name AND last name.
-- Address: city or country names alone (London, Oslo, Germany), regions, destinations. Address MUST include a street name AND house/building number.
-- Budget/amounts: time expressions (weeks, months, «4-6 week»), headcounts, generic percentages without monetary context, plain numbers. Amounts MUST have a currency symbol (NOK, EUR, USD, $, £, €) or clear price/budget context.
+_RULES_EN = """\
+Find ONLY personal data that CONCRETELY identifies individuals. Use these rules:
+
+Personal name – MUST have both first name AND last name of a real person:
+  ✅ «John Smith»  ✅ «Maria Hansen»
+  ❌ «YARA»  ❌ «YARA PAYS FOR»  ❌ «London»  ❌ «CEO»  ❌ «Microsoft»  ❌ first name only  ❌ last name only
+
+Address – MUST have a street name AND house/building number:
+  ✅ «14 Baker Street»  ✅ «Karl Johans gate 1, Oslo»
+  ❌ «Oslo»  ❌ «Trondheim»  ❌ «London»  ❌ «Azure App Service»  ❌ «Cosmos DB vector store»  ❌ cloud services  ❌ city name alone  ❌ technical terms
+
+Phone – 8-digit national or international with country code:
+  ✅ «+44 7911 123456»  ✅ «90123456»
+  ❌ years  ❌ postal codes  ❌ 4-6 digit numbers
+
+ID/SSN – national identity number format:
+  ✅ «12034567891»
+  ❌ short numbers  ❌ account numbers  ❌ dates
+
+Bank account – national account number or IBAN:
+  ✅ «GB29 NWBK 6016 1331 9268 19»
+  ❌ phone numbers  ❌ ID numbers
+
+Company name – official company, org., or foundation:
+  ✅ «XLENT AS»  ✅ «Equinor ASA»
+  ❌ product names  ❌ technologies («Azure», «Terraform»)  ❌ project names  ❌ generic terms
+
+Monetary amount – MUST have a currency symbol OR code (NOK / EUR / USD / $ / £ / €):
+  ✅ «NOK 500 000»  ✅ «$1,200»  ✅ «€50 000»  ✅ «3 MNOK»
+  ❌ «4-6 week pilot»  ❌ «4-6 weeks»  ❌ «Q1 2025»  ❌ «50 employees»  ❌ time expressions  ❌ numbers without currency
 """
 
 
@@ -156,24 +231,24 @@ def _build_prompt(categories: list[str], chunk: str, lang: str = "nb") -> str:
 
     if lang == "sv":
         return (
-            f"Analysera texten och identifiera följande typer av känslig information:\n{cat_list}\n\n"
-            f"{_EXCLUSIONS_SV}\n"
+            f"Analysera texten nedan. Sök efter dessa kategorier:\n{cat_list}\n\n"
+            f"{_RULES_SV}\n"
             "Svara BARA med JSON i detta format (ingen annan text):\n"
             '{{"findings":[{{"category":"Kategori","text":"hittad text","context":"omgivande ord"}}]}}\n'
             "Inga fynd → {{\"findings\":[]}}\n\nText:\n" + chunk
         )
     elif lang == "en":
         return (
-            f"Analyse the text and identify the following types of sensitive information:\n{cat_list}\n\n"
-            f"{_EXCLUSIONS_EN}\n"
+            f"Analyse the text below. Search for these categories:\n{cat_list}\n\n"
+            f"{_RULES_EN}\n"
             "Respond ONLY with JSON in this format (no other text):\n"
             '{{"findings":[{{"category":"Category","text":"found text","context":"surrounding words"}}]}}\n'
             "No findings → {{\"findings\":[]}}\n\nText:\n" + chunk
         )
     else:  # nb
         return (
-            f"Analyser teksten og identifiser følgende typer sensitiv informasjon:\n{cat_list}\n\n"
-            f"{_EXCLUSIONS_NB}\n"
+            f"Analyser teksten nedenfor. Søk etter disse kategoriene:\n{cat_list}\n\n"
+            f"{_RULES_NB}\n"
             "Svar KUN med JSON på denne formen (ingen annen tekst):\n"
             '{{"findings":[{{"category":"Kategori","text":"funnet tekst","context":"noen ord rundt funnet"}}]}}\n'
             "Ingen funn → {{\"findings\":[]}}\n\nTekst:\n" + chunk

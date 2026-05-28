@@ -207,31 +207,35 @@ def check_for_update(current_version: str, force: bool = False) -> dict[str, Any
                 "last_checked_at": new_state["last_checked_at"],
                 "next_check_at": _to_iso(now + timedelta(days=CHECK_INTERVAL_DAYS)),
             }
+        _cached_latest = state.get("latest_version", current_version)
         return {
             "ok": False,
             "checked_now": True,
             "current_version": current_version,
-            "latest_version": state.get("latest_version", current_version),
+            "latest_version": _cached_latest,
             "release_url": state.get(
                 "release_url",
                 f"https://github.com/{GITHUB_OWNER}/{GITHUB_REPO}/releases",
             ),
-            "update_available": bool(state.get("update_available", False)),
+            # Re-evaluer alltid – aldri bruk den cachede update_available-verdien direkte
+            "update_available": _is_newer(_cached_latest, current_version),
             "last_checked_at": state.get("last_checked_at", ""),
             "next_check_at": state.get("next_check_at", ""),
             "error": str(exc),
         }
     except (urllib.error.URLError, urllib.error.HTTPError) as exc:
+        _cached_latest = state.get("latest_version", current_version)
         return {
             "ok": False,
             "checked_now": True,
             "current_version": current_version,
-            "latest_version": state.get("latest_version", current_version),
+            "latest_version": _cached_latest,
             "release_url": state.get(
                 "release_url",
                 f"https://github.com/{GITHUB_OWNER}/{GITHUB_REPO}/releases",
             ),
-            "update_available": bool(state.get("update_available", False)),
+            # Re-evaluer alltid – aldri bruk den cachede update_available-verdien direkte
+            "update_available": _is_newer(_cached_latest, current_version),
             "last_checked_at": state.get("last_checked_at", ""),
             "next_check_at": state.get("next_check_at", ""),
             "error": str(exc),
