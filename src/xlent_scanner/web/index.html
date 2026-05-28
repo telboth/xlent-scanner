@@ -423,6 +423,9 @@
         </div>
       </div>
 
+      <!-- Ekstrahert tekst (etter deep-scan for å ikke skjule den) -->
+      <div id="text-preview-section" style="display:none; margin-top:10px;"></div>
+
       <!-- Skannehistorikk -->
       <div id="history-section">
         <div class="section-heading" data-i18n="historyTitle">Siste skanninger</div>
@@ -1303,13 +1306,21 @@
           <span class="anon-msg" id="exp-msg"></span>
         </div>
 
-        ${r.text_preview ? `
-          <h3 class="section-heading">${t("extractedText")}</h3>
-          <div class="preview">${escapeHtml(r.text_preview)}</div>
-        ` : ""}
       `;
 
       wireEvents(sorted, canPatch, ext);
+
+      // Tekst-forhåndsvisning vises ETTER deep-scan-seksjonen
+      const tpEl = document.getElementById("text-preview-section");
+      if (r.text_preview) {
+        tpEl.innerHTML = `<h3 class="section-heading">${t("extractedText")}</h3>
+          <div class="preview">${escapeHtml(r.text_preview)}</div>`;
+        tpEl.style.display = "";
+      } else {
+        tpEl.innerHTML = "";
+        tpEl.style.display = "none";
+      }
+
       if (!r.error) showDeepScanSection();
     }
 
@@ -1803,7 +1814,8 @@
     document.getElementById("ds-header").addEventListener("click", _dsToggle);
 
     function showDeepScanSection() {
-      document.getElementById("deep-scan-section").classList.add("show");
+      const el = document.getElementById("deep-scan-section");
+      el.classList.add("show");
       // Tilbakestill state ved ny fil-skanning
       document.getElementById("ds-findings-area").innerHTML = "";
       document.getElementById("ds-progress").textContent = "";
@@ -1811,6 +1823,8 @@
       document.getElementById("ds-start-btn").style.display = "";
       if (_dsPollTimer) { clearInterval(_dsPollTimer); _dsPollTimer = null; }
       if (_dsOpen) renderDeepScanBody();
+      // Scroll seksjonen inn i visningsfeltet
+      setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "nearest" }), 80);
     }
 
     async function renderDeepScanBody() {
