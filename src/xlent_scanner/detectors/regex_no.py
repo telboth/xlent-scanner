@@ -133,8 +133,8 @@ def find_orgnr(text: str) -> Iterator[Finding]:
 _KONTO_RAW = re.compile(
     # 4-2-5 med punkt eller mellomrom: 1234.56.78901 / 1234 56 78901
     r"\b(\d{4})[.\s](\d{2})[.\s](\d{5})\b"
-    # 4-4-3 med punkt: 1730.1777.922
-    r"|\b(\d{4})\.(\d{4})\.(\d{3})\b"
+    # 4-4-3 med punkt eller mellomrom: 1730.1777.922 / 1234 5678 910
+    r"|\b(\d{4})[. ](\d{4})[. ](\d{3})\b"
     # 11 siffer uten skilletegn: 17301777922
     r"|\b(\d{11})\b"
 )
