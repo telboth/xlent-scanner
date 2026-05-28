@@ -4,6 +4,7 @@ Støttede språk:
   nb  – Norsk bokmål  (spaCy: nb_core_news_sm)
   sv  – Svenska       (spaCy: sv_core_news_sm)
   en  – English       (spaCy: en_core_web_sm)
+  da  – Dansk         (spaCy: da_core_news_sm)
 """
 from __future__ import annotations
 
@@ -11,6 +12,7 @@ SUPPORTED: dict[str, str] = {
     "nb": "Norsk",
     "sv": "Svenska",
     "en": "English",
+    "da": "Dansk",
 }
 
 # spaCy-modell og NER-label per språk
@@ -18,6 +20,7 @@ SPACY_CONFIG: dict[str, dict[str, str]] = {
     "nb": {"model": "nb_core_news_sm", "ner_label": "PER"},
     "sv": {"model": "sv_core_news_sm",  "ner_label": "PER"},
     "en": {"model": "en_core_web_sm",   "ner_label": "PERSON"},
+    "da": {"model": "da_core_news_sm",  "ner_label": "PER"},
 }
 
 _MIN_DETECT_CHARS = 80   # kortere tekster gir upålitelig deteksjon
@@ -35,9 +38,11 @@ def detect_language(text: str) -> str:
         from langdetect import detect, DetectorFactory  # type: ignore
         DetectorFactory.seed = 0   # deterministisk resultat
         lang = detect(text[:3000])
-        # Norsk bokmål, nynorsk og dansk (svært likt norsk) → nb
-        if lang in ("no", "nb", "nn", "da"):
+        # Norsk bokmål og nynorsk → nb
+        if lang in ("no", "nb", "nn"):
             return "nb"
+        if lang == "da":
+            return "da"
         if lang == "sv":
             return "sv"
         return "en"

@@ -23,6 +23,7 @@ from xlent_scanner.language import SPACY_CONFIG
 # Er vi inne i en PyInstaller-bundle? Pip-basert nedlasting vil alltid feile der.
 _IS_FROZEN = getattr(sys, "frozen", False)
 from xlent_scanner.models import Finding
+from xlent_scanner.utils import ctx as _ctx
 
 # Modell-cache og feil-cache per språk
 _nlp_cache: dict[str, Any] = {}
@@ -69,12 +70,6 @@ _STOPWORDS: frozenset[str] = frozenset({
 
 
 # ── Hjelpefunksjoner ──────────────────────────────────────────────────────────
-
-def _ctx(text: str, start: int, end: int, radius: int = 40) -> str:
-    lo = max(0, start - radius)
-    hi = min(len(text), end + radius)
-    snippet = text[lo:hi].replace("\n", " ")
-    return ("…" if lo > 0 else "") + snippet + ("…" if hi < len(text) else "")
 
 
 def _looks_like_name(name: str) -> bool:

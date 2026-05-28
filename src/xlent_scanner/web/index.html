@@ -351,6 +351,37 @@
     /* Flagg-emoji i språkvelger */
     .flag-em { font-size: 15px; line-height: 1; }
 
+    /* ── Modus-toggle (Fil / Lim inn / Mappe) ───────────────────────── */
+    .mode-toggle {
+      display: flex; gap: 3px; background: var(--panel);
+      border: 1px solid var(--border); border-radius: 7px;
+      padding: 3px; align-self: flex-start;
+    }
+    .mode-btn {
+      padding: 4px 14px; border-radius: 5px; border: none;
+      background: transparent; color: var(--muted); cursor: pointer;
+      font-size: 12px; font-weight: 500; transition: all .12s;
+      white-space: nowrap;
+    }
+    .mode-btn:hover { color: var(--text); background: rgba(138,150,168,.12); }
+    .mode-btn.active { color: var(--accent); background: var(--panel2); }
+
+    /* Paste-area */
+    .paste-input {
+      width: 100%; min-height: 180px; resize: vertical;
+      background: var(--panel); color: var(--text);
+      border: 2px dashed var(--border); border-radius: 8px;
+      padding: 14px; font-size: 13px; font-family: inherit; line-height: 1.5;
+    }
+    .paste-input:focus { outline: none; border-color: var(--accent); }
+    .paste-input::placeholder { color: var(--muted); }
+
+    /* Batch-scan results table */
+    .batch-table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin-top: 8px; }
+    .batch-table th { text-align: left; padding: 5px 8px; color: var(--muted); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+    .batch-table td { padding: 6px 8px; border-top: 1px solid var(--border); }
+    .batch-table tr:hover td { background: rgba(138,150,168,.05); }
+
     /* ── Settings panel ─────────────────────────────────────────────── */
     #panel-settings { padding: 24px 28px; gap: 0; max-width: 680px; }
     .settings-section {
@@ -443,13 +474,38 @@
   <main>
     <!-- ── Scanner panel ──────────────────────────────────────────── -->
     <div id="panel-scanner" class="tab-panel active">
+
+      <!-- Modus-toggle -->
+      <div class="mode-toggle">
+        <button class="mode-btn active" data-mode="file" data-i18n="modeFile">Fil</button>
+        <button class="mode-btn" data-mode="paste" data-i18n="modePaste">Lim inn</button>
+        <button class="mode-btn" data-mode="folder" data-i18n="modeFolder">Mappe</button>
+      </div>
+
+      <!-- Fil-modus -->
       <div id="dropzone">
         <p class="big" data-i18n="dropTitle">Dra og slipp et dokument her</p>
         <p class="muted" data-i18n="dropFormats">PDF · DOCX · PPTX · XLSX · TXT · MD · HTML</p>
         <button id="browse" data-i18n="dropBrowse">…eller velg fil</button>
       </div>
 
-      <!-- Innstillinger er nå i ⚙️-tabben — kontrollene finnes i DOM via settings-panelet -->
+      <!-- Lim-inn-modus -->
+      <div id="paste-area" style="display:none; flex-direction:column; gap:8px;">
+        <textarea id="paste-input" class="paste-input" data-i18n-placeholder="pastePlaceholder"></textarea>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <button id="btn-scan-text" class="ctrl-btn ctrl-btn-primary" data-i18n="pasteBtn">Skann tekst</button>
+          <span id="paste-status" style="font-size:12px; color:var(--muted);"></span>
+        </div>
+      </div>
+
+      <!-- Mappe-modus -->
+      <div id="folder-area" style="display:none; flex-direction:column; gap:8px;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <button id="btn-scan-folder" class="ctrl-btn ctrl-btn-primary" data-i18n="folderBtn">📂 Velg og skann mappe</button>
+          <span id="folder-status" style="font-size:12px; color:var(--muted);"></span>
+        </div>
+        <div id="folder-results" style="display:none;"></div>
+      </div>
 
       <!-- Vises kun når spaCy NER-modeller mangler -->
       <div id="ner-scan-notice" class="ner-notice">
@@ -466,7 +522,10 @@
 
       <!-- Skannehistorikk -->
       <div id="history-section">
-        <div class="section-heading" data-i18n="historyTitle">Siste skanninger</div>
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+          <div class="section-heading" style="margin:0; flex:1;" data-i18n="historyTitle">Siste skanninger</div>
+          <button class="ctrl-btn" id="btn-clear-history" style="font-size:11px; padding:2px 8px;" data-i18n="historyClear">Tøm historikk</button>
+        </div>
         <ul class="history-list" id="history-list"></ul>
       </div>
     </div>
@@ -513,6 +572,14 @@
             <select id="dst-model-select"></select>
             <button id="dst-start-btn" class="ctrl-btn ctrl-btn-primary" data-i18n="deepScanStart">🔬 Start dybdeskann</button>
             <button id="dst-cancel-btn" class="ctrl-btn" style="display:none" data-i18n="deepScanCancel">✕ Avbryt</button>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+            <label style="font-size:12px; color:var(--muted); white-space:nowrap;" data-i18n="confidenceLabel">Min konfidensfilter:</label>
+            <select id="dst-confidence-select" style="padding:3px 8px; border-radius:5px; border:1px solid var(--border); background:var(--bg); color:var(--text); font-size:12px; cursor:pointer;">
+              <option value="high" data-i18n="confidenceHigh">Høy (kun sikre funn)</option>
+              <option value="medium" selected data-i18n="confidenceMedium">Medium (sannsynlige)</option>
+              <option value="low" data-i18n="confidenceLow">Lav (alle funn)</option>
+            </select>
           </div>
           <div id="dst-hw-badge" style="display:none" class="dst-hw-badge"></div>
           <div class="dst-hw-req" data-i18n="dstHwReq">⚠ Dybdeskanning kjøres lokalt og kan ta tid – spesielt på CPU. Anbefalt: maskin med minst 8 GB RAM. GPU-akselerasjon brukes automatisk dersom tilgjengelig.</div>
@@ -908,6 +975,24 @@
         dstHwCpu:           "🖥️ Kjører på CPU",
         dstHwGpu:           "🎮 Kjører på GPU",
         dstHwHybrid:        "⚡ CPU + GPU",
+        modeFile:           "Fil",
+        modePaste:          "Lim inn",
+        modeFolder:         "Mappe",
+        pasteBtn:           "Skann tekst",
+        pastePlaceholder:   "Lim inn tekst her for å skanne for sensitiv informasjon…",
+        folderBtn:          "📂 Velg og skann mappe",
+        folderScanning:     "Skanner mappe…",
+        folderDone:         "{n} filer skannet",
+        folderError:        "Feil under mappeskanning:",
+        folderNoFiles:      "Ingen støttede filer funnet i mappen.",
+        historyClear:       "Tøm historikk",
+        downloadPdf:        "📥 Last ned PDF-rapport",
+        confidenceLabel:    "Min konfidensfilter:",
+        confidenceHigh:     "Høy (kun sikre funn)",
+        confidenceMedium:   "Medium (sannsynlige)",
+        confidenceLow:      "Lav (alle funn)",
+        folderLevel:        "Nivå",
+        folderFile:         "Fil",
       },
       sv: {
         subtitle:     "Kontrollerar dokument för känslig information innan uppladdning till online-AI-verktyg",
@@ -1028,6 +1113,24 @@
         dstHwCpu:           "🖥️ Körs på CPU",
         dstHwGpu:           "🎮 Körs på GPU",
         dstHwHybrid:        "⚡ CPU + GPU",
+        modeFile:           "Fil",
+        modePaste:          "Klistra in",
+        modeFolder:         "Mapp",
+        pasteBtn:           "Skanna text",
+        pastePlaceholder:   "Klistra in text här för att skanna efter känslig information…",
+        folderBtn:          "📂 Välj och skanna mapp",
+        folderScanning:     "Skannar mapp…",
+        folderDone:         "{n} filer skannade",
+        folderError:        "Fel vid mappskanning:",
+        folderNoFiles:      "Inga filer som stöds hittades i mappen.",
+        historyClear:       "Rensa historik",
+        downloadPdf:        "📥 Ladda ned PDF-rapport",
+        confidenceLabel:    "Min konfidensfilter:",
+        confidenceHigh:     "Hög (endast säkra fynd)",
+        confidenceMedium:   "Medium (sannolika)",
+        confidenceLow:      "Låg (alla fynd)",
+        folderLevel:        "Nivå",
+        folderFile:         "Fil",
       },
       en: {
         subtitle:     "Checks documents for sensitive information before uploading to online AI tools",
@@ -1148,6 +1251,24 @@
         dstHwCpu:           "🖥️ Running on CPU",
         dstHwGpu:           "🎮 Running on GPU",
         dstHwHybrid:        "⚡ CPU + GPU",
+        modeFile:           "File",
+        modePaste:          "Paste",
+        modeFolder:         "Folder",
+        pasteBtn:           "Scan text",
+        pastePlaceholder:   "Paste text here to scan for sensitive information…",
+        folderBtn:          "📂 Select and scan folder",
+        folderScanning:     "Scanning folder…",
+        folderDone:         "{n} files scanned",
+        folderError:        "Error during folder scan:",
+        folderNoFiles:      "No supported files found in the folder.",
+        historyClear:       "Clear history",
+        downloadPdf:        "📥 Download PDF report",
+        confidenceLabel:    "Min confidence filter:",
+        confidenceHigh:     "High (certain findings only)",
+        confidenceMedium:   "Medium (probable)",
+        confidenceLow:      "Low (all findings)",
+        folderLevel:        "Level",
+        folderFile:         "File",
       },
     };
 
@@ -1211,6 +1332,16 @@
 
       // Update static elements
       document.querySelectorAll("[data-i18n]").forEach(el => {
+        el.textContent = t(el.dataset.i18n);
+      });
+
+      // Update placeholders
+      document.querySelectorAll("[data-i18n-placeholder]").forEach(el => {
+        el.placeholder = t(el.dataset.i18nPlaceholder);
+      });
+
+      // Update confidence select options
+      document.querySelectorAll("#dst-confidence-select option[data-i18n]").forEach(el => {
         el.textContent = t(el.dataset.i18n);
       });
 
@@ -1483,6 +1614,7 @@
 
         <div class="toolbar-row">
           <button id="btn-open-report" class="ctrl-btn">${t("openReport")}</button>
+          <button id="btn-download-pdf" class="ctrl-btn">${t("downloadPdf")}</button>
           ${lastScan ? `<button id="btn-rescan" class="ctrl-btn">${t("rescan")}</button>` : ""}
           <span class="ctrl-sep"></span>
           <button id="btn-exp-json" class="ctrl-btn">${t("exportJson")}</button>
@@ -1563,6 +1695,9 @@
       document.getElementById("btn-open-report")
         .addEventListener("click", () => fetch(`${API}/open-report`, { method:"POST" }));
 
+      document.getElementById("btn-download-pdf")
+        .addEventListener("click", () => window.open(`${API}/report/pdf`, "_blank"));
+
       const rescanBtn = document.getElementById("btn-rescan");
       if (rescanBtn && lastScan) {
         rescanBtn.addEventListener("click", () => {
@@ -1633,12 +1768,49 @@
     /* ══════════════════════════════════════════════════════════════════
        HISTORY
     ══════════════════════════════════════════════════════════════════ */
+    function _fmtHistTime(isoStr) {
+      try {
+        const d = new Date(isoStr);
+        const mo = (d.getMonth()+1).toString().padStart(2,"0");
+        const day = d.getDate().toString().padStart(2,"0");
+        const hh  = d.getHours().toString().padStart(2,"0");
+        const mm  = d.getMinutes().toString().padStart(2,"0");
+        return `${day}.${mo} ${hh}:${mm}`;
+      } catch { return isoStr || ""; }
+    }
+
+    // Holds rescanFns keyed by fileName so persistent history entries can still re-scan
+    const _rescanFnMap = new Map();
+
     function addToHistory(r, rescanFn) {
-      const now = new Date();
-      const ts  = `${now.getHours().toString().padStart(2,"0")}:${now.getMinutes().toString().padStart(2,"0")}`;
-      scanHistory.unshift({ fileName: r.file_name, timestamp: ts, riskLevel: r.risk_level || "grønn", rescanFn });
-      if (scanHistory.length > 8) scanHistory.pop();
-      renderHistory();
+      if (rescanFn) _rescanFnMap.set(r.file_name, rescanFn);
+      // After each scan the server already persisted it — just reload from API
+      loadHistoryFromApi();
+    }
+
+    async function loadHistoryFromApi() {
+      try {
+        const d = await (await fetch(`${API}/history/get`)).json();
+        if (!d.ok || !d.entries) return;
+        scanHistory = d.entries.map(e => ({
+          fileName:    e.file_name,
+          timestamp:   _fmtHistTime(e.timestamp),
+          riskLevel:   e.risk_level || "grønn",
+          findingCount:e.finding_count || 0,
+          source:      e.source || "file",
+          rescanFn:    _rescanFnMap.get(e.file_name) || null,
+        }));
+        renderHistory();
+      } catch (_) { /* stille */ }
+    }
+
+    async function clearHistoryAction() {
+      try {
+        await fetch(`${API}/history/clear`, { method: "POST" });
+        scanHistory = [];
+        _rescanFnMap.clear();
+        renderHistory();
+      } catch (_) {}
     }
 
     function renderHistory() {
@@ -1649,7 +1821,7 @@
       list.innerHTML = scanHistory.map((item, idx) => `
         <li class="history-item">
           <span>${LEVEL_ICON[item.riskLevel] || "•"}</span>
-          <span class="h-name">${escapeHtml(item.fileName)}</span>
+          <span class="h-name" title="${escapeHtml(item.fileName)}">${escapeHtml(item.fileName)}</span>
           <span class="h-time">${item.timestamp}</span>
           <span class="h-badge" style="color:${LEVEL_COLOR[item.riskLevel]||"#8a96a8"}">
             ${item.riskLevel.toUpperCase()}
@@ -1661,6 +1833,8 @@
         btn.addEventListener("click", () => scanHistory[+btn.dataset.hidx]?.rescanFn?.())
       );
     }
+
+    document.getElementById("btn-clear-history").addEventListener("click", clearHistoryAction);
 
     /* ══════════════════════════════════════════════════════════════════
        SCANNING
@@ -2105,11 +2279,12 @@
       document.getElementById("dst-hw-badge").style.display  = "none";
       _dstFindings  = [];
       _dstHwChecked = false;
+      const minConf = document.getElementById("dst-confidence-select")?.value || "medium";
       try {
         const r = await (await fetch(`${API}/ollama/deep-scan`, {
           method: "POST",
           headers: {"Content-Type": "application/json"},
-          body: JSON.stringify({ model, categories: cats }),
+          body: JSON.stringify({ model, categories: cats, min_confidence: minConf }),
         })).json();
         if (!r.ok) { setDstError(r.error || "Ukjent feil"); return; }
         _dstPollTimer = setInterval(pollDstScan, 2000);
@@ -2240,10 +2415,137 @@
     document.getElementById("dst-cancel-btn").addEventListener("click", cancelDstScan);
     document.getElementById("dst-anon-btn").addEventListener("click",   anonymizeDst);
 
+    /* ══════════════════════════════════════════════════════════════════
+       MODE TOGGLE (Fil / Lim inn / Mappe)
+    ══════════════════════════════════════════════════════════════════ */
+    let _scanMode = "file";
+
+    function setScanMode(mode) {
+      _scanMode = mode;
+      document.querySelectorAll(".mode-btn").forEach(b =>
+        b.classList.toggle("active", b.dataset.mode === mode)
+      );
+      const dz         = document.getElementById("dropzone");
+      const pasteArea  = document.getElementById("paste-area");
+      const folderArea = document.getElementById("folder-area");
+      dz.style.display          = mode === "file"   ? "" : "none";
+      pasteArea.style.display   = mode === "paste"  ? "flex" : "none";
+      folderArea.style.display  = mode === "folder" ? "flex" : "none";
+    }
+
+    document.querySelectorAll(".mode-btn").forEach(btn =>
+      btn.addEventListener("click", () => setScanMode(btn.dataset.mode))
+    );
+
+    /* ══════════════════════════════════════════════════════════════════
+       PASTE TEXT SCAN
+    ══════════════════════════════════════════════════════════════════ */
+    document.getElementById("btn-scan-text").addEventListener("click", async () => {
+      const text = document.getElementById("paste-input").value.trim();
+      const ps   = document.getElementById("paste-status");
+      if (!text) { ps.style.color = "var(--warn)"; ps.textContent = t("selectOne"); return; }
+      ps.style.color = "var(--muted)"; ps.textContent = t("statusScan");
+      setStatus(t("statusScan"));
+      resultEl.classList.remove("show");
+      lastScan = null;
+      try {
+        const opts = getOpts();
+        const r = await (await fetch(`${API}/scan-text`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text, language: opts.language }),
+        })).json();
+        ps.textContent = "";
+        setStatus("");
+        renderResult(r);
+        addToHistory(r, null);
+      } catch (e) {
+        ps.style.color = "#f44336"; ps.textContent = `${t("scanErr")} ${e}`;
+        setStatus("");
+      }
+    });
+
+    /* ══════════════════════════════════════════════════════════════════
+       FOLDER SCAN
+    ══════════════════════════════════════════════════════════════════ */
+    document.getElementById("btn-scan-folder").addEventListener("click", async () => {
+      const fs = document.getElementById("folder-status");
+      const fr = document.getElementById("folder-results");
+      fs.style.color = "var(--muted)"; fs.textContent = t("processing");
+      fr.style.display = "none";
+      try {
+        // Step 1: open folder dialog
+        const dlg = await (await fetch(`${API}/open-folder-dialog`, { method: "POST" })).json();
+        if (!dlg.path) { fs.textContent = ""; return; }
+
+        // Step 2: scan folder
+        fs.textContent = t("folderScanning");
+        const opts = getOpts();
+        const d = await (await fetch(`${API}/scan-folder`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ folder_path: dlg.path, ignore_xlent: opts.ignore_xlent, language: opts.language }),
+        })).json();
+
+        if (d.error) {
+          fs.style.color = "#f44336"; fs.textContent = `${t("folderError")} ${d.error}`; return;
+        }
+        if (!d.files || !d.files.length) {
+          fs.style.color = "var(--muted)"; fs.textContent = t("folderNoFiles"); return;
+        }
+
+        fs.style.color = "var(--ok)"; fs.textContent = t("folderDone").replace("{n}", d.total);
+        renderFolderResults(d.files);
+        loadHistoryFromApi();
+      } catch (e) {
+        fs.style.color = "#f44336"; fs.textContent = `${t("folderError")} ${e}`;
+      }
+    });
+
+    function renderFolderResults(files) {
+      const fr = document.getElementById("folder-results");
+      // Sort by risk (svart→rød→gul→grønn)
+      const ord = { svart:3, rød:2, gul:1, grønn:0 };
+      const sorted = [...files].sort((a,b) => (ord[b.risk_level]||0) - (ord[a.risk_level]||0));
+
+      const rows = sorted.map(f => {
+        const rc = LEVEL_COLOR[f.risk_level] || "#8a96a8";
+        const ic = LEVEL_ICON[f.risk_level] || "•";
+        if (f.error) {
+          return `<tr>
+            <td style="color:var(--danger)">${escapeHtml(f.file_name)}</td>
+            <td colspan="2" style="color:var(--muted);font-size:11px;">${escapeHtml(f.error)}</td>
+          </tr>`;
+        }
+        return `<tr>
+          <td><span style="margin-right:5px">${ic}</span>${escapeHtml(f.file_name)}</td>
+          <td style="color:${rc};font-weight:600;white-space:nowrap">${f.risk_level.toUpperCase()}</td>
+          <td style="color:var(--muted);text-align:right">${f.finding_count} ${t("metaFindings")}</td>
+        </tr>`;
+      }).join("");
+
+      fr.style.display = "";
+      fr.innerHTML = `
+        <div style="background:var(--panel);border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+          <table class="batch-table">
+            <thead><tr>
+              <th>${t("folderFile")}</th>
+              <th>${t("folderLevel")}</th>
+              <th style="text-align:right">${t("metaFindings")}</th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>`;
+    }
+
     /* Init */
     loadSettings();
     syncAboutLang();
     setStatus(t("statusReady"));
+    // Apply initial placeholder translations
+    document.querySelectorAll("[data-i18n-placeholder]").forEach(el => {
+      el.placeholder = t(el.dataset.i18nPlaceholder);
+    });
     setIgnoreMessage(t("ignoreHint"), "var(--muted)", "hint");
     renderIgnorePath();
     loadIgnoreEditor();
@@ -2253,6 +2555,7 @@
     runUpdateCheck(false);
     loadNerStatus();
     loadOllamaSettingsStatus();
+    loadHistoryFromApi();
   </script>
 </body>
 </html>

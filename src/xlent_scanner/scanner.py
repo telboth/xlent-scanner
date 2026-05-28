@@ -18,6 +18,7 @@ from xlent_scanner.detectors.ner_names import detect_names, get_load_error
 from xlent_scanner.detectors.regex_en import detect_en_specific
 from xlent_scanner.detectors.regex_no import detect_no_specific, find_emails
 from xlent_scanner.detectors.regex_sv import detect_sv_specific
+from xlent_scanner.detectors.regex_da import detect_da_specific
 from xlent_scanner.detectors.secrets import detect_secrets
 from xlent_scanner.ignore import filter_findings, load_ignore_list
 from xlent_scanner.language import resolve_language
@@ -173,6 +174,80 @@ def extract_text(path: Path) -> str:
     raise ValueError(f"Filtype ikke støttet: {suffix}")
 
 
+def scan_text(text: str, language: str = "auto", source_name: str = "Innlimt tekst") -> ScanResult:
+    """Skann ren tekst direkte (uten filekstraksjon). Brukes for utklippstavle/paste."""
+    if not text.strip():
+        return ScanResult(
+            file_name=source_name, file_size=0, text_length=0, text_preview="",
+            error="Ingen tekst å skanne.",
+        )
+    lang = resolve_language(language, text)
+    findings: list[Finding] = []
+    _detector_errors: list[str] = []
+
+    def _run(fn, *args):
+        try:
+            findings.extend(fn(*args))
+        except BaseException as _e:
+            _detector_errors.append(f"{fn.__name__}: {type(_e).__name__}: {_e}")
+
+    _run(detect_keywords, text)
+    _run(detect_secrets, text)
+    _run(find_emails, text)
+    if lang in ("nb", "en"):
+        _run(detect_no_specific, text)
+    if lang in ("sv", "en"):
+        _run(detect_sv_specific, text)
+    if lang == "da":
+        _run(detect_da_specific, text)
+    if lang == "en":
+        _run(detect_en_specific, text)
+    _run(detect_iban, text)
+    _run(detect_creditcards, text)
+    _run(detect_financials, text)
+    _run(detect_clients, text)
+    _run(detect_names, text, lang)
+
+    findings = filter_by_whitelist(findings)
+
+    ner_err = get_load_error(lang)
+    if ner_err:
+        findings.append(Finding(category="⚠ NER ikke tilgjengelig", text=ner_err, context=""))
+    for det_err in _detector_errors:
+        findings.append(Finding(category="⚠ Detektor-feil", text=det_err, context=""))
+
+    result = ScanResult(
+        file_name=source_name,
+        file_size=len(text.encode("utf-8")),
+        text_length=len(text),
+        text_preview=text,
+        findings=findings,
+        original_text=text,
+        language=lang,
+    )
+    return assess(result)
+
+
+def scan_folder(
+    folder: str | Path,
+    ignore_xlent: bool = False,
+    language: str = "auto",
+    max_files: int = 100,
+) -> list[ScanResult]:
+    """Skann alle støttede filer i en mappe. Returnerer resultater sortert etter risikonivå."""
+    p = Path(folder)
+    if not p.is_dir():
+        raise ValueError(f"Ikke en mappe: {folder}")
+    files = sorted(
+        [f for f in p.iterdir() if f.is_file() and f.suffix.lower() in SUPPORTED_SUFFIXES],
+        key=lambda f: f.name.lower(),
+    )[:max_files]
+    results = [scan_file(f, ignore_xlent=ignore_xlent, language=language) for f in files]
+    level_order = {"svart": 3, "rød": 2, "gul": 1, "grønn": 0}
+    results.sort(key=lambda r: level_order.get(r.risk_level, 0), reverse=True)
+    return results
+
+
 def scan_file(path: str | Path, ignore_xlent: bool = False, language: str = "auto") -> ScanResult:
     p = Path(path)
     if not p.exists():
@@ -235,6 +310,8 @@ def scan_file(path: str | Path, ignore_xlent: bool = False, language: str = "aut
         _run(detect_no_specific, text)
     if lang in ("sv", "en"):
         _run(detect_sv_specific, text)
+    if lang == "da":
+        _run(detect_da_specific, text)
     if lang == "en":
         _run(detect_en_specific, text)
     _run(detect_iban, text)

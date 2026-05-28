@@ -121,7 +121,8 @@ def ollama_hardware_info() -> dict[str, Any]:
 
 _SYS = (
     "Du er en personvernekspert med svært høy presisjon. "
-    "Rapporter KUN funn du er 100 % sikker på. "
+    "Rapporter KUN funn du er helt sikker på. "
+    "Gi hvert funn en konfidens: \"high\" (helt sikkert), \"medium\" (sannsynlig) eller \"low\" (usikkert). "
     "Svar ALLTID med gyldig JSON, aldri med annen tekst."
 )
 
@@ -247,7 +248,7 @@ def _build_prompt(categories: list[str], chunk: str, lang: str = "nb") -> str:
             f"Analysera texten nedan. Sök efter dessa kategorier:\n{cat_list}\n\n"
             f"{_RULES_SV}\n"
             "Svara BARA med JSON i detta format (ingen annan text):\n"
-            '{{"findings":[{{"category":"Kategori","text":"hittad text","context":"omgivande ord"}}]}}\n'
+            '{{"findings":[{{"category":"Kategori","text":"hittad text","context":"omgivande ord","confidence":"high"}}]}}\n'
             "Inga fynd → {{\"findings\":[]}}\n\nText:\n" + chunk
         )
     elif lang == "en":
@@ -255,7 +256,7 @@ def _build_prompt(categories: list[str], chunk: str, lang: str = "nb") -> str:
             f"Analyse the text below. Search for these categories:\n{cat_list}\n\n"
             f"{_RULES_EN}\n"
             "Respond ONLY with JSON in this format (no other text):\n"
-            '{{"findings":[{{"category":"Category","text":"found text","context":"surrounding words"}}]}}\n'
+            '{{"findings":[{{"category":"Category","text":"found text","context":"surrounding words","confidence":"high"}}]}}\n'
             "No findings → {{\"findings\":[]}}\n\nText:\n" + chunk
         )
     else:  # nb
@@ -263,7 +264,7 @@ def _build_prompt(categories: list[str], chunk: str, lang: str = "nb") -> str:
             f"Analyser teksten nedenfor. Søk etter disse kategoriene:\n{cat_list}\n\n"
             f"{_RULES_NB}\n"
             "Svar KUN med JSON på denne formen (ingen annen tekst):\n"
-            '{{"findings":[{{"category":"Kategori","text":"funnet tekst","context":"noen ord rundt funnet"}}]}}\n'
+            '{{"findings":[{{"category":"Kategori","text":"funnet tekst","context":"noen ord rundt funnet","confidence":"high"}}]}}\n'
             "Ingen funn → {{\"findings\":[]}}\n\nTekst:\n" + chunk
         )
 
@@ -336,7 +337,8 @@ def _deduplicate(raw: list[dict]) -> list[dict]:
 
 
 def _run_deep_scan(
-    text: str, model: str, lang: str, job_id: str, categories: list[str]
+    text: str, model: str, lang: str, job_id: str, categories: list[str],
+    min_confidence: str = "medium",
 ) -> None:
     chunks = _split_chunks(text)
     n = len(chunks)
@@ -353,6 +355,15 @@ def _run_deep_scan(
         all_raw.extend(findings)
 
     deduped = _deduplicate(all_raw)
+
+    # Filtrer etter minimumskonfidens
+    _CONF_ORDER = {"high": 2, "medium": 1, "low": 0}
+    min_conf_val = _CONF_ORDER.get(min_confidence, 1)
+    deduped = [
+        f for f in deduped
+        if _CONF_ORDER.get(str(f.get("confidence", "medium")).lower(), 1) >= min_conf_val
+    ]
+
     # Legg til 🤖-prefiks på kategori
     for f in deduped:
         cat = str(f.get("category") or "AI-funn").strip()
@@ -372,7 +383,8 @@ def _run_deep_scan(
 # ── Offentlige API-er ───────────────────────────────────────────────────
 
 def start_deep_scan(
-    text: str, model: str, lang: str = "nb", categories: list[str] | None = None
+    text: str, model: str, lang: str = "nb", categories: list[str] | None = None,
+    min_confidence: str = "medium",
 ) -> str:
     """Start dybdeskanning i bakgrunn. Returnerer job_id."""
     import uuid
@@ -381,18 +393,19 @@ def start_deep_scan(
     with _job_lock:
         _job.clear()
         _job.update({
-            "job_id":     job_id,
-            "status":     "running",
-            "progress":   "Starter…",
-            "findings":   [],
-            "cancelled":  False,
-            "model":      model,
-            "categories": cats,
-            "started_at": time.time(),
+            "job_id":         job_id,
+            "status":         "running",
+            "progress":       "Starter…",
+            "findings":       [],
+            "cancelled":      False,
+            "model":          model,
+            "categories":     cats,
+            "min_confidence": min_confidence,
+            "started_at":     time.time(),
         })
     t = threading.Thread(
         target=_run_deep_scan,
-        args=(text, model, lang, job_id, cats),
+        args=(text, model, lang, job_id, cats, min_confidence),
         daemon=True,
         name=f"deep-scan-{job_id}",
     )

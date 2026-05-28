@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Iterator
 
 from xlent_scanner.models import Finding
+from xlent_scanner.utils import ctx as _ctx_base
 
 _CLIENTS_FILE = Path(__file__).parent.parent / "data" / "clients.toml"
 _patterns: list[tuple[str, re.Pattern[str]]] | None = None
@@ -33,10 +34,7 @@ def _get_patterns() -> list[tuple[str, re.Pattern[str]]]:
 
 
 def _ctx(text: str, start: int, end: int, radius: int = 50) -> str:
-    lo = max(0, start - radius)
-    hi = min(len(text), end + radius)
-    snippet = text[lo:hi].replace("\n", " ")
-    return ("…" if lo > 0 else "") + snippet + ("…" if hi < len(text) else "")
+    return _ctx_base(text, start, end, radius)
 
 
 def find_client_names(text: str) -> Iterator[Finding]:

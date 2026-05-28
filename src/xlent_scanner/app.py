@@ -44,7 +44,8 @@ from xlent_scanner.ignore import (
 )
 from xlent_scanner.patch import SUPPORTED_PATCH_SUFFIXES, patch_file
 from xlent_scanner.report import generate_html
-from xlent_scanner.scanner import reset_ignore_cache, scan_file
+from xlent_scanner.history import add_history_entry, load_history, clear_history
+from xlent_scanner.scanner import reset_ignore_cache, scan_file, scan_text, scan_folder
 from xlent_scanner.update_check import check_for_update
 from xlent_scanner.whitelist import (
     add_to_whitelist,
@@ -164,6 +165,13 @@ def scan():
         result = scan_file(file_path, ignore_xlent=ignore_xlent, language=language)
         _last_result = result
         _last_path = Path(file_path) if file_path else None
+        add_history_entry(
+            file_name=result.file_name,
+            risk_level=result.risk_level,
+            finding_count=len(result.findings),
+            file_size=result.file_size,
+            source="file",
+        )
         LOGGER.info("scan result path=%s error=%s findings=%s", file_path, bool(result.error), len(result.findings))
         return jsonify(asdict(result))
     except Exception as exc:
@@ -216,6 +224,13 @@ def scan_upload():
         _last_result = result
         _last_path = tmp_path              # brukes av /patch hvis aktuelt
         _last_tmp_path = tmp_path          # huskes for opprydding ved neste upload
+        add_history_entry(
+            file_name=result.file_name,
+            risk_level=result.risk_level,
+            finding_count=len(result.findings),
+            file_size=result.file_size,
+            source="file",
+        )
         LOGGER.info("scan-upload result name=%s error=%s findings=%s", original_name, bool(result.error), len(result.findings))
         return jsonify(asdict(result))
     except Exception as exc:
@@ -238,6 +253,65 @@ def scan_upload():
             "original_text": "",
             "error": f"Klarte ikke å lese fil: {exc}",
         })
+
+
+@flask_app.route("/scan-text", methods=["POST"])
+def scan_text_endpoint():
+    """Skann tekst limt inn direkte (uten fil)."""
+    global _last_result, _last_path
+    try:
+        data = request.get_json(force=True)
+        text = data.get("text", "")
+        language = data.get("language", "auto")
+        LOGGER.info("scan-text request len=%d lang=%s", len(text), language)
+        result = scan_text(text, language=language)
+        _last_result = result
+        _last_path = None
+        add_history_entry(
+            file_name=result.file_name,
+            risk_level=result.risk_level,
+            finding_count=len(result.findings),
+            file_size=result.file_size,
+            source="text",
+        )
+        LOGGER.info("scan-text result findings=%d", len(result.findings))
+        return jsonify(asdict(result))
+    except Exception as exc:
+        LOGGER.error("scan-text endpoint failed: %s", traceback.format_exc())
+        return jsonify({"error": f"Klarte ikke å skanne tekst: {exc}"})
+
+
+@flask_app.route("/scan-folder", methods=["POST"])
+def scan_folder_endpoint():
+    """Skann alle støttede filer i en mappe (batch)."""
+    try:
+        data = request.get_json(force=True)
+        folder_path = data.get("folder_path", "")
+        ignore_xlent = bool(data.get("ignore_xlent", False))
+        language = data.get("language", "auto")
+        LOGGER.info("scan-folder request path=%s", folder_path)
+        results = scan_folder(folder_path, ignore_xlent=ignore_xlent, language=language)
+        summary = []
+        for r in results:
+            add_history_entry(
+                file_name=r.file_name,
+                risk_level=r.risk_level,
+                finding_count=len(r.findings),
+                file_size=r.file_size,
+                source="batch",
+            )
+            summary.append({
+                "file_name": r.file_name,
+                "risk_level": r.risk_level,
+                "finding_count": len(r.findings),
+                "error": r.error,
+                "file_size": r.file_size,
+            })
+        LOGGER.info("scan-folder result files=%d", len(summary))
+        return jsonify({"files": summary, "total": len(summary)})
+    except Exception as exc:
+        LOGGER.error("scan-folder endpoint failed: %s", traceback.format_exc())
+        return jsonify({"error": str(exc)})
 
 
 @flask_app.route("/diagnostics", methods=["GET"])
@@ -285,6 +359,85 @@ def open_report():
         return jsonify({"ok": True})
     except Exception as exc:
         return jsonify({"error": str(exc)})
+
+
+@flask_app.route("/report/pdf", methods=["GET"])
+def report_pdf():
+    """Generer og last ned PDF-rapport."""
+    if _last_result is None:
+        return "Ingen rapport tilgjengelig.", 404
+    try:
+        import fitz  # noqa: PLC0415
+        from datetime import datetime  # noqa: PLC0415
+
+        RISK_COLORS = {
+            "grønn": (0.18, 0.69, 0.31),
+            "gul":   (0.85, 0.60, 0.15),
+            "rød":   (0.87, 0.22, 0.22),
+            "svart": (0.61, 0.15, 0.69),
+        }
+        SEV_COLORS = RISK_COLORS
+
+        doc = fitz.open()
+
+        def _new_page():
+            p = doc.new_page(width=595, height=842)
+            return p, 54
+
+        page, y = _new_page()
+
+        def _text(pg, yp, txt, size=10, color=(0.85, 0.88, 0.93), bold=False):
+            fn = "helv-b" if bold else "helv"
+            rc = pg.insert_text((54, yp), txt, fontsize=size, fontname=fn, color=color)
+            return yp + size + 4
+
+        # Header
+        y = _text(page, y, "XLENT Compliance-scanner", 18, (0.31, 0.56, 1.0), bold=True)
+        y = _text(page, y, f"Fil: {_last_result.file_name}", 11)
+        y = _text(page, y, f"Dato: {datetime.now().strftime('%d.%m.%Y  %H:%M')}", 9, (0.55, 0.62, 0.72))
+        y += 6
+
+        # Risk level
+        rc_color = RISK_COLORS.get(_last_result.risk_level, (0.85, 0.88, 0.93))
+        y = _text(page, y, f"Risikonivå: {_last_result.risk_level.upper()}  –  {_last_result.risk_summary}", 12, rc_color, bold=True)
+        y = _text(page, y, _last_result.recommended_action, 9, (0.72, 0.77, 0.85))
+        y += 10
+
+        # Divider
+        page.draw_line((54, y), (541, y), color=(0.22, 0.31, 0.44), width=0.5)
+        y += 8
+
+        # Findings
+        if not _last_result.findings:
+            y = _text(page, y, "Ingen sensitive funn oppdaget.", 10, (0.18, 0.69, 0.31))
+        else:
+            y = _text(page, y, f"Funn ({len(_last_result.findings)})", 11, (0.85, 0.88, 0.93), bold=True)
+            y += 4
+            for f in _last_result.findings:
+                if y > 800:
+                    page, y = _new_page()
+                    y = _text(page, y, "(fortsetter…)", 8, (0.55, 0.62, 0.72))
+                    y += 4
+                sev_c = SEV_COLORS.get(f.severity, (0.72, 0.77, 0.85))
+                line = f"[{f.category}]  {f.text[:120]}"
+                y = _text(page, y, line, 9, sev_c)
+                if f.context:
+                    ctx_line = f"    {f.context[:140]}"
+                    y = _text(page, y, ctx_line, 7.5, (0.50, 0.57, 0.68))
+                y += 1
+
+        pdf_bytes = doc.tobytes()
+        doc.close()
+
+        stem = Path(_last_result.file_name).stem
+        filename = f"{stem}-rapport.pdf"
+        return pdf_bytes, 200, {
+            "Content-Type": "application/pdf",
+            "Content-Disposition": f'attachment; filename="{filename}"',
+        }
+    except Exception as exc:
+        LOGGER.error("report/pdf failed: %s", traceback.format_exc())
+        return f"PDF-generering feilet: {exc}", 500
 
 
 @flask_app.route("/anonymize", methods=["POST"])
@@ -427,6 +580,39 @@ def open_dialog():
     return jsonify({"path": path})
 
 
+@flask_app.route("/history/get", methods=["GET"])
+def history_get():
+    """Hent persistent scan-historikk."""
+    try:
+        entries = load_history()
+        return jsonify({"ok": True, "entries": list(reversed(entries))})
+    except Exception as exc:
+        return jsonify({"ok": False, "entries": [], "error": str(exc)})
+
+
+@flask_app.route("/history/clear", methods=["POST"])
+def history_clear():
+    """Slett all scan-historikk."""
+    try:
+        clear_history()
+        return jsonify({"ok": True})
+    except Exception as exc:
+        return jsonify({"ok": False, "error": str(exc)})
+
+
+@flask_app.route("/open-folder-dialog", methods=["POST"])
+def open_folder_dialog():
+    """Åpne mappe-velger-dialog."""
+    if _window is None:
+        return jsonify({"path": None})
+    result = _window.create_file_dialog(
+        webview.FOLDER_DIALOG,
+        allow_multiple=False,
+    )
+    path = result[0] if result else None
+    return jsonify({"path": path})
+
+
 @flask_app.route("/update-check", methods=["POST"])
 def update_check():
     data = request.get_json(silent=True) or {}
@@ -537,7 +723,10 @@ def ollama_deep_scan_endpoint():
         return jsonify({"ok": False, "error": "Ingen Ollama-modell oppgitt."})
     categories = data.get("categories") or None
     lang = getattr(_last_result, "language", "nb") or "nb"
-    job_id = start_deep_scan(text, model, lang, categories=categories)
+    min_confidence = (data.get("min_confidence") or "medium").strip().lower()
+    if min_confidence not in ("high", "medium", "low"):
+        min_confidence = "medium"
+    job_id = start_deep_scan(text, model, lang, categories=categories, min_confidence=min_confidence)
     LOGGER.info("ollama/deep-scan started job=%s model=%s cats=%s", job_id, model, categories)
     return jsonify({"ok": True, "job_id": job_id})
 

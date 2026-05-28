@@ -11,15 +11,10 @@ import re
 from typing import Iterator
 
 from xlent_scanner.models import Finding
+from xlent_scanner.utils import ctx as _ctx
 
 
 # ── kontekst-hjelper ──────────────────────────────────────────────────────────
-
-def _ctx(text: str, start: int, end: int, radius: int = 40) -> str:
-    lo = max(0, start - radius)
-    hi = min(len(text), end + radius)
-    snippet = text[lo:hi].replace("\n", " ")
-    return ("…" if lo > 0 else "") + snippet + ("…" if hi < len(text) else "")
 
 
 # ── kjente mønstre ────────────────────────────────────────────────────────────
