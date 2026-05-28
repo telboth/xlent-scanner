@@ -502,6 +502,19 @@ def ollama_status_endpoint():
     return jsonify(ollama_status())
 
 
+@flask_app.route("/ollama/last-file-info", methods=["GET"])
+def ollama_last_file_info():
+    """Returnerer info om sist skannede fil for Dybdeskann-fanen."""
+    if _last_result is None or getattr(_last_result, "error", None):
+        return jsonify({"available": False})
+    text = getattr(_last_result, "original_text", "") or ""
+    return jsonify({
+        "available": bool(text.strip()),
+        "file_name": _last_result.file_name or "",
+        "text_length": _last_result.text_length or 0,
+    })
+
+
 @flask_app.route("/ollama/deep-scan", methods=["POST"])
 def ollama_deep_scan_endpoint():
     """Start dybdeskanning med Ollama på sist skannede fil."""
@@ -515,10 +528,38 @@ def ollama_deep_scan_endpoint():
     model = (data.get("model") or "").strip()
     if not model:
         return jsonify({"ok": False, "error": "Ingen Ollama-modell oppgitt."})
+    categories = data.get("categories") or None
     lang = getattr(_last_result, "language", "nb") or "nb"
-    job_id = start_deep_scan(text, model, lang)
-    LOGGER.info("ollama/deep-scan started job=%s model=%s", job_id, model)
+    job_id = start_deep_scan(text, model, lang, categories=categories)
+    LOGGER.info("ollama/deep-scan started job=%s model=%s cats=%s", job_id, model, categories)
     return jsonify({"ok": True, "job_id": job_id})
+
+
+@flask_app.route("/ollama/anonymize-findings", methods=["POST"])
+def ollama_anonymize_findings():
+    """Anonymiser valgte AI-funn og lagre til fil."""
+    if _last_result is None:
+        return jsonify({"error": "Ingen fil skannet."})
+    text = getattr(_last_result, "original_text", "") or ""
+    if not text.strip():
+        return jsonify({"error": "Originaltekst ikke tilgjengelig. Re-skann filen."})
+    data = request.get_json(force=True) or {}
+    texts_to_remove = [t for t in (data.get("texts") or []) if t and str(t).strip()]
+    result_text = text
+    for t in texts_to_remove:
+        result_text = result_text.replace(str(t), "[ANONYMISERT]")
+    stem = Path(_last_result.file_name).stem if _last_result.file_name else "dokument"
+    downloads = Path.home() / "Downloads"
+    if not downloads.exists():
+        downloads = Path.home() / "Desktop"
+    out = downloads / f"{stem}-ai-anonymisert.txt"
+    counter = 1
+    while out.exists():
+        out = downloads / f"{stem}-ai-anonymisert-{counter}.txt"
+        counter += 1
+    out.write_text(result_text, encoding="utf-8")
+    LOGGER.info("ollama/anonymize-findings: wrote %s (%d replacements)", out, len(texts_to_remove))
+    return jsonify({"ok": True, "path": str(out)})
 
 
 @flask_app.route("/ollama/deep-scan/status", methods=["GET"])

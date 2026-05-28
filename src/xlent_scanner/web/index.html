@@ -182,6 +182,58 @@
       padding: 1px 5px; font-family: monospace; font-size: 12px;
     }
 
+    /* ── Dybdeskann tab panel ───────────────────────────────────────── */
+    #panel-deepscan { padding: 20px 24px; gap: 14px; }
+    .dst-section {
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 8px; padding: 16px 20px;
+    }
+    .dst-section-title {
+      font-size: 11px; text-transform: uppercase; letter-spacing: .06em;
+      color: var(--muted); margin-bottom: 12px; font-weight: 600;
+    }
+    .dst-file-info { font-size: 13px; color: var(--text); padding: 4px 0; }
+    .dst-filename { font-weight: 600; }
+    .dst-no-file { color: var(--muted); }
+    .dst-cats-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 7px 16px; margin: 8px 0;
+    }
+    .dst-cat-label {
+      display: flex; align-items: center; gap: 7px;
+      font-size: 13px; cursor: pointer; user-select: none;
+    }
+    .dst-cat-label input[type=checkbox] {
+      width: 14px; height: 14px; cursor: pointer; accent-color: var(--accent);
+    }
+    .dst-status-row {
+      display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--muted); margin-bottom: 10px;
+    }
+    .dst-model-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+    .dst-model-row select {
+      flex: 1; min-width: 180px; max-width: 320px;
+      padding: 5px 8px; border-radius: 5px;
+      border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 13px;
+    }
+    .dst-progress { font-size: 12.5px; color: var(--muted); margin: 6px 0; min-height: 18px; }
+    .dst-finding {
+      display: flex; align-items: flex-start; gap: 8px;
+      padding: 7px 10px; border-radius: 5px; margin-bottom: 4px;
+      background: rgba(138,150,168,.06); font-size: 13px; line-height: 1.45;
+    }
+    .dst-finding input[type=checkbox] {
+      width: 13px; height: 13px; margin-top: 3px; flex-shrink: 0;
+      cursor: pointer; accent-color: var(--ok);
+    }
+    .dst-finding-body { flex: 1; }
+    .dst-finding-cat { font-weight: 600; color: var(--accent); font-size: 11px; margin-bottom: 3px; text-transform: uppercase; letter-spacing: .03em; }
+    .dst-finding-ctx { color: var(--muted); font-size: 11.5px; margin-top: 2px; }
+    .dst-anon-bar {
+      display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
+      background: var(--panel2); border: 1px solid var(--border);
+      border-radius: 6px; padding: 7px 11px; margin-top: 10px;
+    }
+    .dst-anon-msg { font-size: 12px; margin-left: 2px; flex: 1; color: var(--muted); }
+
     /* NER-notice – vises i scanner-panelet når spaCy-modeller mangler */
     .ner-notice {
       display: none; align-items: center; gap: 10px;
@@ -367,6 +419,7 @@
 
   <nav class="tab-nav">
     <button class="tab-btn active" data-tab="scanner" data-i18n="tabScanner">🔍 Scanner</button>
+    <button class="tab-btn" data-tab="deepscan" data-i18n="tabDeepScan">🔬 Dybdeskann</button>
     <button class="tab-btn" data-tab="about" data-i18n="tabAbout">ℹ Om programmet</button>
     <button class="tab-btn" data-tab="settings" data-i18n="tabSettings">⚙️ Innstillinger</button>
     <div class="ui-lang-sel">
@@ -401,29 +454,7 @@
       <div id="status"></div>
       <div id="result"></div>
 
-      <!-- Dybdeskann med Ollama -->
-      <div id="deep-scan-section">
-        <div class="ds-header" id="ds-header">
-          <span style="font-size:16px">🔬</span>
-          <span class="ds-header-title" data-i18n="deepScanTitle">Dybdeskann med AI</span>
-          <span class="ds-chevron">▶</span>
-        </div>
-        <div class="ds-body" id="ds-body">
-          <div class="ds-status-row" id="ds-status-row"></div>
-          <div id="ds-not-running" style="display:none" class="ds-ollama-instructions"></div>
-          <div id="ds-ready" style="display:none">
-            <div class="ds-model-row">
-              <select id="ds-model-select"></select>
-              <button id="ds-start-btn" class="ctrl-btn ctrl-btn-primary" data-i18n="deepScanStart">🔬 Start dybdeskann</button>
-              <button id="ds-cancel-btn" class="ctrl-btn" style="display:none" data-i18n="deepScanCancel">✕ Avbryt</button>
-            </div>
-            <div class="ds-progress" id="ds-progress"></div>
-            <div id="ds-findings-area"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Ekstrahert tekst (etter deep-scan for å ikke skjule den) -->
+      <!-- Ekstrahert tekst -->
       <div id="text-preview-section" style="display:none; margin-top:10px;"></div>
 
       <!-- Skannehistorikk -->
@@ -431,6 +462,67 @@
         <div class="section-heading" data-i18n="historyTitle">Siste skanninger</div>
         <ul class="history-list" id="history-list"></ul>
       </div>
+    </div>
+
+    <!-- ── Dybdeskann panel ─────────────────────────────────────── -->
+    <div id="panel-deepscan" class="tab-panel">
+
+      <!-- Fil å analysere -->
+      <div class="dst-section">
+        <div class="dst-section-title" data-i18n="dstFileInfoTitle">Fil å analysere</div>
+        <div id="dst-file-info" class="dst-file-info">
+          <span class="dst-no-file" data-i18n="dstNoFile">Ingen fil skannet. Gå til Scanner-fanen og skann en fil først.</span>
+        </div>
+      </div>
+
+      <!-- Søkekategorier -->
+      <div class="dst-section">
+        <div class="dst-section-title" data-i18n="dstCatsTitle">Søk etter</div>
+        <div class="dst-cats-grid">
+          <label class="dst-cat-label"><input type="checkbox" class="dst-cat" value="navn" checked> <span data-i18n="dstCatNavn">Navn</span></label>
+          <label class="dst-cat-label"><input type="checkbox" class="dst-cat" value="adresse" checked> <span data-i18n="dstCatAdresse">Adresse</span></label>
+          <label class="dst-cat-label"><input type="checkbox" class="dst-cat" value="telefon" checked> <span data-i18n="dstCatTelefon">Telefon</span></label>
+          <label class="dst-cat-label"><input type="checkbox" class="dst-cat" value="personnummer" checked> <span data-i18n="dstCatPersonnummer">Personnummer</span></label>
+          <label class="dst-cat-label"><input type="checkbox" class="dst-cat" value="bankkonto" checked> <span data-i18n="dstCatBankkonto">Bankkontonummer</span></label>
+          <label class="dst-cat-label"><input type="checkbox" class="dst-cat" value="selskapsnavn" checked> <span data-i18n="dstCatSelskapsnavn">Selskapsnavn</span></label>
+          <label class="dst-cat-label"><input type="checkbox" class="dst-cat" value="budsjett_tall" checked> <span data-i18n="dstCatBudsjett">Budsjett / beløp</span></label>
+        </div>
+        <div style="margin-top:8px;display:flex;gap:6px;">
+          <button class="ctrl-btn" id="dst-sel-all-cats" data-i18n="selAll">Velg alle</button>
+          <button class="ctrl-btn" id="dst-sel-no-cats" data-i18n="selNone">Fjern alle</button>
+        </div>
+      </div>
+
+      <!-- AI-analyse -->
+      <div class="dst-section">
+        <div class="dst-section-title" data-i18n="dstScanTitle">AI-analyse (Ollama)</div>
+        <div class="dst-status-row" id="dst-status-row">
+          <span style="color:var(--muted);font-size:12px">Sjekker Ollama…</span>
+        </div>
+        <div id="dst-not-running" style="display:none" class="ds-ollama-instructions"></div>
+        <div id="dst-ready" style="display:none">
+          <div class="dst-model-row">
+            <select id="dst-model-select"></select>
+            <button id="dst-start-btn" class="ctrl-btn ctrl-btn-primary" data-i18n="deepScanStart">🔬 Start dybdeskann</button>
+            <button id="dst-cancel-btn" class="ctrl-btn" style="display:none" data-i18n="deepScanCancel">✕ Avbryt</button>
+          </div>
+          <div class="dst-progress" id="dst-progress"></div>
+        </div>
+      </div>
+
+      <!-- Funn og anonymisering -->
+      <div class="dst-section" id="dst-results-section" style="display:none">
+        <div class="dst-section-title" id="dst-results-title" data-i18n="dstResultsTitle">AI-funn</div>
+        <div id="dst-findings-area"></div>
+        <div class="dst-anon-bar" id="dst-anon-bar" style="display:none">
+          <button class="ctrl-btn" id="dst-sel-all" data-i18n="selAll">Velg alle</button>
+          <button class="ctrl-btn" id="dst-sel-none" data-i18n="selNone">Fjern alle</button>
+          <span class="ctrl-sep"></span>
+          <button class="ctrl-btn ctrl-btn-primary" id="dst-anon-btn" data-i18n="dstAnonBtn">Anonymiser valgte</button>
+          <span class="dst-anon-msg" id="dst-anon-msg"></span>
+        </div>
+      </div>
+
     </div>
 
     <!-- ── About panel ────────────────────────────────────────────── -->
@@ -765,6 +857,21 @@
         updateNoUpdate: "Du har nyeste versjon.",
         updateCheckFailed: "Kunne ikke sjekke oppdateringer.",
         logHint: "Se logg:",
+        tabDeepScan:        "🔬 Dybdeskann",
+        dstFileInfoTitle:   "Fil å analysere",
+        dstNoFile:          "Ingen fil skannet ennå. Gå til Scanner-fanen og skann en fil først.",
+        dstCatsTitle:       "Søk etter",
+        dstCatNavn:         "Navn",
+        dstCatAdresse:      "Adresse",
+        dstCatTelefon:      "Telefon",
+        dstCatPersonnummer: "Personnummer",
+        dstCatBankkonto:    "Bankkontonummer",
+        dstCatSelskapsnavn: "Selskapsnavn",
+        dstCatBudsjett:     "Budsjett / beløp",
+        dstScanTitle:       "AI-analyse (Ollama)",
+        dstResultsTitle:    "AI-funn",
+        dstAnonBtn:         "Anonymiser valgte",
+        dstSelectOne:       "Velg minst ett funn å anonymisere.",
       },
       sv: {
         subtitle:     "Kontrollerar dokument för känslig information innan uppladdning till online-AI-verktyg",
@@ -865,6 +972,21 @@
         updateNoUpdate: "Du har senaste versionen.",
         updateCheckFailed: "Kunde inte kontrollera uppdateringar.",
         logHint: "Se logg:",
+        tabDeepScan:        "🔬 Djupskanning",
+        dstFileInfoTitle:   "Fil att analysera",
+        dstNoFile:          "Ingen fil skannad ännu. Gå till Scanner-fliken och skanna en fil först.",
+        dstCatsTitle:       "Sök efter",
+        dstCatNavn:         "Namn",
+        dstCatAdresse:      "Adress",
+        dstCatTelefon:      "Telefon",
+        dstCatPersonnummer: "Personnummer",
+        dstCatBankkonto:    "Bankkontonummer",
+        dstCatSelskapsnavn: "Företagsnamn",
+        dstCatBudsjett:     "Budget / belopp",
+        dstScanTitle:       "AI-analys (Ollama)",
+        dstResultsTitle:    "AI-fynd",
+        dstAnonBtn:         "Anonymisera valda",
+        dstSelectOne:       "Välj minst ett fynd att anonymisera.",
       },
       en: {
         subtitle:     "Checks documents for sensitive information before uploading to online AI tools",
@@ -965,6 +1087,21 @@
         updateNoUpdate: "You already have the latest version.",
         updateCheckFailed: "Could not check for updates.",
         logHint: "See log:",
+        tabDeepScan:        "🔬 Deep Scan",
+        dstFileInfoTitle:   "File to analyse",
+        dstNoFile:          "No file scanned yet. Go to the Scanner tab and scan a file first.",
+        dstCatsTitle:       "Search for",
+        dstCatNavn:         "Names",
+        dstCatAdresse:      "Addresses",
+        dstCatTelefon:      "Phone numbers",
+        dstCatPersonnummer: "National ID numbers",
+        dstCatBankkonto:    "Bank account numbers",
+        dstCatSelskapsnavn: "Company names",
+        dstCatBudsjett:     "Budget / amounts",
+        dstScanTitle:       "AI analysis (Ollama)",
+        dstResultsTitle:    "AI findings",
+        dstAnonBtn:         "Anonymise selected",
+        dstSelectOne:       "Select at least one finding to anonymise.",
       },
     };
 
@@ -1078,6 +1215,7 @@
         btn.classList.add("active");
         document.getElementById("panel-" + btn.dataset.tab).classList.add("active");
         if (btn.dataset.tab === "about") syncAboutLang();
+        if (btn.dataset.tab === "deepscan") loadDeepScanTab();
       })
     );
 
@@ -1321,7 +1459,6 @@
         tpEl.style.display = "none";
       }
 
-      if (!r.error) showDeepScanSection();
     }
 
     function buildFindingsHtml(sorted, canPatch, ext) {
@@ -1755,12 +1892,8 @@
     });
 
     /* ══════════════════════════════════════════════════════════════════
-       OLLAMA / DYBDESKANN
+       OLLAMA INNSTILLINGER (settings-panel)
     ══════════════════════════════════════════════════════════════════ */
-
-    let _dsOpen        = false;
-    let _dsPollTimer   = null;
-    let _dsLastJobId   = null;
 
     // ── Innstillinger: Ollama-seksjon ────────────────────────────────
     async function loadOllamaSettingsStatus() {
@@ -1800,38 +1933,36 @@
       }
     });
 
-    // ── Scanner: Dybdeskann-seksjon ──────────────────────────────────
+    /* ══════════════════════════════════════════════════════════════════
+       DYBDESKANN-FANE
+    ══════════════════════════════════════════════════════════════════ */
+    let _dstPollTimer = null;
+    let _dstFindings  = [];
 
-    function _dsToggle() {
-      _dsOpen = !_dsOpen;
-      const header = document.getElementById("ds-header");
-      const body   = document.getElementById("ds-body");
-      header.classList.toggle("open", _dsOpen);
-      body.classList.toggle("open", _dsOpen);
-      if (_dsOpen) renderDeepScanBody();
+    async function loadDeepScanTab() {
+      // Fil-info
+      try {
+        const info = await (await fetch(`${API}/ollama/last-file-info`)).json();
+        const el = document.getElementById("dst-file-info");
+        if (info.available) {
+          el.innerHTML = `<span class="dst-filename">📄 ${escapeHtml(info.file_name)}</span>
+            <span style="color:var(--muted);font-size:12px;margin-left:8px">${info.text_length.toLocaleString()} ${t("metaChars")}</span>`;
+        } else {
+          el.innerHTML = `<span class="dst-no-file">${t("dstNoFile")}</span>`;
+        }
+      } catch (_) {
+        document.getElementById("dst-file-info").innerHTML =
+          `<span class="dst-no-file">${t("dstNoFile")}</span>`;
+      }
+      // Ollama-status
+      await loadDstOllamaStatus();
     }
 
-    document.getElementById("ds-header").addEventListener("click", _dsToggle);
-
-    function showDeepScanSection() {
-      const el = document.getElementById("deep-scan-section");
-      el.classList.add("show");
-      // Tilbakestill state ved ny fil-skanning
-      document.getElementById("ds-findings-area").innerHTML = "";
-      document.getElementById("ds-progress").textContent = "";
-      document.getElementById("ds-cancel-btn").style.display = "none";
-      document.getElementById("ds-start-btn").style.display = "";
-      if (_dsPollTimer) { clearInterval(_dsPollTimer); _dsPollTimer = null; }
-      if (_dsOpen) renderDeepScanBody();
-      // Scroll seksjonen inn i visningsfeltet
-      setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "nearest" }), 80);
-    }
-
-    async function renderDeepScanBody() {
-      const statusRow   = document.getElementById("ds-status-row");
-      const notRunning  = document.getElementById("ds-not-running");
-      const readyDiv    = document.getElementById("ds-ready");
-      const modelSelect = document.getElementById("ds-model-select");
+    async function loadDstOllamaStatus() {
+      const statusRow  = document.getElementById("dst-status-row");
+      const notRunning = document.getElementById("dst-not-running");
+      const readyDiv   = document.getElementById("dst-ready");
+      const modelSel   = document.getElementById("dst-model-select");
       statusRow.innerHTML = `<span style="color:var(--muted);font-size:12px">Sjekker Ollama…</span>`;
       try {
         const s = await (await fetch(`${API}/ollama/status`)).json();
@@ -1850,15 +1981,14 @@
           return;
         }
         statusRow.innerHTML = `<span style="color:var(--ok)">${t("ollamaRunning")}</span>`;
-        // Bygg modell-dropdown
-        const current = modelSelect.value;
-        modelSelect.innerHTML = s.models.map(m => {
+        const current = modelSel.value;
+        modelSel.innerHTML = s.models.map(m => {
           const rec = ["llama3.2:3b","llama3.2:1b","gemma2:2b","mistral:7b"].includes(m);
           return `<option value="${escapeHtml(m)}">${escapeHtml(m)}${rec ? " ★" : ""}</option>`;
         }).join("");
-        if (current && s.models.includes(current)) modelSelect.value = current;
+        if (current && s.models.includes(current)) modelSel.value = current;
         readyDiv.style.display = "block";
-      } catch (e) {
+      } catch (_) {
         statusRow.innerHTML  = `<span style="color:var(--danger)">${t("ollamaNotRunning")}</span>`;
         notRunning.innerHTML = t("ollamaInstallHint");
         notRunning.style.display = "block";
@@ -1866,85 +1996,123 @@
       }
     }
 
-    async function startDeepScan() {
-      const model = document.getElementById("ds-model-select").value;
+    async function startDstScan() {
+      const model = document.getElementById("dst-model-select").value;
       if (!model) return;
-      document.getElementById("ds-start-btn").style.display  = "none";
-      document.getElementById("ds-cancel-btn").style.display = "";
-      document.getElementById("ds-progress").textContent = t("deepScanRunning");
-      document.getElementById("ds-findings-area").innerHTML  = "";
+      const cats = [...document.querySelectorAll(".dst-cat:checked")].map(cb => cb.value);
+      if (!cats.length) {
+        document.getElementById("dst-progress").innerHTML =
+          `<span style="color:var(--warn)">Velg minst én kategori.</span>`;
+        return;
+      }
+      document.getElementById("dst-start-btn").style.display  = "none";
+      document.getElementById("dst-cancel-btn").style.display = "";
+      document.getElementById("dst-progress").textContent = t("deepScanRunning");
+      document.getElementById("dst-results-section").style.display = "none";
+      document.getElementById("dst-findings-area").innerHTML = "";
+      _dstFindings = [];
       try {
         const r = await (await fetch(`${API}/ollama/deep-scan`, {
           method: "POST",
           headers: {"Content-Type": "application/json"},
-          body: JSON.stringify({model}),
+          body: JSON.stringify({ model, categories: cats }),
         })).json();
-        if (!r.ok) {
-          setDeepScanError(r.error || "Ukjent feil");
-          return;
-        }
-        _dsLastJobId = r.job_id;
-        _dsPollTimer = setInterval(pollDeepScan, 2000);
-      } catch (e) {
-        setDeepScanError(String(e));
-      }
+        if (!r.ok) { setDstError(r.error || "Ukjent feil"); return; }
+        _dstPollTimer = setInterval(pollDstScan, 2000);
+      } catch (e) { setDstError(String(e)); }
     }
 
-    async function cancelDeepScan() {
-      if (_dsPollTimer) { clearInterval(_dsPollTimer); _dsPollTimer = null; }
-      await fetch(`${API}/ollama/deep-scan/cancel`, {method:"POST"}).catch(()=>{});
-      document.getElementById("ds-cancel-btn").style.display = "none";
-      document.getElementById("ds-start-btn").style.display  = "";
-      document.getElementById("ds-progress").textContent = "Avbrutt.";
+    async function cancelDstScan() {
+      if (_dstPollTimer) { clearInterval(_dstPollTimer); _dstPollTimer = null; }
+      await fetch(`${API}/ollama/deep-scan/cancel`, { method:"POST" }).catch(()=>{});
+      document.getElementById("dst-cancel-btn").style.display = "none";
+      document.getElementById("dst-start-btn").style.display  = "";
+      document.getElementById("dst-progress").textContent = "Avbrutt.";
     }
 
-    async function pollDeepScan() {
+    async function pollDstScan() {
       try {
         const s = await (await fetch(`${API}/ollama/deep-scan/status`)).json();
-        document.getElementById("ds-progress").textContent = s.progress || "";
+        document.getElementById("dst-progress").textContent = s.progress || "";
         if (s.status === "done") {
-          clearInterval(_dsPollTimer); _dsPollTimer = null;
-          document.getElementById("ds-cancel-btn").style.display = "none";
-          document.getElementById("ds-start-btn").style.display  = "";
-          renderDeepFindings(s.findings || []);
+          clearInterval(_dstPollTimer); _dstPollTimer = null;
+          document.getElementById("dst-cancel-btn").style.display = "none";
+          document.getElementById("dst-start-btn").style.display  = "";
+          _dstFindings = s.findings || [];
+          renderDstFindings(_dstFindings);
         } else if (s.status === "cancelled" || s.status === "error") {
-          clearInterval(_dsPollTimer); _dsPollTimer = null;
-          document.getElementById("ds-cancel-btn").style.display = "none";
-          document.getElementById("ds-start-btn").style.display  = "";
+          clearInterval(_dstPollTimer); _dstPollTimer = null;
+          document.getElementById("dst-cancel-btn").style.display = "none";
+          document.getElementById("dst-start-btn").style.display  = "";
         }
-      } catch (e) {
-        // stille feil – prøver igjen om 2 sek
-      }
+      } catch (_) { /* stille – prøver igjen */ }
     }
 
-    function renderDeepFindings(findings) {
-      const area = document.getElementById("ds-findings-area");
+    function renderDstFindings(findings) {
+      const section = document.getElementById("dst-results-section");
+      const area    = document.getElementById("dst-findings-area");
+      const anonBar = document.getElementById("dst-anon-bar");
+      const titleEl = document.getElementById("dst-results-title");
+      section.style.display = "";
       if (!findings.length) {
-        area.innerHTML = `<p style="color:var(--muted);font-size:13px;margin-top:8px">${t("deepScanNoFindings")}</p>`;
+        titleEl.textContent = t("dstResultsTitle");
+        area.innerHTML = `<p style="color:var(--muted);font-size:13px;margin-top:4px">${t("deepScanNoFindings")}</p>`;
+        anonBar.style.display = "none";
         return;
       }
-      const title = t("deepScanAIFindings").replace("{n}", findings.length);
-      const rows  = findings.map(f => `
-        <div class="ds-finding">
-          <div class="ds-finding-cat">${escapeHtml(f.category || "AI-funn")}</div>
-          <div class="ds-finding-text">
-            <div>${escapeHtml(f.text || "")}</div>
-            ${f.context ? `<div class="ds-finding-ctx">${escapeHtml(f.context)}</div>` : ""}
+      titleEl.textContent = t("deepScanAIFindings").replace("{n}", findings.length);
+      area.innerHTML = findings.map((f, i) => `
+        <div class="dst-finding">
+          <input type="checkbox" class="dst-cb" value="${i}" checked>
+          <div class="dst-finding-body">
+            <div class="dst-finding-cat">${escapeHtml(f.category || "AI-funn")}</div>
+            <div><strong>${escapeHtml(f.text || "")}</strong></div>
+            ${f.context ? `<div class="dst-finding-ctx">${escapeHtml(f.context)}</div>` : ""}
           </div>
         </div>`).join("");
-      area.innerHTML = `<div class="ds-findings-title">${title}</div>${rows}`;
+      anonBar.style.display = "flex";
+      document.getElementById("dst-sel-all").onclick  = () =>
+        document.querySelectorAll(".dst-cb").forEach(cb => cb.checked = true);
+      document.getElementById("dst-sel-none").onclick = () =>
+        document.querySelectorAll(".dst-cb").forEach(cb => cb.checked = false);
     }
 
-    function setDeepScanError(msg) {
-      clearInterval(_dsPollTimer); _dsPollTimer = null;
-      document.getElementById("ds-cancel-btn").style.display = "none";
-      document.getElementById("ds-start-btn").style.display  = "";
-      document.getElementById("ds-progress").innerHTML =
+    function setDstError(msg) {
+      clearInterval(_dstPollTimer); _dstPollTimer = null;
+      document.getElementById("dst-cancel-btn").style.display = "none";
+      document.getElementById("dst-start-btn").style.display  = "";
+      document.getElementById("dst-progress").innerHTML =
         `<span style="color:var(--danger)">${t("deepScanError")} ${escapeHtml(msg)}</span>`;
     }
 
-    document.getElementById("ds-start-btn").addEventListener("click",  startDeepScan);
-    document.getElementById("ds-cancel-btn").addEventListener("click", cancelDeepScan);
+    async function anonymizeDst() {
+      const msg = document.getElementById("dst-anon-msg");
+      const checked = [...document.querySelectorAll(".dst-cb:checked")].map(cb => +cb.value);
+      if (!checked.length) {
+        msg.style.color = "var(--warn)"; msg.textContent = t("dstSelectOne"); return;
+      }
+      msg.style.color = "var(--muted)"; msg.textContent = t("processing");
+      const texts = checked.map(i => _dstFindings[i]?.text).filter(Boolean);
+      try {
+        const d = await (await fetch(`${API}/ollama/anonymize-findings`, {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({ texts }),
+        })).json();
+        if (d.ok) { msg.style.color = "#4caf50"; msg.textContent = `${t("saved")} ${d.path}`; }
+        else      { msg.style.color = "#f44336"; msg.textContent = `${t("errPrefix")} ${d.error}`; }
+      } catch (e) { msg.style.color = "#f44336"; msg.textContent = `${t("netErr")} ${e}`; }
+    }
+
+    // Checkbox-fellesknapper for kategorier
+    document.getElementById("dst-sel-all-cats").addEventListener("click", () =>
+      document.querySelectorAll(".dst-cat").forEach(cb => cb.checked = true));
+    document.getElementById("dst-sel-no-cats").addEventListener("click", () =>
+      document.querySelectorAll(".dst-cat").forEach(cb => cb.checked = false));
+
+    document.getElementById("dst-start-btn").addEventListener("click",  startDstScan);
+    document.getElementById("dst-cancel-btn").addEventListener("click", cancelDstScan);
+    document.getElementById("dst-anon-btn").addEventListener("click",   anonymizeDst);
 
     /* Init */
     loadSettings();

@@ -30,6 +30,17 @@ RECOMMENDED_MODELS = [
     "phi3.5:mini",
 ]
 
+# Søkekategorier – nøkkel → norsk beskrivelse til LLM-prompt
+CATEGORIES: dict[str, str] = {
+    "navn":          "personnavn (fornavn og etternavn på enkeltpersoner)",
+    "adresse":       "fysiske adresser (gateadresse, postnummer, poststed)",
+    "telefon":       "telefonnumre (norske og internasjonale)",
+    "personnummer":  "norske fødselsnumre (11 siffer) og personnumre",
+    "bankkonto":     "bankkontonumre (11 siffer) og IBAN-numre",
+    "selskapsnavn":  "selskapsnavn, firmanavn og organisasjonsnavn",
+    "budsjett_tall": "tall som representerer beløp, priser, summer, marginer eller budsjetter (inkl. kr, NOK, %, antall)",
+}
+
 # Én aktiv jobb om gangen
 _job: dict[str, Any] = {}
 _job_lock = threading.Lock()
@@ -72,52 +83,41 @@ def ollama_status() -> dict[str, Any]:
         return {"running": False, "models": [], "error": str(exc)}
 
 
-# ── Prompt-maler ────────────────────────────────────────────────────────
+# ── Prompt-builder (dynamisk basert på valgte kategorier) ───────────────
 
 _SYS = (
     "Du er en GDPR-ekspert. Svar ALLTID med gyldig JSON, aldri med annen tekst."
 )
 
-_PROMPT_NB = """\
-Analyser teksten for GDPR-sensitive personopplysninger.
-Identifiser: personnavn, adresser, telefonnumre, e-poster, fødselsnumre/personnumre, \
-bankkontonumre, kredittkortnumre, helseopplysninger, fagforeningsmedlemskap, \
-etnisk bakgrunn, religiøs overbevisning, politisk ståsted, biometriske data.
 
-Svar KUN med JSON på denne formen (ingen annen tekst):
-{{"findings":[{{"category":"Kategori","text":"funnet tekst","context":"noen ord rundt funnet"}}]}}
-Ingen funn → {{"findings":[]}}
+def _build_prompt(categories: list[str], chunk: str, lang: str = "nb") -> str:
+    """Bygg LLM-prompt dynamisk basert på valgte søkekategorier."""
+    active = [CATEGORIES[c] for c in categories if c in CATEGORIES]
+    if not active:
+        active = list(CATEGORIES.values())
+    cat_list = "\n".join(f"- {a}" for a in active)
 
-Tekst:
-{chunk}"""
-
-_PROMPT_SV = """\
-Analysera texten för GDPR-känsliga personuppgifter.
-Identifiera: personnamn, adresser, telefonnummer, e-postadresser, personnummer, \
-bankkontonummer, kreditkortsnummer, hälsoinformation, fackföreningsmedlemskap, \
-etnisk bakgrund, religiös övertygelse, politisk ståndpunkt, biometriska data.
-
-Svara BARA med JSON i detta format (ingen annan text):
-{{"findings":[{{"category":"Kategori","text":"hittad text","context":"omgivande ord"}}]}}
-Inga fynd → {{"findings":[]}}
-
-Text:
-{chunk}"""
-
-_PROMPT_EN = """\
-Analyse the text for GDPR-sensitive personal data.
-Identify: personal names, addresses, phone numbers, emails, national ID numbers, \
-bank account numbers, credit card numbers, health information, union membership, \
-ethnic background, religious beliefs, political views, biometric data.
-
-Respond ONLY with JSON in this format (no other text):
-{{"findings":[{{"category":"Category","text":"found text","context":"surrounding words"}}]}}
-No findings → {{"findings":[]}}
-
-Text:
-{chunk}"""
-
-_PROMPTS: dict[str, str] = {"nb": _PROMPT_NB, "sv": _PROMPT_SV, "en": _PROMPT_EN}
+    if lang == "sv":
+        return (
+            f"Analysera texten och identifiera följande typer av känslig information:\n{cat_list}\n\n"
+            "Svara BARA med JSON i detta format (ingen annan text):\n"
+            '{{"findings":[{{"category":"Kategori","text":"hittad text","context":"omgivande ord"}}]}}\n'
+            "Inga fynd → {{\"findings\":[]}}\n\nText:\n" + chunk
+        )
+    elif lang == "en":
+        return (
+            f"Analyse the text and identify the following types of sensitive information:\n{cat_list}\n\n"
+            "Respond ONLY with JSON in this format (no other text):\n"
+            '{{"findings":[{{"category":"Category","text":"found text","context":"surrounding words"}}]}}\n'
+            "No findings → {{\"findings\":[]}}\n\nText:\n" + chunk
+        )
+    else:  # nb
+        return (
+            f"Analyser teksten og identifiser følgende typer sensitiv informasjon:\n{cat_list}\n\n"
+            "Svar KUN med JSON på denne formen (ingen annen tekst):\n"
+            '{{"findings":[{{"category":"Kategori","text":"funnet tekst","context":"noen ord rundt funnet"}}]}}\n'
+            "Ingen funn → {{\"findings\":[]}}\n\nTekst:\n" + chunk
+        )
 
 
 # ── Tekst-oppdeling ─────────────────────────────────────────────────────
@@ -187,10 +187,11 @@ def _deduplicate(raw: list[dict]) -> list[dict]:
     return out
 
 
-def _run_deep_scan(text: str, model: str, lang: str, job_id: str) -> None:
+def _run_deep_scan(
+    text: str, model: str, lang: str, job_id: str, categories: list[str]
+) -> None:
     chunks = _split_chunks(text)
     n = len(chunks)
-    prompt_tpl = _PROMPTS.get(lang, _PROMPTS["nb"])
     all_raw: list[dict] = []
 
     for idx, chunk in enumerate(chunks, 1):
@@ -199,7 +200,8 @@ def _run_deep_scan(text: str, model: str, lang: str, job_id: str) -> None:
                 return
             _job["progress"] = f"Analyserer del {idx} av {n}…"
 
-        findings = _call_ollama(model, prompt_tpl.format(chunk=chunk))
+        prompt = _build_prompt(categories, chunk, lang)
+        findings = _call_ollama(model, prompt)
         all_raw.extend(findings)
 
     deduped = _deduplicate(all_raw)
@@ -221,29 +223,33 @@ def _run_deep_scan(text: str, model: str, lang: str, job_id: str) -> None:
 
 # ── Offentlige API-er ───────────────────────────────────────────────────
 
-def start_deep_scan(text: str, model: str, lang: str = "nb") -> str:
+def start_deep_scan(
+    text: str, model: str, lang: str = "nb", categories: list[str] | None = None
+) -> str:
     """Start dybdeskanning i bakgrunn. Returnerer job_id."""
     import uuid
     job_id = str(uuid.uuid4())[:8]
+    cats = categories or list(CATEGORIES.keys())
     with _job_lock:
         _job.clear()
         _job.update({
-            "job_id":    job_id,
-            "status":    "running",
-            "progress":  "Starter…",
-            "findings":  [],
-            "cancelled": False,
-            "model":     model,
+            "job_id":     job_id,
+            "status":     "running",
+            "progress":   "Starter…",
+            "findings":   [],
+            "cancelled":  False,
+            "model":      model,
+            "categories": cats,
             "started_at": time.time(),
         })
     t = threading.Thread(
         target=_run_deep_scan,
-        args=(text, model, lang, job_id),
+        args=(text, model, lang, job_id, cats),
         daemon=True,
         name=f"deep-scan-{job_id}",
     )
     t.start()
-    LOGGER.info("Dybdeskann startet: job=%s model=%s lang=%s", job_id, model, lang)
+    LOGGER.info("Dybdeskann startet: job=%s model=%s lang=%s cats=%s", job_id, model, lang, cats)
     return job_id
 
 
