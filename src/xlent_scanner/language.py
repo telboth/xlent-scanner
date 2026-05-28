@@ -4,7 +4,7 @@ Støttede språk:
   nb  – Norsk bokmål  (spaCy: nb_core_news_sm)
   sv  – Svenska       (spaCy: sv_core_news_sm)
   en  – English       (spaCy: en_core_web_sm)
-  da  – Dansk         (spaCy: da_core_news_sm)
+  da  – Dansk         (spaCy: nb_core_news_sm — norsk brukes, skriftspråkene ligner)
 """
 from __future__ import annotations
 
@@ -15,12 +15,15 @@ SUPPORTED: dict[str, str] = {
     "da": "Dansk",
 }
 
-# spaCy-modell og NER-label per språk
+# spaCy-modell og NER-label per språk.
+# Dansk gjenbruker norsk bokmål-modellen (nb_core_news_sm) — skriftspråkene
+# er tilstrekkelig like til at NER-treffkvaliteten er god nok, og
+# da_core_news_sm er ikke tilgjengelig via pip på alle plattformer.
 SPACY_CONFIG: dict[str, dict[str, str]] = {
     "nb": {"model": "nb_core_news_sm", "ner_label": "PER"},
     "sv": {"model": "sv_core_news_sm",  "ner_label": "PER"},
     "en": {"model": "en_core_web_sm",   "ner_label": "PERSON"},
-    "da": {"model": "da_core_news_sm",  "ner_label": "PER"},
+    "da": {"model": "nb_core_news_sm",  "ner_label": "PER"},
 }
 
 _MIN_DETECT_CHARS = 80   # kortere tekster gir upålitelig deteksjon

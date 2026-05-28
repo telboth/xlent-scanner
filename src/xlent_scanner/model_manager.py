@@ -70,10 +70,19 @@ def model_path(model_name: str) -> Path | None:
 
 
 def models_status() -> list[dict]:
-    """Returnerer statusliste for alle støttede spaCy-modeller."""
+    """Returnerer statusliste for alle støttede spaCy-modeller.
+
+    Deduplicerer på modellnavn — dersom to språk bruker samme modell
+    (f.eks. dansk og norsk begge bruker nb_core_news_sm) vises modellen
+    bare én gang (for det første språket i SPACY_CONFIG).
+    """
     result = []
+    seen_models: set[str] = set()
     for lang, cfg in SPACY_CONFIG.items():
         name = cfg["model"]
+        if name in seen_models:
+            continue   # Samme modell brukes av et annet språk allerede
+        seen_models.add(name)
         path = model_path(name)
         with _progress_lock:
             progress_msg = _progress.get(name, "")
