@@ -83,6 +83,39 @@ def ollama_status() -> dict[str, Any]:
         return {"running": False, "models": [], "error": str(exc)}
 
 
+def ollama_hardware_info() -> dict[str, Any]:
+    """Sjekk om Ollama bruker GPU eller CPU via /api/ps.
+
+    Returnerer:
+        mode: "gpu" | "hybrid" | "cpu"
+        gpu:  True/False
+        vram_mb:  VRAM i bruk (MB)
+        total_mb: Modellstørrelse (MB)
+    """
+    try:
+        data = _get("/api/ps", timeout=3)
+        models = data.get("models") or []
+        if not models:
+            return {"mode": "cpu", "gpu": False, "vram_mb": 0, "total_mb": 0}
+        m = models[0]
+        size      = int(m.get("size", 0) or 0)
+        size_vram = int(m.get("size_vram", 0) or 0)
+        total_mb  = round(size / 1024 / 1024)
+        vram_mb   = round(size_vram / 1024 / 1024)
+        if size_vram == 0:
+            mode = "cpu"
+            gpu  = False
+        elif size_vram >= size * 0.85:
+            mode = "gpu"
+            gpu  = True
+        else:
+            mode = "hybrid"
+            gpu  = True
+        return {"mode": mode, "gpu": gpu, "vram_mb": vram_mb, "total_mb": total_mb}
+    except Exception:
+        return {"mode": "cpu", "gpu": False, "vram_mb": 0, "total_mb": 0}
+
+
 # ── Prompt-builder (dynamisk basert på valgte kategorier) ───────────────
 
 _SYS = (

@@ -233,6 +233,19 @@
       border-radius: 6px; padding: 7px 11px; margin-top: 10px;
     }
     .dst-anon-msg { font-size: 12px; margin-left: 2px; flex: 1; color: var(--muted); }
+    .dst-hw-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 12px; color: var(--muted); margin-top: 6px;
+      background: rgba(138,150,168,.08); border: 1px solid var(--border);
+      border-radius: 4px; padding: 3px 9px;
+    }
+    .dst-hw-badge.gpu  { color: var(--ok);     border-color: rgba(76,175,80,.35); }
+    .dst-hw-badge.hybrid { color: var(--warn); border-color: rgba(255,184,77,.35); }
+    .dst-hw-req {
+      font-size: 12px; color: var(--muted); background: rgba(255,184,77,.07);
+      border: 1px solid rgba(255,184,77,.3); border-left: 3px solid var(--warn);
+      border-radius: 4px; padding: 8px 12px; margin-top: 8px; line-height: 1.55;
+    }
 
     /* NER-notice – vises i scanner-panelet når spaCy-modeller mangler */
     .ner-notice {
@@ -506,6 +519,8 @@
             <button id="dst-start-btn" class="ctrl-btn ctrl-btn-primary" data-i18n="deepScanStart">🔬 Start dybdeskann</button>
             <button id="dst-cancel-btn" class="ctrl-btn" style="display:none" data-i18n="deepScanCancel">✕ Avbryt</button>
           </div>
+          <div id="dst-hw-badge" style="display:none" class="dst-hw-badge"></div>
+          <div class="dst-hw-req" data-i18n="dstHwReq">⚠ Dybdeskanning kjøres lokalt og kan ta tid – spesielt på CPU. Anbefalt: maskin med minst 8 GB RAM. GPU-akselerasjon brukes automatisk dersom tilgjengelig.</div>
           <div class="dst-progress" id="dst-progress"></div>
         </div>
       </div>
@@ -572,6 +587,13 @@
           <p>Etter scanning kan du velge funn og generere en anonymisert versjon. For DOCX, PPTX, XLSX og PDF erstattes teksten direkte i filen. For andre formater genereres en renset .md-fil. Funn kan også eksporteres som JSON eller CSV.</p>
           <p style="color:var(--muted);font-size:12px;">⚠ PDF-redaktering erstatter tekst i innholdsstrømmen, men tekst i metadata eller bilder anonymiseres ikke. Kontroller resultatet.</p>
         </div>
+        <div class="about-section">
+          <h3>Dybdeskann med AI (Ollama)</h3>
+          <p>Dybdeskann-fanen sender dokumentteksten til en lokal AI-modell via <strong>Ollama</strong> og ber den identifisere sensitiv informasjon som regel-baserte detektorer kan misse – for eksempel navn i uvanlige formater, adresser uten postnummer, eller budsjettall i fritekst.</p>
+          <p>Du velger selv hvilke kategorier AI-en skal lete etter: navn, adresser, telefonnumre, personnumre, bankkontonumre, selskapsnavn og budsjetttall. Valgte funn kan anonymiseres direkte fra fanen og lagres som tekstfil i nedlastingsmappen.</p>
+          <div class="local-badge" style="margin-top:8px"><span class="icon">⏱️</span><span><strong>Maskinvarekrav:</strong> Dybdeskanning kan ta fra noen sekunder til flere minutter avhengig av dokumentstørrelse. Anbefalt maskin: minst 8 GB RAM og en relativt moderne CPU (fra ca. 2018 eller nyere). <strong>GPU-akselerasjon</strong> (NVIDIA/AMD) benyttes automatisk dersom det er tilgjengelig og gir betydelig kortere analysetid. Programmet viser om det kjører på CPU eller GPU.</span></div>
+          <p style="margin-top:8px;">Ollama lastes ned gratis fra <a href="https://ollama.ai" target="_blank" style="color:var(--accent)">ollama.ai</a>. Anbefalt modell: <strong>llama3.2:3b</strong> (~1,9 GB).</p>
+        </div>
         <p style="color:var(--muted);font-size:12px;">Skrevet av thomas.elboth@xlent.no</p>
       </div>
 
@@ -619,6 +641,13 @@
           <p>Efter skanning kan du välja fynd och generera en anonymiserad version. För DOCX, PPTX, XLSX och PDF ersätts texten direkt i filen. Fynd kan också exporteras som JSON eller CSV.</p>
           <p style="color:var(--muted);font-size:12px;">⚠ PDF-redigering ersätter text i innehållsströmmen, men text i metadata eller bilder anonymiseras inte. Kontrollera resultatet.</p>
         </div>
+        <div class="about-section">
+          <h3>Djupskanning med AI (Ollama)</h3>
+          <p>Fliken Djupskanning skickar dokumenttexten till en lokal AI-modell via <strong>Ollama</strong> och ber den identifiera känslig information som regelbaserade detektorer kan missa – till exempel namn i ovanliga format, adresser utan postnummer eller budgetsiffror i fritext.</p>
+          <p>Du väljer själv vilka kategorier AI:n ska leta efter: namn, adresser, telefonnummer, personnummer, bankkontonummer, företagsnamn och budgetbelopp. Valda fynd kan anonymiseras direkt från fliken och sparas som en textfil i nedladdningsmappen.</p>
+          <div class="local-badge" style="margin-top:8px"><span class="icon">⏱️</span><span><strong>Maskinvarukrav:</strong> Djupskanning kan ta från några sekunder till flera minuter beroende på dokumentets storlek. Rekommenderat: minst 8 GB RAM och en relativt modern CPU (från ca 2018 eller senare). <strong>GPU-acceleration</strong> (NVIDIA/AMD) används automatiskt om tillgänglig och ger avsevärt kortare analystid. Programmet visar om det körs på CPU eller GPU.</span></div>
+          <p style="margin-top:8px;">Ollama laddas ned gratis från <a href="https://ollama.ai" target="_blank" style="color:var(--accent)">ollama.ai</a>. Rekommenderad modell: <strong>llama3.2:3b</strong> (~1,9 GB).</p>
+        </div>
         <p style="color:var(--muted);font-size:12px;">Skriven av thomas.elboth@xlent.no</p>
       </div>
 
@@ -665,6 +694,13 @@
           <h3>Anonymisation and export</h3>
           <p>After scanning you can select findings and generate an anonymised version. For DOCX, PPTX, XLSX, and PDF the text is replaced directly in the file. Findings can also be exported as JSON or CSV.</p>
           <p style="color:var(--muted);font-size:12px;">⚠ PDF redaction replaces text in the content stream, but text in metadata or images is not anonymised. Verify the result.</p>
+        </div>
+        <div class="about-section">
+          <h3>AI Deep Scan (Ollama)</h3>
+          <p>The Deep Scan tab sends document text to a local AI model via <strong>Ollama</strong> and asks it to identify sensitive information that rule-based detectors may miss — for example names in unusual formats, addresses without postal codes, or budget figures embedded in free text.</p>
+          <p>You choose which categories the AI should look for: names, addresses, phone numbers, national ID numbers, bank account numbers, company names, and budget amounts. Selected findings can be anonymised directly from the tab and saved as a text file in the Downloads folder.</p>
+          <div class="local-badge" style="margin-top:8px"><span class="icon">⏱️</span><span><strong>Hardware requirements:</strong> Deep scanning can take anywhere from a few seconds to several minutes depending on document size. Recommended: at least 8 GB RAM and a relatively modern CPU (circa 2018 or newer). <strong>GPU acceleration</strong> (NVIDIA/AMD) is used automatically when available and provides significantly faster analysis. The app shows whether it is running on CPU or GPU.</span></div>
+          <p style="margin-top:8px;">Ollama is available free at <a href="https://ollama.ai" target="_blank" style="color:var(--accent)">ollama.ai</a>. Recommended model: <strong>llama3.2:3b</strong> (~1.9 GB).</p>
         </div>
         <p style="color:var(--muted);font-size:12px;">Written by thomas.elboth@xlent.no</p>
       </div>
@@ -872,6 +908,10 @@
         dstResultsTitle:    "AI-funn",
         dstAnonBtn:         "Anonymiser valgte",
         dstSelectOne:       "Velg minst ett funn å anonymisere.",
+        dstHwReq:           "⚠ Dybdeskanning kjøres lokalt og kan ta tid – spesielt på CPU. Anbefalt: maskin med minst 8 GB RAM. GPU-akselerasjon brukes automatisk dersom tilgjengelig.",
+        dstHwCpu:           "🖥️ Kjører på CPU",
+        dstHwGpu:           "🎮 Kjører på GPU",
+        dstHwHybrid:        "⚡ CPU + GPU",
       },
       sv: {
         subtitle:     "Kontrollerar dokument för känslig information innan uppladdning till online-AI-verktyg",
@@ -987,6 +1027,10 @@
         dstResultsTitle:    "AI-fynd",
         dstAnonBtn:         "Anonymisera valda",
         dstSelectOne:       "Välj minst ett fynd att anonymisera.",
+        dstHwReq:           "⚠ Djupskanning körs lokalt och kan ta tid – särskilt på CPU. Rekommenderas: maskin med minst 8 GB RAM. GPU-acceleration används automatiskt om tillgänglig.",
+        dstHwCpu:           "🖥️ Körs på CPU",
+        dstHwGpu:           "🎮 Körs på GPU",
+        dstHwHybrid:        "⚡ CPU + GPU",
       },
       en: {
         subtitle:     "Checks documents for sensitive information before uploading to online AI tools",
@@ -1102,6 +1146,10 @@
         dstResultsTitle:    "AI findings",
         dstAnonBtn:         "Anonymise selected",
         dstSelectOne:       "Select at least one finding to anonymise.",
+        dstHwReq:           "⚠ Deep scanning runs locally and may take time – especially on CPU. Recommended: machine with at least 8 GB RAM. GPU acceleration is used automatically when available.",
+        dstHwCpu:           "🖥️ Running on CPU",
+        dstHwGpu:           "🎮 Running on GPU",
+        dstHwHybrid:        "⚡ CPU + GPU",
       },
     };
 
@@ -1936,8 +1984,9 @@
     /* ══════════════════════════════════════════════════════════════════
        DYBDESKANN-FANE
     ══════════════════════════════════════════════════════════════════ */
-    let _dstPollTimer = null;
-    let _dstFindings  = [];
+    let _dstPollTimer   = null;
+    let _dstFindings    = [];
+    let _dstHwChecked   = false;
 
     async function loadDeepScanTab() {
       // Fil-info
@@ -1996,6 +2045,35 @@
       }
     }
 
+    function renderDstHardware(hw) {
+      const el = document.getElementById("dst-hw-badge");
+      if (!hw || hw.mode === "cpu") {
+        el.className = "dst-hw-badge";
+        el.textContent = t("dstHwCpu");
+        el.style.display = "";
+        return;
+      }
+      if (hw.mode === "gpu") {
+        el.className = "dst-hw-badge gpu";
+        el.textContent = hw.vram_mb
+          ? `${t("dstHwGpu")} (${hw.vram_mb} MB VRAM)`
+          : t("dstHwGpu");
+      } else {
+        el.className = "dst-hw-badge hybrid";
+        el.textContent = hw.vram_mb
+          ? `${t("dstHwHybrid")} (${hw.vram_mb} MB VRAM)`
+          : t("dstHwHybrid");
+      }
+      el.style.display = "";
+    }
+
+    async function checkDstHardware() {
+      try {
+        const hw = await (await fetch(`${API}/ollama/hardware-info`)).json();
+        renderDstHardware(hw);
+      } catch (_) { /* stille */ }
+    }
+
     async function startDstScan() {
       const model = document.getElementById("dst-model-select").value;
       if (!model) return;
@@ -2010,7 +2088,9 @@
       document.getElementById("dst-progress").textContent = t("deepScanRunning");
       document.getElementById("dst-results-section").style.display = "none";
       document.getElementById("dst-findings-area").innerHTML = "";
-      _dstFindings = [];
+      document.getElementById("dst-hw-badge").style.display  = "none";
+      _dstFindings  = [];
+      _dstHwChecked = false;
       try {
         const r = await (await fetch(`${API}/ollama/deep-scan`, {
           method: "POST",
@@ -2034,12 +2114,18 @@
       try {
         const s = await (await fetch(`${API}/ollama/deep-scan/status`)).json();
         document.getElementById("dst-progress").textContent = s.progress || "";
+        // Sjekk hardware én gang etter at modellen er lastet (andre poll)
+        if (!_dstHwChecked && s.status === "running" && s.progress && s.progress !== "Starter…") {
+          _dstHwChecked = true;
+          checkDstHardware();
+        }
         if (s.status === "done") {
           clearInterval(_dstPollTimer); _dstPollTimer = null;
           document.getElementById("dst-cancel-btn").style.display = "none";
           document.getElementById("dst-start-btn").style.display  = "";
           _dstFindings = s.findings || [];
           renderDstFindings(_dstFindings);
+          if (!_dstHwChecked) { _dstHwChecked = true; checkDstHardware(); }
         } else if (s.status === "cancelled" || s.status === "error") {
           clearInterval(_dstPollTimer); _dstPollTimer = null;
           document.getElementById("dst-cancel-btn").style.display = "none";

@@ -502,6 +502,13 @@ def ollama_status_endpoint():
     return jsonify(ollama_status())
 
 
+@flask_app.route("/ollama/hardware-info", methods=["GET"])
+def ollama_hardware_info_endpoint():
+    """Returner GPU/CPU-info for pågående Ollama-modell via /api/ps."""
+    from xlent_scanner.deep_scanner import ollama_hardware_info  # noqa: PLC0415
+    return jsonify(ollama_hardware_info())
+
+
 @flask_app.route("/ollama/last-file-info", methods=["GET"])
 def ollama_last_file_info():
     """Returnerer info om sist skannede fil for Dybdeskann-fanen."""
