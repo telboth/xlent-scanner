@@ -40,6 +40,7 @@ CATEGORIES: dict[str, str] = {
     "bankkonto":     "bankkontonumre – 11-sifret norsk eller IBAN",
     "selskapsnavn":  "offisielle firma- og organisasjonsnavn (ikke produkter eller teknologier)",
     "budsjett_tall": "pengebeløp MED valutasymbol/-kode: kr, NOK, EUR, USD, $, € (ikke tidsuttrykk eller tall uten valuta)",
+    "nettadresse":   "nettadresser/URL-er som begynner med http://, https:// eller www.",
 }
 
 # Én aktiv jobb om gangen
@@ -161,6 +162,10 @@ Selskapsnavn – offisielt firma, org. eller stiftelse:
 Pengebeløp – MÅ ha valutasymbol ELLER -kode (kr / NOK / EUR / USD / $ / €):
   ✅ «500 000 kr»  ✅ «NOK 1 200»  ✅ «€50 000»  ✅ «3 MNOK»  ✅ «15 mill kr»
   ❌ «4-6 week pilot»  ❌ «4-6 weeks»  ❌ «Q1 2025»  ❌ «50 ansatte»  ❌ «15 %»  ❌ tidsuttrykk  ❌ tall uten valuta
+
+Nettadresse – URL som begynner med http://, https:// eller www.:
+  ✅ «www.vg.no»  ✅ «https://xlent.no»  ✅ «http://intern.firma.com/dokument»
+  ❌ e-postadresser  ❌ fil-stier  ❌ domenenavn uten protokoll eller www.
 """
 
 _RULES_SV = """\
@@ -197,6 +202,10 @@ Företagsnamn – officiellt bolag, org. eller stiftelse:
 Penningbelopp – MÅSTE ha valutasymbol ELLER -kod (kr / SEK / EUR / USD / $ / €):
   ✅ «500 000 kr»  ✅ «SEK 1 200»  ✅ «€50 000»
   ❌ «4-6 veckor»  ❌ «Q1 2025»  ❌ «50 anställda»  ❌ tidsuttryck  ❌ tal utan valuta
+
+Webbadress – URL som börjar med http://, https:// eller www.:
+  ✅ «www.vg.no»  ✅ «https://xlent.se»  ✅ «http://intern.foretag.se/dokument»
+  ❌ e-postadresser  ❌ filsökvägar  ❌ domännamn utan protokoll eller www.
 """
 
 _RULES_EN = """\
@@ -233,6 +242,10 @@ Company name – official company, org., or foundation:
 Monetary amount – MUST have a currency symbol OR code (NOK / EUR / USD / $ / £ / €):
   ✅ «NOK 500 000»  ✅ «$1,200»  ✅ «€50 000»  ✅ «3 MNOK»
   ❌ «4-6 week pilot»  ❌ «4-6 weeks»  ❌ «Q1 2025»  ❌ «50 employees»  ❌ time expressions  ❌ numbers without currency
+
+Web address – URL starting with http://, https:// or www.:
+  ✅ «www.vg.no»  ✅ «https://xlent.com»  ✅ «http://internal.company.com/doc»
+  ❌ email addresses  ❌ file paths  ❌ domain names without a protocol or www.
 """
 
 

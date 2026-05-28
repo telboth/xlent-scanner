@@ -517,6 +517,56 @@
       <div id="status"></div>
       <div id="result"></div>
 
+      <!-- Inline dybdeskann (kollapsibel, vises etter fil-skann) -->
+      <div id="deep-scan-section">
+        <div class="ds-header" id="ds-header">
+          <span style="font-size:15px">🔬</span>
+          <span class="ds-header-title" data-i18n="inlineDeepTitle">Dybdeskann med AI</span>
+          <span class="ds-chevron">▶</span>
+        </div>
+        <div class="ds-body" id="ds-body">
+          <div class="ds-status-row" id="ds-status-row-inline">
+            <span style="color:var(--muted);font-size:12px" data-i18n="ollamaChecking">Sjekker Ollama…</span>
+          </div>
+          <div id="ds-not-running" style="display:none" class="ds-ollama-instructions"></div>
+          <div id="ds-ready" style="display:none">
+            <!-- Kategorier -->
+            <div style="margin-bottom:10px;">
+              <div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:8px;font-weight:600;" data-i18n="dstCatsTitle">Søk etter</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px 14px;margin-bottom:8px;">
+                <label class="dst-cat-label"><input type="checkbox" class="ds-cat" value="navn" checked> <span data-i18n="dstCatNavn">Navn</span></label>
+                <label class="dst-cat-label"><input type="checkbox" class="ds-cat" value="adresse" checked> <span data-i18n="dstCatAdresse">Adresse</span></label>
+                <label class="dst-cat-label"><input type="checkbox" class="ds-cat" value="epost" checked> <span data-i18n="dstCatEpost">E-post</span></label>
+                <label class="dst-cat-label"><input type="checkbox" class="ds-cat" value="telefon" checked> <span data-i18n="dstCatTelefon">Telefon</span></label>
+                <label class="dst-cat-label"><input type="checkbox" class="ds-cat" value="personnummer" checked> <span data-i18n="dstCatPersonnummer">Personnummer</span></label>
+                <label class="dst-cat-label"><input type="checkbox" class="ds-cat" value="bankkonto" checked> <span data-i18n="dstCatBankkonto">Bankkontonummer</span></label>
+                <label class="dst-cat-label"><input type="checkbox" class="ds-cat" value="selskapsnavn" checked> <span data-i18n="dstCatSelskapsnavn">Selskapsnavn</span></label>
+                <label class="dst-cat-label"><input type="checkbox" class="ds-cat" value="budsjett_tall" checked> <span data-i18n="dstCatBudsjett">Budsjett / beløp</span></label>
+                <label class="dst-cat-label"><input type="checkbox" class="ds-cat" value="nettadresse"> <span data-i18n="dstCatNettadresse">Nettadresser</span></label>
+              </div>
+            </div>
+            <!-- Modellrad + start/avbryt -->
+            <div class="ds-model-row">
+              <select id="ds-model-select"></select>
+              <button id="ds-start-btn" class="ctrl-btn ctrl-btn-primary" data-i18n="deepScanStart">🔬 Start dybdeskann</button>
+              <button id="ds-cancel-btn" class="ctrl-btn" style="display:none" data-i18n="deepScanCancel">✕ Avbryt</button>
+            </div>
+            <!-- Konfidensfilter -->
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+              <label style="font-size:12px;color:var(--muted);white-space:nowrap;" data-i18n="confidenceLabel">Min konfidensfilter:</label>
+              <select id="ds-confidence-select" style="padding:3px 8px;border-radius:5px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:12px;cursor:pointer;">
+                <option value="high" data-i18n="confidenceHigh">Høy (kun sikre funn)</option>
+                <option value="medium" selected data-i18n="confidenceMedium">Medium (sannsynlige)</option>
+                <option value="low" data-i18n="confidenceLow">Lav (alle funn)</option>
+              </select>
+            </div>
+            <div class="ds-progress" id="ds-progress"></div>
+          </div>
+          <!-- Funn fra inline dybdeskann -->
+          <div id="ds-findings-area"></div>
+        </div>
+      </div>
+
       <!-- Ekstrahert tekst -->
       <div id="text-preview-section" style="display:none; margin-top:10px;"></div>
 
@@ -553,6 +603,7 @@
           <label class="dst-cat-label"><input type="checkbox" class="dst-cat" value="bankkonto" checked> <span data-i18n="dstCatBankkonto">Bankkontonummer</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="dst-cat" value="selskapsnavn" checked> <span data-i18n="dstCatSelskapsnavn">Selskapsnavn</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="dst-cat" value="budsjett_tall" checked> <span data-i18n="dstCatBudsjett">Budsjett / beløp</span></label>
+          <label class="dst-cat-label"><input type="checkbox" class="dst-cat" value="nettadresse"> <span data-i18n="dstCatNettadresse">Nettadresser</span></label>
         </div>
         <div style="margin-top:8px;display:flex;gap:6px;">
           <button class="ctrl-btn" id="dst-sel-all-cats" data-i18n="selAll">Velg alle</button>
@@ -931,6 +982,8 @@
         settingsOllamaTitle: "AI-dybdeskann (Ollama)",
         settingsOllamaNote:  "Dybdeskanning bruker en lokal Ollama-modell for å oppdage personopplysninger som regel-baserte detektorer kan misse. Krever Ollama installert.",
         ollamaRefresh:       "↻ Sjekk status",
+        inlineDeepTitle:     "Dybdeskann med AI",
+        ollamaChecking:      "Sjekker Ollama…",
         ollamaRunning:       "✅ Ollama kjører",
         ollamaNotRunning:    "❌ Ollama kjører ikke",
         ollamaModelsLabel:   "Installerte modeller:",
@@ -965,9 +1018,10 @@
         dstCatTelefon:      "Telefon",
         dstCatPersonnummer: "Personnummer",
         dstCatBankkonto:    "Bankkontonummer",
-        dstCatSelskapsnavn: "Selskapsnavn",
-        dstCatBudsjett:     "Budsjett / beløp",
-        dstScanTitle:       "AI-analyse (Ollama)",
+        dstCatSelskapsnavn:  "Selskapsnavn",
+        dstCatBudsjett:      "Budsjett / beløp",
+        dstCatNettadresse:   "Nettadresser",
+        dstScanTitle:        "AI-analyse (Ollama)",
         dstResultsTitle:    "AI-funn",
         dstAnonBtn:         "Anonymiser valgte",
         dstSelectOne:       "Velg minst ett funn å anonymisere.",
@@ -1069,6 +1123,8 @@
         settingsOllamaTitle: "AI-djupskanning (Ollama)",
         settingsOllamaNote:  "Djupskanning använder en lokal Ollama-modell för att hitta personuppgifter som regelbaserade detektorer kan missa. Kräver att Ollama är installerat.",
         ollamaRefresh:       "↻ Kontrollera status",
+        inlineDeepTitle:     "Djupskanning med AI",
+        ollamaChecking:      "Kontrollerar Ollama…",
         ollamaRunning:       "✅ Ollama körs",
         ollamaNotRunning:    "❌ Ollama körs inte",
         ollamaModelsLabel:   "Installerade modeller:",
@@ -1103,9 +1159,10 @@
         dstCatTelefon:      "Telefon",
         dstCatPersonnummer: "Personnummer",
         dstCatBankkonto:    "Bankkontonummer",
-        dstCatSelskapsnavn: "Företagsnamn",
-        dstCatBudsjett:     "Budget / belopp",
-        dstScanTitle:       "AI-analys (Ollama)",
+        dstCatSelskapsnavn:  "Företagsnamn",
+        dstCatBudsjett:      "Budget / belopp",
+        dstCatNettadresse:   "Webbadresser",
+        dstScanTitle:        "AI-analys (Ollama)",
         dstResultsTitle:    "AI-fynd",
         dstAnonBtn:         "Anonymisera valda",
         dstSelectOne:       "Välj minst ett fynd att anonymisera.",
@@ -1207,6 +1264,8 @@
         settingsOllamaTitle: "AI deep scan (Ollama)",
         settingsOllamaNote:  "Deep scanning uses a local Ollama model to detect personal data that rule-based detectors may miss. Requires Ollama to be installed.",
         ollamaRefresh:       "↻ Check status",
+        inlineDeepTitle:     "Deep Scan with AI",
+        ollamaChecking:      "Checking Ollama…",
         ollamaRunning:       "✅ Ollama is running",
         ollamaNotRunning:    "❌ Ollama is not running",
         ollamaModelsLabel:   "Installed models:",
@@ -1241,9 +1300,10 @@
         dstCatTelefon:      "Phone numbers",
         dstCatPersonnummer: "National ID numbers",
         dstCatBankkonto:    "Bank account numbers",
-        dstCatSelskapsnavn: "Company names",
-        dstCatBudsjett:     "Budget / amounts",
-        dstScanTitle:       "AI analysis (Ollama)",
+        dstCatSelskapsnavn:  "Company names",
+        dstCatBudsjett:      "Budget / amounts",
+        dstCatNettadresse:   "Web addresses",
+        dstScanTitle:        "AI analysis (Ollama)",
         dstResultsTitle:    "AI findings",
         dstAnonBtn:         "Anonymise selected",
         dstSelectOne:       "Select at least one finding to anonymise.",
@@ -1340,8 +1400,8 @@
         el.placeholder = t(el.dataset.i18nPlaceholder);
       });
 
-      // Update confidence select options
-      document.querySelectorAll("#dst-confidence-select option[data-i18n]").forEach(el => {
+      // Update confidence select options (dybdeskann tab + inline panel)
+      document.querySelectorAll("#dst-confidence-select option[data-i18n], #ds-confidence-select option[data-i18n]").forEach(el => {
         el.textContent = t(el.dataset.i18n);
       });
 
@@ -1625,6 +1685,16 @@
       `;
 
       wireEvents(sorted, canPatch, ext);
+
+      // Vis inline dybdeskann-panel etter fil-skann (ikke paste/mappe)
+      if (_scanMode === "file") {
+        document.getElementById("deep-scan-section").classList.add("show");
+        // Tilbakestill panel men behold header-åpen-tilstand
+        document.getElementById("ds-progress").textContent = "";
+        document.getElementById("ds-findings-area").innerHTML = "";
+      } else {
+        document.getElementById("deep-scan-section").classList.remove("show");
+      }
 
       // Tekst-forhåndsvisning vises ETTER deep-scan-seksjonen
       const tpEl = document.getElementById("text-preview-section");
@@ -2414,6 +2484,147 @@
     document.getElementById("dst-start-btn").addEventListener("click",  startDstScan);
     document.getElementById("dst-cancel-btn").addEventListener("click", cancelDstScan);
     document.getElementById("dst-anon-btn").addEventListener("click",   anonymizeDst);
+
+    /* ══════════════════════════════════════════════════════════════════
+       INLINE DYBDESKANN (kollapsibel panel i scanner-tabben)
+    ══════════════════════════════════════════════════════════════════ */
+    let _dsInitialized = false;
+    let _dsPollTimer   = null;
+
+    // Kollapser/ekspander
+    document.getElementById("ds-header").addEventListener("click", () => {
+      const h = document.getElementById("ds-header");
+      const b = document.getElementById("ds-body");
+      const opening = !h.classList.contains("open");
+      h.classList.toggle("open");
+      b.classList.toggle("open");
+      if (opening && !_dsInitialized) {
+        _dsInitialized = true;
+        dsCheckOllama();
+      }
+    });
+
+    async function dsCheckOllama() {
+      const statusRow  = document.getElementById("ds-status-row-inline");
+      const notRunning = document.getElementById("ds-not-running");
+      const readyDiv   = document.getElementById("ds-ready");
+      const modelSel   = document.getElementById("ds-model-select");
+      statusRow.innerHTML = `<span style="color:var(--muted);font-size:12px">${t("ollamaChecking")}</span>`;
+      try {
+        const s = await (await fetch(`${API}/ollama/status`)).json();
+        if (!s.running) {
+          statusRow.innerHTML  = `<span style="color:var(--danger)">${t("ollamaNotRunning")}</span>`;
+          notRunning.innerHTML = t("ollamaInstallHint");
+          notRunning.style.display = "block";
+          readyDiv.style.display   = "none";
+          return;
+        }
+        notRunning.style.display = "none";
+        if (!s.models || !s.models.length) {
+          statusRow.innerHTML = `<span style="color:var(--ok)">${t("ollamaRunning")}</span>
+            <span style="color:var(--danger);margin-left:8px">${t("ollamaNoModels")}</span>`;
+          readyDiv.style.display = "none";
+          return;
+        }
+        statusRow.innerHTML = `<span style="color:var(--ok)">${t("ollamaRunning")}</span>`;
+        const current = modelSel.value;
+        modelSel.innerHTML = s.models.map(m => {
+          const rec = ["llama3.2:3b","llama3.2:1b","gemma2:2b","mistral:7b"].includes(m);
+          return `<option value="${escapeHtml(m)}">${escapeHtml(m)}${rec ? " ★" : ""}</option>`;
+        }).join("");
+        if (current && s.models.includes(current)) modelSel.value = current;
+        readyDiv.style.display = "block";
+      } catch (_) {
+        statusRow.innerHTML  = `<span style="color:var(--danger)">${t("ollamaNotRunning")}</span>`;
+        notRunning.innerHTML = t("ollamaInstallHint");
+        notRunning.style.display = "block";
+        readyDiv.style.display   = "none";
+      }
+    }
+
+    async function dsStart() {
+      const model = document.getElementById("ds-model-select").value;
+      if (!model) return;
+      const cats = [...document.querySelectorAll(".ds-cat:checked")].map(cb => cb.value);
+      if (!cats.length) {
+        document.getElementById("ds-progress").innerHTML =
+          `<span style="color:var(--warn)">Velg minst én kategori.</span>`;
+        return;
+      }
+      document.getElementById("ds-start-btn").style.display  = "none";
+      document.getElementById("ds-cancel-btn").style.display = "";
+      document.getElementById("ds-progress").textContent = t("deepScanRunning");
+      document.getElementById("ds-findings-area").innerHTML = "";
+      const minConf = document.getElementById("ds-confidence-select")?.value || "medium";
+      try {
+        const r = await (await fetch(`${API}/ollama/deep-scan`, {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({ model, categories: cats, min_confidence: minConf }),
+        })).json();
+        if (r.error) { dsSetError(r.error); return; }
+        if (_dsPollTimer) clearInterval(_dsPollTimer);
+        _dsPollTimer = setInterval(dsPoll, 1500);
+      } catch (e) { dsSetError(String(e)); }
+    }
+
+    async function dsCancel() {
+      if (_dsPollTimer) { clearInterval(_dsPollTimer); _dsPollTimer = null; }
+      await fetch(`${API}/ollama/deep-scan/cancel`, { method:"POST" }).catch(()=>{});
+      document.getElementById("ds-cancel-btn").style.display = "none";
+      document.getElementById("ds-start-btn").style.display  = "";
+      document.getElementById("ds-progress").textContent = t("deepScanCancelled") || "Avbrutt.";
+    }
+
+    async function dsPoll() {
+      try {
+        const s = await (await fetch(`${API}/ollama/deep-scan/status`)).json();
+        document.getElementById("ds-progress").textContent = s.progress || "";
+        if (s.status === "done") {
+          clearInterval(_dsPollTimer); _dsPollTimer = null;
+          document.getElementById("ds-cancel-btn").style.display = "none";
+          document.getElementById("ds-start-btn").style.display  = "";
+          dsRenderFindings(s.findings || []);
+        } else if (s.status === "cancelled" || s.status === "error") {
+          clearInterval(_dsPollTimer); _dsPollTimer = null;
+          document.getElementById("ds-cancel-btn").style.display = "none";
+          document.getElementById("ds-start-btn").style.display  = "";
+        }
+      } catch (_) { /* stille – prøver igjen */ }
+    }
+
+    function dsRenderFindings(findings) {
+      const area = document.getElementById("ds-findings-area");
+      if (!findings.length) {
+        area.innerHTML = `<p style="color:var(--ok);font-size:13px;margin-top:8px">${t("noFindings")}</p>`;
+        return;
+      }
+      const confBadge = conf => {
+        const map = { high: ["var(--ok)","★★★"], medium: ["var(--warn)","★★☆"], low: ["var(--muted)","★☆☆"] };
+        const [color, stars] = map[conf] || ["var(--muted)", conf];
+        return `<span style="color:${color};font-size:11px;margin-left:4px">${stars}</span>`;
+      };
+      area.innerHTML = `<div class="ds-findings-title">${t("dstResultsTitle")} (${findings.length})</div>` +
+        findings.map(f => `
+          <div class="ds-finding">
+            <div class="ds-finding-cat">${escapeHtml(f.category||"")}${confBadge((f.confidence||"").toLowerCase())}</div>
+            <div class="ds-finding-text">
+              <div>${escapeHtml(f.text||"")}</div>
+              ${f.context ? `<div class="ds-finding-ctx">${escapeHtml(f.context)}</div>` : ""}
+            </div>
+          </div>`).join("");
+    }
+
+    function dsSetError(msg) {
+      clearInterval(_dsPollTimer); _dsPollTimer = null;
+      document.getElementById("ds-cancel-btn").style.display = "none";
+      document.getElementById("ds-start-btn").style.display  = "";
+      document.getElementById("ds-progress").innerHTML =
+        `<span style="color:var(--danger)">${t("deepScanError")} ${escapeHtml(msg)}</span>`;
+    }
+
+    document.getElementById("ds-start-btn").addEventListener("click",  dsStart);
+    document.getElementById("ds-cancel-btn").addEventListener("click",  dsCancel);
 
     /* ══════════════════════════════════════════════════════════════════
        MODE TOGGLE (Fil / Lim inn / Mappe)

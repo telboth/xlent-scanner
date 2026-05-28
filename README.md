@@ -1,6 +1,6 @@
 # XLENT Compliance-scanner
 
-> **v0.9.19** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
+> **v0.9.20** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
 
 Alt kjøres 100 % lokalt — ingen dokumenter, tekst eller funn sendes over internett.
 
@@ -203,6 +203,11 @@ src/xlent_scanner/
 ---
 
 ## Endringslogg
+
+### v0.9.20
+- **Test suite** — automatiske tester for alle detektorer (`tests/`); integrasjonstest mot `i_english.docx`
+- **URL-kategori i dybdeskann** — ny kategori «Nettadresser» (http/https/www) i AI-dybdeskann
+- **Inline dybdeskann** — kollapsibelt 🔬 dybdeskann-panel vises direkte i scanner-tabben etter fil-skanning
 
 ### v0.9.19
 - Paste-tekst-modus og mappeskann-modus i scanner-tabben
