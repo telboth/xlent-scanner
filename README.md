@@ -98,6 +98,17 @@ Last ned `xlent-scanner-setup-<versjon>.exe` fra [Releases](https://github.com/t
 
 ---
 
+## Installasjon (macOS — intern MVP)
+
+Last ned `xlent-scanner-macos-<versjon>.dmg` fra [Releases](https://github.com/telboth/xlent-scanner/releases).
+
+1. Åpne DMG-filen og dra **XLENTScanner** til **Applications**-mappen
+2. **Første gangs oppstart**: macOS Gatekeeper kan blokkere appen fordi den ikke er signert. Høyreklikk på appen og velg **Åpne**, deretter bekreft i dialogboksen.
+
+> Appen er bygget for Apple Silicon (M-series). Intel Mac-brukere kan kjøre fra kildekode med `uv run xlent-scanner`.
+
+---
+
 ## Bruk
 
 1. Start appen (`uv run xlent-scanner` eller dobbeltklikk på installert snarvei)

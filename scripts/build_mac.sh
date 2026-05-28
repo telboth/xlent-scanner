@@ -75,9 +75,50 @@ uv pip install --python "$PYTHON_EXE" "pyinstaller>=6.0.0" "pyinstaller-hooks-co
   --clean \
   --windowed \
   --name "$APP_NAME" \
+  --osx-bundle-identifier "no.xlent.xlent-scanner" \
   --paths "$REPO_ROOT/src" \
+  \
   --collect-data xlent_scanner \
-  --hidden-import webview.platforms.cocoa \
+  --collect-data langdetect \
+  --collect-all docling \
+  --collect-all docling_core \
+  --collect-data docling_ibm_models \
+  \
+  --hidden-import "webview.platforms.cocoa" \
+  \
+  --hidden-import "docx" \
+  --hidden-import "docx.oxml" \
+  --hidden-import "docx.oxml.ns" \
+  --hidden-import "docx.enum.text" \
+  --hidden-import "docx.shared" \
+  --hidden-import "pptx" \
+  --hidden-import "pptx.util" \
+  --hidden-import "pptx.enum" \
+  --hidden-import "pptx.enum.text" \
+  --hidden-import "pptx.dml.color" \
+  --hidden-import "openpyxl" \
+  --hidden-import "openpyxl.styles" \
+  --hidden-import "openpyxl.utils" \
+  --hidden-import "openpyxl.utils.exceptions" \
+  \
+  --hidden-import "langdetect" \
+  --hidden-import "langdetect.detector" \
+  --hidden-import "langdetect.detector_factory" \
+  --hidden-import "langdetect.language" \
+  --hidden-import "langdetect.utils.lang_detect_exception" \
+  --hidden-import "langdetect.utils.unicode_block" \
+  \
+  --hidden-import "fitz" \
+  \
+  --hidden-import "xlent_scanner.model_manager" \
+  --hidden-import "xlent_scanner.deep_scanner" \
+  --hidden-import "spacy" \
+  --hidden-import "spacy.lang.nb" \
+  --hidden-import "spacy.lang.sv" \
+  --hidden-import "spacy.lang.en" \
+  \
+  --exclude-module "torchvision" \
+  \
   --distpath "$DIST_DIR" \
   --workpath "$BUILD_DIR" \
   --specpath "$SPEC_DIR" \

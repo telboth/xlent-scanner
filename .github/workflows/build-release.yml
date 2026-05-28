@@ -1,0 +1,93 @@
+name: Build and Release
+
+# Kjøres automatisk ved tag-push (v*) eller manuelt fra GitHub Actions-UI.
+# Bygger Windows .exe + macOS .dmg og laster dem opp til GitHub Release.
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release-tag som finnes på GitHub (f.eks. v1.0.0)'
+        required: true
+
+permissions:
+  contents: write   # Trengs for å laste opp til Release
+
+jobs:
+
+  # ── macOS ─────────────────────────────────────────────────────────────
+  build-macos:
+    name: macOS .dmg (Apple Silicon)
+    runs-on: macos-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Installer uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Installer avhengigheter
+        run: uv sync
+
+      - name: Bygg app-bundle (PyInstaller)
+        run: bash scripts/build_mac.sh
+
+      - name: Pakk .dmg
+        run: bash scripts/package_mac.sh
+
+      - name: Last opp til GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${GITHUB_REF_NAME:-${{ github.event.inputs.tag }}}"
+          # Opprett release hvis den ikke finnes ennå
+          gh release view "$TAG" --json tagName > /dev/null 2>&1 || \
+            gh release create "$TAG" --title "$TAG" --notes "Automatisk bygg fra GitHub Actions."
+          gh release upload "$TAG" artifacts/macos/installer/*.dmg --clobber
+
+  # ── Windows ───────────────────────────────────────────────────────────
+  build-windows:
+    name: Windows .exe (x64)
+    runs-on: windows-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Installer uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Installer avhengigheter
+        run: uv sync
+
+      - name: Installer Inno Setup
+        run: choco install innosetup --yes --no-progress
+
+      - name: Bygg app-bundle (PyInstaller)
+        run: .\scripts\build_win.ps1
+
+      - name: Pakk installer (.exe)
+        run: .\scripts\package_win.ps1
+
+      - name: Last opp til GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: pwsh
+        run: |
+          $Tag = if ($env:GITHUB_REF_NAME -and $env:GITHUB_REF_NAME -ne '') { $env:GITHUB_REF_NAME } else { '${{ github.event.inputs.tag }}' }
+          gh release view $Tag --json tagName 2>$null | Out-Null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create $Tag --title $Tag --notes "Automatisk bygg fra GitHub Actions."
+          }
+          $Installer = Get-ChildItem artifacts\windows\installer\*.exe | Select-Object -First 1
+          gh release upload $Tag $Installer.FullName --clobber
