@@ -141,16 +141,19 @@ def check_for_update(current_version: str, force: bool = False) -> dict[str, Any
     )
 
     if not force and last_checked and now < next_check_at:
+        cached_latest = state.get("latest_version", current_version)
         return {
             "ok": True,
             "checked_now": False,
             "current_version": current_version,
-            "latest_version": state.get("latest_version", current_version),
+            "latest_version": cached_latest,
             "release_url": state.get(
                 "release_url",
                 f"https://github.com/{GITHUB_OWNER}/{GITHUB_REPO}/releases",
             ),
-            "update_available": bool(state.get("update_available", False)),
+            # Re-evaluer alltid mot gjeldende versjon – cachen kan være utdatert
+            # hvis brukeren har oppgradert siden siste nettsjekk.
+            "update_available": _is_newer(cached_latest, current_version),
             "last_checked_at": _to_iso(last_checked),
             "next_check_at": _to_iso(next_check_at),
         }

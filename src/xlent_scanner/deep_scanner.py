@@ -32,13 +32,13 @@ RECOMMENDED_MODELS = [
 
 # Søkekategorier – nøkkel → norsk beskrivelse til LLM-prompt
 CATEGORIES: dict[str, str] = {
-    "navn":          "personnavn (fornavn og etternavn på enkeltpersoner)",
-    "adresse":       "fysiske adresser (gateadresse, postnummer, poststed)",
+    "navn":          "personnavn – fornavn OG etternavn på virkelige enkeltpersoner",
+    "adresse":       "fullstendige fysiske adresser med gatenavn OG husnummer",
     "telefon":       "telefonnumre (norske og internasjonale)",
     "personnummer":  "norske fødselsnumre (11 siffer) og personnumre",
     "bankkonto":     "bankkontonumre (11 siffer) og IBAN-numre",
     "selskapsnavn":  "selskapsnavn, firmanavn og organisasjonsnavn",
-    "budsjett_tall": "tall som representerer beløp, priser, summer, marginer eller budsjetter (inkl. kr, NOK, %, antall)",
+    "budsjett_tall": "konkrete pengebeløp med valutasymbol/kode (kr, NOK, EUR, USD, $, €) eller prosentandeler av verdi",
 }
 
 # Én aktiv jobb om gangen
@@ -119,8 +119,32 @@ def ollama_hardware_info() -> dict[str, Any]:
 # ── Prompt-builder (dynamisk basert på valgte kategorier) ───────────────
 
 _SYS = (
-    "Du er en GDPR-ekspert. Svar ALLTID med gyldig JSON, aldri med annen tekst."
+    "Du er en GDPR-ekspert med høy presisjon. "
+    "Rapporter KUN funn du er sikker på. "
+    "Svar ALLTID med gyldig JSON, aldri med annen tekst."
 )
+
+# Eksplisitte eksklusjonsregler per kategori og språk
+_EXCLUSIONS_NB = """\
+Strenge regler – IKKE flag:
+- Personnavn: bynavn, selskapsnavn, produktnavn, fraser i store bokstaver (f.eks. «YARA PAYS FOR»), funksjonstitler, land, organisasjoner. Personnavn MÅ bestå av fornavn + etternavn.
+- Adresse: enkelt bynavn (Oslo, Bergen, Trondheim, Ålesund), land, regioner, destinasjonsnavn. Adresse MÅ ha gatenavn OG husnummer.
+- Budsjett/beløp: tidsuttrykk (uker, måneder, «4-6 week»), antall personer/enheter, generelle prosentandeler uten pengesammenheng, generelle tall. Beløp MÅ ha valutasymbol (kr, NOK, €, $) eller tydelig budsjett/prissammenheng.
+"""
+
+_EXCLUSIONS_SV = """\
+Strikta regler – flagga INTE:
+- Personnamn: stadsnamn, företagsnamn, produktnamn, fraser med versaler, titlar, länder. Personnamn MÅSTE bestå av förnamn + efternamn.
+- Adress: enbart stadsnamn (Stockholm, Göteborg, Oslo), länder, regioner. Adress MÅSTE ha gatunamn OCH husnummer.
+- Budget/belopp: tidsuttryck (veckor, månader), antal personer/enheter, allmänna procentsatser utan penningsammanhang. Belopp MÅSTE ha valutasymbol (kr, SEK, €, $) eller tydligt pris-/budgetsammanhang.
+"""
+
+_EXCLUSIONS_EN = """\
+Strict rules – do NOT flag:
+- Personal names: city names, company names, product names, ALL-CAPS phrases (e.g. «YARA PAYS FOR»), job titles, countries, organisations. Personal names MUST have both first name AND last name.
+- Address: city or country names alone (London, Oslo, Germany), regions, destinations. Address MUST include a street name AND house/building number.
+- Budget/amounts: time expressions (weeks, months, «4-6 week»), headcounts, generic percentages without monetary context, plain numbers. Amounts MUST have a currency symbol (NOK, EUR, USD, $, £, €) or clear price/budget context.
+"""
 
 
 def _build_prompt(categories: list[str], chunk: str, lang: str = "nb") -> str:
@@ -133,6 +157,7 @@ def _build_prompt(categories: list[str], chunk: str, lang: str = "nb") -> str:
     if lang == "sv":
         return (
             f"Analysera texten och identifiera följande typer av känslig information:\n{cat_list}\n\n"
+            f"{_EXCLUSIONS_SV}\n"
             "Svara BARA med JSON i detta format (ingen annan text):\n"
             '{{"findings":[{{"category":"Kategori","text":"hittad text","context":"omgivande ord"}}]}}\n'
             "Inga fynd → {{\"findings\":[]}}\n\nText:\n" + chunk
@@ -140,6 +165,7 @@ def _build_prompt(categories: list[str], chunk: str, lang: str = "nb") -> str:
     elif lang == "en":
         return (
             f"Analyse the text and identify the following types of sensitive information:\n{cat_list}\n\n"
+            f"{_EXCLUSIONS_EN}\n"
             "Respond ONLY with JSON in this format (no other text):\n"
             '{{"findings":[{{"category":"Category","text":"found text","context":"surrounding words"}}]}}\n'
             "No findings → {{\"findings\":[]}}\n\nText:\n" + chunk
@@ -147,6 +173,7 @@ def _build_prompt(categories: list[str], chunk: str, lang: str = "nb") -> str:
     else:  # nb
         return (
             f"Analyser teksten og identifiser følgende typer sensitiv informasjon:\n{cat_list}\n\n"
+            f"{_EXCLUSIONS_NB}\n"
             "Svar KUN med JSON på denne formen (ingen annen tekst):\n"
             '{{"findings":[{{"category":"Kategori","text":"funnet tekst","context":"noen ord rundt funnet"}}]}}\n'
             "Ingen funn → {{\"findings\":[]}}\n\nTekst:\n" + chunk
