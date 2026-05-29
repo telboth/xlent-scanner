@@ -1,0 +1,127 @@
+# XLENT AS – Prosjekttilbud og Avtalegrunnlag
+## Strengt konfidensielt – ikke for distribusjon
+
+NDA gjelder. Deling med tredjepart krever skriftlig godkjenning. Taushetsplikt.
+
+---
+
+## Oppdragsinformasjon
+
+Klient: Nordea Bank ASA
+Organisasjonsnummer klient: 911 044 110
+Internt org.nr: 800000009
+Prosjektnavn: DataBridge 2025
+Prosjektkode: XLENT-DB-2025
+
+Kontaktperson hos klient: Per Erik Hansen
+E-post: per.hansen@nordea.no
+Telefon: +47 41234567
+
+Prosjektleder XLENT: Thomas Elboth
+E-post: thomas@xlent.no
+Mobil: 912 34 567
+
+---
+
+## Personopplysninger – Konsulenter
+
+### Konsulent 1 – Norsk
+
+Navn: Per Erik Hansen
+Fødselsnummer: 01019000083
+D-nummer (vikar): 41019000077
+Kontonummer: 1000.00.00006
+Telefon: 412 34 567
+E-post: per.erik.hansen@konsulent.no
+
+### Konsulent 2 – Svensk
+
+Navn: Anna Lindqvist
+Personnummer (SV): 811218-0008
+IBAN (SE): SE7450000000001234567890
+E-post: anna.lindqvist@xlent.se
+Telefon: 070-123 45 67
+
+---
+
+## Bankopplysninger
+
+XLENT AS Kontonummer: 1000.00.00006
+IBAN (NO): NO8010000000006
+Visakort (test): 4532015112830002
+
+---
+
+## Internasjonale identifikatorer
+
+UK National Insurance: AB 12 34 56 A
+US Social Security: 123-45-6789
+
+---
+
+## Tekniske hemmeligheter
+
+OpenAI API-nøkkel: sk-aBcDeFgHiJkLmNoPqRsTuVwXyZaBcDeFgHiJkLmNoPqRsTuV
+AWS Access Key: AKIAIOSFODNN7EXAMPLE
+GitHub Token: ghp_AbCdEfGhIjKlMnOpQrStUvWxYz1234567890Ab
+JWT Token: eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyMTIzIn0.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
+Konfig: database_url = postgres://admin:hemmelig123@db.intern.no/prod
+Konfig: api_key = super_secret_key_for_prod_2025
+
+---
+
+## Finansiell informasjon
+
+Timepris: NOK 1 850/time
+Dagspris: NOK 14 800/dag
+Prosjektsum: 4 500 000 NOK
+Kontraktsverdi: NOK 2 200 000
+Margin: 35%
+Rabatt: 5%
+
+---
+
+## Nettadresser
+
+Prosjektportal: https://portal.nordea.com/prosjekt/databridge-2025
+Intern ressursside: www.xlent.no/intern/prosjekter
+API-dokumentasjon: https://api.nordea.com/v2/docs
+
+---
+
+## Fritekst med konfidensielle opplysninger
+
+Dette er et konfidensielt dokument som beskriver forretningssensitiv informasjon.
+Konsulenten Per Erik Hansen vil fakturere 1 850 kr/time for oppdraget.
+Klienten Nordea Bank ASA har bekreftet prosjektsummen på 4,5 MNOK.
+Vi bruker intern referanse thomas@xlent.no for all kommunikasjon.
+Oppstart er satt til Q1 2025 ved kontoret i Karl Johans gate 10, 0154 Oslo.
+
+---
+
+## Svensk seksjon (for sv-detektortest)
+
+Fakturaadress: Anna Lindqvist, Storgatan 14, 111 23 Stockholm
+Organisationsnummer (SV): 556000-0001
+Bankgiro: bankgiro 123-4567
+Plusgiro: plusgiro 12345-6
+
+---
+
+## Engelsk seksjon (for en-detektortest)
+
+Contact: John Smith (john.smith@company.co.uk)
+Phone: +44 7911 123456
+National Insurance: AB 12 34 56 A
+Social Security: 123-45-6789
+Bank: GB29 NWBK 6016 1331 9268 19
+Company: Acme Ltd
+
+---
+
+## Avslutningstekst
+
+Alle opplysninger i dette dokumentet er underlagt strenge konfidensialitetskrav.
+Misbruk vil kunne medføre rettslige konsekvenser.
+
+Proprietary and confidential – eyes only.
