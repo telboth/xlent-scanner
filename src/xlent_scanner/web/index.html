@@ -556,6 +556,7 @@
             <button class="ctrl-btn" id="ai-rescan-btn"
               style="font-size:11px;padding:2px 9px;display:none;"
               data-i18n="rescanAi">🔄 Re-skann</button>
+            <span id="ai-inline-status" style="font-size:11px;color:var(--muted);"></span>
           </div>
           <div id="ai-scan-opts">
             <div id="ai-status-row" style="font-size:12px;color:var(--muted);margin-bottom:6px;" data-i18n="ollamaChecking">Sjekker Ollama…</div>
@@ -1747,6 +1748,7 @@
     function clearResult() {
       // Tøm alt relatert til siste skann
       if (_aiPollTimer) { clearInterval(_aiPollTimer); _aiPollTimer = null; }
+      _setAiInlineStatus("");
       lastResult  = null;
       lastScan    = null;
       resultEl.innerHTML = "";
@@ -2760,42 +2762,48 @@
     let _aiPollTimer  = null;
     let _aiFindingsData = [];
 
+    function _setAiInlineStatus(msg) {
+      const el = document.getElementById("ai-inline-status");
+      if (el) el.textContent = msg;
+    }
+
     async function autoAiScan() {
       const toggle = document.getElementById("ai-scan-toggle");
       if (!toggle?.checked) return;
 
-      // Race-condition: modeller kanskje ikke lastet ennå — last på nytt og vent
+      const rescanBtn = document.getElementById("ai-rescan-btn");
+
+      // Gi umiddelbar visuell tilbakemelding UTEN å vente på nettverks-kall
+      if (rescanBtn) { rescanBtn.disabled = true; rescanBtn.textContent = "⏳…"; }
+      _setAiInlineStatus("⏳ Sjekker Ollama…");
+
+      // Hent/oppdater modelliste (asynkron – vises inline)
       let model = document.getElementById("ai-model-select")?.value;
       if (!model) {
         await _loadAiModels();
         model = document.getElementById("ai-model-select")?.value;
       }
 
-      const statusEl   = document.getElementById("ai-scan-status");
-      const progressEl = document.getElementById("ai-progress");
-      const cancelBtn  = document.getElementById("ai-cancel-btn");
-      const rescanBtn  = document.getElementById("ai-rescan-btn");
-
       if (!model) {
-        // Ollama ikke tilgjengelig eller ingen modeller installert
-        statusEl.style.display = "";
-        progressEl.innerHTML =
-          `<span style="color:var(--warn)">⚠ Ollama kjører ikke eller ingen modell er installert.</span>`;
-        statusEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        _setAiInlineStatus("⚠ Ollama kjører ikke eller ingen modell er installert");
+        if (rescanBtn) { rescanBtn.disabled = false; rescanBtn.textContent = "🔄 Re-skann"; }
         return;
       }
 
-      // Vis status og indiker at scan er i gang
+      // Start scan – oppdater status inline OG i statusfeltet under
+      _setAiInlineStatus("🔬 Analyserer…");
+      if (rescanBtn) { rescanBtn.disabled = true; rescanBtn.textContent = "⏳ Analyserer…"; }
+
+      const statusEl   = document.getElementById("ai-scan-status");
+      const progressEl = document.getElementById("ai-progress");
+      const cancelBtn  = document.getElementById("ai-cancel-btn");
+
       statusEl.style.display = "";
       progressEl.textContent = t("deepScanRunning");
       cancelBtn.style.display = "";
-      if (rescanBtn) { rescanBtn.disabled = true; rescanBtn.textContent = "⏳ Analyserer…"; }
       document.getElementById("ai-findings-area").innerHTML = "";
       document.getElementById("ai-anon-bar").style.display = "none";
       _aiFindingsData = [];
-
-      // Scroll slik at brukeren ser at AI-skannet kjører
-      statusEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
 
       const minConf = document.getElementById("ai-conf-select")?.value || "medium";
       const cats = _getAiCategories();
@@ -2806,8 +2814,10 @@
           body: JSON.stringify({ model, categories: cats, min_confidence: minConf }),
         })).json();
         if (!r.ok) {
-          progressEl.innerHTML = `<span style="color:var(--danger)">${escapeHtml(r.error || "Feil")}</span>`;
+          const errMsg = escapeHtml(r.error || "Feil");
+          progressEl.innerHTML = `<span style="color:var(--danger)">${errMsg}</span>`;
           cancelBtn.style.display = "none";
+          _setAiInlineStatus(`⚠ ${r.error || "Feil"}`);
           if (rescanBtn) { rescanBtn.disabled = false; rescanBtn.textContent = "🔄 Re-skann"; }
           return;
         }
@@ -2816,13 +2826,15 @@
       } catch (e) {
         progressEl.innerHTML = `<span style="color:var(--danger)">${escapeHtml(String(e))}</span>`;
         cancelBtn.style.display = "none";
+        _setAiInlineStatus(`⚠ ${String(e)}`);
         if (rescanBtn) { rescanBtn.disabled = false; rescanBtn.textContent = "🔄 Re-skann"; }
       }
     }
 
-    function _restoreRescanBtn() {
+    function _restoreRescanBtn(inlineMsg) {
       const rb = document.getElementById("ai-rescan-btn");
       if (rb) { rb.disabled = false; rb.textContent = "🔄 Re-skann"; }
+      if (inlineMsg !== undefined) _setAiInlineStatus(inlineMsg);
     }
 
     async function _pollAiScan() {
@@ -2832,17 +2844,17 @@
         if (s.status === "done") {
           clearInterval(_aiPollTimer); _aiPollTimer = null;
           document.getElementById("ai-cancel-btn").style.display = "none";
-          _restoreRescanBtn();
           _aiFindingsData = s.findings || [];
           _renderAiFindings(_aiFindingsData);
           // Vis "ferdig"-melding med antall funn
           const n = _aiFindingsData.length;
-          document.getElementById("ai-progress").textContent =
-            `${t("deepScanDone")} – ${n} ${n === 1 ? t("metaFinding") || "funn" : t("metaFindings") || "funn"}`;
+          const doneMsg = `${t("deepScanDone")} – ${n} ${t("metaFindings") || "funn"}`;
+          document.getElementById("ai-progress").textContent = doneMsg;
+          _restoreRescanBtn(`✅ ${n} ${t("metaFindings") || "funn"}`);
         } else if (s.status === "cancelled" || s.status === "error") {
           clearInterval(_aiPollTimer); _aiPollTimer = null;
           document.getElementById("ai-cancel-btn").style.display = "none";
-          _restoreRescanBtn();
+          _restoreRescanBtn("⛔ Avbrutt");
         }
       } catch (_) { /* stille – prøver igjen */ }
     }
@@ -2887,7 +2899,7 @@
       await fetch(`${API}/ollama/deep-scan/cancel`, { method:"POST" }).catch(()=>{});
       document.getElementById("ai-cancel-btn").style.display = "none";
       document.getElementById("ai-progress").textContent = t("deepScanCancelled") || "Avbrutt.";
-      _restoreRescanBtn();
+      _restoreRescanBtn("⛔ Avbrutt");
     }
 
     async function _anonymizeAi() {
