@@ -2986,6 +2986,19 @@
     loadNerStatus();
     loadOllamaSettingsStatus();
     loadHistoryFromApi();
+
+    /* ── Windows kontekstmeny: auto-skann fil sendt via høyreklikk ── */
+    (async function checkStartupFile() {
+      try {
+        const r = await (await fetch(`${API}/startup-file`)).json();
+        if (r.path) {
+          // Bytt til Scanner-fanen
+          const scannerTab = document.querySelector('[data-tab="scanner"]');
+          if (scannerTab) scannerTab.click();
+          await scanPath(r.path);
+        }
+      } catch(_) { /* ingen fil, eller Flask ikke klar ennå */ }
+    })();
   </script>
 </body>
 </html>

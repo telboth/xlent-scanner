@@ -59,6 +59,7 @@ _last_path: Path | None = None
 _last_tmp_path: Path | None = None   # temp-fil fra forrige upload – ryddes opp ved neste upload
 
 _window: webview.Window | None = None
+_initial_file: str | None = None     # fil sendt via Windows kontekstmeny (sys.argv[1])
 flask_app = Flask(__name__, static_folder=None)
 _web_dir = Path(__file__).parent / "web"
 _port: int = 0
@@ -321,6 +322,12 @@ def diagnostics():
         "log_path": str(LOG_PATH),
         "version": __version__,
     })
+
+
+@flask_app.route("/startup-file", methods=["GET"])
+def startup_file():
+    """Returnerer filen som ble sendt via Windows høyreklikk-kontekstmeny (sys.argv[1])."""
+    return jsonify({"path": _initial_file})
 
 
 @flask_app.route("/logo.svg")
@@ -835,7 +842,12 @@ def _wait_for_flask(port: int, timeout: float = 10.0) -> None:
 
 
 def main() -> None:
-    global _window, _port
+    global _window, _port, _initial_file
+
+    # Fil sendt via Windows høyreklikk-kontekstmeny
+    if len(sys.argv) > 1:
+        _initial_file = sys.argv[1]
+        LOGGER.info("Startup file from argv: %s", _initial_file)
 
     LOGGER.info("App starting version=%s", __version__)
     LOGGER.info(
