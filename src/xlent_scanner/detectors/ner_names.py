@@ -79,8 +79,11 @@ def _looks_like_name(name: str) -> bool:
     for part in parts:
         if len(part) < 2:
             return False
-        # Forkast deler med apostrof/backtick (possessiver som "XLENT's", koderef)
-        if any(c in part for c in ("'", "’", "‘", "`")):
+        # Personnavn inneholder aldri sifre – filtrer bort "G3 Legemiddelbruk" o.l.
+        if any(c.isdigit() for c in part):
+            return False
+        # Forkast deler med apostrof/backtick (possessiver som "XLENT’s", koderef)
+        if any(c in part for c in ("’", "’", "’", "`")):
             return False
         if part.lower() in _STOPWORDS:
             return False

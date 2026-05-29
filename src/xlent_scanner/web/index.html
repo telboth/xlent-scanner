@@ -580,7 +580,7 @@
                 <label class="dst-cat-label"><input type="checkbox" class="ai-extra-cat" value="adresse" checked> <span data-i18n="dstCatAdresse">Adresse</span></label>
                 <label class="dst-cat-label"><input type="checkbox" class="ai-extra-cat" value="selskapsnavn" checked> <span data-i18n="dstCatSelskapsnavn">Selskapsnavn</span></label>
               </div>
-              <div class="dst-hw-req" data-i18n="dstHwReq">⚠ Dybdeskanning kjøres lokalt og kan ta tid – spesielt på CPU. Anbefalt: minst 8 GB RAM.</div>
+              <div class="dst-hw-req" data-i18n="dstHwReq">⚠ Dybdeskanning kjøres lokalt og kan ta opptil flere minutter. Anbefalt: minst 16 GB RAM.</div>
             </div>
           </div>
         </div>
@@ -708,7 +708,7 @@
             </select>
           </div>
           <div id="dst-hw-badge" style="display:none" class="dst-hw-badge"></div>
-          <div class="dst-hw-req" data-i18n="dstHwReq">⚠ Dybdeskanning kjøres lokalt og kan ta tid – spesielt på CPU. Anbefalt: maskin med minst 8 GB RAM. GPU-akselerasjon brukes automatisk dersom tilgjengelig.</div>
+          <div class="dst-hw-req" data-i18n="dstHwReq">⚠ Dybdeskanning kjøres lokalt og kan ta opptil flere minutter. Anbefalt: minst 16 GB RAM. GPU-akselerasjon brukes automatisk dersom tilgjengelig.</div>
           <div class="dst-progress" id="dst-progress"></div>
         </div>
       </div>
@@ -1068,8 +1068,8 @@
         deepScanStart:       "🔬 Start dybdeskann",
         deepScanCancel:      "✕ Avbryt",
         deepScanModelLabel:  "Velg modell:",
-        deepScanRunning:     "Dybdeskanning pågår…",
-        deepScanDone:        "Dybdeskann ferdig",
+        deepScanRunning:     "🔬 Dybdeskanning pågår… (kan ta opptil flere minutter avhengig av maskin og dokumentstørrelse)",
+        deepScanDone:        "✅ Dybdeskann ferdig",
         deepScanNoFindings:  "Ingen ekstra funn fra AI-analyse.",
         deepScanAIFindings:  "AI-funn ({n} nye):",
         deepScanNotRunning:  "Ollama kjører ikke. Start Ollama og prøv igjen.",
@@ -1100,7 +1100,7 @@
         dstResultsTitle:    "AI-funn",
         dstAnonBtn:         "Anonymiser valgte",
         dstSelectOne:       "Velg minst ett funn å anonymisere.",
-        dstHwReq:           "⚠ Dybdeskanning kjøres lokalt og kan ta tid – spesielt på CPU. Anbefalt: maskin med minst 8 GB RAM. GPU-akselerasjon brukes automatisk dersom tilgjengelig.",
+        dstHwReq:           "⚠ Dybdeskanning kjøres lokalt og kan ta opptil flere minutter, avhengig av dokumentstørrelse og maskinvare. Anbefalt: minst 16 GB RAM og en relativt moderne CPU. GPU-akselerasjon (NVIDIA/AMD) brukes automatisk og gir vesentlig kortere analysetid.",
         dstHwCpu:           "🖥️ Kjører på CPU",
         dstHwGpu:           "🎮 Kjører på GPU",
         dstHwHybrid:        "⚡ CPU + GPU",
@@ -1224,8 +1224,8 @@
         deepScanStart:       "🔬 Starta djupskanning",
         deepScanCancel:      "✕ Avbryt",
         deepScanModelLabel:  "Välj modell:",
-        deepScanRunning:     "Djupskanning pågår…",
-        deepScanDone:        "Djupskanning klar",
+        deepScanRunning:     "🔬 Djupskanning pågår… (kan ta upp till flera minuter beroende på maskin och dokumentstorlek)",
+        deepScanDone:        "✅ Djupskanning klar",
         deepScanNoFindings:  "Inga extra fynd från AI-analysen.",
         deepScanAIFindings:  "AI-fynd ({n} nya):",
         deepScanNotRunning:  "Ollama körs inte. Starta Ollama och försök igen.",
@@ -1256,7 +1256,7 @@
         dstResultsTitle:    "AI-fynd",
         dstAnonBtn:         "Anonymisera valda",
         dstSelectOne:       "Välj minst ett fynd att anonymisera.",
-        dstHwReq:           "⚠ Djupskanning körs lokalt och kan ta tid – särskilt på CPU. Rekommenderas: maskin med minst 8 GB RAM. GPU-acceleration används automatiskt om tillgänglig.",
+        dstHwReq:           "⚠ Djupskanning körs lokalt och kan ta upp till flera minuter beroende på dokumentstorlek och hårdvara. Rekommenderat: minst 16 GB RAM och en relativt modern CPU. GPU-acceleration (NVIDIA/AMD) används automatiskt och ger avsevärt kortare analystid.",
         dstHwCpu:           "🖥️ Körs på CPU",
         dstHwGpu:           "🎮 Körs på GPU",
         dstHwHybrid:        "⚡ CPU + GPU",
@@ -1380,8 +1380,8 @@
         deepScanStart:       "🔬 Start deep scan",
         deepScanCancel:      "✕ Cancel",
         deepScanModelLabel:  "Select model:",
-        deepScanRunning:     "Deep scan in progress…",
-        deepScanDone:        "Deep scan complete",
+        deepScanRunning:     "🔬 Deep scan in progress… (may take several minutes depending on machine and document size)",
+        deepScanDone:        "✅ Deep scan complete",
         deepScanNoFindings:  "No additional findings from AI analysis.",
         deepScanAIFindings:  "AI findings ({n} new):",
         deepScanNotRunning:  "Ollama is not running. Start Ollama and try again.",
@@ -1412,7 +1412,7 @@
         dstResultsTitle:    "AI findings",
         dstAnonBtn:         "Anonymise selected",
         dstSelectOne:       "Select at least one finding to anonymise.",
-        dstHwReq:           "⚠ Deep scanning runs locally and may take time – especially on CPU. Recommended: machine with at least 8 GB RAM. GPU acceleration is used automatically when available.",
+        dstHwReq:           "⚠ Deep scanning runs locally and may take several minutes depending on document size and hardware. Recommended: at least 16 GB RAM and a relatively modern CPU. GPU acceleration (NVIDIA/AMD) is used automatically and significantly reduces analysis time.",
         dstHwCpu:           "🖥️ Running on CPU",
         dstHwGpu:           "🎮 Running on GPU",
         dstHwHybrid:        "⚡ CPU + GPU",
@@ -2540,6 +2540,10 @@
           _dstFindings = s.findings || [];
           renderDstFindings(_dstFindings);
           if (!_dstHwChecked) { _dstHwChecked = true; checkDstHardware(); }
+          // Vis "ferdig"-melding med antall funn
+          const n = _dstFindings.length;
+          document.getElementById("dst-progress").textContent =
+            `${t("deepScanDone")} – ${n} ${n === 1 ? t("metaFinding") || "funn" : t("metaFindings") || "funn"}`;
         } else if (s.status === "cancelled" || s.status === "error") {
           clearInterval(_dstPollTimer); _dstPollTimer = null;
           document.getElementById("dst-cancel-btn").style.display = "none";
@@ -2831,6 +2835,10 @@
           _restoreRescanBtn();
           _aiFindingsData = s.findings || [];
           _renderAiFindings(_aiFindingsData);
+          // Vis "ferdig"-melding med antall funn
+          const n = _aiFindingsData.length;
+          document.getElementById("ai-progress").textContent =
+            `${t("deepScanDone")} – ${n} ${n === 1 ? t("metaFinding") || "funn" : t("metaFindings") || "funn"}`;
         } else if (s.status === "cancelled" || s.status === "error") {
           clearInterval(_aiPollTimer); _aiPollTimer = null;
           document.getElementById("ai-cancel-btn").style.display = "none";
