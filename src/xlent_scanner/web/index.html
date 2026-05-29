@@ -1749,6 +1749,7 @@
       // Tøm alt relatert til siste skann
       if (_aiPollTimer) { clearInterval(_aiPollTimer); _aiPollTimer = null; }
       _setAiInlineStatus("");
+      resultEl.querySelectorAll(".ai-injected-finding, .ai-injected-sep").forEach(el => el.remove());
       lastResult  = null;
       lastScan    = null;
       resultEl.innerHTML = "";
@@ -2859,9 +2860,63 @@
       } catch (_) { /* stille – prøver igjen */ }
     }
 
+    /* ── Injiser AI-funn direkte inn i den eksisterende funnlisten ── */
+    function _injectAiFindingsIntoMainList(findings) {
+      // Fjern evt. tidligere injiserte AI-rader (fra forrige re-skann)
+      resultEl.querySelectorAll(".ai-injected-finding, .ai-injected-sep").forEach(el => el.remove());
+
+      const list = resultEl.querySelector("ul.findings-list");
+      if (!list) return;   // Ingen funnliste (tomt resultat eller feil)
+
+      if (!findings.length) return;
+
+      // Skillelinje
+      const sep = document.createElement("li");
+      sep.className = "ai-injected-sep";
+      sep.style.cssText = "list-style:none;padding:6px 0 2px;border-top:1px solid var(--border);margin-top:8px;";
+      sep.innerHTML = `<span style="font-size:11px;color:var(--muted);padding-left:4px;">🔬 ${t("aiResultsTitle")} – ${findings.length} ${t("metaFindings") || "funn"}</span>`;
+      list.appendChild(sep);
+
+      // Sorter etter alvorlighetsgrad
+      const ORDER = {svart:3, rød:2, gul:1, grønn:0};
+      const sorted = [...findings].sort((a,b) =>
+        (ORDER[_dstSeverity(b.category)]||0) - (ORDER[_dstSeverity(a.category)]||0));
+
+      for (const f of sorted) {
+        const sev   = _dstSeverity(f.category);
+        const sc    = SEV_COLOR[sev] || "#ffb84d";
+        const light = sev === "gul";
+        const li = document.createElement("li");
+        li.className = "finding-row ai-injected-finding";
+        li.style.borderLeftColor = sc;
+        li.innerHTML = `
+          <div class="finding-inner">
+            <div class="finding-body">
+              <div>
+                <span class="cat" style="background:${sc};color:${light?"#1a1a1a":"#fff"}">${escapeHtml(f.category||"AI-funn")}</span>
+                <strong>${escapeHtml(f.text||"")}</strong>
+              </div>
+              ${f.context ? `<div class="ctx">${escapeHtml(f.context)}</div>` : ""}
+            </div>
+          </div>`;
+        list.appendChild(li);
+      }
+
+      // Oppdater overskriften med totalt antall
+      const heading = resultEl.querySelector("h3.section-heading");
+      if (heading) {
+        const total = resultEl.querySelectorAll("li.finding-row").length;
+        heading.innerHTML = heading.innerHTML.replace(/\(\d+\)/, `(${total})`);
+      }
+    }
+
     function _renderAiFindings(findings) {
       const area    = document.getElementById("ai-findings-area");
       const anonBar = document.getElementById("ai-anon-bar");
+
+      // Injiser alltid i hovedlisten (viktigst – brukeren ser den)
+      _injectAiFindingsIntoMainList(findings);
+
       if (!findings.length) {
         area.innerHTML = `<p style="color:var(--ok);font-size:13px;">${t("deepScanNoFindings")}</p>`;
         anonBar.style.display = "none";
