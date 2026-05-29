@@ -198,6 +198,46 @@
     .dst-cats-grid {
       display: grid; grid-template-columns: 1fr 1fr; gap: 7px 16px; margin: 8px 0;
     }
+    /* ── Unified scan options (kategorivelger + AI-toggle) ─────────── */
+    #scan-opts {
+      background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+      padding: 12px 16px; margin-bottom: 8px;
+    }
+    .scan-opts-head {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;
+    }
+    .scan-opts-label {
+      font-size: 11px; text-transform: uppercase; letter-spacing: .06em;
+      color: var(--muted); font-weight: 600;
+    }
+    .scan-cat-grid {
+      display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px 14px; margin-bottom: 8px;
+    }
+    .ai-toggle-row {
+      border-top: 1px solid var(--border); padding-top: 10px; margin-top: 4px;
+    }
+    .ai-toggle-label {
+      display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 13px;
+      font-weight: 500;
+    }
+    .ai-toggle-label input { width: 15px; height: 15px; cursor: pointer; accent-color: var(--accent); }
+    #ai-scan-opts {
+      margin-top: 8px; padding-left: 22px; display: none;
+    }
+    #ai-scan-opts .ai-opt-row {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px;
+    }
+    /* ── AI resultater (unified) ────────────────────────────────────── */
+    #ai-scan-status {
+      display: none; margin-top: 10px;
+      background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+      padding: 12px 16px;
+    }
+    .ai-results-head {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;
+    }
+    .ai-results-title { font-size: 13px; font-weight: 600; }
+    #ai-progress { font-size: 12px; color: var(--muted); margin-bottom: 6px; min-height: 16px; }
     .dst-cat-label {
       display: flex; align-items: center; gap: 7px;
       font-size: 13px; cursor: pointer; user-select: none;
@@ -457,7 +497,7 @@
 
   <nav class="tab-nav">
     <button class="tab-btn active" data-tab="scanner" data-i18n="tabScanner">🔍 Rask scanner</button>
-    <button class="tab-btn" data-tab="deepscan" data-i18n="tabDeepScan">🔬 Dybdeskann</button>
+    <button class="tab-btn" data-tab="deepscan" data-i18n="tabDeepScan" style="display:none">🔬 Dybdeskann</button>
     <button class="tab-btn" data-tab="about" data-i18n="tabAbout">ℹ Om programmet</button>
     <button class="tab-btn" data-tab="settings" data-i18n="tabSettings">⚙️ Innstillinger</button>
     <div class="ui-lang-sel">
@@ -480,6 +520,65 @@
         <button class="mode-btn active" data-mode="file" data-i18n="modeFile">Fil</button>
         <button class="mode-btn" data-mode="paste" data-i18n="modePaste">Lim inn</button>
         <button class="mode-btn" data-mode="folder" data-i18n="modeFolder">Mappe</button>
+      </div>
+
+      <!-- Kategorivelger + AI-toggle -->
+      <div id="scan-opts">
+        <div class="scan-opts-head">
+          <span class="scan-opts-label" data-i18n="scanOptsTitle">Hva vil du finne?</span>
+          <div style="display:flex;gap:4px;">
+            <button class="ctrl-btn" id="scan-sel-all" style="font-size:11px;padding:2px 8px;" data-i18n="selAll">Velg alle</button>
+            <button class="ctrl-btn" id="scan-sel-none" style="font-size:11px;padding:2px 8px;" data-i18n="selNone">Fjern alle</button>
+          </div>
+        </div>
+        <div class="scan-cat-grid">
+          <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="epost" checked> <span data-i18n="dstCatEpost">E-post</span></label>
+          <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="telefon" checked> <span data-i18n="dstCatTelefon">Telefon</span></label>
+          <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="id" checked> <span data-i18n="scanCatId">Personnummer / ID</span></label>
+          <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="konto" checked> <span data-i18n="scanCatKonto">Kontonummer / IBAN</span></label>
+          <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="kredittkort" checked> <span data-i18n="scanCatKredittkort">Kredittkort</span></label>
+          <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="navn" checked> <span data-i18n="scanCatNavn">Navn (person)</span></label>
+          <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="nettadresse" checked> <span data-i18n="dstCatNettadresse">Nettadresser</span></label>
+          <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="hemmeligheter" checked> <span data-i18n="scanCatHemmeligheter">API-nøkler / secrets</span></label>
+          <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="finansielt" checked> <span data-i18n="scanCatFinansielt">Finansielle nøkkeltall</span></label>
+          <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="konfidensielt" checked> <span data-i18n="scanCatKonfidensielt">Konfidensielle ord</span></label>
+          <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="klient" checked> <span data-i18n="scanCatKlient">Klientnavn</span></label>
+          <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="orgnummer" checked> <span data-i18n="scanCatOrgnummer">Org.nummer</span></label>
+        </div>
+
+        <!-- AI-dybdeskann toggle -->
+        <div class="ai-toggle-row">
+          <label class="ai-toggle-label">
+            <input type="checkbox" id="ai-scan-toggle">
+            <span>🔬 <span data-i18n="aiToggleLabel">Kjør AI-dybdeskann (Ollama)</span></span>
+          </label>
+          <div id="ai-scan-opts">
+            <div id="ai-status-row" style="font-size:12px;color:var(--muted);margin-bottom:6px;" data-i18n="ollamaChecking">Sjekker Ollama…</div>
+            <div id="ai-not-running" style="display:none;" class="ds-ollama-instructions"></div>
+            <div id="ai-ready" style="display:none;">
+              <div class="ai-opt-row">
+                <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;">
+                  <span data-i18n="deepScanModelLabel">Modell:</span>
+                  <select id="ai-model-select" style="padding:3px 8px;border-radius:5px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:12px;"></select>
+                </label>
+                <label style="font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;">
+                  <span data-i18n="confidenceLabel">Konfidens:</span>
+                  <select id="ai-conf-select" style="padding:3px 8px;border-radius:5px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:12px;">
+                    <option value="high" data-i18n="confidenceHigh">Høy (kun sikre funn)</option>
+                    <option value="medium" selected data-i18n="confidenceMedium">Medium (sannsynlige)</option>
+                    <option value="low" data-i18n="confidenceLow">Lav (alle funn)</option>
+                  </select>
+                </label>
+              </div>
+              <div style="font-size:11px;color:var(--muted);margin-bottom:4px;" data-i18n="aiExtraCats">Ekstra AI-kategorier:</div>
+              <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:6px;">
+                <label class="dst-cat-label"><input type="checkbox" class="ai-extra-cat" value="adresse" checked> <span data-i18n="dstCatAdresse">Adresse</span></label>
+                <label class="dst-cat-label"><input type="checkbox" class="ai-extra-cat" value="selskapsnavn" checked> <span data-i18n="dstCatSelskapsnavn">Selskapsnavn</span></label>
+              </div>
+              <div class="dst-hw-req" data-i18n="dstHwReq">⚠ Dybdeskanning kjøres lokalt og kan ta tid – spesielt på CPU. Anbefalt: minst 8 GB RAM.</div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Fil-modus -->
@@ -517,53 +616,20 @@
       <div id="status"></div>
       <div id="result"></div>
 
-      <!-- Inline dybdeskann (kollapsibel, vises etter fil-skann) -->
-      <div id="deep-scan-section">
-        <div class="ds-header" id="ds-header">
-          <span style="font-size:15px">🔬</span>
-          <span class="ds-header-title" data-i18n="inlineDeepTitle">Dybdeskann med AI</span>
-          <span class="ds-chevron">▶</span>
+      <!-- AI-scan resultater (vises etter skann når AI-toggle er på) -->
+      <div id="ai-scan-status">
+        <div class="ai-results-head">
+          <span class="ai-results-title">🔬 <span data-i18n="aiResultsTitle">AI-funn</span></span>
+          <button id="ai-cancel-btn" class="ctrl-btn" style="display:none;" data-i18n="deepScanCancel">✕ Avbryt</button>
         </div>
-        <div class="ds-body" id="ds-body">
-          <div class="ds-status-row" id="ds-status-row-inline">
-            <span style="color:var(--muted);font-size:12px" data-i18n="ollamaChecking">Sjekker Ollama…</span>
-          </div>
-          <div id="ds-not-running" style="display:none" class="ds-ollama-instructions"></div>
-          <div id="ds-ready" style="display:none">
-            <!-- Kategorier -->
-            <div style="margin-bottom:10px;">
-              <div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:8px;font-weight:600;" data-i18n="dstCatsTitle">Søk etter</div>
-              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px 14px;margin-bottom:8px;">
-                <label class="dst-cat-label"><input type="checkbox" class="ds-cat" value="navn" checked> <span data-i18n="dstCatNavn">Navn</span></label>
-                <label class="dst-cat-label"><input type="checkbox" class="ds-cat" value="adresse" checked> <span data-i18n="dstCatAdresse">Adresse</span></label>
-                <label class="dst-cat-label"><input type="checkbox" class="ds-cat" value="epost" checked> <span data-i18n="dstCatEpost">E-post</span></label>
-                <label class="dst-cat-label"><input type="checkbox" class="ds-cat" value="telefon" checked> <span data-i18n="dstCatTelefon">Telefon</span></label>
-                <label class="dst-cat-label"><input type="checkbox" class="ds-cat" value="personnummer" checked> <span data-i18n="dstCatPersonnummer">Personnummer</span></label>
-                <label class="dst-cat-label"><input type="checkbox" class="ds-cat" value="bankkonto" checked> <span data-i18n="dstCatBankkonto">Bankkontonummer</span></label>
-                <label class="dst-cat-label"><input type="checkbox" class="ds-cat" value="selskapsnavn" checked> <span data-i18n="dstCatSelskapsnavn">Selskapsnavn</span></label>
-                <label class="dst-cat-label"><input type="checkbox" class="ds-cat" value="budsjett_tall" checked> <span data-i18n="dstCatBudsjett">Budsjett / beløp</span></label>
-                <label class="dst-cat-label"><input type="checkbox" class="ds-cat" value="nettadresse" checked> <span data-i18n="dstCatNettadresse">Nettadresser</span></label>
-              </div>
-            </div>
-            <!-- Modellrad + start/avbryt -->
-            <div class="ds-model-row">
-              <select id="ds-model-select"></select>
-              <button id="ds-start-btn" class="ctrl-btn ctrl-btn-primary" data-i18n="deepScanStart">🔬 Start dybdeskann</button>
-              <button id="ds-cancel-btn" class="ctrl-btn" style="display:none" data-i18n="deepScanCancel">✕ Avbryt</button>
-            </div>
-            <!-- Konfidensfilter -->
-            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-              <label style="font-size:12px;color:var(--muted);white-space:nowrap;" data-i18n="confidenceLabel">Min konfidensfilter:</label>
-              <select id="ds-confidence-select" style="padding:3px 8px;border-radius:5px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:12px;cursor:pointer;">
-                <option value="high" data-i18n="confidenceHigh">Høy (kun sikre funn)</option>
-                <option value="medium" selected data-i18n="confidenceMedium">Medium (sannsynlige)</option>
-                <option value="low" data-i18n="confidenceLow">Lav (alle funn)</option>
-              </select>
-            </div>
-            <div class="ds-progress" id="ds-progress"></div>
-          </div>
-          <!-- Funn fra inline dybdeskann -->
-          <div id="ds-findings-area"></div>
+        <div id="ai-progress"></div>
+        <div id="ai-findings-area"></div>
+        <div id="ai-anon-bar" class="anon-bar" style="display:none;">
+          <button class="ctrl-btn" id="ai-sel-all" data-i18n="selAll">Velg alle</button>
+          <button class="ctrl-btn" id="ai-sel-none" data-i18n="selNone">Fjern alle</button>
+          <span class="ctrl-sep"></span>
+          <button class="ctrl-btn ctrl-btn-primary" id="ai-anon-btn" data-i18n="saveAnon">Anonymiser valgte</button>
+          <span class="anon-msg" id="ai-anon-msg"></span>
         </div>
       </div>
 
@@ -1047,6 +1113,19 @@
         confidenceLow:      "Lav (alle funn)",
         folderLevel:        "Nivå",
         folderFile:         "Fil",
+        scanOptsTitle:       "Hva vil du finne?",
+        scanCatId:           "Personnummer / ID",
+        scanCatKonto:        "Kontonummer / IBAN",
+        scanCatKredittkort:  "Kredittkort",
+        scanCatNavn:         "Navn (person)",
+        scanCatHemmeligheter:"API-nøkler / secrets",
+        scanCatFinansielt:   "Finansielle nøkkeltall",
+        scanCatKonfidensielt:"Konfidensielle ord",
+        scanCatKlient:       "Klientnavn",
+        scanCatOrgnummer:    "Org.nummer",
+        aiToggleLabel:       "Kjør AI-dybdeskann (Ollama)",
+        aiExtraCats:         "Ekstra AI-kategorier:",
+        aiResultsTitle:      "AI-funn",
       },
       sv: {
         subtitle:     "Kontrollerar dokument för känslig information innan uppladdning till online-AI-verktyg",
@@ -1188,6 +1267,19 @@
         confidenceLow:      "Låg (alla fynd)",
         folderLevel:        "Nivå",
         folderFile:         "Fil",
+        scanOptsTitle:       "Vad vill du hitta?",
+        scanCatId:           "Personnummer / ID",
+        scanCatKonto:        "Kontonummer / IBAN",
+        scanCatKredittkort:  "Kredittkort",
+        scanCatNavn:         "Namn (person)",
+        scanCatHemmeligheter:"API-nycklar / secrets",
+        scanCatFinansielt:   "Finansiella nyckeltal",
+        scanCatKonfidensielt:"Konfidentiella ord",
+        scanCatKlient:       "Kundnamn",
+        scanCatOrgnummer:    "Org.nummer",
+        aiToggleLabel:       "Kör AI-djupskanning (Ollama)",
+        aiExtraCats:         "Extra AI-kategorier:",
+        aiResultsTitle:      "AI-fynd",
       },
       en: {
         subtitle:     "Checks documents for sensitive information before uploading to online AI tools",
@@ -1329,6 +1421,19 @@
         confidenceLow:      "Low (all findings)",
         folderLevel:        "Level",
         folderFile:         "File",
+        scanOptsTitle:       "What do you want to find?",
+        scanCatId:           "National ID / passport",
+        scanCatKonto:        "Account number / IBAN",
+        scanCatKredittkort:  "Credit cards",
+        scanCatNavn:         "Person names",
+        scanCatHemmeligheter:"API keys / secrets",
+        scanCatFinansielt:   "Financial figures",
+        scanCatKonfidensielt:"Confidential keywords",
+        scanCatKlient:       "Client names",
+        scanCatOrgnummer:    "Org. number",
+        aiToggleLabel:       "Run AI deep scan (Ollama)",
+        aiExtraCats:         "Extra AI categories:",
+        aiResultsTitle:      "AI findings",
       },
     };
 
@@ -1400,8 +1505,8 @@
         el.placeholder = t(el.dataset.i18nPlaceholder);
       });
 
-      // Update confidence select options (dybdeskann tab + inline panel)
-      document.querySelectorAll("#dst-confidence-select option[data-i18n], #ds-confidence-select option[data-i18n]").forEach(el => {
+      // Update confidence select options (dybdeskann tab + AI-scan panel)
+      document.querySelectorAll("#dst-confidence-select option[data-i18n], #ai-conf-select option[data-i18n]").forEach(el => {
         el.textContent = t(el.dataset.i18n);
       });
 
@@ -1686,16 +1791,15 @@
 
       wireEvents(sorted, canPatch, ext);
 
-      // Vis inline dybdeskann-panel etter fil- og paste-skann (ikke mappe)
-      if (_scanMode === "file" || _scanMode === "paste") {
-        document.getElementById("deep-scan-section").classList.add("show");
-        // Tilbakestill panel men behold header-åpen-tilstand
-        document.getElementById("ds-progress").textContent = "";
-        document.getElementById("ds-findings-area").innerHTML = "";
-        // Resett initstate slik at Ollama-status sjekkes på nytt for nytt dokument
-        _dsInitialized = false;
+      // Start AI-skann automatisk hvis toggle er på (ikke for mappeskann)
+      if (_scanMode !== "folder") {
+        document.getElementById("ai-scan-status").style.display = "none";
+        document.getElementById("ai-progress").textContent = "";
+        document.getElementById("ai-findings-area").innerHTML = "";
+        document.getElementById("ai-anon-bar").style.display = "none";
+        autoAiScan();
       } else {
-        document.getElementById("deep-scan-section").classList.remove("show");
+        document.getElementById("ai-scan-status").style.display = "none";
       }
 
       // Tekst-forhåndsvisning vises ETTER deep-scan-seksjonen
@@ -1712,9 +1816,17 @@
     }
 
     function buildFindingsHtml(sorted, canPatch, ext) {
-      if (!sorted.length) {
-        return `<p style="color:var(--ok);margin-top:6px;">${t("noFindings")}</p>`;
+      // Filter findings based on selected scan categories
+      const selectedCats = [...document.querySelectorAll(".scan-cat:checked")].map(cb => cb.value);
+      const filtered = selectedCats.length
+        ? sorted.filter(({f}) => _findingMatchesCat(f, selectedCats))
+        : sorted;
+
+      if (!filtered.length) {
+        if (!sorted.length) return `<p style="color:var(--ok);margin-top:6px;">${t("noFindings")}</p>`;
+        return `<p style="color:var(--ok);margin-top:6px;">${t("noFindings")} <span style="color:var(--muted);font-size:11px">(${sorted.length - filtered.length} skjult av filter)</span></p>`;
       }
+      const sorted_use = filtered;
 
       const pdfNote = (ext === "pdf")
         ? `<div class="pdf-caveat">⚠ ${t("pdfCaveat")}</div>` : "";
@@ -1732,7 +1844,7 @@
           <span class="anon-msg" id="g-anon-msg"></span>
         </div>`;
 
-      const rows = sorted.map(({ f, i }) => {
+      const rows = sorted_use.map(({ f, i }) => {
         const sc    = SEV_COLOR[f.severity] || "#ffb84d";
         const light = f.severity === "gul";
         const canWl = (f.severity === "gul" || f.severity === "rød") && !f.category.startsWith("⚠");
@@ -1757,8 +1869,11 @@
           </li>`;
       }).join("");
 
+      const hiddenNote = sorted.length > sorted_use.length
+        ? `<span style="font-size:11px;color:var(--muted);margin-left:8px;">${sorted.length - sorted_use.length} skjult av kategorifilter</span>`
+        : "";
       return `
-        <h3 class="section-heading">${t("sectionFind")} (${sorted.length})</h3>
+        <h3 class="section-heading">${t("sectionFind")} (${sorted_use.length})${hiddenNote}</h3>
         ${anonBar}
         <ul class="findings-list">${rows}</ul>`;
     }
@@ -2488,145 +2603,231 @@
     document.getElementById("dst-anon-btn").addEventListener("click",   anonymizeDst);
 
     /* ══════════════════════════════════════════════════════════════════
-       INLINE DYBDESKANN (kollapsibel panel i scanner-tabben)
+       UNIFIED SCANNER: kategorifilter + AI-dybdeskann
     ══════════════════════════════════════════════════════════════════ */
-    let _dsInitialized = false;
-    let _dsPollTimer   = null;
 
-    // Kollapser/ekspander
-    document.getElementById("ds-header").addEventListener("click", () => {
-      const h = document.getElementById("ds-header");
-      const b = document.getElementById("ds-body");
-      const opening = !h.classList.contains("open");
-      h.classList.toggle("open");
-      b.classList.toggle("open");
-      if (opening && !_dsInitialized) {
-        _dsInitialized = true;
-        dsCheckOllama();
+    // Mapping: .scan-cat verdi → finding.category matcher (lowercase)
+    const FILTER_MAP = {
+      "epost":         c => c.startsWith("e-post"),
+      "telefon":       c => c.startsWith("telefonnummer"),
+      "id":            c => ["fødselsnummer","d-nummer","personnummer","samordningsnummer","cpr-nummer","uk national insurance","us social security"].some(p => c.startsWith(p)),
+      "konto":         c => ["kontonummer","bankgiro","plusgiro","iban"].some(p => c.startsWith(p)),
+      "kredittkort":   c => c.startsWith("kredittkort"),
+      "navn":          c => c.startsWith("navn (person)"),
+      "nettadresse":   c => c.startsWith("nettadresse"),
+      "hemmeligheter": c => ["openai","anthropic","github","jwt","bearer","aws","private key","azure storage","passord i konfig","konfigurasjonsord","høy-entropisteng"].some(p => c.startsWith(p)),
+      "finansielt":    c => ["timepris","dagspris","prosjektsum","margin","rabatt"].some(p => c.startsWith(p)),
+      "konfidensielt": c => c.startsWith("konfidensielt dokument"),
+      "klient":        c => c.startsWith("kundenavn"),
+      "orgnummer":     c => c.startsWith("organisasjonsnummer"),
+    };
+
+    // Mapping: .scan-cat verdi → AI deep_scanner kategori-nøkkel
+    const AI_CAT_MAP = {
+      "epost":       "epost",
+      "telefon":     "telefon",
+      "id":          "personnummer",
+      "konto":       "bankkonto",
+      "navn":        "navn",
+      "nettadresse": "nettadresse",
+      "finansielt":  "budsjett_tall",
+    };
+
+    function _findingMatchesCat(f, selectedCats) {
+      const cat = (f.category || "").toLowerCase();
+      if (cat.startsWith("⚠")) return true; // vis alltid systemadvarsler
+      for (const key of selectedCats) {
+        const matcher = FILTER_MAP[key];
+        if (matcher && matcher(cat)) return true;
       }
+      return false;
+    }
+
+    function _getAiCategories() {
+      const selected = [...document.querySelectorAll(".scan-cat:checked")].map(cb => cb.value);
+      const cats = [];
+      for (const key of selected) {
+        if (AI_CAT_MAP[key] && !cats.includes(AI_CAT_MAP[key])) cats.push(AI_CAT_MAP[key]);
+      }
+      document.querySelectorAll(".ai-extra-cat:checked").forEach(cb => {
+        if (!cats.includes(cb.value)) cats.push(cb.value);
+      });
+      return cats;
+    }
+
+    // Velg alle / fjern alle for scan-cat
+    document.getElementById("scan-sel-all").addEventListener("click", () =>
+      document.querySelectorAll(".scan-cat").forEach(cb => cb.checked = true));
+    document.getElementById("scan-sel-none").addEventListener("click", () =>
+      document.querySelectorAll(".scan-cat").forEach(cb => cb.checked = false));
+
+    // AI-toggle: vis/skjul opsjoner og last modeller
+    document.getElementById("ai-scan-toggle").addEventListener("change", function() {
+      const optsEl = document.getElementById("ai-scan-opts");
+      optsEl.style.display = this.checked ? "" : "none";
+      if (this.checked) _loadAiModels();
     });
 
-    async function dsCheckOllama() {
-      const statusRow  = document.getElementById("ds-status-row-inline");
-      const notRunning = document.getElementById("ds-not-running");
-      const readyDiv   = document.getElementById("ds-ready");
-      const modelSel   = document.getElementById("ds-model-select");
-      statusRow.innerHTML = `<span style="color:var(--muted);font-size:12px">${t("ollamaChecking")}</span>`;
+    async function _loadAiModels() {
+      const statusEl  = document.getElementById("ai-status-row");
+      const notRunEl  = document.getElementById("ai-not-running");
+      const readyEl   = document.getElementById("ai-ready");
+      if (!statusEl) return;
+      statusEl.textContent = t("ollamaChecking");
       try {
         const s = await (await fetch(`${API}/ollama/status`)).json();
         if (!s.running) {
-          statusRow.innerHTML  = `<span style="color:var(--danger)">${t("ollamaNotRunning")}</span>`;
-          notRunning.innerHTML = t("ollamaInstallHint");
-          notRunning.style.display = "block";
-          readyDiv.style.display   = "none";
+          statusEl.innerHTML   = `<span style="color:var(--danger)">${t("ollamaNotRunning")}</span>`;
+          notRunEl.innerHTML   = t("ollamaInstallHint");
+          notRunEl.style.display = "block";
+          readyEl.style.display  = "none";
           return;
         }
-        notRunning.style.display = "none";
-        if (!s.models || !s.models.length) {
-          statusRow.innerHTML = `<span style="color:var(--ok)">${t("ollamaRunning")}</span>
+        notRunEl.style.display = "none";
+        if (!s.models?.length) {
+          statusEl.innerHTML  = `<span style="color:var(--ok)">${t("ollamaRunning")}</span>
             <span style="color:var(--danger);margin-left:8px">${t("ollamaNoModels")}</span>`;
-          readyDiv.style.display = "none";
+          readyEl.style.display = "none";
           return;
         }
-        statusRow.innerHTML = `<span style="color:var(--ok)">${t("ollamaRunning")}</span>`;
-        const current = modelSel.value;
-        modelSel.innerHTML = s.models.map(m => {
+        statusEl.innerHTML = `<span style="color:var(--ok)">${t("ollamaRunning")}</span>`;
+        const sel  = document.getElementById("ai-model-select");
+        const prev = sel.value;
+        sel.innerHTML = s.models.map(m => {
           const rec = ["llama3.2:3b","llama3.2:1b","gemma2:2b","mistral:7b"].includes(m);
           return `<option value="${escapeHtml(m)}">${escapeHtml(m)}${rec ? " ★" : ""}</option>`;
         }).join("");
-        if (current && s.models.includes(current)) modelSel.value = current;
-        readyDiv.style.display = "block";
+        if (prev && s.models.includes(prev)) sel.value = prev;
+        readyEl.style.display = "block";
       } catch (_) {
-        statusRow.innerHTML  = `<span style="color:var(--danger)">${t("ollamaNotRunning")}</span>`;
-        notRunning.innerHTML = t("ollamaInstallHint");
-        notRunning.style.display = "block";
-        readyDiv.style.display   = "none";
+        statusEl.innerHTML   = `<span style="color:var(--danger)">${t("ollamaNotRunning")}</span>`;
+        notRunEl.innerHTML   = t("ollamaInstallHint");
+        notRunEl.style.display = "block";
+        readyEl.style.display  = "none";
       }
     }
 
-    async function dsStart() {
-      const model = document.getElementById("ds-model-select").value;
-      if (!model) return;
-      const cats = [...document.querySelectorAll(".ds-cat:checked")].map(cb => cb.value);
-      if (!cats.length) {
-        document.getElementById("ds-progress").innerHTML =
-          `<span style="color:var(--warn)">Velg minst én kategori.</span>`;
+    let _aiPollTimer  = null;
+    let _aiFindingsData = [];
+
+    async function autoAiScan() {
+      const toggle = document.getElementById("ai-scan-toggle");
+      if (!toggle?.checked) return;
+      const model = document.getElementById("ai-model-select")?.value;
+      if (!model) {
+        // Vis kort melding om at modell ikke er valgt
+        const statusEl = document.getElementById("ai-scan-status");
+        statusEl.style.display = "";
+        document.getElementById("ai-progress").innerHTML =
+          `<span style="color:var(--warn)">Ollama ikke konfigurert. Huk av og velg modell.</span>`;
         return;
       }
-      document.getElementById("ds-start-btn").style.display  = "none";
-      document.getElementById("ds-cancel-btn").style.display = "";
-      document.getElementById("ds-progress").textContent = t("deepScanRunning");
-      document.getElementById("ds-findings-area").innerHTML = "";
-      const minConf = document.getElementById("ds-confidence-select")?.value || "medium";
+      const statusEl   = document.getElementById("ai-scan-status");
+      const progressEl = document.getElementById("ai-progress");
+      const cancelBtn  = document.getElementById("ai-cancel-btn");
+      statusEl.style.display = "";
+      progressEl.textContent = t("deepScanRunning");
+      cancelBtn.style.display = "";
+      document.getElementById("ai-findings-area").innerHTML = "";
+      document.getElementById("ai-anon-bar").style.display = "none";
+      _aiFindingsData = [];
+      const minConf = document.getElementById("ai-conf-select")?.value || "medium";
+      const cats = _getAiCategories();
       try {
         const r = await (await fetch(`${API}/ollama/deep-scan`, {
           method: "POST",
           headers: {"Content-Type": "application/json"},
           body: JSON.stringify({ model, categories: cats, min_confidence: minConf }),
         })).json();
-        if (r.error) { dsSetError(r.error); return; }
-        if (_dsPollTimer) clearInterval(_dsPollTimer);
-        _dsPollTimer = setInterval(dsPoll, 1500);
-      } catch (e) { dsSetError(String(e)); }
+        if (!r.ok) {
+          progressEl.innerHTML = `<span style="color:var(--danger)">${escapeHtml(r.error || "Feil")}</span>`;
+          cancelBtn.style.display = "none";
+          return;
+        }
+        if (_aiPollTimer) clearInterval(_aiPollTimer);
+        _aiPollTimer = setInterval(_pollAiScan, 1500);
+      } catch (e) {
+        progressEl.innerHTML = `<span style="color:var(--danger)">${escapeHtml(String(e))}</span>`;
+        cancelBtn.style.display = "none";
+      }
     }
 
-    async function dsCancel() {
-      if (_dsPollTimer) { clearInterval(_dsPollTimer); _dsPollTimer = null; }
-      await fetch(`${API}/ollama/deep-scan/cancel`, { method:"POST" }).catch(()=>{});
-      document.getElementById("ds-cancel-btn").style.display = "none";
-      document.getElementById("ds-start-btn").style.display  = "";
-      document.getElementById("ds-progress").textContent = t("deepScanCancelled") || "Avbrutt.";
-    }
-
-    async function dsPoll() {
+    async function _pollAiScan() {
       try {
         const s = await (await fetch(`${API}/ollama/deep-scan/status`)).json();
-        document.getElementById("ds-progress").textContent = s.progress || "";
+        document.getElementById("ai-progress").textContent = s.progress || "";
         if (s.status === "done") {
-          clearInterval(_dsPollTimer); _dsPollTimer = null;
-          document.getElementById("ds-cancel-btn").style.display = "none";
-          document.getElementById("ds-start-btn").style.display  = "";
-          dsRenderFindings(s.findings || []);
+          clearInterval(_aiPollTimer); _aiPollTimer = null;
+          document.getElementById("ai-cancel-btn").style.display = "none";
+          _aiFindingsData = s.findings || [];
+          _renderAiFindings(_aiFindingsData);
         } else if (s.status === "cancelled" || s.status === "error") {
-          clearInterval(_dsPollTimer); _dsPollTimer = null;
-          document.getElementById("ds-cancel-btn").style.display = "none";
-          document.getElementById("ds-start-btn").style.display  = "";
+          clearInterval(_aiPollTimer); _aiPollTimer = null;
+          document.getElementById("ai-cancel-btn").style.display = "none";
         }
       } catch (_) { /* stille – prøver igjen */ }
     }
 
-    function dsRenderFindings(findings) {
-      const area = document.getElementById("ds-findings-area");
+    function _renderAiFindings(findings) {
+      const area    = document.getElementById("ai-findings-area");
+      const anonBar = document.getElementById("ai-anon-bar");
       if (!findings.length) {
-        area.innerHTML = `<p style="color:var(--ok);font-size:13px;margin-top:8px">${t("noFindings")}</p>`;
+        area.innerHTML = `<p style="color:var(--ok);font-size:13px;">${t("deepScanNoFindings")}</p>`;
+        anonBar.style.display = "none";
         return;
       }
-      const confBadge = conf => {
-        const map = { high: ["var(--ok)","★★★"], medium: ["var(--warn)","★★☆"], low: ["var(--muted)","★☆☆"] };
-        const [color, stars] = map[conf] || ["var(--muted)", conf];
-        return `<span style="color:${color};font-size:11px;margin-left:4px">${stars}</span>`;
-      };
-      area.innerHTML = `<div class="ds-findings-title">${t("dstResultsTitle")} (${findings.length})</div>` +
-        findings.map(f => `
-          <div class="ds-finding">
-            <div class="ds-finding-cat">${escapeHtml(f.category||"")}${confBadge((f.confidence||"").toLowerCase())}</div>
-            <div class="ds-finding-text">
-              <div>${escapeHtml(f.text||"")}</div>
-              ${f.context ? `<div class="ds-finding-ctx">${escapeHtml(f.context)}</div>` : ""}
+      const ORDER = { svart: 3, rød: 2, gul: 1 };
+      const sortedF = findings
+        .map((f, i) => ({ f, i, sev: _dstSeverity(f.category) }))
+        .sort((a, b) => (ORDER[b.sev]||0) - (ORDER[a.sev]||0));
+      area.innerHTML = sortedF.map(({ f, i, sev }) => {
+        const sc = SEV_COLOR[sev] || "#ffb84d";
+        const light = sev === "gul";
+        return `
+          <div class="dst-finding" style="border-left-color:${sc}">
+            <input type="checkbox" class="ai-cb" value="${i}" checked
+              style="margin-top:3px;flex-shrink:0;width:13px;height:13px;cursor:pointer;accent-color:var(--ok)">
+            <div class="finding-body">
+              <div>
+                <span class="cat" style="background:${sc};color:${light?"#1a1a1a":"#fff"}">${escapeHtml(f.category||"AI-funn")}</span>
+                <strong>${escapeHtml(f.text||"")}</strong>
+              </div>
+              ${f.context ? `<div class="ctx">${escapeHtml(f.context)}</div>` : ""}
             </div>
-          </div>`).join("");
+          </div>`;
+      }).join("");
+      anonBar.style.display = "flex";
+      document.getElementById("ai-sel-all").onclick  = () =>
+        document.querySelectorAll(".ai-cb").forEach(cb => cb.checked = true);
+      document.getElementById("ai-sel-none").onclick = () =>
+        document.querySelectorAll(".ai-cb").forEach(cb => cb.checked = false);
     }
 
-    function dsSetError(msg) {
-      clearInterval(_dsPollTimer); _dsPollTimer = null;
-      document.getElementById("ds-cancel-btn").style.display = "none";
-      document.getElementById("ds-start-btn").style.display  = "";
-      document.getElementById("ds-progress").innerHTML =
-        `<span style="color:var(--danger)">${t("deepScanError")} ${escapeHtml(msg)}</span>`;
+    async function _cancelAiScan() {
+      if (_aiPollTimer) { clearInterval(_aiPollTimer); _aiPollTimer = null; }
+      await fetch(`${API}/ollama/deep-scan/cancel`, { method:"POST" }).catch(()=>{});
+      document.getElementById("ai-cancel-btn").style.display = "none";
+      document.getElementById("ai-progress").textContent = t("deepScanCancelled") || "Avbrutt.";
     }
 
-    document.getElementById("ds-start-btn").addEventListener("click",  dsStart);
-    document.getElementById("ds-cancel-btn").addEventListener("click",  dsCancel);
+    async function _anonymizeAi() {
+      const msg     = document.getElementById("ai-anon-msg");
+      const checked = [...document.querySelectorAll(".ai-cb:checked")].map(cb => +cb.value);
+      if (!checked.length) { msg.style.color="var(--warn)"; msg.textContent=t("dstSelectOne"); return; }
+      msg.style.color="var(--muted)"; msg.textContent=t("processing");
+      const texts = checked.map(i => _aiFindingsData[i]?.text).filter(Boolean);
+      try {
+        const d = await (await fetch(`${API}/ollama/anonymize-findings`, {
+          method:"POST", headers:{"Content-Type":"application/json"},
+          body: JSON.stringify({ texts }),
+        })).json();
+        if (d.ok) { msg.style.color="#4caf50"; msg.textContent=`${t("saved")} ${d.path}`; }
+        else      { msg.style.color="#f44336"; msg.textContent=`${t("errPrefix")} ${d.error}`; }
+      } catch (e) { msg.style.color="#f44336"; msg.textContent=`${t("netErr")} ${e}`; }
+    }
+
+    document.getElementById("ai-cancel-btn").addEventListener("click", _cancelAiScan);
+    document.getElementById("ai-anon-btn").addEventListener("click",   _anonymizeAi);
 
     /* ══════════════════════════════════════════════════════════════════
        MODE TOGGLE (Fil / Lim inn / Mappe)
