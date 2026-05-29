@@ -496,7 +496,7 @@
   </header>
 
   <nav class="tab-nav">
-    <button class="tab-btn active" data-tab="scanner" data-i18n="tabScanner">🔍 Rask scanner</button>
+    <button class="tab-btn active" data-tab="scanner" data-i18n="tabScanner">🔍 Scanner</button>
     <button class="tab-btn" data-tab="deepscan" data-i18n="tabDeepScan" style="display:none">🔬 Dybdeskann</button>
     <button class="tab-btn" data-tab="about" data-i18n="tabAbout">ℹ Om programmet</button>
     <button class="tab-btn" data-tab="settings" data-i18n="tabSettings">⚙️ Innstillinger</button>
@@ -548,10 +548,15 @@
 
         <!-- AI-dybdeskann toggle -->
         <div class="ai-toggle-row">
-          <label class="ai-toggle-label">
-            <input type="checkbox" id="ai-scan-toggle">
-            <span>🔬 <span data-i18n="aiToggleLabel">Kjør AI-dybdeskann (Ollama)</span></span>
-          </label>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <label class="ai-toggle-label">
+              <input type="checkbox" id="ai-scan-toggle">
+              <span>🔬 <span data-i18n="aiToggleLabel">Kjør AI-dybdeskann (Ollama)</span></span>
+            </label>
+            <button class="ctrl-btn" id="ai-rescan-btn"
+              style="font-size:11px;padding:2px 9px;display:none;"
+              data-i18n="rescanAi">🔄 Re-skann</button>
+          </div>
           <div id="ai-scan-opts">
             <div id="ai-status-row" style="font-size:12px;color:var(--muted);margin-bottom:6px;" data-i18n="ollamaChecking">Sjekker Ollama…</div>
             <div id="ai-not-running" style="display:none;" class="ds-ollama-instructions"></div>
@@ -653,7 +658,7 @@
       <div class="dst-section">
         <div class="dst-section-title" data-i18n="dstFileInfoTitle">Fil å analysere</div>
         <div id="dst-file-info" class="dst-file-info">
-          <span class="dst-no-file" data-i18n="dstNoFile">Ingen fil skannet. Gå til Rask scanner-fanen og skann en fil først.</span>
+          <span class="dst-no-file" data-i18n="dstNoFile">Ingen fil skannet. Gå til Scanner-fanen og skann en fil først.</span>
         </div>
       </div>
 
@@ -975,7 +980,7 @@
     const I18N = {
       nb: {
         subtitle:     "Sjekker dokumenter for sensitiv informasjon før opplasting til online AI-verktøy",
-        tabScanner:   "🔍 Rask scanner",
+        tabScanner:   "🔍 Scanner",
         tabAbout:     "ℹ Om programmet",
         dropTitle:    "Dra og slipp et dokument her",
         dropFormats:  "PDF · DOCX · PPTX · XLSX · TXT · MD · HTML",
@@ -1076,7 +1081,7 @@
         logHint: "Se logg:",
         tabDeepScan:        "🔬 Dybdeskann",
         dstFileInfoTitle:   "Fil å analysere",
-        dstNoFile:          "Ingen fil skannet ennå. Gå til Rask scanner-fanen og skann en fil først.",
+        dstNoFile:          "Ingen fil skannet ennå. Gå til Scanner-fanen og skann en fil først.",
         dstCatsTitle:       "Søk etter",
         dstCatNavn:         "Navn",
         dstCatAdresse:      "Adresse",
@@ -1126,10 +1131,11 @@
         aiToggleLabel:       "Kjør AI-dybdeskann (Ollama)",
         aiExtraCats:         "Ekstra AI-kategorier:",
         aiResultsTitle:      "AI-funn",
+        rescanAi:            "🔄 Re-skann",
       },
       sv: {
         subtitle:     "Kontrollerar dokument för känslig information innan uppladdning till online-AI-verktyg",
-        tabScanner:   "🔍 Snabb scanner",
+        tabScanner:   "🔍 Scanner",
         tabAbout:     "ℹ Om programmet",
         dropTitle:    "Dra och släpp ett dokument här",
         dropFormats:  "PDF · DOCX · PPTX · XLSX · TXT · MD · HTML",
@@ -1230,7 +1236,7 @@
         logHint: "Se logg:",
         tabDeepScan:        "🔬 Djupskanning",
         dstFileInfoTitle:   "Fil att analysera",
-        dstNoFile:          "Ingen fil skannad ännu. Gå till Snabb scanner-fliken och skanna en fil först.",
+        dstNoFile:          "Ingen fil skannad ännu. Gå till Scanner-fliken och skanna en fil först.",
         dstCatsTitle:       "Sök efter",
         dstCatNavn:         "Namn",
         dstCatAdresse:      "Adress",
@@ -1280,10 +1286,11 @@
         aiToggleLabel:       "Kör AI-djupskanning (Ollama)",
         aiExtraCats:         "Extra AI-kategorier:",
         aiResultsTitle:      "AI-fynd",
+        rescanAi:            "🔄 Re-skanna",
       },
       en: {
         subtitle:     "Checks documents for sensitive information before uploading to online AI tools",
-        tabScanner:   "🔍 Quick scan",
+        tabScanner:   "🔍 Scanner",
         tabAbout:     "ℹ About",
         dropTitle:    "Drag and drop a document here",
         dropFormats:  "PDF · DOCX · PPTX · XLSX · TXT · MD · HTML",
@@ -1384,7 +1391,7 @@
         logHint: "See log:",
         tabDeepScan:        "🔬 Deep Scan",
         dstFileInfoTitle:   "File to analyse",
-        dstNoFile:          "No file scanned yet. Go to the Quick scan tab and scan a file first.",
+        dstNoFile:          "No file scanned yet. Go to the Scanner tab and scan a file first.",
         dstCatsTitle:       "Search for",
         dstCatNavn:         "Names",
         dstCatAdresse:      "Addresses",
@@ -1434,6 +1441,7 @@
         aiToggleLabel:       "Run AI deep scan (Ollama)",
         aiExtraCats:         "Extra AI categories:",
         aiResultsTitle:      "AI findings",
+        rescanAi:            "🔄 Re-scan",
       },
     };
 
@@ -2663,9 +2671,17 @@
 
     // AI-toggle: vis/skjul opsjoner og last modeller
     document.getElementById("ai-scan-toggle").addEventListener("change", function() {
-      const optsEl = document.getElementById("ai-scan-opts");
+      const optsEl    = document.getElementById("ai-scan-opts");
+      const rescanBtn = document.getElementById("ai-rescan-btn");
       optsEl.style.display = this.checked ? "" : "none";
+      // Vis re-skann-knapp kun når toggle er på og et resultat allerede finnes
+      if (rescanBtn) rescanBtn.style.display = (this.checked && lastResult) ? "" : "none";
       if (this.checked) _loadAiModels();
+    });
+
+    // Re-skann-knapp: kjør AI-skannet på nytt med gjeldende innstillinger
+    document.getElementById("ai-rescan-btn").addEventListener("click", () => {
+      if (lastResult) autoAiScan();
     });
 
     async function _loadAiModels() {
