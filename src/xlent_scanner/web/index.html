@@ -1799,6 +1799,10 @@
 
       wireEvents(sorted, canPatch, ext);
 
+      // Oppdater re-skann-knapp nå som lastResult er satt
+      { const rb = document.getElementById("ai-rescan-btn");
+        if (rb) rb.style.display = (document.getElementById("ai-scan-toggle")?.checked && lastResult) ? "" : "none"; }
+
       // Start AI-skann automatisk hvis toggle er på (ikke for mappeskann)
       if (_scanMode !== "folder") {
         document.getElementById("ai-scan-status").style.display = "none";
@@ -2729,24 +2733,40 @@
     async function autoAiScan() {
       const toggle = document.getElementById("ai-scan-toggle");
       if (!toggle?.checked) return;
-      const model = document.getElementById("ai-model-select")?.value;
+
+      // Race-condition: modeller kanskje ikke lastet ennå — last på nytt og vent
+      let model = document.getElementById("ai-model-select")?.value;
       if (!model) {
-        // Vis kort melding om at modell ikke er valgt
-        const statusEl = document.getElementById("ai-scan-status");
-        statusEl.style.display = "";
-        document.getElementById("ai-progress").innerHTML =
-          `<span style="color:var(--warn)">Ollama ikke konfigurert. Huk av og velg modell.</span>`;
-        return;
+        await _loadAiModels();
+        model = document.getElementById("ai-model-select")?.value;
       }
+
       const statusEl   = document.getElementById("ai-scan-status");
       const progressEl = document.getElementById("ai-progress");
       const cancelBtn  = document.getElementById("ai-cancel-btn");
+      const rescanBtn  = document.getElementById("ai-rescan-btn");
+
+      if (!model) {
+        // Ollama ikke tilgjengelig eller ingen modeller installert
+        statusEl.style.display = "";
+        progressEl.innerHTML =
+          `<span style="color:var(--warn)">⚠ Ollama kjører ikke eller ingen modell er installert.</span>`;
+        statusEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        return;
+      }
+
+      // Vis status og indiker at scan er i gang
       statusEl.style.display = "";
       progressEl.textContent = t("deepScanRunning");
       cancelBtn.style.display = "";
+      if (rescanBtn) { rescanBtn.disabled = true; rescanBtn.textContent = "⏳ Analyserer…"; }
       document.getElementById("ai-findings-area").innerHTML = "";
       document.getElementById("ai-anon-bar").style.display = "none";
       _aiFindingsData = [];
+
+      // Scroll slik at brukeren ser at AI-skannet kjører
+      statusEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+
       const minConf = document.getElementById("ai-conf-select")?.value || "medium";
       const cats = _getAiCategories();
       try {
@@ -2758,6 +2778,7 @@
         if (!r.ok) {
           progressEl.innerHTML = `<span style="color:var(--danger)">${escapeHtml(r.error || "Feil")}</span>`;
           cancelBtn.style.display = "none";
+          if (rescanBtn) { rescanBtn.disabled = false; rescanBtn.textContent = "🔄 Re-skann"; }
           return;
         }
         if (_aiPollTimer) clearInterval(_aiPollTimer);
@@ -2765,7 +2786,13 @@
       } catch (e) {
         progressEl.innerHTML = `<span style="color:var(--danger)">${escapeHtml(String(e))}</span>`;
         cancelBtn.style.display = "none";
+        if (rescanBtn) { rescanBtn.disabled = false; rescanBtn.textContent = "🔄 Re-skann"; }
       }
+    }
+
+    function _restoreRescanBtn() {
+      const rb = document.getElementById("ai-rescan-btn");
+      if (rb) { rb.disabled = false; rb.textContent = "🔄 Re-skann"; }
     }
 
     async function _pollAiScan() {
@@ -2775,11 +2802,13 @@
         if (s.status === "done") {
           clearInterval(_aiPollTimer); _aiPollTimer = null;
           document.getElementById("ai-cancel-btn").style.display = "none";
+          _restoreRescanBtn();
           _aiFindingsData = s.findings || [];
           _renderAiFindings(_aiFindingsData);
         } else if (s.status === "cancelled" || s.status === "error") {
           clearInterval(_aiPollTimer); _aiPollTimer = null;
           document.getElementById("ai-cancel-btn").style.display = "none";
+          _restoreRescanBtn();
         }
       } catch (_) { /* stille – prøver igjen */ }
     }
@@ -2824,6 +2853,7 @@
       await fetch(`${API}/ollama/deep-scan/cancel`, { method:"POST" }).catch(()=>{});
       document.getElementById("ai-cancel-btn").style.display = "none";
       document.getElementById("ai-progress").textContent = t("deepScanCancelled") || "Avbrutt.";
+      _restoreRescanBtn();
     }
 
     async function _anonymizeAi() {
@@ -2986,6 +3016,7 @@
     loadNerStatus();
     loadOllamaSettingsStatus();
     loadHistoryFromApi();
+    _loadAiModels();   // Pre-last Ollama-modeller ved oppstart så AI-toggle er klar umiddelbart
 
     /* ── Windows kontekstmeny: auto-skann fil sendt via høyreklikk ── */
     (async function checkStartupFile() {
