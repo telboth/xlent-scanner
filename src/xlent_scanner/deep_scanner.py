@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import threading
 import time
 import urllib.error
@@ -14,7 +15,10 @@ import urllib.request
 from typing import Any
 
 LOGGER = logging.getLogger(__name__)
-OLLAMA_BASE = "http://localhost:11434"
+
+# URL kan overstyres med miljøvariabelen OLLAMA_BASE_URL.
+# Eksempel: OLLAMA_BASE_URL=http://192.168.1.10:11434 xlent-scanner
+OLLAMA_BASE: str = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434").rstrip("/")
 
 # Chunk-størrelse i ord. 900 ord gir ~1200 tokens – passer alle 1B-7B-modeller.
 _CHUNK_WORDS   = 900

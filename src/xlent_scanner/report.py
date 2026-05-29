@@ -271,7 +271,7 @@ document.querySelectorAll('.wl-btn').forEach(btn => {
 
 _ICONS = {"grønn": "✅", "gul": "⚠️", "rød": "🚫", "svart": "⛔"}
 _LABELS = {"grønn": "GRØNN", "gul": "GUL", "rød": "RØD", "svart": "SVART"}
-_LANG_LABELS = {"nb": "🇳🇴 Norsk", "sv": "🇸🇪 Svenska", "en": "🇬🇧 English"}
+_LANG_LABELS = {"nb": "🇳🇴 Norsk", "sv": "🇸🇪 Svenska", "en": "🇬🇧 English", "da": "🇩🇰 Dansk"}
 _PATCH_SUFFIXES = {"pdf", "docx", "pptx", "xlsx"}
 
 

@@ -2,22 +2,16 @@
 from __future__ import annotations
 
 import json
-import platform
-import os
 from datetime import datetime, timezone
 from pathlib import Path
+
+from xlent_scanner.paths import app_data_dir
 
 MAX_HISTORY = 200
 
 
 def _history_file() -> Path:
-    if platform.system() == "Windows":
-        base = Path(os.environ.get("APPDATA", Path.home()))
-    else:
-        base = Path.home() / "Library" / "Application Support"
-    d = base / "xlent-scanner"
-    d.mkdir(parents=True, exist_ok=True)
-    return d / "scan_history.jsonl"
+    return app_data_dir() / "scan_history.jsonl"
 
 
 def load_history() -> list[dict]:

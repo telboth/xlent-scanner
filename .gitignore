@@ -17,3 +17,6 @@ build/temp*/
 artifacts/
 build/windows/dist/
 build/windows/work/
+
+# Build-logger generert lokalt
+build_v*.log

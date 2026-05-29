@@ -7,8 +7,6 @@ Bruker bare standardbibliotek — ingen ekstra avhengigheter utover spaCy.
 """
 from __future__ import annotations
 
-import os
-import platform
 import shutil
 import tempfile
 import threading
@@ -18,6 +16,7 @@ import zipfile
 from pathlib import Path
 
 from xlent_scanner.language import SPACY_CONFIG
+from xlent_scanner.paths import app_data_dir
 
 # Modellversjoner som er kompatible med spaCy 3.8.x
 _MODEL_VERSIONS: dict[str, str] = {
@@ -42,11 +41,7 @@ _progress: dict[str, str] = {}
 # ── Hjelpefunksjoner ──────────────────────────────────────────────────────────
 
 def _models_dir() -> Path:
-    if platform.system() == "Windows":
-        base = Path(os.environ.get("APPDATA", Path.home()))
-    else:
-        base = Path.home() / "Library" / "Application Support"
-    d = base / "xlent-scanner" / "models"
+    d = app_data_dir() / "models"
     d.mkdir(parents=True, exist_ok=True)
     return d
 

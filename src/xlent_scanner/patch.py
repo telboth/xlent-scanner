@@ -22,12 +22,24 @@ def _norm(s: str) -> str:
 
 
 def _apply_replacements(text: str, replacements: dict[str, str]) -> str:
-    for old, new in replacements.items():
-        text = text.replace(old, new)
-        # Prøv også normalisert variant hvis første ikke matchet
+    """To-fase erstatning: tokens forhindrer kollisjon mellom overlappende funn."""
+    if not replacements:
+        return text
+
+    # Fase 1: erstatt med null-byte-tokens (lengste-først)
+    tokens: list[tuple[str, str]] = []
+    sorted_items = sorted(replacements.items(), key=lambda x: len(x[0]), reverse=True)
+    for i, (old, new) in enumerate(sorted_items):
+        token = f"\x00{i}\x00"
+        text = text.replace(old, token)
         norm_old = _norm(old)
         if norm_old != old:
-            text = text.replace(norm_old, new)
+            text = text.replace(norm_old, token)
+        tokens.append((token, new))
+
+    # Fase 2: tokens → endelige plassholdere
+    for token, new in tokens:
+        text = text.replace(token, new)
     return text
 
 

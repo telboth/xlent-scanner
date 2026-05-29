@@ -2,8 +2,6 @@
 from __future__ import annotations
 
 import json
-import os
-import platform
 import re
 import urllib.error
 import urllib.request
@@ -11,19 +9,15 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
+from xlent_scanner.paths import app_data_dir
+
 GITHUB_OWNER = "telboth"
 GITHUB_REPO = "xlent-scanner"
 CHECK_INTERVAL_DAYS = 30
 
 
 def _state_path() -> Path:
-    if platform.system() == "Windows":
-        base = Path(os.environ.get("APPDATA", Path.home()))
-    else:
-        base = Path.home() / "Library" / "Application Support"
-    d = base / "xlent-scanner"
-    d.mkdir(parents=True, exist_ok=True)
-    return d / "update_check.json"
+    return app_data_dir() / "update_check.json"
 
 
 def _utc_now() -> datetime:

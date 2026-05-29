@@ -6,22 +6,17 @@ Brukeren kan overstyre med en lokal fil:
 """
 from __future__ import annotations
 
-import os
-import platform
 import tomllib
 from pathlib import Path
 
 from xlent_scanner.models import Finding
+from xlent_scanner.paths import app_data_dir
 
 _BUNDLED = Path(__file__).parent / "data" / "ignore.toml"
 
 
 def _user_override_path() -> Path:
-    if platform.system() == "Windows":
-        base = Path(os.environ.get("APPDATA", Path.home()))
-    else:
-        base = Path.home() / "Library" / "Application Support"
-    return base / "xlent-scanner" / "ignore.toml"
+    return app_data_dir() / "ignore.toml"
 
 
 def ignore_path_str() -> str:

@@ -37,6 +37,7 @@ from flask import Flask, jsonify, request
 
 from xlent_scanner import __version__
 from xlent_scanner.anonymize import anonymize_text, build_replacements
+from xlent_scanner.paths import app_data_dir
 from xlent_scanner.ignore import (
     get_ignore_toml_text,
     ignore_path_str,
@@ -71,18 +72,8 @@ _NO_CACHE = {
 }
 
 
-def _app_data_dir() -> Path:
-    if platform.system() == "Windows":
-        base = Path(os.environ.get("APPDATA", Path.home()))
-    else:
-        base = Path.home() / "Library" / "Application Support"
-    d = base / "xlent-scanner"
-    d.mkdir(parents=True, exist_ok=True)
-    return d
-
-
 def _setup_logging() -> tuple[logging.Logger, Path]:
-    log_dir = _app_data_dir() / "logs"
+    log_dir = app_data_dir() / "logs"
     log_dir.mkdir(parents=True, exist_ok=True)
     log_path = log_dir / "app.log"
 
@@ -841,13 +832,121 @@ def _wait_for_flask(port: int, timeout: float = 10.0) -> None:
     raise RuntimeError(f"Flask startet ikke på port {port} innen {timeout}s")
 
 
+# ── CLI-modus ─────────────────────────────────────────────────────────────────
+
+def _cli_scan() -> None:
+    """Kommandolinje-modus: skann en fil og skriv ut funn uten GUI.
+
+    Bruk:
+      xlent-scanner --scan FIL [--json] [--lang nb|sv|en|auto]
+
+    Exit-kode: 0 = rent, 1 = gul, 2 = rød, 3 = svart.
+    """
+    import argparse
+    from dataclasses import asdict
+
+    parser = argparse.ArgumentParser(
+        prog="xlent-scanner",
+        description="XLENT Compliance-scanner — skann fil for sensitiv informasjon",
+    )
+    parser.add_argument("--scan", required=True, metavar="FIL", help="Fil som skal skannes")
+    parser.add_argument("--json", action="store_true", help="Skriv funn som JSON på stdout")
+    parser.add_argument("--lang", default="auto", metavar="LANG",
+                        help="Språk: nb / sv / en / auto (standard: auto)")
+    args = parser.parse_args()
+
+    result = scan_file(args.scan, language=args.lang)
+
+    if args.json:
+        print(json.dumps(asdict(result), ensure_ascii=False, indent=2))
+    else:
+        level_icon = {"grønn": "✅", "gul": "⚠️", "rød": "🚫", "svart": "⛔"}.get(
+            result.risk_level, "?"
+        )
+        print(f"{level_icon}  {result.file_name}  [{result.risk_level.upper()}]")
+        print(f"   {result.risk_summary}")
+        if result.error:
+            print(f"   Feil: {result.error}")
+        for f in result.findings:
+            sev_icon = {"svart": "⛔", "rød": "🚫", "gul": "⚠️", "grønn": "✅"}.get(
+                f.severity, "•"
+            )
+            print(f"   {sev_icon} [{f.category}] {f.text}")
+
+    exit_code = {"grønn": 0, "gul": 1, "rød": 2, "svart": 3}.get(result.risk_level, 0)
+    sys.exit(exit_code)
+
+
+# ── Enkel-instans IPC ──────────────────────────────────────────────────────────
+# Brukes når appen åpnes fra Windows kontekstmeny:
+# - Første instans: bind IPC-socket og kjør GUI
+# - Etterfølgende instanser: send filsti til første instans og avslutt
+
+_IPC_PORT = 51290   # fast lokal port for xlent-scanner IPC
+
+
+def _ipc_send_and_exit(file_path: str) -> None:
+    """Send filsti til en eksisterende instans og avslutt."""
+    try:
+        with socket.create_connection(("127.0.0.1", _IPC_PORT), timeout=1.0) as s:
+            s.sendall((file_path + "\n").encode("utf-8"))
+        LOGGER.info("IPC: filsti sendt til eksisterende instans: %s", file_path)
+        sys.exit(0)
+    except OSError:
+        pass  # Ingen eksisterende instans — fortsett som ny
+
+
+def _ipc_start_server() -> None:
+    """Start IPC-lytter som mottar filstier fra nye instanser.
+
+    Når en ny filsti ankommer, trigger vi scanPath() i det kjørende vinduet
+    via evaluate_js — ingen sidelasting nødvendig.
+    """
+    def _listen() -> None:
+        try:
+            srv = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            srv.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            srv.bind(("127.0.0.1", _IPC_PORT))
+            srv.listen(5)
+            LOGGER.info("IPC-server lytter på port %s", _IPC_PORT)
+            while True:
+                conn, addr = srv.accept()
+                try:
+                    data = conn.recv(4096).decode("utf-8").strip()
+                    if data and _window:
+                        LOGGER.info("IPC: mottok filsti: %s", data)
+                        path_js = json.dumps(data)
+                        _window.evaluate_js(
+                            f"(function(){{"
+                            f"  document.querySelector('[data-tab=\"scanner\"]')?.click();"
+                            f"  scanPath({path_js});"
+                            f"}})()"
+                        )
+                finally:
+                    conn.close()
+        except Exception as exc:
+            LOGGER.warning("IPC-server feilet: %s", exc)
+
+    t = threading.Thread(target=_listen, daemon=True, name="ipc-server")
+    t.start()
+
+
 def main() -> None:
     global _window, _port, _initial_file
 
-    # Fil sendt via Windows høyreklikk-kontekstmeny
-    if len(sys.argv) > 1:
+    # ── CLI-modus ──────────────────────────────────────────────────────────
+    if "--scan" in sys.argv:
+        _cli_scan()
+        return  # _cli_scan kaller sys.exit, men for type-checker:
+        return  # noqa: unreachable
+
+    # ── Fil fra Windows kontekstmeny (argv[1]) ──────────────────────────────
+    if len(sys.argv) > 1 and not sys.argv[1].startswith("--"):
         _initial_file = sys.argv[1]
         LOGGER.info("Startup file from argv: %s", _initial_file)
+        # Enkel-instans: hvis en instans allerede kjører, send filen dit
+        _ipc_send_and_exit(_initial_file)
+        # Kommer hit: vi er første instans
 
     LOGGER.info("App starting version=%s", __version__)
     LOGGER.info(
@@ -858,6 +957,9 @@ def main() -> None:
     )
     LOGGER.info("PyWebView version=%s", getattr(webview, "__version__", "unknown"))
     _validate_runtime_dependencies()
+
+    # Start IPC-server (enkel-instans-støtte for kontekstmeny-åpning)
+    _ipc_start_server()
 
     _port = _free_port()
     t = threading.Thread(target=_start_flask, args=(_port,), daemon=True)

@@ -9,22 +9,15 @@ Format:
 """
 from __future__ import annotations
 
-import os
-import platform
 import tomllib
 from pathlib import Path
 
 from xlent_scanner.models import Finding
+from xlent_scanner.paths import app_data_dir
 
 
 def _whitelist_path() -> Path:
-    if platform.system() == "Windows":
-        base = Path(os.environ.get("APPDATA", Path.home()))
-    else:
-        base = Path.home() / "Library" / "Application Support"
-    d = base / "xlent-scanner"
-    d.mkdir(parents=True, exist_ok=True)
-    return d / "whitelist.toml"
+    return app_data_dir() / "whitelist.toml"
 
 
 def _toml_str(s: str) -> str:

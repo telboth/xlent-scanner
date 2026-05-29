@@ -152,12 +152,18 @@ def find_kontonummer(text: str) -> Iterator[Finding]:
             digits = m.group(4) + m.group(5) + m.group(6)   # 4-4-3
         else:
             digits = m.group(7)                               # rå 11 siffer
-        if _validate_konto(digits):
-            yield Finding(
-                "kontonummer",
-                m.group(0).strip(),
-                _ctx(text, m.start(), m.end()),
-            )
+        if not _validate_konto(digits):
+            continue
+        # Hopp over tall som OGSÅ validerer som fødselsnummer/D-nummer —
+        # kontrollsiffer-vektene overlapper, og fnr-validering er strengere
+        # (K1 + K2 + datovalidering). Fnr-detektoren har prioritet.
+        if _validate_fnr_or_dnr(digits):
+            continue
+        yield Finding(
+            "kontonummer",
+            m.group(0).strip(),
+            _ctx(text, m.start(), m.end()),
+        )
 
 
 # ── telefonnummer ─────────────────────────────────────────────────────────────

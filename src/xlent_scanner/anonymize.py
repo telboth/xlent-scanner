@@ -132,9 +132,30 @@ def build_replacements(findings: list[Finding]) -> dict[str, str]:
 
 
 def anonymize_text(text: str, findings: list[Finding]) -> str:
-    """Erstatter alle valgte funn i teksten med plassholdere."""
+    """Erstatter alle valgte funn i teksten med plassholdere.
+
+    To-fase strategi for å unngå kollisjon mellom erstatninger:
+    1. Erstatt originalverdier (lengste-først) med midlertidige null-byte-tokens.
+    2. Erstatt tokens med de endelige lesbare plassholderne.
+
+    Dette hindrer at f.eks. «Per Hansen» → «<Person A>» → «<Person B>son A>»
+    fordi «Per» i plassholderen ikke tilhører originalteksten.
+    """
     replacements = build_replacements(findings)
+    if not replacements:
+        return text
+
+    # Fase 1: midlertidige tokens (null-bytes kan ikke oppstå i vanlig tekst)
+    tokens: list[tuple[str, str]] = []
     result = text
-    for old, new in replacements.items():
-        result = result.replace(old, new)
+    for i, (old, new) in enumerate(
+        sorted(replacements.items(), key=lambda x: len(x[0]), reverse=True)
+    ):
+        token = f"\x00{i}\x00"
+        result = result.replace(old, token)
+        tokens.append((token, new))
+
+    # Fase 2: bytt tokens med endelige plassholdere
+    for token, new in tokens:
+        result = result.replace(token, new)
     return result

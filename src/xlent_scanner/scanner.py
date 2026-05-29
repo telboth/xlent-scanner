@@ -27,7 +27,11 @@ from xlent_scanner.models import Finding, ScanResult  # noqa: F401
 from xlent_scanner.risk import assess
 from xlent_scanner.whitelist import filter_by_whitelist
 
-SUPPORTED_SUFFIXES = {".pdf", ".docx", ".pptx", ".xlsx", ".md", ".txt", ".html"}
+SUPPORTED_SUFFIXES = {
+    ".pdf", ".docx", ".pptx", ".xlsx",
+    ".md", ".txt", ".html",
+    ".csv", ".eml", ".rtf", ".odt",
+}
 
 _ignore_list: dict | None = None
 
@@ -148,6 +152,83 @@ def _extract_text_xlsx(path: Path) -> str:
         wb.close()
 
 
+def _extract_text_csv(path: Path) -> str:
+    """Leser CSV og returnerer celleinnhold rad for rad."""
+    import csv as _csv
+    content = _read_text_file(path)
+    try:
+        reader = _csv.reader(content.splitlines())
+        parts = [" | ".join(cell for cell in row if cell.strip()) for row in reader]
+        return "\n".join(p for p in parts if p).strip()
+    except Exception:
+        return content.strip()
+
+
+def _extract_text_eml(path: Path) -> str:
+    """Ekstraherer tekst fra e-post (.eml) via stdlib email-modulen."""
+    import email as _email
+    from email import policy as _policy
+    content = _read_text_file(path)
+    msg = _email.message_from_string(content, policy=_policy.default)
+    parts: list[str] = []
+    # Relevante headers
+    for header in ("From", "To", "Cc", "Bcc", "Subject", "Date", "Reply-To"):
+        val = msg.get(header, "")
+        if val:
+            parts.append(f"{header}: {val}")
+    # Brødtekst
+    if msg.is_multipart():
+        for part in msg.walk():
+            if part.get_content_type() == "text/plain":
+                try:
+                    parts.append(str(part.get_content()))
+                except Exception:
+                    pass
+    else:
+        try:
+            parts.append(str(msg.get_content()))
+        except Exception:
+            pass
+    return "\n".join(parts).strip()
+
+
+# Regex for å strippe RTF-kontrollkoder (enkel men presis for vanlig tekst-RTF)
+_RTF_CTRL = re.compile(
+    r"\\(?:[a-z]+(?:-?\d+)? ?|\'[0-9a-fA-F]{2}|[^a-z\s])"
+    r"|[{}]",
+    re.IGNORECASE,
+)
+
+
+def _extract_text_rtf(path: Path) -> str:
+    """Enkel RTF-ekstraksjon: fjerner kontrollkoder, beholder løpende tekst."""
+    content = _read_text_file(path)
+    if not content.lstrip().startswith("{\\rtf"):
+        return content.strip()
+    text = _RTF_CTRL.sub("", content)
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def _extract_text_odt(path: Path) -> str:
+    """Ekstraherer tekst fra ODT/ODS/ODP via zipfile + XML-parsing."""
+    import xml.etree.ElementTree as _ET
+    import zipfile as _zf
+
+    with _zf.ZipFile(str(path), "r") as zf:
+        if "content.xml" not in zf.namelist():
+            return ""
+        with zf.open("content.xml") as f:
+            root = _ET.parse(f).getroot()
+
+    parts: list[str] = []
+    for elem in root.iter():
+        if elem.text and elem.text.strip():
+            parts.append(elem.text.strip())
+        if elem.tail and elem.tail.strip():
+            parts.append(elem.tail.strip())
+    return "\n".join(parts).strip()
+
+
 def _extract_text_html(path: Path) -> str:
     content = _read_text_file(path)
     content = re.sub(r"(?is)<script.*?>.*?</script>", " ", content)
@@ -172,6 +253,14 @@ def extract_text(path: Path) -> str:
         return _read_text_file(path).strip()
     if suffix == ".html":
         return _extract_text_html(path)
+    if suffix == ".csv":
+        return _extract_text_csv(path)
+    if suffix == ".eml":
+        return _extract_text_eml(path)
+    if suffix == ".rtf":
+        return _extract_text_rtf(path)
+    if suffix == ".odt":
+        return _extract_text_odt(path)
     raise ValueError(f"Filtype ikke støttet: {suffix}")
 
 
