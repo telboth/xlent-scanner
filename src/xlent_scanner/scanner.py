@@ -19,6 +19,7 @@ from xlent_scanner.detectors.regex_en import detect_en_specific
 from xlent_scanner.detectors.regex_no import detect_no_specific, find_emails
 from xlent_scanner.detectors.regex_sv import detect_sv_specific
 from xlent_scanner.detectors.regex_da import detect_da_specific
+from xlent_scanner.detectors.regex_url import detect_urls
 from xlent_scanner.detectors.secrets import detect_secrets
 from xlent_scanner.ignore import filter_findings, load_ignore_list
 from xlent_scanner.language import resolve_language
@@ -194,6 +195,7 @@ def scan_text(text: str, language: str = "auto", source_name: str = "Innlimt tek
     _run(detect_keywords, text)
     _run(detect_secrets, text)
     _run(find_emails, text)
+    _run(detect_urls, text)
     if lang in ("nb", "en"):
         _run(detect_no_specific, text)
     if lang in ("sv", "en"):
@@ -306,6 +308,7 @@ def scan_file(path: str | Path, ignore_xlent: bool = False, language: str = "aut
     _run(detect_keywords, text)
     _run(detect_secrets, text)
     _run(find_emails, text)
+    _run(detect_urls, text)
     if lang in ("nb", "en"):
         _run(detect_no_specific, text)
     if lang in ("sv", "en"):

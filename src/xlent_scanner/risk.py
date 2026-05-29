@@ -46,6 +46,7 @@ _SEVERITY_MAP: list[tuple[str, str]] = [
     ("prosjektsum",                 "gul"),
     ("margin",                      "gul"),
     ("rabatt",                      "gul"),
+    ("nettadresse",                 "gul"),
 ]
 
 _LEVEL_ORDER = {"grønn": 0, "gul": 1, "rød": 2, "svart": 3}

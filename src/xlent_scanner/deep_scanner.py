@@ -367,6 +367,21 @@ def _run_deep_scan(
         findings = _call_ollama(model, prompt)
         all_raw.extend(findings)
 
+    # Nettadresse: supplement AI med regex – AI-modeller behandler offentlige
+    # URL-er som ikke-sensitive og hopper over dem. Regex er 100 % pålitelig.
+    if "nettadresse" in categories:
+        try:
+            from xlent_scanner.detectors.regex_url import detect_urls  # noqa: PLC0415
+            for f in detect_urls(text):
+                all_raw.append({
+                    "category":   "Nettadresse",
+                    "text":       f.text,
+                    "context":    f.context,
+                    "confidence": "high",
+                })
+        except Exception as exc:
+            LOGGER.warning("Nettadresse regex-supplement feilet: %s", exc)
+
     deduped = _deduplicate(all_raw)
 
     # Filtrer etter minimumskonfidens

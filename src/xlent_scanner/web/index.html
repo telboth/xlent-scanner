@@ -542,7 +542,7 @@
                 <label class="dst-cat-label"><input type="checkbox" class="ds-cat" value="bankkonto" checked> <span data-i18n="dstCatBankkonto">Bankkontonummer</span></label>
                 <label class="dst-cat-label"><input type="checkbox" class="ds-cat" value="selskapsnavn" checked> <span data-i18n="dstCatSelskapsnavn">Selskapsnavn</span></label>
                 <label class="dst-cat-label"><input type="checkbox" class="ds-cat" value="budsjett_tall" checked> <span data-i18n="dstCatBudsjett">Budsjett / beløp</span></label>
-                <label class="dst-cat-label"><input type="checkbox" class="ds-cat" value="nettadresse"> <span data-i18n="dstCatNettadresse">Nettadresser</span></label>
+                <label class="dst-cat-label"><input type="checkbox" class="ds-cat" value="nettadresse" checked> <span data-i18n="dstCatNettadresse">Nettadresser</span></label>
               </div>
             </div>
             <!-- Modellrad + start/avbryt -->
@@ -603,7 +603,7 @@
           <label class="dst-cat-label"><input type="checkbox" class="dst-cat" value="bankkonto" checked> <span data-i18n="dstCatBankkonto">Bankkontonummer</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="dst-cat" value="selskapsnavn" checked> <span data-i18n="dstCatSelskapsnavn">Selskapsnavn</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="dst-cat" value="budsjett_tall" checked> <span data-i18n="dstCatBudsjett">Budsjett / beløp</span></label>
-          <label class="dst-cat-label"><input type="checkbox" class="dst-cat" value="nettadresse"> <span data-i18n="dstCatNettadresse">Nettadresser</span></label>
+          <label class="dst-cat-label"><input type="checkbox" class="dst-cat" value="nettadresse" checked> <span data-i18n="dstCatNettadresse">Nettadresser</span></label>
         </div>
         <div style="margin-top:8px;display:flex;gap:6px;">
           <button class="ctrl-btn" id="dst-sel-all-cats" data-i18n="selAll">Velg alle</button>
@@ -1686,12 +1686,14 @@
 
       wireEvents(sorted, canPatch, ext);
 
-      // Vis inline dybdeskann-panel etter fil-skann (ikke paste/mappe)
-      if (_scanMode === "file") {
+      // Vis inline dybdeskann-panel etter fil- og paste-skann (ikke mappe)
+      if (_scanMode === "file" || _scanMode === "paste") {
         document.getElementById("deep-scan-section").classList.add("show");
         // Tilbakestill panel men behold header-åpen-tilstand
         document.getElementById("ds-progress").textContent = "";
         document.getElementById("ds-findings-area").innerHTML = "";
+        // Resett initstate slik at Ollama-status sjekkes på nytt for nytt dokument
+        _dsInitialized = false;
       } else {
         document.getElementById("deep-scan-section").classList.remove("show");
       }
