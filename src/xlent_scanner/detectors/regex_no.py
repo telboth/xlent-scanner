@@ -83,7 +83,31 @@ def _validate_fnr_or_dnr(s: str) -> str | None:
     return "d-nummer" if is_dnr else "fødselsnummer"
 
 
+def _looks_like_fnr_date(s: str) -> bool:
+    """Kontrollerer om de første 6 sifrene ser ut som en gyldig norsk fødselsdato
+    (inkl. D-nummer), men uten å kreve gyldig mod-11-kontrollsiffer.
+
+    Brukes som fallback-detektor for tall som «ser ut som» personnummer
+    selv om kontrollsifrene er feil (f.eks. testdata, feilskrevne numre).
+    """
+    if len(s) != 11 or not s.isdigit():
+        return False
+    d = [int(c) for c in s]
+    day   = d[0] * 10 + d[1]
+    month = d[2] * 10 + d[3]
+    if 40 < day <= 71:          # D-nummer: trekk fra 40 for datokontroll
+        day -= 40
+    return (1 <= day <= 31) and (1 <= month <= 12)
+
+
 def find_fnr(text: str) -> Iterator[Finding]:
+    """Finner fødselsnumre og D-numre.
+
+    To nivåer:
+      1. Gyldig mod-11 → kategori «fødselsnummer»/«d-nummer» (svart)
+      2. Ugyldig checksum men gyldig datoformat → «mulig personnummer (format)» (gul)
+         Fanger f.eks. testdata eller feilskrevne numre som «210572 12345».
+    """
     for m in _FNR_RAW.finditer(text):
         if m.group(1):
             raw     = m.group(1)
@@ -94,6 +118,13 @@ def find_fnr(text: str) -> Iterator[Finding]:
         kind = _validate_fnr_or_dnr(raw)
         if kind:
             yield Finding(kind, display, _ctx(text, m.start(), m.end()))
+        elif _looks_like_fnr_date(raw):
+            # Format-match men ugyldig sjekksiffer: lavere alvorlighetsgrad
+            yield Finding(
+                "mulig personnummer (format)",
+                display,
+                _ctx(text, m.start(), m.end()),
+            )
 
 
 # ── organisasjonsnummer ───────────────────────────────────────────────────────

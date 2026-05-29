@@ -51,13 +51,33 @@ class TestFnr:
         assert len(f) == 1
         assert f[0].category == "fødselsnummer"
 
-    def test_invalid_checksum(self):
-        f = list(find_fnr("01019000084"))  # endret siste siffer
+    def test_invalid_checksum_caught_as_possible(self):
+        """Feil kontrollsiffer men gyldig datoformat → 'mulig personnummer (format)'."""
+        f = list(find_fnr("21057212345"))          # brukertestcase: feil mod-11
+        assert len(f) == 1
+        assert f[0].category == "mulig personnummer (format)"
+
+    def test_invalid_checksum_with_space(self):
+        """6+space+5-format med feil checksum skal også fanges."""
+        f = list(find_fnr("My personnummer is 210572 12345 ok"))
+        assert len(f) == 1
+        assert f[0].category == "mulig personnummer (format)"
+
+    def test_invalid_date_not_caught(self):
+        """Dag=32 finnes ikke → ingen funn overhodet."""
+        f = list(find_fnr("32139000000"))
         assert f == []
 
-    def test_invalid_date(self):
-        f = list(find_fnr("32139000000"))  # dag=32 finnes ikke
+    def test_invalid_month_not_caught(self):
+        """Mnd=13 finnes ikke → ingen funn."""
+        f = list(find_fnr("01139000000"))
         assert f == []
+
+    def test_valid_beats_possible(self):
+        """Gyldig personnummer skal gi 'fødselsnummer', ikke 'mulig personnummer'."""
+        f = list(find_fnr("01019000083"))
+        assert len(f) == 1
+        assert f[0].category == "fødselsnummer"
 
 
 class TestKontonummer:

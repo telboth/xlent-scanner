@@ -26,10 +26,11 @@ _NUM_CATEGORIES: dict[str, str] = {
     "bankgiro":      "Konto",
     "e-post":        "Epost",
     "telefonnummer": "Tlf",
-    "fødselsnummer": "FNR",
-    "d-nummer":      "DNR",
-    "cpr-nummer":    "CPR",
-    "personnummer":  "PNR",
+    "fødselsnummer":          "FNR",
+    "d-nummer":               "DNR",
+    "mulig personnummer":     "PNR",   # startswith-match fanger også "(format)"-varianten
+    "cpr-nummer":             "CPR",
+    "personnummer":           "PNR",
     "organisasjonsnummer": "OrgNr",
     "iban":          "IBAN",
 }

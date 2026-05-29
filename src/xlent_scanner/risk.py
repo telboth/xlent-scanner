@@ -31,6 +31,7 @@ _SEVERITY_MAP: list[tuple[str, str]] = [
     ("konfidensielt dokument (overskrift)", "rød"),
 
     # ── GUL ────────────────────────────────────────────────────────────────
+    ("mulig personnummer",          "gul"),   # datoformat men ugyldig mod-11
     ("e-post",                      "gul"),
     ("telefonnummer",               "gul"),
     ("organisasjonsnummer",         "gul"),

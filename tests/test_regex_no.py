@@ -52,22 +52,29 @@ class TestFindFnr:
         # 010197 50023 – med mellomrom
         assert "fødselsnummer" in self._kinds("010197 50023")
 
-    # Ugyldige – skal ikke treffe
-    def test_invalid_checksum(self):
-        # 21057212345 – fra testfila, ugyldig mod-11
-        assert not self._kinds("FNR: 21057212345")
+    # Ugyldig mod-11 men gyldig datoformat → «mulig personnummer (format)»
+    def test_invalid_checksum_gives_possible(self):
+        # 21057212345 – ugyldig mod-11, men dag=21, mnd=05 er gyldig dato
+        kinds = self._kinds("FNR: 21057212345")
+        assert "mulig personnummer (format)" in kinds
+        assert "fødselsnummer" not in kinds
 
-    def test_invalid_space_format(self):
+    def test_invalid_space_format_gives_possible(self):
         # 210572 12345 – ugyldig mod-11
-        assert not self._kinds("FNR: 210572 12345")
+        kinds = self._kinds("FNR: 210572 12345")
+        assert "mulig personnummer (format)" in kinds
+        assert "fødselsnummer" not in kinds
+
+    def test_invalid_date_gives_nothing(self):
+        # dag=99 finnes ikke → skal ikke fanges overhodet
+        assert not self._kinds("99131234567")
 
     # D-nummer
     def test_dnumber(self):
-        # D-nummer har dag + 40: gyldig D-nummer 410184 12345 (hypotetisk – vi bekrefter kategori)
-        # Bruk et kjent gyldig D-nummer: 450180 49875
-        result = list(find_fnr("D-nr: 45018049875"))
-        if result:
-            assert result[0].category == "d-nummer"
+        # Bekreftet gyldig D-nummer (dag+40=41, mnd=01, år=90): 41019000077
+        result = list(find_fnr("D-nr: 41019000077"))
+        assert result, "Gyldig D-nummer skal gi ett funn"
+        assert result[0].category == "d-nummer"
 
 
 # ── Kontonummer ───────────────────────────────────────────────────────────────
