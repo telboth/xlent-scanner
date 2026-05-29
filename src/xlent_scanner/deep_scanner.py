@@ -151,9 +151,9 @@ Telefon – 8-sifret norsk eller internasjonal med landkode:
   ✅ «90123456»  ✅ «+47 901 23 456»  ✅ «+47 91717678»  ✅ «0047 12345678»  ✅ «91 23 45 67»
   ❌ årstall  ❌ postnummer  ❌ 4-6 siffer  ❌ interne koder
 
-Personnummer – nøyaktig 11 siffer i norsk fødselsdatoformat:
-  ✅ «12034567891»  ✅ «210572 34161»
-  ❌ korte tall  ❌ kontonummer  ❌ datoer
+Personnummer – nøyaktig 11 siffer i norsk fødselsdatoformat (DDMMÅÅ + individnr + 2 kontrollsifre):
+  ✅ «21057234161»  ✅ «210572 34161»  ✅ «12034567891»  (med eller uten mellomrom)
+  ❌ korte tall  ❌ kontonummer  ❌ datoer  ❌ tall med færre enn 11 siffer
 
 Bankkonto – 11-sifret norsk kontonummer eller IBAN:
   ✅ «1234.56.78901»  ✅ «1730.1777.922»  ✅ «1730 1777 922»  ✅ «17301777922»  ✅ «NO9386011117947»
@@ -194,9 +194,9 @@ Telefon – 8-siffrigt svenskt/norskt eller internationellt med landskod:
   ✅ «070-123 45 67»  ✅ «+46 701 23 45 67»  ✅ «+47 91717678»  ✅ «0047 12345678»
   ❌ årtal  ❌ postnummer  ❌ 4-6 siffror
 
-Personnummer – 10-11 siffror i personnummerformat:
-  ✅ «19900101-1234»  ✅ «210572 34161»
-  ❌ korta tal  ❌ kontonummer  ❌ datum
+Personnummer – 10-11 siffror i personnummerformat (med eller utan bindestreck/mellanrum):
+  ✅ «19900101-1234»  ✅ «811218-0008»  ✅ «210572 34161»  ✅ «21057234161»
+  ❌ korta tal  ❌ kontonummer  ❌ datum  ❌ tal med färre än 10 siffror
 
 Bankkonto – IBAN eller kontonummer:
   ✅ «SE4550000000058398257466»  ✅ «1730.1777.922»  ✅ «1730 1777 922»  ✅ «17301777922»
@@ -235,9 +235,9 @@ Phone – 8-digit national or international with country code:
   ✅ «+44 7911 123456»  ✅ «90123456»  ✅ «+47 91717678»  ✅ «0047 12345678»
   ❌ years  ❌ postal codes  ❌ 4-6 digit numbers
 
-ID/SSN – national identity number format:
-  ✅ «12034567891»  ✅ «210572 34161»
-  ❌ short numbers  ❌ account numbers  ❌ dates
+ID/SSN – national identity number format (11-digit Norwegian, with or without space):
+  ✅ «21057234161»  ✅ «210572 34161»  ✅ «12034567891»
+  ❌ numbers with fewer than 11 digits  ❌ account numbers  ❌ dates
 
 Bank account – national account number or IBAN:
   ✅ «GB29 NWBK 6016 1331 9268 19»  ✅ «1730.1777.922»  ✅ «1730 1777 922»  ✅ «17301777922»
@@ -377,8 +377,11 @@ def _run_deep_scan(
         findings = _call_ollama(model, prompt)
         all_raw.extend(findings)
 
-    # Nettadresse: supplement AI med regex – AI-modeller behandler offentlige
-    # URL-er som ikke-sensitive og hopper over dem. Regex er 100 % pålitelig.
+    # ── Regex-supplementer: kategorier der regelbaserte detektorer er mer
+    # pålitelige enn LLM-modellen (spesielt små modeller som llama3.2:1b/3b).
+    # Funn herfra får confidence="high" og 🤖-prefiks som alle andre AI-funn.
+
+    # Nettadresse: AI-modeller hopper ofte over URL-er som «ikke-sensitive».
     if "nettadresse" in categories:
         try:
             from xlent_scanner.detectors.regex_url import detect_urls  # noqa: PLC0415
@@ -391,6 +394,57 @@ def _run_deep_scan(
                 })
         except Exception as exc:
             LOGGER.warning("Nettadresse regex-supplement feilet: %s", exc)
+
+    # Personnummer / D-nummer: mod-11-validering er 100 % pålitelig.
+    # Små LLM-modeller gjenkjenner ikke alltid 11-sifret norsk FNR-format.
+    if "personnummer" in categories:
+        try:
+            from xlent_scanner.detectors.regex_no import find_fnr  # noqa: PLC0415
+            for f in find_fnr(text):
+                all_raw.append({
+                    "category":   f.category.capitalize(),  # "Fødselsnummer" / "D-nummer" / "Mulig personnummer (format)"
+                    "text":       f.text,
+                    "context":    f.context,
+                    "confidence": "high" if f.category in ("fødselsnummer", "d-nummer") else "medium",
+                })
+        except Exception as exc:
+            LOGGER.warning("Personnummer regex-supplement feilet: %s", exc)
+
+    # E-post: regex er deterministisk og fanger alltid korrekte e-poster.
+    if "epost" in categories:
+        try:
+            from xlent_scanner.detectors.regex_no import find_emails  # noqa: PLC0415
+            for f in find_emails(text):
+                all_raw.append({
+                    "category":   "E-post",
+                    "text":       f.text,
+                    "context":    f.context,
+                    "confidence": "high",
+                })
+        except Exception as exc:
+            LOGGER.warning("E-post regex-supplement feilet: %s", exc)
+
+    # Bankkontonummer: mod-11-validering er 100 % pålitelig.
+    if "bankkonto" in categories:
+        try:
+            from xlent_scanner.detectors.regex_no import find_kontonummer  # noqa: PLC0415
+            from xlent_scanner.detectors.iban import find_iban  # noqa: PLC0415
+            for f in find_kontonummer(text):
+                all_raw.append({
+                    "category":   "Kontonummer",
+                    "text":       f.text,
+                    "context":    f.context,
+                    "confidence": "high",
+                })
+            for f in find_iban(text):
+                all_raw.append({
+                    "category":   "IBAN",
+                    "text":       f.text,
+                    "context":    f.context,
+                    "confidence": "high",
+                })
+        except Exception as exc:
+            LOGGER.warning("Bankkonto regex-supplement feilet: %s", exc)
 
     deduped = _deduplicate(all_raw)
 
