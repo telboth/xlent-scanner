@@ -16,11 +16,44 @@ on:
 permissions:
   contents: write   # Trengs for å laste opp til Release
 
+# Bruk Node.js 24 for å unngå deprecation-advarsel fra actions/checkout og setup-uv
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
+
+  # ── Oppretter release én gang – unngår race-condition ─────────────────
+  create-release:
+    name: Opprett GitHub Release
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.resolve.outputs.tag }}
+
+    steps:
+      - name: Løs opp tag-navn
+        id: resolve
+        run: |
+          INPUT_TAG="${{ github.event.inputs.tag }}"
+          TAG="${INPUT_TAG:-$GITHUB_REF_NAME}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Opprett release (hvis den ikke finnes)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ steps.resolve.outputs.tag }}"
+          gh release view "$TAG" \
+            --repo "${{ github.repository }}" \
+            --json tagName > /dev/null 2>&1 || \
+          gh release create "$TAG" \
+            --repo "${{ github.repository }}" \
+            --title "$TAG" \
+            --notes "Automatisk bygg fra GitHub Actions."
 
   # ── macOS ─────────────────────────────────────────────────────────────
   build-macos:
     name: macOS .dmg (Apple Silicon)
+    needs: create-release
     runs-on: macos-latest
     timeout-minutes: 60
 
@@ -46,18 +79,14 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # workflow_dispatch: bruk input-tag; tag-push: bruk GITHUB_REF_NAME
-          INPUT_TAG="${{ github.event.inputs.tag }}"
-          TAG="${INPUT_TAG:-$GITHUB_REF_NAME}"
-          # Opprett release hvis den ikke finnes ennå
-          gh release view "$TAG" --json tagName > /dev/null 2>&1 || \
-            gh release create "$TAG" --title "$TAG" --notes "Automatisk bygg fra GitHub Actions."
+          TAG="${{ needs.create-release.outputs.tag }}"
           gh release upload "$TAG" artifacts/macos/installer/*.dmg --clobber
 
   # ── Windows ───────────────────────────────────────────────────────────
   build-windows:
     name: Windows .exe (x64)
-    runs-on: windows-latest
+    needs: create-release
+    runs-on: windows-2022
     timeout-minutes: 60
 
     steps:
@@ -73,7 +102,16 @@ jobs:
         run: uv sync
 
       - name: Installer Inno Setup
-        run: choco install innosetup --yes --no-progress
+        run: |
+          $iscc = @(
+            "$env:ProgramFiles(x86)\Inno Setup 6\ISCC.exe",
+            "$env:ProgramFiles\Inno Setup 6\ISCC.exe"
+          ) | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if ($iscc) {
+            Write-Host "Inno Setup allerede tilgjengelig: $iscc"
+          } else {
+            choco install innosetup --yes --no-progress
+          }
 
       - name: Bygg app-bundle (PyInstaller)
         run: .\scripts\build_win.ps1
@@ -86,12 +124,8 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: pwsh
         run: |
-          # workflow_dispatch: bruk input-tag; tag-push: bruk GITHUB_REF_NAME
-          $InputTag = '${{ github.event.inputs.tag }}'
-          $Tag = if ($InputTag -ne '') { $InputTag } else { $env:GITHUB_REF_NAME }
-          gh release view $Tag --json tagName 2>$null | Out-Null
-          if ($LASTEXITCODE -ne 0) {
-            gh release create $Tag --title $Tag --notes "Automatisk bygg fra GitHub Actions."
-          }
+          $Tag = "${{ needs.create-release.outputs.tag }}"
           $Installer = Get-ChildItem artifacts\windows\installer\*.exe | Select-Object -First 1
+          if (-not $Installer) { throw "Fant ingen .exe i artifacts\windows\installer\" }
+          Write-Host "Laster opp: $($Installer.FullName)"
           gh release upload $Tag $Installer.FullName --clobber
