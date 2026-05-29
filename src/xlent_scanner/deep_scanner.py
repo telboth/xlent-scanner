@@ -456,6 +456,19 @@ def _run_deep_scan(
         if _CONF_ORDER.get(str(f.get("confidence", "medium")).lower(), 1) >= min_conf_val
     ]
 
+    # Filtrer mot brukerens whitelist – samme logikk som regelbasert skann
+    try:
+        from xlent_scanner.whitelist import load_whitelist  # noqa: PLC0415
+        wl = load_whitelist()
+        if wl:
+            before = len(deduped)
+            deduped = [f for f in deduped if f.get("text", "").lower() not in wl]
+            removed = before - len(deduped)
+            if removed:
+                LOGGER.info("AI-whitelist: fjernet %d funn", removed)
+    except Exception as exc:
+        LOGGER.warning("AI-whitelist-filter feilet: %s", exc)
+
     # Legg til 🤖-prefiks på kategori
     for f in deduped:
         cat = str(f.get("category") or "AI-funn").strip()
