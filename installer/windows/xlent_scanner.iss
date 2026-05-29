@@ -45,10 +45,13 @@ Name: "{autoprograms}\{#AppName}"; Filename: "{app}\{#AppExeName}"
 Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppExeName}"; Tasks: desktopicon
 
 [Registry]
-; Høyreklikk-kontekstmeny for alle filtyper
-Root: HKCR; Subkey: "*\shell\XLENT Scanner";            ValueType: string; ValueData: "Skann med XLENT";                    Flags: uninsdeletekey
-Root: HKCR; Subkey: "*\shell\XLENT Scanner";            ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#AppExeName},0"
-Root: HKCR; Subkey: "*\shell\XLENT Scanner\command";    ValueType: string; ValueData: """{app}\{#AppExeName}"" ""%1"""
+; Høyreklikk-kontekstmeny for alle filtyper.
+; Bruker HKCU\Software\Classes i stedet for HKCR slik at det fungerer
+; uten administrator-rettigheter (PrivilegesRequired=lowest).
+; Windows Explorer merger HKCU\Software\Classes med HKCR automatisk.
+Root: HKCU; Subkey: "Software\Classes\*\shell\XLENT Scanner";            ValueType: string; ValueData: "Skann med XLENT";    Flags: uninsdeletekey
+Root: HKCU; Subkey: "Software\Classes\*\shell\XLENT Scanner";            ValueType: string; ValueName: "Icon"; ValueData: "{app}\{#AppExeName},0"
+Root: HKCU; Subkey: "Software\Classes\*\shell\XLENT Scanner\command";    ValueType: string; ValueData: """{app}\{#AppExeName}"" ""%1"""
 
 [Run]
 Filename: "{app}\{#AppExeName}"; Description: "Launch {#AppName}"; Flags: nowait postinstall skipifsilent
