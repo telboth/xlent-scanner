@@ -163,9 +163,12 @@ Selskapsnavn – offisielt firma, org. eller stiftelse:
   ✅ «XLENT AS»  ✅ «Equinor ASA»  ✅ «DNB Bank»
   ❌ produktnavn  ❌ teknologier («Azure», «Terraform», «Python»)  ❌ generelle termer  ❌ prosjektnavn
 
-Pengebeløp – MÅ ha valutasymbol ELLER -kode (kr / NOK / EUR / USD / $ / €):
+Pengebeløp – beløp med valutasymbol/-kode ELLER tall i en tydelig budsjettkontekst:
   ✅ «500 000 kr»  ✅ «NOK 1 200»  ✅ «€50 000»  ✅ «3 MNOK»  ✅ «15 mill kr»
-  ❌ «4-6 week pilot»  ❌ «4-6 weeks»  ❌ «Q1 2025»  ❌ «50 ansatte»  ❌ «15 %»  ❌ tidsuttrykk  ❌ tall uten valuta
+  ✅ «Total NOK 180»  ✅ «Total Cost (NOK)» etterfulgt av tall
+  ✅ Tall i kolonne merket «Cost (NOK)», «Amount», «Price» i et budsjett (eks: «30», «60», «100»)
+  ❌ «4-6 week pilot»  ❌ «4-6 weeks»  ❌ «Q1 2025»  ❌ «50 ansatte»  ❌ «15 %»  ❌ tidsuttrykk
+  ❌ løse tall uten noen form for budsjettkontekst
 
 Nettadresse – URL som begynner med http://, https:// eller www.:
   ✅ «www.vg.no»  ✅ «https://xlent.no»  ✅ «http://intern.firma.com/dokument»
@@ -203,9 +206,10 @@ Företagsnamn – officiellt bolag, org. eller stiftelse:
   ✅ «Volvo AB»  ✅ «Ericsson AB»
   ❌ produktnamn  ❌ teknologier  ❌ projektnamn
 
-Penningbelopp – MÅSTE ha valutasymbol ELLER -kod (kr / SEK / EUR / USD / $ / €):
-  ✅ «500 000 kr»  ✅ «SEK 1 200»  ✅ «€50 000»
-  ❌ «4-6 veckor»  ❌ «Q1 2025»  ❌ «50 anställda»  ❌ tidsuttryck  ❌ tal utan valuta
+Penningbelopp – belopp med valutasymbol/-kod ELLER tal i tydlig budgetkontext:
+  ✅ «500 000 kr»  ✅ «SEK 1 200»  ✅ «€50 000»  ✅ «Totalt SEK 180»
+  ✅ Tal i kolumn märkt «Kostnad (SEK)», «Belopp», «Pris» i ett budget (t.ex. «30», «60»)
+  ❌ «4-6 veckor»  ❌ «Q1 2025»  ❌ «50 anställda»  ❌ tidsuttryck  ❌ lösa tal utan kontext
 
 Webbadress – URL som börjar med http://, https:// eller www.:
   ✅ «www.vg.no»  ✅ «https://xlent.se»  ✅ «http://intern.foretag.se/dokument»
@@ -243,9 +247,11 @@ Company name – official company, org., or foundation:
   ✅ «XLENT AS»  ✅ «Equinor ASA»
   ❌ product names  ❌ technologies («Azure», «Terraform»)  ❌ project names  ❌ generic terms
 
-Monetary amount – MUST have a currency symbol OR code (NOK / EUR / USD / $ / £ / €):
-  ✅ «NOK 500 000»  ✅ «$1,200»  ✅ «€50 000»  ✅ «3 MNOK»
-  ❌ «4-6 week pilot»  ❌ «4-6 weeks»  ❌ «Q1 2025»  ❌ «50 employees»  ❌ time expressions  ❌ numbers without currency
+Monetary amount – amounts with a currency symbol/code OR numbers in a clear budget context:
+  ✅ «NOK 500 000»  ✅ «$1,200»  ✅ «€50 000»  ✅ «3 MNOK»  ✅ «Total NOK 180»
+  ✅ Numbers in columns labelled «Cost (NOK)», «Amount», «Price» in a budget table (e.g. «30», «60», «100»)
+  ❌ «4-6 week pilot»  ❌ «4-6 weeks»  ❌ «Q1 2025»  ❌ «50 employees»  ❌ time expressions
+  ❌ isolated numbers with no budget or price context
 
 Web address – URL starting with http://, https:// or www.:
   ✅ «www.vg.no»  ✅ «https://xlent.com»  ✅ «http://internal.company.com/doc»

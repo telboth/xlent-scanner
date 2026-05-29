@@ -64,6 +64,7 @@ _RATE_KW_RE = re.compile(
 
 # ── C: Prosjektsum / budsjett / kontraktsverdi ─────────────────────────────────
 # Matcher:  "Prosjektsum: 4,5 MNOK",  "Budsjett: NOK 2.4 mill",  "Total: 450 000 kr"
+# Matcher også:  "Total NOK 180,-"  og  "budget: £500"
 _SCALE = r"(?:\s*(?:mill(?:ion(?:er)?)?|mrd|milliarder?|MNOK|MSEK|MEUR|k|K))??"
 _SUM_KW_RE = re.compile(
     r"(?:"
@@ -74,10 +75,14 @@ _SUM_KW_RE = re.compile(
         r"|contract\s+value|project\s+(?:budget|cost|value)"
         r"|total\s+(?:cost|value|amount|sum|fee)"
         r"|invoice\s+(?:total|amount)|quote\s+(?:total|value)"
+        r"|total\s+(?:NOK|SEK|DKK|EUR|USD|£|kr|€|\$)"  # «Total NOK 180,-»
+        r"|budget\b"                                      # engelsk «budget:»
     r")"
     r"\s*:?\s*"
     r"(?:NOK|SEK|DKK|EUR|USD|£|kr|€|\$)?\s*"
-    r"(\d{1,3}(?:[., \t]\d{3})*(?:[.,]\d{1,2})?)"
+    # \d{1,7} fanger tall uten tusenskilletegn (som 1200, 50000) i tillegg
+    # til formaterte tall som 1 200 / 1.200 / 4 500 000
+    r"(\d{1,7}(?:[., \t]\d{3})*(?:[.,]\d{1,2})?)"
     r"(?:" + _SCALE + r"\s*(?:NOK|SEK|DKK|EUR|USD|kr|mill\w*|MNOK|MSEK))?",
     re.IGNORECASE,
 )

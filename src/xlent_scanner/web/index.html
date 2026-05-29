@@ -619,6 +619,10 @@
       </div>
 
       <div id="status"></div>
+      <div id="result-header" style="display:none; justify-content:flex-end; margin-bottom:4px;">
+        <button id="btn-clear-result" class="ctrl-btn" style="font-size:11px; padding:2px 10px;"
+          data-i18n="clearResult">🗑 Tøm</button>
+      </div>
       <div id="result"></div>
 
       <!-- AI-scan resultater (vises etter skann når AI-toggle er på) -->
@@ -1132,6 +1136,7 @@
         aiExtraCats:         "Ekstra AI-kategorier:",
         aiResultsTitle:      "AI-funn",
         rescanAi:            "🔄 Re-skann",
+        clearResult:         "🗑 Tøm",
       },
       sv: {
         subtitle:     "Kontrollerar dokument för känslig information innan uppladdning till online-AI-verktyg",
@@ -1287,6 +1292,7 @@
         aiExtraCats:         "Extra AI-kategorier:",
         aiResultsTitle:      "AI-fynd",
         rescanAi:            "🔄 Re-skanna",
+        clearResult:         "🗑 Töm",
       },
       en: {
         subtitle:     "Checks documents for sensitive information before uploading to online AI tools",
@@ -1442,6 +1448,7 @@
         aiExtraCats:         "Extra AI categories:",
         aiResultsTitle:      "AI findings",
         rescanAi:            "🔄 Re-scan",
+        clearResult:         "🗑 Clear",
       },
     };
 
@@ -1737,9 +1744,28 @@
     /* ══════════════════════════════════════════════════════════════════
        RENDERING
     ══════════════════════════════════════════════════════════════════ */
+    function clearResult() {
+      // Tøm alt relatert til siste skann
+      if (_aiPollTimer) { clearInterval(_aiPollTimer); _aiPollTimer = null; }
+      lastResult  = null;
+      lastScan    = null;
+      resultEl.innerHTML = "";
+      resultEl.classList.remove("show");
+      document.getElementById("result-header").style.display = "none";
+      document.getElementById("ai-scan-status").style.display = "none";
+      document.getElementById("ai-progress").textContent = "";
+      document.getElementById("ai-findings-area").innerHTML = "";
+      document.getElementById("ai-anon-bar").style.display = "none";
+      document.getElementById("text-preview-section").style.display = "none";
+      const rescanBtn = document.getElementById("ai-rescan-btn");
+      if (rescanBtn) rescanBtn.style.display = "none";
+      setStatus("");
+    }
+
     function renderResult(r) {
       lastResult = r;
       resultEl.classList.add("show");
+      document.getElementById("result-header").style.display = "flex";
 
       if (r.error) {
         resultEl.innerHTML = `<h2>${escapeHtml(r.file_name)}</h2>
@@ -2874,6 +2900,7 @@
 
     document.getElementById("ai-cancel-btn").addEventListener("click", _cancelAiScan);
     document.getElementById("ai-anon-btn").addEventListener("click",   _anonymizeAi);
+    document.getElementById("btn-clear-result").addEventListener("click", clearResult);
 
     /* ══════════════════════════════════════════════════════════════════
        MODE TOGGLE (Fil / Lim inn / Mappe)
