@@ -139,8 +139,10 @@ def index():
     print(f"[flask] Serving {idx}  (mtime {idx.stat().st_mtime:.0f})", flush=True)
     html = idx.read_text("utf-8")
     # Injiser port slik at JS kan bruke absolutte URL-er
+    from datetime import datetime  # noqa: PLC0415
     html = html.replace("__API_BASE__", f"http://127.0.0.1:{_port}")
     html = html.replace("__APP_VERSION__", __version__)
+    html = html.replace("__APP_STARTED__", datetime.now().strftime("%d.%m.%Y %H:%M"))
     html = html.replace('"__LOG_PATH__"', json.dumps(str(LOG_PATH)))
     return html, 200, {"Content-Type": "text/html; charset=utf-8", **_NO_CACHE}
 

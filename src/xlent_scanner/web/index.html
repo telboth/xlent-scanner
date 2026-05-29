@@ -43,6 +43,14 @@
       font-size: 12px;
       font-weight: 600;
       white-space: nowrap;
+      text-align: right;
+    }
+    .app-updated {
+      display: block;
+      font-size: 10px;
+      font-weight: 400;
+      color: var(--muted);
+      opacity: 0.75;
     }
     .update-banner {
       display: none;
@@ -492,7 +500,7 @@
       <h1>Compliance-scanner</h1>
       <div class="sub" data-i18n="subtitle">Sjekker dokumenter for sensitiv informasjon før opplasting til online AI-verktøy</div>
     </div>
-    <span class="app-version">v__APP_VERSION__</span>
+    <span class="app-version">v__APP_VERSION__<span class="app-updated"> · Oppdatert __APP_STARTED__</span></span>
   </header>
 
   <nav class="tab-nav">
