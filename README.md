@@ -123,6 +123,30 @@ Installasjonen legger til **«Skann med XLENT»** i Windows høyreklikk-meny for
 
 ---
 
+## Installasjon (Linux — intern MVP)
+
+Last ned `xlent-scanner-linux-<versjon>-x86_64.AppImage` fra [Releases](https://github.com/telboth/xlent-scanner/releases).
+
+```bash
+chmod +x xlent-scanner-linux-*-x86_64.AppImage
+./xlent-scanner-linux-*-x86_64.AppImage
+```
+
+AppImage-filen krever **ingen installasjon** og ingen root-rettigheter. Den kjører på Ubuntu 20.04+, Fedora 36+, Debian 11+ og de fleste andre moderne distros.
+
+**Systemkrav:** `libwebkit2gtk-4.0` — er vanligvis allerede installert, men kan installeres med:
+```bash
+# Ubuntu/Debian:
+sudo apt install libwebkit2gtk-4.0-dev
+
+# Fedora:
+sudo dnf install webkit2gtk4.0
+```
+
+> For tekniske brukere: `uv sync && uv run xlent-scanner` fra kildekoden er et godt alternativ (krever Python 3.13).
+
+---
+
 ## Installasjon (macOS — intern MVP)
 
 Last ned `xlent-scanner-macos-<versjon>.dmg` fra [Releases](https://github.com/telboth/xlent-scanner/releases).
@@ -169,16 +193,30 @@ OLLAMA_BASE_URL=http://192.168.1.10:11434 uv run xlent-scanner
 
 ---
 
-## Bygg og pakking (Windows)
+## Bygg og pakking
 
+### Windows
 ```powershell
 .\scripts\build_win.ps1     # Bygg app-bundle med PyInstaller
 .\scripts\package_win.ps1   # Pakk installer (.exe) med Inno Setup 6
 ```
+Resultater: `artifacts\windows\installer\xlent-scanner-setup-<versjon>.exe`
 
-Resultater:
-- App-bundle: `artifacts\windows\app\dist\XLENTScanner\`
-- Installer: `artifacts\windows\installer\xlent-scanner-setup-<versjon>.exe`
+### macOS
+```bash
+bash scripts/build_mac.sh
+bash scripts/package_mac.sh
+```
+Resultater: `artifacts/macos/installer/xlent-scanner-macos-<versjon>.dmg`
+
+### Linux (AppImage)
+```bash
+bash scripts/build_linux.sh
+bash scripts/package_linux.sh
+```
+Resultater: `artifacts/linux/installer/xlent-scanner-linux-<versjon>-x86_64.AppImage`
+
+Krever `libwebkit2gtk-4.0-dev` og `libfuse2` installert lokalt (GitHub Actions installerer disse automatisk).
 
 ---
 

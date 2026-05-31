@@ -1,7 +1,7 @@
 name: Build and Release
 
 # Kjøres automatisk ved tag-push (v*) eller manuelt fra GitHub Actions-UI.
-# Bygger Windows .exe + macOS .dmg og laster dem opp til GitHub Release.
+# Bygger Windows .exe + macOS .dmg + Linux .AppImage og laster dem opp til GitHub Release.
 
 on:
   push:
@@ -129,3 +129,43 @@ jobs:
           if (-not $Installer) { throw "Fant ingen .exe i artifacts\windows\installer\" }
           Write-Host "Laster opp: $($Installer.FullName)"
           gh release upload $Tag $Installer.FullName --clobber
+
+  # ── Linux ─────────────────────────────────────────────────────────────
+  build-linux:
+    name: Linux .AppImage (x86_64)
+    needs: create-release
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Installer systemavhengigheter (WebKit2GTK + FUSE)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            libwebkit2gtk-4.0-dev \
+            libfuse2 \
+            file
+
+      - name: Installer uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Installer avhengigheter
+        run: uv sync
+
+      - name: Bygg app-bundle (PyInstaller)
+        run: bash scripts/build_linux.sh
+
+      - name: Pakk AppImage
+        run: bash scripts/package_linux.sh
+
+      - name: Last opp til GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ needs.create-release.outputs.tag }}"
+          gh release upload "$TAG" artifacts/linux/installer/*.AppImage --clobber
