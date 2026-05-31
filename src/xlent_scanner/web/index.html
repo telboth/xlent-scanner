@@ -190,8 +190,7 @@
       padding: 1px 5px; font-family: monospace; font-size: 12px;
     }
 
-    /* ── Dybdeskann tab panel ───────────────────────────────────────── */
-    #panel-deepscan { padding: 20px 24px; gap: 14px; }
+    /* ── Delte stiler (brukt av AI-dybdeskann inline i scanner-fanen) ── */
     .dst-section {
       background: var(--panel); border: 1px solid var(--border);
       border-radius: 8px; padding: 16px 20px;
@@ -505,7 +504,6 @@
 
   <nav class="tab-nav">
     <button class="tab-btn active" data-tab="scanner" data-i18n="tabScanner">🔍 Scanner</button>
-    <button class="tab-btn" data-tab="deepscan" data-i18n="tabDeepScan" style="display:none">🔬 Dybdeskann</button>
     <button class="tab-btn" data-tab="about" data-i18n="tabAbout">ℹ Om programmet</button>
     <button class="tab-btn" data-tab="settings" data-i18n="tabSettings">⚙️ Innstillinger</button>
     <div class="ui-lang-sel">
@@ -662,79 +660,6 @@
         </div>
         <ul class="history-list" id="history-list"></ul>
       </div>
-    </div>
-
-    <!-- ── Dybdeskann panel ─────────────────────────────────────── -->
-    <div id="panel-deepscan" class="tab-panel">
-
-      <!-- Fil å analysere -->
-      <div class="dst-section">
-        <div class="dst-section-title" data-i18n="dstFileInfoTitle">Fil å analysere</div>
-        <div id="dst-file-info" class="dst-file-info">
-          <span class="dst-no-file" data-i18n="dstNoFile">Ingen fil skannet. Gå til Scanner-fanen og skann en fil først.</span>
-        </div>
-      </div>
-
-      <!-- Søkekategorier -->
-      <div class="dst-section">
-        <div class="dst-section-title" data-i18n="dstCatsTitle">Søk etter</div>
-        <div class="dst-cats-grid">
-          <label class="dst-cat-label"><input type="checkbox" class="dst-cat" value="navn" checked> <span data-i18n="dstCatNavn">Navn</span></label>
-          <label class="dst-cat-label"><input type="checkbox" class="dst-cat" value="adresse" checked> <span data-i18n="dstCatAdresse">Adresse</span></label>
-          <label class="dst-cat-label"><input type="checkbox" class="dst-cat" value="epost" checked> <span data-i18n="dstCatEpost">E-post</span></label>
-          <label class="dst-cat-label"><input type="checkbox" class="dst-cat" value="telefon" checked> <span data-i18n="dstCatTelefon">Telefon</span></label>
-          <label class="dst-cat-label"><input type="checkbox" class="dst-cat" value="personnummer" checked> <span data-i18n="dstCatPersonnummer">Personnummer</span></label>
-          <label class="dst-cat-label"><input type="checkbox" class="dst-cat" value="bankkonto" checked> <span data-i18n="dstCatBankkonto">Bankkontonummer</span></label>
-          <label class="dst-cat-label"><input type="checkbox" class="dst-cat" value="selskapsnavn" checked> <span data-i18n="dstCatSelskapsnavn">Selskapsnavn</span></label>
-          <label class="dst-cat-label"><input type="checkbox" class="dst-cat" value="budsjett_tall" checked> <span data-i18n="dstCatBudsjett">Budsjett / beløp</span></label>
-          <label class="dst-cat-label"><input type="checkbox" class="dst-cat" value="nettadresse" checked> <span data-i18n="dstCatNettadresse">Nettadresser</span></label>
-        </div>
-        <div style="margin-top:8px;display:flex;gap:6px;">
-          <button class="ctrl-btn" id="dst-sel-all-cats" data-i18n="selAll">Velg alle</button>
-          <button class="ctrl-btn" id="dst-sel-no-cats" data-i18n="selNone">Fjern alle</button>
-        </div>
-      </div>
-
-      <!-- AI-analyse -->
-      <div class="dst-section">
-        <div class="dst-section-title" data-i18n="dstScanTitle">AI-analyse (Ollama)</div>
-        <div class="dst-status-row" id="dst-status-row">
-          <span style="color:var(--muted);font-size:12px">Sjekker Ollama…</span>
-        </div>
-        <div id="dst-not-running" style="display:none" class="ds-ollama-instructions"></div>
-        <div id="dst-ready" style="display:none">
-          <div class="dst-model-row">
-            <select id="dst-model-select"></select>
-            <button id="dst-start-btn" class="ctrl-btn ctrl-btn-primary" data-i18n="deepScanStart">🔬 Start dybdeskann</button>
-            <button id="dst-cancel-btn" class="ctrl-btn" style="display:none" data-i18n="deepScanCancel">✕ Avbryt</button>
-          </div>
-          <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
-            <label style="font-size:12px; color:var(--muted); white-space:nowrap;" data-i18n="confidenceLabel">Min konfidensfilter:</label>
-            <select id="dst-confidence-select" style="padding:3px 8px; border-radius:5px; border:1px solid var(--border); background:var(--bg); color:var(--text); font-size:12px; cursor:pointer;">
-              <option value="high" data-i18n="confidenceHigh">Høy (kun sikre funn)</option>
-              <option value="medium" selected data-i18n="confidenceMedium">Medium (sannsynlige)</option>
-              <option value="low" data-i18n="confidenceLow">Lav (alle funn)</option>
-            </select>
-          </div>
-          <div id="dst-hw-badge" style="display:none" class="dst-hw-badge"></div>
-          <div class="dst-hw-req" data-i18n="dstHwReq">⚠ Dybdeskanning kjøres lokalt og kan ta opptil flere minutter. Anbefalt: minst 16 GB RAM. GPU-akselerasjon brukes automatisk dersom tilgjengelig.</div>
-          <div class="dst-progress" id="dst-progress"></div>
-        </div>
-      </div>
-
-      <!-- Funn og anonymisering -->
-      <div class="dst-section" id="dst-results-section" style="display:none">
-        <div class="dst-section-title" id="dst-results-title" data-i18n="dstResultsTitle">AI-funn</div>
-        <div id="dst-findings-area"></div>
-        <div class="dst-anon-bar" id="dst-anon-bar" style="display:none">
-          <button class="ctrl-btn" id="dst-sel-all" data-i18n="selAll">Velg alle</button>
-          <button class="ctrl-btn" id="dst-sel-none" data-i18n="selNone">Fjern alle</button>
-          <span class="ctrl-sep"></span>
-          <button class="ctrl-btn ctrl-btn-primary" id="dst-anon-btn">Anonymiser valgte</button>
-          <span class="dst-anon-msg" id="dst-anon-msg"></span>
-        </div>
-      </div>
-
     </div>
 
     <!-- ── About panel ────────────────────────────────────────────── -->
@@ -1032,7 +957,6 @@
         wlErr:        "Feil!",
         exportJson:   "Eksporter JSON",
         exportCsv:    "Eksporter CSV",
-        exportSection:"Eksporter funn",
         historyTitle: "Siste skanninger",
         pdfCaveat:    "PDF-redaktering erstatter tekst i innholdsstrømmen. Merk at tekst i metadata eller bilder ikke anonymiseres — kontroller resultatet.",
         scanErr:      "Feil under scanning:",
@@ -1066,24 +990,17 @@
         settingsOllamaTitle: "AI-dybdeskann (Ollama)",
         settingsOllamaNote:  "Dybdeskanning bruker en lokal Ollama-modell for å oppdage personopplysninger som regel-baserte detektorer kan misse. Krever Ollama installert.",
         ollamaRefresh:       "↻ Sjekk status",
-        inlineDeepTitle:     "Dybdeskann med AI",
         ollamaChecking:      "Sjekker Ollama…",
         ollamaRunning:       "✅ Ollama kjører",
         ollamaNotRunning:    "❌ Ollama kjører ikke",
         ollamaModelsLabel:   "Installerte modeller:",
         ollamaNoModels:      "Ingen modeller funnet.",
         ollamaInstallHint:   "Last ned Ollama fra <a href='https://ollama.ai' target='_blank'>ollama.ai</a>, og kjør deretter:<br><code>ollama pull llama3.2:3b</code><br>Anbefalt: <strong>llama3.2:3b</strong> (~1.9 GB) – rask og god på norsk.",
-        deepScanTitle:       "Dybdeskann med AI (Ollama)",
-        deepScanStart:       "🔬 Start dybdeskann",
         deepScanCancel:      "✕ Avbryt",
         deepScanModelLabel:  "Velg modell:",
         deepScanRunning:     "🔬 Dybdeskanning pågår… (kan ta opptil flere minutter avhengig av maskin og dokumentstørrelse)",
         deepScanDone:        "✅ Dybdeskann ferdig",
         deepScanNoFindings:  "Ingen ekstra funn fra AI-analyse.",
-        deepScanAIFindings:  "AI-funn ({n} nye):",
-        deepScanNotRunning:  "Ollama kjører ikke. Start Ollama og prøv igjen.",
-        deepScanNoModels:    "Ingen Ollama-modeller installert. Kjør: <code>ollama pull llama3.2:3b</code>",
-        deepScanError:       "Dybdeskann feilet:",
         settingsUpdateTitle: "Oppdateringer",
         settingsPersistNote: "Innstillinger lagres automatisk i nettleseren.",
         updateAvailable: "Ny versjon tilgjengelig:",
@@ -1092,27 +1009,13 @@
         updateNoUpdate: "Du har nyeste versjon.",
         updateCheckFailed: "Kunne ikke sjekke oppdateringer.",
         logHint: "Se logg:",
-        tabDeepScan:        "🔬 Dybdeskann",
-        dstFileInfoTitle:   "Fil å analysere",
-        dstNoFile:          "Ingen fil skannet ennå. Gå til Scanner-fanen og skann en fil først.",
-        dstCatsTitle:       "Søk etter",
-        dstCatNavn:         "Navn",
         dstCatAdresse:      "Adresse",
         dstCatEpost:        "E-post",
         dstCatTelefon:      "Telefon",
-        dstCatPersonnummer: "Personnummer",
-        dstCatBankkonto:    "Bankkontonummer",
         dstCatSelskapsnavn:  "Selskapsnavn",
-        dstCatBudsjett:      "Budsjett / beløp",
         dstCatNettadresse:   "Nettadresser",
-        dstScanTitle:        "AI-analyse (Ollama)",
-        dstResultsTitle:    "AI-funn",
-        dstAnonBtn:         "Anonymiser valgte",
         dstSelectOne:       "Velg minst ett funn å anonymisere.",
         dstHwReq:           "⚠ Dybdeskanning kjøres lokalt og kan ta opptil flere minutter, avhengig av dokumentstørrelse og maskinvare. Anbefalt: minst 16 GB RAM og en relativt moderne CPU. GPU-akselerasjon (NVIDIA/AMD) brukes automatisk og gir vesentlig kortere analysetid.",
-        dstHwCpu:           "🖥️ Kjører på CPU",
-        dstHwGpu:           "🎮 Kjører på GPU",
-        dstHwHybrid:        "⚡ CPU + GPU",
         modeFile:           "Fil",
         modePaste:          "Lim inn",
         modeFolder:         "Mappe",
@@ -1145,6 +1048,12 @@
         aiExtraCats:         "Ekstra AI-kategorier:",
         aiResultsTitle:      "AI-funn",
         rescanAi:            "🔄 Re-skann",
+        aiCheckingOllama:    "⏳ Sjekker Ollama…",
+        aiNoModel:           "⚠ Ollama kjører ikke eller ingen modell er installert",
+        aiAnalyzing:         "🔬 Analyserer…",
+        aiAnalyzingBtn:      "⏳ Analyserer…",
+        aiCancelled:         "⛔ Avbrutt",
+        deepScanCancelled:   "Avbrutt.",
         clearResult:         "🗑 Tøm",
       },
       sv: {
@@ -1188,7 +1097,6 @@
         wlErr:        "Fel!",
         exportJson:   "Exportera JSON",
         exportCsv:    "Exportera CSV",
-        exportSection:"Exportera fynd",
         historyTitle: "Senaste skanningar",
         pdfCaveat:    "PDF-redigering ersätter text i innehållsströmmen. Observera att text i metadata eller bilder inte anonymiseras — kontrollera resultatet.",
         scanErr:      "Fel vid skanning:",
@@ -1222,24 +1130,17 @@
         settingsOllamaTitle: "AI-djupskanning (Ollama)",
         settingsOllamaNote:  "Djupskanning använder en lokal Ollama-modell för att hitta personuppgifter som regelbaserade detektorer kan missa. Kräver att Ollama är installerat.",
         ollamaRefresh:       "↻ Kontrollera status",
-        inlineDeepTitle:     "Djupskanning med AI",
         ollamaChecking:      "Kontrollerar Ollama…",
         ollamaRunning:       "✅ Ollama körs",
         ollamaNotRunning:    "❌ Ollama körs inte",
         ollamaModelsLabel:   "Installerade modeller:",
         ollamaNoModels:      "Inga modeller hittades.",
         ollamaInstallHint:   "Ladda ned Ollama från <a href='https://ollama.ai' target='_blank'>ollama.ai</a>, kör sedan:<br><code>ollama pull llama3.2:3b</code><br>Rekommenderat: <strong>llama3.2:3b</strong> (~1,9 GB) – snabb och bra på svenska.",
-        deepScanTitle:       "Djupskanning med AI (Ollama)",
-        deepScanStart:       "🔬 Starta djupskanning",
         deepScanCancel:      "✕ Avbryt",
         deepScanModelLabel:  "Välj modell:",
         deepScanRunning:     "🔬 Djupskanning pågår… (kan ta upp till flera minuter beroende på maskin och dokumentstorlek)",
         deepScanDone:        "✅ Djupskanning klar",
         deepScanNoFindings:  "Inga extra fynd från AI-analysen.",
-        deepScanAIFindings:  "AI-fynd ({n} nya):",
-        deepScanNotRunning:  "Ollama körs inte. Starta Ollama och försök igen.",
-        deepScanNoModels:    "Inga Ollama-modeller installerade. Kör: <code>ollama pull llama3.2:3b</code>",
-        deepScanError:       "Djupskanning misslyckades:",
         settingsUpdateTitle: "Uppdateringar",
         settingsPersistNote: "Inställningar sparas automatiskt i webbläsaren.",
         updateAvailable: "Ny version tillgänglig:",
@@ -1248,27 +1149,13 @@
         updateNoUpdate: "Du har senaste versionen.",
         updateCheckFailed: "Kunde inte kontrollera uppdateringar.",
         logHint: "Se logg:",
-        tabDeepScan:        "🔬 Djupskanning",
-        dstFileInfoTitle:   "Fil att analysera",
-        dstNoFile:          "Ingen fil skannad ännu. Gå till Scanner-fliken och skanna en fil först.",
-        dstCatsTitle:       "Sök efter",
-        dstCatNavn:         "Namn",
         dstCatAdresse:      "Adress",
         dstCatEpost:        "E-post",
         dstCatTelefon:      "Telefon",
-        dstCatPersonnummer: "Personnummer",
-        dstCatBankkonto:    "Bankkontonummer",
         dstCatSelskapsnavn:  "Företagsnamn",
-        dstCatBudsjett:      "Budget / belopp",
         dstCatNettadresse:   "Webbadresser",
-        dstScanTitle:        "AI-analys (Ollama)",
-        dstResultsTitle:    "AI-fynd",
-        dstAnonBtn:         "Anonymisera valda",
         dstSelectOne:       "Välj minst ett fynd att anonymisera.",
         dstHwReq:           "⚠ Djupskanning körs lokalt och kan ta upp till flera minuter beroende på dokumentstorlek och hårdvara. Rekommenderat: minst 16 GB RAM och en relativt modern CPU. GPU-acceleration (NVIDIA/AMD) används automatiskt och ger avsevärt kortare analystid.",
-        dstHwCpu:           "🖥️ Körs på CPU",
-        dstHwGpu:           "🎮 Körs på GPU",
-        dstHwHybrid:        "⚡ CPU + GPU",
         modeFile:           "Fil",
         modePaste:          "Klistra in",
         modeFolder:         "Mapp",
@@ -1301,6 +1188,12 @@
         aiExtraCats:         "Extra AI-kategorier:",
         aiResultsTitle:      "AI-fynd",
         rescanAi:            "🔄 Re-skanna",
+        aiCheckingOllama:    "⏳ Kontrollerar Ollama…",
+        aiNoModel:           "⚠ Ollama körs inte eller ingen modell är installerad",
+        aiAnalyzing:         "🔬 Analyserar…",
+        aiAnalyzingBtn:      "⏳ Analyserar…",
+        aiCancelled:         "⛔ Avbruten",
+        deepScanCancelled:   "Avbruten.",
         clearResult:         "🗑 Töm",
       },
       en: {
@@ -1344,7 +1237,6 @@
         wlErr:        "Error!",
         exportJson:   "Export JSON",
         exportCsv:    "Export CSV",
-        exportSection:"Export findings",
         historyTitle: "Recent scans",
         pdfCaveat:    "PDF redaction replaces text in the content stream. Note that text in metadata or images is not anonymised — verify the result.",
         scanErr:      "Error during scan:",
@@ -1378,24 +1270,17 @@
         settingsOllamaTitle: "AI deep scan (Ollama)",
         settingsOllamaNote:  "Deep scanning uses a local Ollama model to detect personal data that rule-based detectors may miss. Requires Ollama to be installed.",
         ollamaRefresh:       "↻ Check status",
-        inlineDeepTitle:     "Deep Scan with AI",
         ollamaChecking:      "Checking Ollama…",
         ollamaRunning:       "✅ Ollama is running",
         ollamaNotRunning:    "❌ Ollama is not running",
         ollamaModelsLabel:   "Installed models:",
         ollamaNoModels:      "No models found.",
         ollamaInstallHint:   "Download Ollama from <a href='https://ollama.ai' target='_blank'>ollama.ai</a>, then run:<br><code>ollama pull llama3.2:3b</code><br>Recommended: <strong>llama3.2:3b</strong> (~1.9 GB) – fast and capable.",
-        deepScanTitle:       "AI deep scan (Ollama)",
-        deepScanStart:       "🔬 Start deep scan",
         deepScanCancel:      "✕ Cancel",
         deepScanModelLabel:  "Select model:",
         deepScanRunning:     "🔬 Deep scan in progress… (may take several minutes depending on machine and document size)",
         deepScanDone:        "✅ Deep scan complete",
         deepScanNoFindings:  "No additional findings from AI analysis.",
-        deepScanAIFindings:  "AI findings ({n} new):",
-        deepScanNotRunning:  "Ollama is not running. Start Ollama and try again.",
-        deepScanNoModels:    "No Ollama models installed. Run: <code>ollama pull llama3.2:3b</code>",
-        deepScanError:       "Deep scan failed:",
         settingsUpdateTitle: "Updates",
         settingsPersistNote: "Settings are saved automatically in the browser.",
         updateAvailable: "New version available:",
@@ -1404,27 +1289,13 @@
         updateNoUpdate: "You already have the latest version.",
         updateCheckFailed: "Could not check for updates.",
         logHint: "See log:",
-        tabDeepScan:        "🔬 Deep Scan",
-        dstFileInfoTitle:   "File to analyse",
-        dstNoFile:          "No file scanned yet. Go to the Scanner tab and scan a file first.",
-        dstCatsTitle:       "Search for",
-        dstCatNavn:         "Names",
         dstCatAdresse:      "Addresses",
         dstCatEpost:        "Email addresses",
         dstCatTelefon:      "Phone numbers",
-        dstCatPersonnummer: "National ID numbers",
-        dstCatBankkonto:    "Bank account numbers",
         dstCatSelskapsnavn:  "Company names",
-        dstCatBudsjett:      "Budget / amounts",
         dstCatNettadresse:   "Web addresses",
-        dstScanTitle:        "AI analysis (Ollama)",
-        dstResultsTitle:    "AI findings",
-        dstAnonBtn:         "Anonymise selected",
         dstSelectOne:       "Select at least one finding to anonymise.",
         dstHwReq:           "⚠ Deep scanning runs locally and may take several minutes depending on document size and hardware. Recommended: at least 16 GB RAM and a relatively modern CPU. GPU acceleration (NVIDIA/AMD) is used automatically and significantly reduces analysis time.",
-        dstHwCpu:           "🖥️ Running on CPU",
-        dstHwGpu:           "🎮 Running on GPU",
-        dstHwHybrid:        "⚡ CPU + GPU",
         modeFile:           "File",
         modePaste:          "Paste",
         modeFolder:         "Folder",
@@ -1457,6 +1328,12 @@
         aiExtraCats:         "Extra AI categories:",
         aiResultsTitle:      "AI findings",
         rescanAi:            "🔄 Re-scan",
+        aiCheckingOllama:    "⏳ Checking Ollama…",
+        aiNoModel:           "⚠ Ollama is not running or no model is installed",
+        aiAnalyzing:         "🔬 Analyzing…",
+        aiAnalyzingBtn:      "⏳ Analyzing…",
+        aiCancelled:         "⛔ Cancelled",
+        deepScanCancelled:   "Cancelled.",
         clearResult:         "🗑 Clear",
       },
     };
@@ -1581,7 +1458,6 @@
         btn.classList.add("active");
         document.getElementById("panel-" + btn.dataset.tab).classList.add("active");
         if (btn.dataset.tab === "about") syncAboutLang();
-        if (btn.dataset.tab === "deepscan") loadDeepScanTab();
       })
     );
 
@@ -2389,180 +2265,6 @@
       }
     });
 
-    /* ══════════════════════════════════════════════════════════════════
-       DYBDESKANN-FANE
-    ══════════════════════════════════════════════════════════════════ */
-    let _dstPollTimer   = null;
-    let _dstFindings    = [];
-    let _dstHwChecked   = false;
-    let _dstFileSuffix  = "";   // .docx / .pptx / .xlsx / .pdf / "" (txt-fallback)
-
-    const PATCH_SUFFIXES = new Set([".docx", ".pptx", ".xlsx", ".pdf"]);
-
-    function _updateAnonBtnLabel() {
-      const btn = document.getElementById("dst-anon-btn");
-      if (!btn) return;
-      const ext = PATCH_SUFFIXES.has(_dstFileSuffix) ? _dstFileSuffix : ".txt";
-      btn.textContent = `${t("dstAnonBtn")} → ${ext}`;
-    }
-
-    async function loadDeepScanTab() {
-      // Fil-info
-      try {
-        const info = await (await fetch(`${API}/ollama/last-file-info`)).json();
-        const el = document.getElementById("dst-file-info");
-        if (info.available) {
-          _dstFileSuffix = info.file_name.includes(".")
-            ? "." + info.file_name.split(".").pop().toLowerCase()
-            : "";
-          el.innerHTML = `<span class="dst-filename">📄 ${escapeHtml(info.file_name)}</span>
-            <span style="color:var(--muted);font-size:12px;margin-left:8px">${info.text_length.toLocaleString()} ${t("metaChars")}</span>`;
-        } else {
-          _dstFileSuffix = "";
-          el.innerHTML = `<span class="dst-no-file">${t("dstNoFile")}</span>`;
-        }
-      } catch (_) {
-        _dstFileSuffix = "";
-        document.getElementById("dst-file-info").innerHTML =
-          `<span class="dst-no-file">${t("dstNoFile")}</span>`;
-      }
-      _updateAnonBtnLabel();
-      // Ollama-status
-      await loadDstOllamaStatus();
-    }
-
-    async function loadDstOllamaStatus() {
-      const statusRow  = document.getElementById("dst-status-row");
-      const notRunning = document.getElementById("dst-not-running");
-      const readyDiv   = document.getElementById("dst-ready");
-      const modelSel   = document.getElementById("dst-model-select");
-      statusRow.innerHTML = `<span style="color:var(--muted);font-size:12px">Sjekker Ollama…</span>`;
-      try {
-        const s = await (await fetch(`${API}/ollama/status`)).json();
-        if (!s.running) {
-          statusRow.innerHTML  = `<span style="color:var(--danger)">${t("ollamaNotRunning")}</span>`;
-          notRunning.innerHTML = t("ollamaInstallHint");
-          notRunning.style.display = "block";
-          readyDiv.style.display   = "none";
-          return;
-        }
-        notRunning.style.display = "none";
-        if (!s.models || !s.models.length) {
-          statusRow.innerHTML = `<span style="color:var(--ok)">${t("ollamaRunning")}</span>
-            <span style="color:var(--danger);margin-left:8px">${t("ollamaNoModels")}</span>`;
-          readyDiv.style.display = "none";
-          return;
-        }
-        statusRow.innerHTML = `<span style="color:var(--ok)">${t("ollamaRunning")}</span>`;
-        const current = modelSel.value;
-        modelSel.innerHTML = s.models.map(m => {
-          const rec = ["llama3.2:3b","llama3.2:1b","gemma2:2b","mistral:7b"].includes(m);
-          return `<option value="${escapeHtml(m)}">${escapeHtml(m)}${rec ? " ★" : ""}</option>`;
-        }).join("");
-        if (current && s.models.includes(current)) modelSel.value = current;
-        readyDiv.style.display = "block";
-      } catch (_) {
-        statusRow.innerHTML  = `<span style="color:var(--danger)">${t("ollamaNotRunning")}</span>`;
-        notRunning.innerHTML = t("ollamaInstallHint");
-        notRunning.style.display = "block";
-        readyDiv.style.display   = "none";
-      }
-    }
-
-    function renderDstHardware(hw) {
-      const el = document.getElementById("dst-hw-badge");
-      if (!hw || hw.mode === "cpu") {
-        el.className = "dst-hw-badge";
-        el.textContent = t("dstHwCpu");
-        el.style.display = "";
-        return;
-      }
-      if (hw.mode === "gpu") {
-        el.className = "dst-hw-badge gpu";
-        el.textContent = hw.vram_mb
-          ? `${t("dstHwGpu")} (${hw.vram_mb} MB VRAM)`
-          : t("dstHwGpu");
-      } else {
-        el.className = "dst-hw-badge hybrid";
-        el.textContent = hw.vram_mb
-          ? `${t("dstHwHybrid")} (${hw.vram_mb} MB VRAM)`
-          : t("dstHwHybrid");
-      }
-      el.style.display = "";
-    }
-
-    async function checkDstHardware() {
-      try {
-        const hw = await (await fetch(`${API}/ollama/hardware-info`)).json();
-        renderDstHardware(hw);
-      } catch (_) { /* stille */ }
-    }
-
-    async function startDstScan() {
-      const model = document.getElementById("dst-model-select").value;
-      if (!model) return;
-      const cats = [...document.querySelectorAll(".dst-cat:checked")].map(cb => cb.value);
-      if (!cats.length) {
-        document.getElementById("dst-progress").innerHTML =
-          `<span style="color:var(--warn)">Velg minst én kategori.</span>`;
-        return;
-      }
-      document.getElementById("dst-start-btn").style.display  = "none";
-      document.getElementById("dst-cancel-btn").style.display = "";
-      document.getElementById("dst-progress").textContent = t("deepScanRunning");
-      document.getElementById("dst-results-section").style.display = "none";
-      document.getElementById("dst-findings-area").innerHTML = "";
-      document.getElementById("dst-hw-badge").style.display  = "none";
-      _dstFindings  = [];
-      _dstHwChecked = false;
-      const minConf = document.getElementById("dst-confidence-select")?.value || "medium";
-      try {
-        const r = await (await fetch(`${API}/ollama/deep-scan`, {
-          method: "POST",
-          headers: {"Content-Type": "application/json"},
-          body: JSON.stringify({ model, categories: cats, min_confidence: minConf }),
-        })).json();
-        if (!r.ok) { setDstError(r.error || "Ukjent feil"); return; }
-        _dstPollTimer = setInterval(pollDstScan, 2000);
-      } catch (e) { setDstError(String(e)); }
-    }
-
-    async function cancelDstScan() {
-      if (_dstPollTimer) { clearInterval(_dstPollTimer); _dstPollTimer = null; }
-      await fetch(`${API}/ollama/deep-scan/cancel`, { method:"POST" }).catch(()=>{});
-      document.getElementById("dst-cancel-btn").style.display = "none";
-      document.getElementById("dst-start-btn").style.display  = "";
-      document.getElementById("dst-progress").textContent = "Avbrutt.";
-    }
-
-    async function pollDstScan() {
-      try {
-        const s = await (await fetch(`${API}/ollama/deep-scan/status`)).json();
-        document.getElementById("dst-progress").textContent = s.progress || "";
-        // Sjekk hardware én gang etter at modellen er lastet (andre poll)
-        if (!_dstHwChecked && s.status === "running" && s.progress && s.progress !== "Starter…") {
-          _dstHwChecked = true;
-          checkDstHardware();
-        }
-        if (s.status === "done") {
-          clearInterval(_dstPollTimer); _dstPollTimer = null;
-          document.getElementById("dst-cancel-btn").style.display = "none";
-          document.getElementById("dst-start-btn").style.display  = "";
-          _dstFindings = s.findings || [];
-          renderDstFindings(_dstFindings);
-          if (!_dstHwChecked) { _dstHwChecked = true; checkDstHardware(); }
-          // Vis "ferdig"-melding med antall funn
-          const n = _dstFindings.length;
-          document.getElementById("dst-progress").textContent =
-            `${t("deepScanDone")} – ${n} ${n === 1 ? t("metaFinding") || "funn" : t("metaFindings") || "funn"}`;
-        } else if (s.status === "cancelled" || s.status === "error") {
-          clearInterval(_dstPollTimer); _dstPollTimer = null;
-          document.getElementById("dst-cancel-btn").style.display = "none";
-          document.getElementById("dst-start-btn").style.display  = "";
-        }
-      } catch (_) { /* stille – prøver igjen */ }
-    }
-
     /* Speilet fra risk.py _SEVERITY_MAP – SAMME klassifisering i AI som i regelbasert. */
     function _dstSeverity(rawCat) {
       const c = (rawCat || "").replace(/^🤖\s*/u, "").toLowerCase();
@@ -2590,86 +2292,6 @@
       // ── GUL – alt annet, inkl. navn, e-post, telefon, adresse, URL ──
       return "gul";
     }
-
-    function renderDstFindings(findings) {
-      const section = document.getElementById("dst-results-section");
-      const area    = document.getElementById("dst-findings-area");
-      const anonBar = document.getElementById("dst-anon-bar");
-      const titleEl = document.getElementById("dst-results-title");
-      section.style.display = "";
-      if (!findings.length) {
-        titleEl.textContent = t("dstResultsTitle");
-        area.innerHTML = `<p style="color:var(--muted);font-size:13px;margin-top:4px">${t("deepScanNoFindings")}</p>`;
-        anonBar.style.display = "none";
-        return;
-      }
-      titleEl.textContent = t("deepScanAIFindings").replace("{n}", findings.length);
-
-      // Sorter etter alvorlighetsgrad (svart → rød → gul)
-      const ORDER = { svart: 3, rød: 2, gul: 1 };
-      const sorted = findings
-        .map((f, i) => ({ f, i, sev: _dstSeverity(f.category) }))
-        .sort((a, b) => (ORDER[b.sev] || 0) - (ORDER[a.sev] || 0));
-
-      area.innerHTML = sorted.map(({ f, i, sev }) => {
-        const sc    = SEV_COLOR[sev] || "#ffb84d";
-        const light = sev === "gul";
-        return `
-          <div class="dst-finding" style="border-left-color:${sc}">
-            <input type="checkbox" class="dst-cb" value="${i}" checked style="margin-top:3px;flex-shrink:0;width:13px;height:13px;cursor:pointer;accent-color:var(--ok)">
-            <div class="finding-body">
-              <div>
-                <span class="cat" style="background:${sc};color:${light ? "#1a1a1a" : "#fff"}">${escapeHtml(f.category || "AI-funn")}</span>
-                <strong>${escapeHtml(f.text || "")}</strong>
-              </div>
-              ${f.context ? `<div class="ctx">${escapeHtml(f.context)}</div>` : ""}
-            </div>
-          </div>`;
-      }).join("");
-
-      anonBar.style.display = "flex";
-      document.getElementById("dst-sel-all").onclick  = () =>
-        document.querySelectorAll(".dst-cb").forEach(cb => cb.checked = true);
-      document.getElementById("dst-sel-none").onclick = () =>
-        document.querySelectorAll(".dst-cb").forEach(cb => cb.checked = false);
-    }
-
-    function setDstError(msg) {
-      clearInterval(_dstPollTimer); _dstPollTimer = null;
-      document.getElementById("dst-cancel-btn").style.display = "none";
-      document.getElementById("dst-start-btn").style.display  = "";
-      document.getElementById("dst-progress").innerHTML =
-        `<span style="color:var(--danger)">${t("deepScanError")} ${escapeHtml(msg)}</span>`;
-    }
-
-    async function anonymizeDst() {
-      const msg = document.getElementById("dst-anon-msg");
-      const checked = [...document.querySelectorAll(".dst-cb:checked")].map(cb => +cb.value);
-      if (!checked.length) {
-        msg.style.color = "var(--warn)"; msg.textContent = t("dstSelectOne"); return;
-      }
-      msg.style.color = "var(--muted)"; msg.textContent = t("processing");
-      const texts = checked.map(i => _dstFindings[i]?.text).filter(Boolean);
-      try {
-        const d = await (await fetch(`${API}/ollama/anonymize-findings`, {
-          method: "POST",
-          headers: {"Content-Type": "application/json"},
-          body: JSON.stringify({ texts }),
-        })).json();
-        if (d.ok) { msg.style.color = "#4caf50"; msg.textContent = `${t("saved")} ${d.path}`; }
-        else      { msg.style.color = "#f44336"; msg.textContent = `${t("errPrefix")} ${d.error}`; }
-      } catch (e) { msg.style.color = "#f44336"; msg.textContent = `${t("netErr")} ${e}`; }
-    }
-
-    // Checkbox-fellesknapper for kategorier
-    document.getElementById("dst-sel-all-cats").addEventListener("click", () =>
-      document.querySelectorAll(".dst-cat").forEach(cb => cb.checked = true));
-    document.getElementById("dst-sel-no-cats").addEventListener("click", () =>
-      document.querySelectorAll(".dst-cat").forEach(cb => cb.checked = false));
-
-    document.getElementById("dst-start-btn").addEventListener("click",  startDstScan);
-    document.getElementById("dst-cancel-btn").addEventListener("click", cancelDstScan);
-    document.getElementById("dst-anon-btn").addEventListener("click",   anonymizeDst);
 
     /* ══════════════════════════════════════════════════════════════════
        UNIFIED SCANNER: kategorifilter + AI-dybdeskann
@@ -2799,8 +2421,8 @@
       const rescanBtn = document.getElementById("ai-rescan-btn");
 
       // Gi umiddelbar visuell tilbakemelding UTEN å vente på nettverks-kall
-      if (rescanBtn) { rescanBtn.disabled = true; rescanBtn.textContent = "⏳…"; }
-      _setAiInlineStatus("⏳ Sjekker Ollama…");
+      if (rescanBtn) { rescanBtn.disabled = true; rescanBtn.textContent = t("aiAnalyzingBtn"); }
+      _setAiInlineStatus(t("aiCheckingOllama"));
 
       // Hent/oppdater modelliste (asynkron – vises inline)
       let model = document.getElementById("ai-model-select")?.value;
@@ -2810,14 +2432,14 @@
       }
 
       if (!model) {
-        _setAiInlineStatus("⚠ Ollama kjører ikke eller ingen modell er installert");
-        if (rescanBtn) { rescanBtn.disabled = false; rescanBtn.textContent = "🔄 Re-skann"; }
+        _setAiInlineStatus(t("aiNoModel"));
+        if (rescanBtn) { rescanBtn.disabled = false; rescanBtn.textContent = t("rescanAi"); }
         return;
       }
 
       // Start scan – oppdater status inline OG i statusfeltet under
-      _setAiInlineStatus("🔬 Analyserer…");
-      if (rescanBtn) { rescanBtn.disabled = true; rescanBtn.textContent = "⏳ Analyserer…"; }
+      _setAiInlineStatus(t("aiAnalyzing"));
+      if (rescanBtn) { rescanBtn.disabled = true; rescanBtn.textContent = t("aiAnalyzingBtn"); }
 
       const statusEl   = document.getElementById("ai-scan-status");
       const progressEl = document.getElementById("ai-progress");
@@ -2842,8 +2464,8 @@
           const errMsg = escapeHtml(r.error || "Feil");
           progressEl.innerHTML = `<span style="color:var(--danger)">${errMsg}</span>`;
           cancelBtn.style.display = "none";
-          _setAiInlineStatus(`⚠ ${r.error || "Feil"}`);
-          if (rescanBtn) { rescanBtn.disabled = false; rescanBtn.textContent = "🔄 Re-skann"; }
+          _setAiInlineStatus(`⚠ ${r.error || t("errPrefix")}`);
+          if (rescanBtn) { rescanBtn.disabled = false; rescanBtn.textContent = t("rescanAi"); }
           return;
         }
         if (_aiPollTimer) clearInterval(_aiPollTimer);
@@ -2852,13 +2474,13 @@
         progressEl.innerHTML = `<span style="color:var(--danger)">${escapeHtml(String(e))}</span>`;
         cancelBtn.style.display = "none";
         _setAiInlineStatus(`⚠ ${String(e)}`);
-        if (rescanBtn) { rescanBtn.disabled = false; rescanBtn.textContent = "🔄 Re-skann"; }
+        if (rescanBtn) { rescanBtn.disabled = false; rescanBtn.textContent = t("rescanAi"); }
       }
     }
 
     function _restoreRescanBtn(inlineMsg) {
       const rb = document.getElementById("ai-rescan-btn");
-      if (rb) { rb.disabled = false; rb.textContent = "🔄 Re-skann"; }
+      if (rb) { rb.disabled = false; rb.textContent = t("rescanAi"); }
       if (inlineMsg !== undefined) _setAiInlineStatus(inlineMsg);
     }
 
@@ -2873,13 +2495,13 @@
           _renderAiFindings(_aiFindingsData);
           // Vis "ferdig"-melding med antall funn
           const n = _aiFindingsData.length;
-          const doneMsg = `${t("deepScanDone")} – ${n} ${t("metaFindings") || "funn"}`;
+          const doneMsg = `${t("deepScanDone")} – ${n} ${t("metaFindings")}`;
           document.getElementById("ai-progress").textContent = doneMsg;
-          _restoreRescanBtn(`✅ ${n} ${t("metaFindings") || "funn"}`);
+          _restoreRescanBtn(`✅ ${n} ${t("metaFindings")}`);
         } else if (s.status === "cancelled" || s.status === "error") {
           clearInterval(_aiPollTimer); _aiPollTimer = null;
           document.getElementById("ai-cancel-btn").style.display = "none";
-          _restoreRescanBtn("⛔ Avbrutt");
+          _restoreRescanBtn(t("aiCancelled"));
         }
       } catch (_) { /* stille – prøver igjen */ }
     }
@@ -2889,8 +2511,21 @@
       // Fjern evt. tidligere injiserte AI-rader
       resultEl.querySelectorAll(".ai-injected-finding, .ai-injected-sep").forEach(el => el.remove());
 
-      const list = resultEl.querySelector("ul.findings-list");
-      if (!list || !findings.length) return;
+      if (!findings.length) return;
+
+      let list = resultEl.querySelector("ul.findings-list");
+      if (!list) {
+        // Regelbasert skann fant 0 funn → ingen liste finnes. Bygg en minimal
+        // funn-seksjon slik at AI-funnene likevel vises i hovedlisten.
+        if (resultEl.firstChild && resultEl.classList.contains("show")) {
+          const sec = document.createElement("div");
+          sec.innerHTML = `<h3 class="section-heading">${t("sectionFind")} (0)</h3><ul class="findings-list"></ul>`;
+          resultEl.appendChild(sec);
+          list = sec.querySelector("ul.findings-list");
+        } else {
+          return;
+        }
+      }
 
       // Sorter etter alvorlighetsgrad – svart→rød→gul
       const ORDER = {svart:3, rød:2, gul:1, grønn:0};
@@ -2968,8 +2603,8 @@
       if (_aiPollTimer) { clearInterval(_aiPollTimer); _aiPollTimer = null; }
       await fetch(`${API}/ollama/deep-scan/cancel`, { method:"POST" }).catch(()=>{});
       document.getElementById("ai-cancel-btn").style.display = "none";
-      document.getElementById("ai-progress").textContent = t("deepScanCancelled") || "Avbrutt.";
-      _restoreRescanBtn("⛔ Avbrutt");
+      document.getElementById("ai-progress").textContent = t("deepScanCancelled");
+      _restoreRescanBtn(t("aiCancelled"));
     }
 
     async function _anonymizeAi() {
