@@ -2885,11 +2885,12 @@ wheels = [
 
 [[package]]
 name = "xlent-scanner"
-version = "0.9.19"
+version = "1.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "docling" },
     { name = "flask" },
+    { name = "jinja2" },
     { name = "langdetect" },
     { name = "openpyxl" },
     { name = "pymupdf" },
@@ -2908,6 +2909,7 @@ dev = [
 requires-dist = [
     { name = "docling", specifier = ">=2.0.0" },
     { name = "flask", specifier = ">=3.1.3" },
+    { name = "jinja2", specifier = ">=3.1.0" },
     { name = "langdetect", specifier = ">=1.0.9" },
     { name = "openpyxl", specifier = ">=3.1.0" },
     { name = "pymupdf", specifier = ">=1.26.0" },

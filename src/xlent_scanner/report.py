@@ -5,6 +5,7 @@ import os
 import tempfile
 from datetime import datetime
 from pathlib import Path
+from types import SimpleNamespace
 
 from jinja2 import Environment, select_autoescape
 
@@ -199,6 +200,28 @@ _TEMPLATE = _JINJA_ENV.from_string("""<!DOCTYPE html>
 <p style="color:var(--grønn);margin-top:16px;">&#10003; Ingen sensitive funn oppdaget.</p>
 {% endif %}
 
+{% if ai_findings %}
+<h2>🔬 AI-dybdeskann-funn ({{ ai_findings|length }})</h2>
+<p style="color:var(--muted);font-size:12px;margin-bottom:10px;">
+  Funn fra lokal AI-analyse (Ollama). Disse kommer i tillegg til de regelbaserte funnene over.
+</p>
+<table>
+  <thead>
+    <tr><th>Alvor</th><th>Kategori</th><th>Verdi</th><th>Kontekst</th></tr>
+  </thead>
+  <tbody>
+  {% for f in ai_findings %}
+  <tr>
+    <td><span class="badge badge-{{ f.severity }}">{{ f.severity }}</span></td>
+    <td>{{ f.category }}</td>
+    <td><strong>{{ f.text }}</strong></td>
+    <td><span class="ctx">{{ f.context }}</span></td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
 {% if result.text_preview %}
 <h2>Ekstrahert tekst</h2>
 <div class="preview">{{ result.text_preview }}</div>
@@ -275,7 +298,36 @@ _LANG_LABELS = {"nb": "🇳🇴 Norsk", "sv": "🇸🇪 Svenska", "en": "🇬�
 _PATCH_SUFFIXES = {"pdf", "docx", "pptx", "xlsx"}
 
 
-def generate_html(result: ScanResult, api_base: str = "") -> str:
+def ai_severity(category: str) -> str:
+    """Alvorlighetsgrad for et AI-funn. Stripper 🤖-prefiks og bruker
+    samme klassifisering (risk._category_severity) som regelbaserte funn."""
+    from xlent_scanner.risk import _category_severity  # noqa: PLC0415
+    cat = category.lstrip("🤖").strip()
+    return _category_severity(cat)
+
+
+def _prepare_ai_findings(ai_findings: list[dict] | None) -> list[SimpleNamespace]:
+    """Konverterer AI-funn-dicts til objekter med severity, sortert svart→gul."""
+    if not ai_findings:
+        return []
+    prepared = [
+        SimpleNamespace(
+            category=str(f.get("category") or "AI-funn"),
+            text=str(f.get("text") or ""),
+            context=str(f.get("context") or ""),
+            severity=ai_severity(str(f.get("category") or "")),
+        )
+        for f in ai_findings
+    ]
+    prepared.sort(key=lambda f: _LEVEL_ORDER.get(f.severity, 1), reverse=True)
+    return prepared
+
+
+def generate_html(
+    result: ScanResult,
+    api_base: str = "",
+    ai_findings: list[dict] | None = None,
+) -> str:
     indexed_findings = sorted(
         enumerate(result.findings),
         key=lambda x: _LEVEL_ORDER.get(x[1].severity, 1),
@@ -285,6 +337,7 @@ def generate_html(result: ScanResult, api_base: str = "") -> str:
     return _TEMPLATE.render(
         result=result,
         indexed_findings=indexed_findings,
+        ai_findings=_prepare_ai_findings(ai_findings),
         timestamp=datetime.now().strftime("%d.%m.%Y %H:%M"),
         ICONS=_ICONS,
         LABELS=_LABELS,

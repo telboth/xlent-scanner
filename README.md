@@ -1,6 +1,6 @@
 # XLENT Compliance-scanner
 
-> **v1.0.0** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
+> **v1.2.0** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
 
 Alt kjøres 100 % lokalt — ingen dokumenter, tekst eller funn sendes over internett.
 
@@ -8,29 +8,37 @@ Alt kjøres 100 % lokalt — ingen dokumenter, tekst eller funn sendes over inte
 
 ## Funksjoner
 
-### Rask scanner
+### Scanner
 
-- **Drag-and-drop** — slipp en fil rett på vinduet
+- **Drag-and-drop** — slipp én eller **flere filer** rett på vinduet (flere filer → batch-oversikt)
 - **Bla-til-fil** — velg fil fra disk
 - **Lim inn tekst** — skann tekst direkte (uten å lagre en fil)
-- **Mappeskann** — velg en mappe og skann alle støttede filer i én operasjon; resultat vises som en sorterbar oversikt
+- **Mappeskann** — velg en mappe og skann alle støttede filer i én operasjon
+- **Kategorifilter** — velg hvilke typer funn du vil se (personnummer, konto, navn, secrets, …)
 
-### Dybdeskann med AI (Ollama)
+### AI-dybdeskann (Ollama) — innebygd i scanner-fanen
 
-- Sender dokumentteksten til en lokal AI-modell (Ollama) for å fange funn som regex-motoren kan misse
-- Velg kategorier: navn, adresser, e-post, telefon, personnummer, bankkontonummer, selskapsnavn, budsjett/beløp
-- **Konfidensfilter**: filtrer funn på `høy` / `medium` / `lav` konfidensgrad
-- Viser GPU/CPU-badge under kjøring
-- Anonymiser valgte AI-funn direkte til `.docx`, `.pptx`, `.xlsx`, `.pdf` eller `.txt`
+- Huk av **🔬 Kjør AI-dybdeskann** før du skanner, så analyseres dokumentet også av en lokal AI-modell (Ollama)
+- Fanger funn som regelmotoren kan misse (adresser, selskapsnavn, kontekstuelle navn)
+- AI-funnene **flettes rett inn i den vanlige funnlisten** med samme alvorlighetsgrad-klassifisering
+- Regelbaserte detektorer (personnummer, e-post, konto, IBAN, URL) **supplerer** AI-en automatisk for 100 % pålitelig dekning
+- **Konfidensfilter**: `høy` / `medium` / `lav`
+- **Re-skann**-knapp + inline statusindikator
+- Ollama-adresse kan overstyres med miljøvariabelen `OLLAMA_BASE_URL`
 
 ### Resultater og eksport
 
-- Trafikklysnivå: grønn / gul / rød / svart
+- **Trafikklysnivå**: grønn / gul / rød / svart
+- **Sammendragsrad** øverst: fargede badges med antall per alvorlighetsgrad (⛔ / 🚫 / ⚠️)
+- **📋 Kopier funn** — kopier alle funn (regel + AI) til utklippstavlen
+- **🗑 Tøm** — nullstill resultatet
 - Klikk-til-hviteliste for falske positive
 - Anonymisering med konsistente etiketter: `<Person A>`, `<Konto 1>`, `[ANONYMISERT]`
 - Eksporter funn som **JSON** eller **CSV**
-- Last ned **PDF-rapport** direkte fra scanner-tabben
-- **Persistent historikk** lagres mellom øktene (`%APPDATA%/xlent-scanner/scan_history.jsonl`)
+- Generer anonymisert fil som **`.md`** eller **PDF**, eller in-place i `.docx` / `.pptx` / `.xlsx` / `.pdf`
+- **HTML-rapport** og **PDF-rapport** — begge inkluderer både regelbaserte funn **og** AI-dybdeskann-funn
+- **Persistent historikk** mellom øktene
+- Valgt **språk og AI-modell huskes** mellom øktene (localStorage)
 
 ---
 
@@ -43,24 +51,28 @@ Alt kjøres 100 % lokalt — ingen dokumenter, tekst eller funn sendes over inte
 | CPR-nummer (DK) | ⛔ Svart | Mod-11-validering |
 | Bankkontonummer (NO) | ⛔ Svart | 11 siffer, mod-11 |
 | Kredittkort | ⛔ Svart | Luhn-validering |
-| IBAN | ⛔ Svart | Internasjonal bank-ID |
-| API-nøkler og hemmeligheter | 🚫 Rød | OpenAI-nøkler, GitHub-tokens, AWS-nøkler, JWT, private keys |
-| Personnavn | 🚫 Rød | Via spaCy NER (NO, SE, EN, DA) |
-| E-postadresser | 🚫 Rød | Regex |
-| Telefonnummer (NO) | 🚫 Rød | 8 siffer + `+47`/`0047`-prefiks |
+| Bankgiro / Plusgiro (SE) | ⛔ Svart | Nøkkelord + siffer |
 | UK NI / US SSN | ⛔ Svart | Nasjonale ID-numre |
+| API-nøkler og hemmeligheter | 🚫 Rød | OpenAI, GitHub, AWS, JWT, private keys |
+| IBAN | 🚫 Rød | MOD-97-validering |
+| Passord i konfig | 🚫 Rød | `password=…`, connection strings |
+| Konfidensielt (overskrift) | 🚫 Rød | «KONFIDENSIELT» i tittel/heading |
+| Personnavn | ⚠️ Gul | Via spaCy NER (NO, SE, EN, DA) |
+| E-postadresser | ⚠️ Gul | Regex |
+| Telefonnummer | ⚠️ Gul | NO/SE, 8 siffer + landkode |
 | Organisasjonsnummer (NO) | ⚠️ Gul | Mod-11-validering |
-| Bankgiro / Plusgiro (SE) | ⚠️ Gul | Regex |
-| Kommersielle nøkkeltall | ⚠️ Gul | Timepris, dagspris, prosjektsum, margin, rabatt |
+| «Mulig personnummer (format)» | ⚠️ Gul | Riktig datoformat, men feil kontrollsiffer |
+| Kommersielle nøkkeltall | ⚠️ Gul | Timepris, dagspris, prosjektsum, budsjett, margin, rabatt |
 | Konfidensielle nøkkelord | ⚠️ Gul | «konfidensielt», «hemmelig», «intern», «fortrolig» |
-| Klientnavn | ⚠️ Gul | Intern klientliste (`ignore.toml`) |
+| Nettadresser | ⚠️ Gul | http/https/www |
+| Klientnavn | ⚠️ Gul | Intern klientliste (`clients.toml`) |
 | Høy-entropi-strenger | ⚠️ Gul | Mulige hemmelige nøkler (Base64, hex) |
 
 ---
 
 ## Filformater
 
-`.pdf` · `.docx` · `.pptx` · `.xlsx` · `.md` · `.txt` · `.html`
+`.pdf` · `.docx` · `.pptx` · `.xlsx` · `.md` · `.txt` · `.html` · `.csv` · `.eml` · `.rtf` · `.odt`
 
 ---
 
@@ -73,7 +85,8 @@ Alt kjøres 100 % lokalt — ingen dokumenter, tekst eller funn sendes over inte
 | 🇩🇰 | Dansk | CPR-nummer (mod-11) |
 | 🇬🇧 | Engelsk | UK NI, US SSN; norske og svenske mønstre gjelder også |
 
-Språk auto-detekteres, eller velges manuelt i Innstillinger-tabben.
+Hele grensesnittet oversettes til **norsk, svensk og engelsk** via språkvelgeren øverst til høyre.
+Dokumentspråk auto-detekteres, eller velges manuelt i Innstillinger-fanen.
 
 ---
 
@@ -90,11 +103,23 @@ uv run xlent-scanner
 
 Ved første oppstart lastes spaCy-språkmodeller ned automatisk (~50 MB per modell).
 
+### Kommandolinje-modus (uten GUI)
+
+```bash
+uv run xlent-scanner --scan dokument.pdf            # menneskelesbar utskrift
+uv run xlent-scanner --scan dokument.pdf --json     # JSON på stdout
+uv run xlent-scanner --scan fil.docx --lang nb      # tving språk
+```
+
+Exit-kode reflekterer risikonivå: `0` grønn · `1` gul · `2` rød · `3` svart — nyttig i CI-pipelines.
+
 ---
 
 ## Installasjon (Windows — intern MVP)
 
-Last ned `xlent-scanner-setup-<versjon>.exe` fra [Releases](https://github.com/telboth/xlent-scanner/releases) og kjør installasjonsprogrammet.
+Last ned `xlent-scanner-setup-<versjon>.exe` fra [Releases](https://github.com/telboth/xlent-scanner/releases) og kjør installasjonsprogrammet (krever **ikke** administrator).
+
+Installasjonen legger til **«Skann med XLENT»** i Windows høyreklikk-meny for alle filtyper. Høyreklikk en fil → filen åpnes og skannes automatisk. Kjører appen allerede, sendes filen til det eksisterende vinduet.
 
 ---
 
@@ -112,41 +137,43 @@ Last ned `xlent-scanner-macos-<versjon>.dmg` fra [Releases](https://github.com/t
 ## Bruk
 
 1. Start appen (`uv run xlent-scanner` eller dobbeltklikk på installert snarvei)
-2. Velg modus øverst i scanner-tabben:
-   - **Fil** — dra og slipp, eller klikk «Velg fil»
+2. Velg modus øverst i scanner-fanen:
+   - **Fil** — dra og slipp (én eller flere filer), eller klikk «Velg fil»
    - **Lim inn** — lim inn tekst direkte i tekstfeltet
    - **Mappe** — velg en mappe for å skanne alle filer
-3. Se gjennom funnene — hvert funn viser kategori, alvorlighetsgrad og tekstkontekst
-4. Klikk **+ Hviteliste** på falske positive for å filtrere dem ut i fremtiden
-5. Bruk **Anonymiser valgte** for å generere en renset versjon av filen
-6. Last ned **PDF-rapport** fra toolbar-raden for en fullstendig rapport
-7. For dypere analyse, bytt til **Dybdeskann**-tabben (krever Ollama)
+3. (Valgfritt) Huk av **🔬 Kjør AI-dybdeskann** for også å analysere med lokal AI (krever Ollama)
+4. Se gjennom funnene — sammendragsraden øverst viser antall per alvorlighetsgrad
+5. Klikk **+ Hviteliste** på falske positive for å filtrere dem ut i fremtiden
+6. Bruk **Generer .md-fil** / **Generer PDF** / **Lagre anonymisert .<format>** for å lage en renset versjon
+7. Åpne **HTML-rapport** eller last ned **PDF-rapport** for full dokumentasjon (inkl. AI-funn)
 
 ---
 
-## Dybdeskann (Ollama)
+## AI-dybdeskann (Ollama)
 
 1. Installer [Ollama](https://ollama.ai) og last ned en modell:
    ```bash
    ollama pull llama3.2:3b
    ```
-2. Skann en fil i Rask scanner-tabben
-3. Bytt til **Dybdeskann**-tabben — filen er automatisk lastet inn
-4. Velg kategorier og **konfidensfilter** (høy = bare sikre funn)
-5. Klikk **Start dybdeskann**
+2. Huk av **🔬 Kjør AI-dybdeskann** i scanner-fanen og velg modell
+3. Skann en fil — AI-analysen kjører automatisk etter den regelbaserte skannen
+4. AI-funnene flettes inn i funnlisten. Bruk **🔄 Re-skann** for å kjøre på nytt med andre innstillinger
 
-Anbefalt maskin: minst 8 GB RAM. GPU-akselerasjon (NVIDIA/AMD) brukes automatisk.
+Dybdeskann kjøres lokalt og kan ta opptil flere minutter avhengig av maskin og dokumentstørrelse.
+Anbefalt: minst **16 GB RAM** og en relativt moderne CPU. GPU-akselerasjon (NVIDIA/AMD) brukes automatisk.
+
+Egendefinert Ollama-adresse:
+```bash
+OLLAMA_BASE_URL=http://192.168.1.10:11434 uv run xlent-scanner
+```
 
 ---
 
 ## Bygg og pakking (Windows)
 
 ```powershell
-# Bygg app-bundle med PyInstaller
-.\scripts\build_win.ps1
-
-# Pakk installer (.exe) med Inno Setup 6
-.\scripts\package_win.ps1
+.\scripts\build_win.ps1     # Bygg app-bundle med PyInstaller
+.\scripts\package_win.ps1   # Pakk installer (.exe) med Inno Setup 6
 ```
 
 Resultater:
@@ -157,16 +184,26 @@ Resultater:
 
 ## Utgivelse
 
-```powershell
-# Tag og push
-git tag v0.9.19
-git push origin v0.9.19
+Bygg og opplasting er automatisert via GitHub Actions (`.github/workflows/build-release.yml`).
+En egen `create-release`-jobb oppretter releasen, deretter bygger Windows- og macOS-jobbene parallelt og laster opp `.exe`/`.dmg`.
 
-# Opprett GitHub Release med installer
-$env:GH_TOKEN = "<token>"
-gh release create "v0.9.19" "artifacts/windows/installer/xlent-scanner-setup-0.9.19.exe" `
-  --title "v0.9.19 – ..." --notes "..."
+```bash
+# Oppdater versjon i pyproject.toml + src/xlent_scanner/__init__.py, så:
+git tag v1.2.0
+git push origin master --tags
 ```
+
+Tag-push (`v*`) trigger bygget automatisk. Manuell kjøring: bruk **workflow_dispatch** fra Actions-fanen med tag-navnet.
+
+---
+
+## Test
+
+```bash
+uv run pytest        # hele test-suiten (detektorer, anonymisering, integrasjon mot fixtures)
+```
+
+Fixtures ligger i `tests/fixtures/` (`sensitiv_nb.txt` + `sensitiv_nb.pdf` med alle typer sensitiv testdata).
 
 ---
 
@@ -174,38 +211,41 @@ gh release create "v0.9.19" "artifacts/windows/installer/xlent-scanner-setup-0.9
 
 ```
 src/xlent_scanner/
-├── app.py              # Flask-server + PyWebView-vindu
+├── app.py              # Flask-server + PyWebView-vindu, CLI-modus, kontekstmeny-IPC
+├── paths.py            # Sentralisert app-data-mappe (Windows/macOS/Linux)
 ├── scanner.py          # Orkestrerer alle detektorer; scan_file / scan_text / scan_folder
-├── deep_scanner.py     # Chunked Ollama-analyse med konfidensfiltrering
-├── anonymize.py        # build_replacements() + patch_file() for docx/pptx/xlsx/pdf
-├── history.py          # Persistent JSONL-historikk (%APPDATA%/xlent-scanner/)
+├── deep_scanner.py     # Chunked Ollama-analyse + regex-supplement + konfidensfilter + hviteliste
+├── anonymize.py        # build_replacements() + to-fase tokenisert teksterstatning
+├── patch.py            # In-place teksterstatning i docx/pptx/xlsx/pdf
+├── report.py           # HTML-rapportgenerering (inkl. AI-funn-seksjon)
+├── history.py          # Persistent JSONL-historikk
 ├── language.py         # Språkdeteksjon + spaCy-konfigurasjon (nb/sv/en/da)
-├── utils.py            # Felles ctx()-hjelpefunksjon
-├── patch.py            # Teksterstattning i docx/pptx/xlsx/pdf
-├── report.py           # HTML-rapportgenerering
 ├── whitelist.py        # Personlig hviteliste
 ├── ignore.py           # ignore.toml (XLENT-interne navn etc.)
 ├── update_check.py     # Sjekker GitHub Releases for ny versjon
+├── model_manager.py    # Nedlasting av spaCy-modeller
+├── utils.py            # Felles ctx()-hjelpefunksjon
 ├── models.py           # Finding + ScanResult dataklasser
 ├── detectors/
 │   ├── regex_no.py     # Norske mønstre (fnr, orgnr, konto, telefon)
 │   ├── regex_sv.py     # Svenske mønstre (personnummer, bankgiro)
 │   ├── regex_da.py     # Danske mønstre (CPR-nummer, mod-11)
 │   ├── regex_en.py     # Engelske mønstre (NI, SSN)
-│   ├── ner_names.py    # spaCy NER for personnavn
+│   ├── regex_url.py    # Nettadresser (http/https/www)
+│   ├── ner_names.py    # spaCy NER for personnavn (filtrerer bort sifre/akronymer)
 │   ├── secrets.py      # API-nøkler, tokens, høy-entropi-strenger
 │   ├── creditcards.py  # Kredittkort (Luhn)
-│   ├── iban.py         # IBAN
-│   ├── financials.py   # Kommersielle nøkkeltall
+│   ├── iban.py         # IBAN (MOD-97)
+│   ├── financials.py   # Kommersielle nøkkeltall + budsjett
 │   ├── keywords.py     # Konfidensielle nøkkelord
-│   └── clients.py      # Klientnavn fra ignore.toml
+│   └── clients.py      # Klientnavn fra clients.toml
 └── web/
-    └── index.html      # Komplett frontend (PyWebView + embedded Flask)
+    └── index.html      # Komplett frontend (PyWebView + embedded Flask), full i18n nb/sv/en
 ```
 
 **Teknologistakk:**
 - Dokumentekstraksjon: [Docling](https://github.com/DS4SD/docling) (IBM) — PDF/DOCX/PPTX/XLSX → tekst
-- NER: [spaCy](https://spacy.io/) med `nb_core_news_sm`, `sv_core_news_sm`, `en_core_web_sm`, `da_core_news_sm`
+- NER: [spaCy](https://spacy.io/) med `nb_core_news_sm`, `sv_core_news_sm`, `en_core_web_sm` (dansk gjenbruker norsk modell)
 - GUI: [PyWebView](https://pywebview.flowrl.com/) med innebygd Flask-server
 - AI-dybdeskann: [Ollama](https://ollama.ai) REST API (`/api/generate`)
 - PDF-anonymisering og -rapport: [PyMuPDF](https://pymupdf.readthedocs.io/) (fitz)
@@ -215,40 +255,39 @@ src/xlent_scanner/
 
 ## Endringslogg
 
-### v1.0.0
-- Dansk NER bruker norsk bokmål-modell (nb_core_news_sm) — da_core_news_sm fjernet
+### v1.2.0
+- **Flerfil-batch** — slipp flere filer samtidig i scanner-fanen for en samlet oversikt
+- **📋 Kopier funn** — kopier alle funn (regel + AI) til utklippstavlen
+- **Sammendragsrad** med fargede alvorlighets-badges øverst i resultatet
+- **PDF som anonymiseringsoutput** (i tillegg til `.md` og in-place-formater)
+- **HTML- og PDF-rapport inkluderer nå AI-dybdeskann-funn** i egen seksjon
+- **Husker språk og AI-modell** mellom øktene (localStorage)
+- Bugfix: CPR-nummer (DK) klassifiseres nå korrekt som ⛔ svart (var ⚠️ gul)
+- Bugfix: PDF-rapport og PDF-anonymisering (ugyldig font-alias `helv-b` → `hebo`)
 
-### v0.9.20
-- **Test suite** — automatiske tester for alle detektorer (`tests/`); integrasjonstest mot `i_english.docx`
-- **URL-kategori i dybdeskann** — ny kategori «Nettadresser» (http/https/www) i AI-dybdeskann
-- **Inline dybdeskann** — kollapsibelt 🔬 dybdeskann-panel vises direkte i scanner-tabben etter fil-skanning
+### v1.1.x
+- Fjernet død «Dybdeskann»-fane; funksjonaliteten er innebygd i scanner-fanen (−365 linjer)
+- Full i18n-dekning av AI-statusmeldinger (nb/sv/en)
+- AI-funn flettes inn i hovedfunnlisten med korrekt alvorlighetsgrad
+- AI-dybdeskann suppleres med regelbasert deteksjon (personnummer, e-post, konto, URL)
+- To-nivå personnummer-deteksjon: «mulig personnummer (format)» for feil kontrollsiffer
+- Budsjett-/beløpsdeteksjon utvidet («Total NOK 180,-» m.m.)
+- AI-funn filtreres mot brukerens hviteliste
+- «Oppdatert»-tidsstempel ved versjonsnummeret
 
-### v0.9.19
-- Paste-tekst-modus og mappeskann-modus i scanner-tabben
-- Persistent historikk (JSONL) mellom øktene
-- PDF-rapport-nedlasting
-- Konfidensfilter i dybdeskann (høy/medium/lav)
-- Dansk CPR-nummer (mod-11)
-- Konsistente anonymiserings-etiketter
-- `0047 12345678` (telefon med 1-prefiks) gjenkjennes nå
-- Teknisk gjeld: felles `utils.py`, ny `history.py`, ny `regex_da.py`
+### v1.0.x
+- Windows høyreklikk-kontekstmeny («Skann med XLENT») via HKCU (krever ikke admin)
+- CLI-modus (`--scan`), single-instans-IPC, Linux-støtte (XDG)
+- Nye filformater: `.csv`, `.eml`, `.rtf`, `.odt`
+- Sentralisert app-data-mappe (`paths.py`); `jinja2` som eksplisitt avhengighet
+- Bugfix: fødselsnummer dobbelt-flagget som kontonummer
+- Bugfix: anonymisering lekket etternavn ved overlappende navn (to-fase tokenisering)
+- Full enhets-test-suite for alle detektorer + anonymisering (`tests/`)
 
-### v0.9.18
-- Støtte for anonymisering til original filformat (`.docx`, `.pptx`, `.xlsx`, `.pdf`)
-- Dynamisk etikett på anonymiserings-knapp
-- Telefon: `0047`-prefiks + ny regex-struktur
-- AI-dybdeskann: e-post som ny kategori; forbedrede eksempler i systempromptet
-
-### v0.9.17
-- Kontonummer i 4-4-3-format med mellomrom (`1730 1777 922`) støttes nå
-
-### v0.9.16
-- NER-filter for svenske personnavn (spaCy)
-- Ny regex for kontonummer og personnummer
-- E-postkategori i dybdeskann
-
-### v0.9.15 og tidligere
-- Grunnfunksjoner: scanner, dybdeskann, hviteliste, NER, innstillinger, oppdateringssjekk
+### v0.9.x
+- Grunnfunksjoner: scanner, dybdeskann, hviteliste, NER, mappeskann, paste-modus,
+  persistent historikk, PDF-rapport, konfidensfilter, dansk CPR, konsistente
+  anonymiserings-etiketter
 
 ---
 

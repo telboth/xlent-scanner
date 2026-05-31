@@ -58,6 +58,8 @@ from xlent_scanner.whitelist import (
 _last_result = None
 _last_path: Path | None = None
 _last_tmp_path: Path | None = None   # temp-fil fra forrige upload – ryddes opp ved neste upload
+_last_ai_findings: list[dict] = []   # AI-dybdeskann-funn for sist skannede fil (vises i rapport)
+_last_ai_findings_file: dict = {"name": ""}   # filnavnet AI-funnene tilhører
 
 _window: webview.Window | None = None
 _initial_file: str | None = None     # fil sendt via Windows kontekstmeny (sys.argv[1])
@@ -341,11 +343,42 @@ def add_to_whitelist_endpoint():
     return jsonify({"ok": True})
 
 
+@flask_app.route("/report/ai-findings", methods=["POST"])
+def set_ai_findings():
+    """Lagrer AI-dybdeskann-funn for sist skannede fil slik at de kan
+    inkluderes i rapporten. Knyttes til filnavn for å unngå utdaterte funn."""
+    global _last_ai_findings
+    data = request.get_json(force=True) or {}
+    findings = data.get("findings") or []
+    file_name = data.get("file_name") or ""
+    if isinstance(findings, list):
+        _last_ai_findings = [
+            {"category": str(f.get("category", "")), "text": str(f.get("text", "")),
+             "context": str(f.get("context", ""))}
+            for f in findings if isinstance(f, dict)
+        ]
+        _last_ai_findings_file["name"] = file_name
+    return jsonify({"ok": True, "count": len(_last_ai_findings)})
+
+
+def _ai_findings_for_report() -> list[dict]:
+    """Returnerer AI-funn kun hvis de tilhører sist skannede fil."""
+    if _last_result is None:
+        return []
+    if _last_ai_findings_file.get("name") and _last_result.file_name != _last_ai_findings_file["name"]:
+        return []
+    return _last_ai_findings
+
+
 @flask_app.route("/report")
 def report():
     if _last_result is None:
         return "Ingen rapport tilgjengelig.", 404
-    html = generate_html(_last_result, api_base=f"http://127.0.0.1:{_port}")
+    html = generate_html(
+        _last_result,
+        api_base=f"http://127.0.0.1:{_port}",
+        ai_findings=_ai_findings_for_report(),
+    )
     return html, 200, {"Content-Type": "text/html; charset=utf-8"}
 
 
@@ -359,6 +392,52 @@ def open_report():
         return jsonify({"ok": True})
     except Exception as exc:
         return jsonify({"error": str(exc)})
+
+
+def _write_text_pdf(text: str, out_path: Path, title: str = "") -> None:
+    """Skriver ren tekst til en enkel, lesbar PDF (A4, ordbrytning) via pymupdf."""
+    import fitz  # noqa: PLC0415
+
+    doc = fitz.open()
+    margin, width, height = 54, 595, 842
+    max_width = width - 2 * margin
+    fontsize, line_h = 10, 14
+    fontname = "helv"
+
+    def _new_page():
+        return doc.new_page(width=width, height=height), margin
+
+    page, y = _new_page()
+    if title:
+        page.insert_text((margin, y), title[:90], fontsize=14, fontname="hebo", color=(0.1, 0.2, 0.5))
+        y += 22
+
+    # Enkel ordbryting per linje basert på estimert tegnbredde
+    char_w = fontsize * 0.5
+    max_chars = max(20, int(max_width / char_w))
+    for raw_line in text.split("\n"):
+        if not raw_line.strip():
+            y += line_h // 2
+            continue
+        words, cur = raw_line.split(" "), ""
+        for w in words:
+            test = (cur + " " + w).strip()
+            if len(test) > max_chars:
+                page.insert_text((margin, y), cur, fontsize=fontsize, fontname=fontname, color=(0.1, 0.1, 0.1))
+                y += line_h
+                cur = w
+                if y > height - margin:
+                    page, y = _new_page()
+            else:
+                cur = test
+        if cur:
+            page.insert_text((margin, y), cur, fontsize=fontsize, fontname=fontname, color=(0.1, 0.1, 0.1))
+            y += line_h
+            if y > height - margin:
+                page, y = _new_page()
+
+    doc.save(str(out_path), garbage=4, deflate=True)
+    doc.close()
 
 
 @flask_app.route("/report/pdf", methods=["GET"])
@@ -387,7 +466,7 @@ def report_pdf():
         page, y = _new_page()
 
         def _text(pg, yp, txt, size=10, color=(0.85, 0.88, 0.93), bold=False):
-            fn = "helv-b" if bold else "helv"
+            fn = "hebo" if bold else "helv"   # hebo = Helvetica-Bold (base-14)
             rc = pg.insert_text((54, yp), txt, fontsize=size, fontname=fn, color=color)
             return yp + size + 4
 
@@ -426,6 +505,28 @@ def report_pdf():
                     y = _text(page, y, ctx_line, 7.5, (0.50, 0.57, 0.68))
                 y += 1
 
+        # AI-dybdeskann-funn (egen seksjon)
+        from xlent_scanner.report import ai_severity  # noqa: PLC0415
+        ai_findings = _ai_findings_for_report()
+        if ai_findings:
+            if y > 770:
+                page, y = _new_page()
+            y += 8
+            page.draw_line((54, y), (541, y), color=(0.22, 0.31, 0.44), width=0.5)
+            y += 8
+            y = _text(page, y, f"AI-dybdeskann-funn ({len(ai_findings)})", 11, (0.85, 0.88, 0.93), bold=True)
+            y += 4
+            for f in ai_findings:
+                if y > 800:
+                    page, y = _new_page()
+                cat = str(f.get("category", ""))
+                sev_c = SEV_COLORS.get(ai_severity(cat), (0.72, 0.77, 0.85))
+                y = _text(page, y, f"[{cat}]  {str(f.get('text',''))[:120]}", 9, sev_c)
+                ctx = str(f.get("context", ""))
+                if ctx:
+                    y = _text(page, y, f"    {ctx[:140]}", 7.5, (0.50, 0.57, 0.68))
+                y += 1
+
         pdf_bytes = doc.tobytes()
         doc.close()
 
@@ -454,17 +555,28 @@ def anonymize():
         if isinstance(i, int) and 0 <= i < len(_last_result.findings)
     ]
     cleaned = anonymize_text(_last_result.original_text, selected)
+    fmt = (data.get("format") or "md").lower()
+    if fmt not in ("md", "pdf"):
+        fmt = "md"
 
     stem = Path(_last_result.file_name).stem
     downloads = Path.home() / "Downloads"
     if not downloads.exists():
         downloads = Path.home() / "Desktop"
-    out = downloads / f"{stem}-anonymisert.md"
+    out = downloads / f"{stem}-anonymisert.{fmt}"
     counter = 1
     while out.exists():
-        out = downloads / f"{stem}-anonymisert-{counter}.md"
+        out = downloads / f"{stem}-anonymisert-{counter}.{fmt}"
         counter += 1
-    out.write_text(cleaned, encoding="utf-8")
+
+    if fmt == "pdf":
+        try:
+            _write_text_pdf(cleaned, out, title=f"{stem} – anonymisert")
+        except Exception as exc:
+            LOGGER.error("anonymize pdf failed: %s", traceback.format_exc())
+            return jsonify({"error": f"PDF-generering feilet: {exc}"})
+    else:
+        out.write_text(cleaned, encoding="utf-8")
     return jsonify({"ok": True, "path": str(out)})
 
 

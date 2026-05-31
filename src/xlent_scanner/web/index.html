@@ -626,7 +626,10 @@
       </div>
 
       <div id="status"></div>
-      <div id="result-header" style="display:none; justify-content:flex-end; margin-bottom:4px;">
+      <div id="result-header" style="display:none; align-items:center; gap:8px; margin-bottom:4px;">
+        <div id="severity-summary" style="display:flex; gap:6px; flex:1; flex-wrap:wrap;"></div>
+        <button id="btn-copy-findings" class="ctrl-btn" style="font-size:11px; padding:2px 10px;"
+          data-i18n="copyFindings">📋 Kopier funn</button>
         <button id="btn-clear-result" class="ctrl-btn" style="font-size:11px; padding:2px 10px;"
           data-i18n="clearResult">🗑 Tøm</button>
       </div>
@@ -944,6 +947,7 @@
         selNone:      "Fjern alle",
         saveAnon:     "Lagre anonymisert",
         genMd:        "Generer .md-fil",
+        genPdf:       "Generer PDF",
         selectOne:    "Velg minst ett funn.",
         processing:   "Behandler…",
         saved:        "✓ Lagret:",
@@ -1055,6 +1059,10 @@
         aiCancelled:         "⛔ Avbrutt",
         deepScanCancelled:   "Avbrutt.",
         clearResult:         "🗑 Tøm",
+        copyFindings:        "📋 Kopier funn",
+        copiedToClipboard:   "✓ Kopiert til utklippstavle",
+        batchScanning:       "Skanner {n} filer…",
+        batchTitle:          "Skanneresultat ({n} filer)",
       },
       sv: {
         subtitle:     "Kontrollerar dokument för känslig information innan uppladdning till online-AI-verktyg",
@@ -1084,6 +1092,7 @@
         selNone:      "Ta bort alla",
         saveAnon:     "Spara anonymiserad",
         genMd:        "Generera .md-fil",
+        genPdf:       "Generera PDF",
         selectOne:    "Välj minst ett fynd.",
         processing:   "Bearbetar…",
         saved:        "✓ Sparad:",
@@ -1195,6 +1204,10 @@
         aiCancelled:         "⛔ Avbruten",
         deepScanCancelled:   "Avbruten.",
         clearResult:         "🗑 Töm",
+        copyFindings:        "📋 Kopiera fynd",
+        copiedToClipboard:   "✓ Kopierat till urklipp",
+        batchScanning:       "Skannar {n} filer…",
+        batchTitle:          "Skanningsresultat ({n} filer)",
       },
       en: {
         subtitle:     "Checks documents for sensitive information before uploading to online AI tools",
@@ -1224,6 +1237,7 @@
         selNone:      "Deselect all",
         saveAnon:     "Save anonymised",
         genMd:        "Generate .md file",
+        genPdf:       "Generate PDF",
         selectOne:    "Select at least one finding.",
         processing:   "Processing…",
         saved:        "✓ Saved:",
@@ -1335,10 +1349,18 @@
         aiCancelled:         "⛔ Cancelled",
         deepScanCancelled:   "Cancelled.",
         clearResult:         "🗑 Clear",
+        copyFindings:        "📋 Copy findings",
+        copiedToClipboard:   "✓ Copied to clipboard",
+        batchScanning:       "Scanning {n} files…",
+        batchTitle:          "Scan results ({n} files)",
       },
     };
 
-    let uiLang = "nb";
+    // Husk valgt språk mellom økter (localStorage)
+    let uiLang = (() => {
+      try { const s = localStorage.getItem("xlent_lang"); if (s && I18N[s]) return s; } catch(_) {}
+      return "nb";
+    })();
     const t = key => I18N[uiLang][key] || key;
 
     // Bruk relativ API-base når siden kjøres fra http(s) for å unngå stale-port fra cachet HTML.
@@ -1390,6 +1412,7 @@
     ══════════════════════════════════════════════════════════════════ */
     function setUiLang(lang) {
       uiLang = lang;
+      try { localStorage.setItem("xlent_lang", lang); } catch(_) {}
 
       // Highlight flag button
       document.querySelectorAll(".ui-lang-btn").forEach(b =>
@@ -1646,13 +1669,69 @@
       document.getElementById("text-preview-section").style.display = "none";
       const rescanBtn = document.getElementById("ai-rescan-btn");
       if (rescanBtn) rescanBtn.style.display = "none";
+      const sumEl = document.getElementById("severity-summary");
+      if (sumEl) sumEl.innerHTML = "";
       setStatus("");
+    }
+
+    /* Sammendragsrad: fargede badges med antall per alvorlighetsgrad (regel + AI) */
+    function renderSeveritySummary() {
+      const el = document.getElementById("severity-summary");
+      if (!el) return;
+      const counts = { svart:0, rød:0, gul:0 };
+      (lastResult?.findings || []).forEach(f => {
+        if (counts[f.severity] !== undefined && !f.category.startsWith("⚠")) counts[f.severity]++;
+      });
+      (_aiFindingsData || []).forEach(f => {
+        const s = _dstSeverity(f.category);
+        if (counts[s] !== undefined) counts[s]++;
+      });
+      const defs = [["svart","⛔"], ["rød","🚫"], ["gul","⚠️"]];
+      const badges = defs.filter(([k]) => counts[k] > 0).map(([k, icon]) =>
+        `<span title="${k}" style="font-size:11px;font-weight:700;background:${SEV_COLOR[k]};`
+        + `color:${k==='gul'?'#1a1a1a':'#fff'};padding:1px 9px;border-radius:10px;">${icon} ${counts[k]}</span>`
+      ).join("");
+      el.innerHTML = badges || `<span style="font-size:11px;color:var(--ok);font-weight:600;">✅ 0</span>`;
+    }
+
+    /* Samle alle funn (regel + AI) som ren tekst for utklippstavle */
+    function _collectFindingsText() {
+      const rows = [];
+      if (lastResult?.file_name) rows.push(`# ${lastResult.file_name} — ${(lastResult.risk_level||"").toUpperCase()}`);
+      (lastResult?.findings || []).forEach(f => {
+        if (!f.category.startsWith("⚠")) rows.push(`[${f.severity}] ${f.category}: ${f.text}`);
+      });
+      (_aiFindingsData || []).forEach(f => {
+        rows.push(`[${_dstSeverity(f.category)}] ${f.category}: ${f.text}`);
+      });
+      return rows.join("\n");
+    }
+
+    async function _copyFindings() {
+      const txt = _collectFindingsText();
+      if (!txt) return;
+      const btn = document.getElementById("btn-copy-findings");
+      try {
+        await navigator.clipboard.writeText(txt);
+      } catch(_) {
+        // Fallback for eldre WebView: textarea + execCommand
+        const ta = document.createElement("textarea");
+        ta.value = txt; document.body.appendChild(ta); ta.select();
+        try { document.execCommand("copy"); } catch(__) {}
+        ta.remove();
+      }
+      if (btn) {
+        const orig = btn.textContent;
+        btn.textContent = t("copiedToClipboard");
+        setTimeout(() => { btn.textContent = orig; }, 1800);
+      }
     }
 
     function renderResult(r) {
       lastResult = r;
       resultEl.classList.add("show");
       document.getElementById("result-header").style.display = "flex";
+      document.getElementById("btn-copy-findings").style.display = "";
 
       if (r.error) {
         resultEl.innerHTML = `<h2>${escapeHtml(r.file_name)}</h2>
@@ -1711,6 +1790,7 @@
       `;
 
       wireEvents(sorted, canPatch, ext);
+      renderSeveritySummary();
 
       // Oppdater re-skann-knapp nå som lastResult er satt
       { const rb = document.getElementById("ai-rescan-btn");
@@ -1766,6 +1846,7 @@
             ? `<button class="ctrl-btn ctrl-btn-accent" id="g-patch">${t("saveAnon")} .${ext}</button>`
             : ""}
           <button class="ctrl-btn ctrl-btn-primary" id="g-anon">${t("genMd")}</button>
+          <button class="ctrl-btn ctrl-btn-primary" id="g-anon-pdf">${t("genPdf")}</button>
           <span class="anon-msg" id="g-anon-msg"></span>
         </div>`;
 
@@ -1830,7 +1911,8 @@
         document.querySelectorAll(".g-cb").forEach(cb => cb.checked = false);
 
       if (canPatch) document.getElementById("g-patch").onclick = () => postAnon("patch");
-      document.getElementById("g-anon").onclick = () => postAnon("anonymize");
+      document.getElementById("g-anon").onclick = () => postAnon("anonymize", "md");
+      document.getElementById("g-anon-pdf").onclick = () => postAnon("anonymize", "pdf");
 
       document.querySelectorAll(".wl-btn").forEach(btn =>
         btn.addEventListener("click", async () => {
@@ -1852,15 +1934,16 @@
     /* ══════════════════════════════════════════════════════════════════
        ASYNC ACTIONS
     ══════════════════════════════════════════════════════════════════ */
-    async function postAnon(endpoint) {
+    async function postAnon(endpoint, format) {
       const indices = [...document.querySelectorAll(".g-cb:checked")].map(cb => +cb.value);
       const msg = document.getElementById("g-anon-msg");
       if (!indices.length) { msg.style.color="#ffb84d"; msg.textContent=t("selectOne"); return; }
       msg.style.color="var(--muted)"; msg.textContent=t("processing");
+      const body = format ? { indices, format } : { indices };
       try {
         const d = await (await fetch(`${API}/${endpoint}`, {
           method:"POST", headers:{"Content-Type":"application/json"},
-          body: JSON.stringify({ indices }),
+          body: JSON.stringify(body),
         })).json();
         if (d.ok) { msg.style.color="#4caf50"; msg.textContent=`${t("saved")} ${d.path}`; }
         else      { msg.style.color="#f44336"; msg.textContent=`${t("errPrefix")} ${d.error}`; }
@@ -2008,7 +2091,13 @@
     dz.addEventListener("drop", async e => {
       e.preventDefault();
       dz.classList.remove("hover");
-      const file = e.dataTransfer.files[0];
+      const files = e.dataTransfer.files;
+      if (!files || !files.length) return;
+
+      // Flere filer sluppet samtidig → batch-skann
+      if (files.length > 1) { scanMultiple(files); return; }
+
+      const file = files[0];
       if (!file) return;
 
       // Strategi 1: Electron / eldre PyWebView eksponerer file.path
@@ -2391,12 +2480,16 @@
         }
         statusEl.innerHTML = `<span style="color:var(--ok)">${t("ollamaRunning")}</span>`;
         const sel  = document.getElementById("ai-model-select");
-        const prev = sel.value;
+        let saved = "";
+        try { saved = localStorage.getItem("xlent_model") || ""; } catch(_) {}
+        const prev = sel.value || saved;
         sel.innerHTML = s.models.map(m => {
           const rec = ["llama3.2:3b","llama3.2:1b","gemma2:2b","mistral:7b"].includes(m);
           return `<option value="${escapeHtml(m)}">${escapeHtml(m)}${rec ? " ★" : ""}</option>`;
         }).join("");
         if (prev && s.models.includes(prev)) sel.value = prev;
+        // Husk valgt modell mellom økter
+        sel.onchange = () => { try { localStorage.setItem("xlent_model", sel.value); } catch(_) {} };
         readyEl.style.display = "block";
       } catch (_) {
         statusEl.innerHTML   = `<span style="color:var(--danger)">${t("ollamaNotRunning")}</span>`;
@@ -2493,6 +2586,11 @@
           document.getElementById("ai-cancel-btn").style.display = "none";
           _aiFindingsData = s.findings || [];
           _renderAiFindings(_aiFindingsData);
+          // Persistér AI-funn server-side slik at de inkluderes i rapporten
+          fetch(`${API}/report/ai-findings`, {
+            method: "POST", headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ findings: _aiFindingsData, file_name: lastResult?.file_name || "" }),
+          }).catch(()=>{});
           // Vis "ferdig"-melding med antall funn
           const n = _aiFindingsData.length;
           const doneMsg = `${t("deepScanDone")} – ${n} ${t("metaFindings")}`;
@@ -2558,6 +2656,8 @@
         const total = resultEl.querySelectorAll("li.finding-row").length;
         heading.innerHTML = heading.innerHTML.replace(/\(\d+\)/, `(${total})`);
       }
+      // Oppdater sammendragsraden med AI-funn inkludert
+      renderSeveritySummary();
     }
 
     function _renderAiFindings(findings) {
@@ -2626,6 +2726,7 @@
     document.getElementById("ai-cancel-btn").addEventListener("click", _cancelAiScan);
     document.getElementById("ai-anon-btn").addEventListener("click",   _anonymizeAi);
     document.getElementById("btn-clear-result").addEventListener("click", clearResult);
+    document.getElementById("btn-copy-findings").addEventListener("click", _copyFindings);
 
     /* ══════════════════════════════════════════════════════════════════
        MODE TOGGLE (Fil / Lim inn / Mappe)
@@ -2714,12 +2815,9 @@
       }
     });
 
-    function renderFolderResults(files) {
-      const fr = document.getElementById("folder-results");
-      // Sort by risk (svart→rød→gul→grønn)
+    function _batchTableHtml(files) {
       const ord = { svart:3, rød:2, gul:1, grønn:0 };
       const sorted = [...files].sort((a,b) => (ord[b.risk_level]||0) - (ord[a.risk_level]||0));
-
       const rows = sorted.map(f => {
         const rc = LEVEL_COLOR[f.risk_level] || "#8a96a8";
         const ic = LEVEL_ICON[f.risk_level] || "•";
@@ -2735,9 +2833,7 @@
           <td style="color:var(--muted);text-align:right">${f.finding_count} ${t("metaFindings")}</td>
         </tr>`;
       }).join("");
-
-      fr.style.display = "";
-      fr.innerHTML = `
+      return `
         <div style="background:var(--panel);border:1px solid var(--border);border-radius:8px;overflow:hidden;">
           <table class="batch-table">
             <thead><tr>
@@ -2750,8 +2846,63 @@
         </div>`;
     }
 
+    function renderFolderResults(files) {
+      const fr = document.getElementById("folder-results");
+      fr.style.display = "";
+      fr.innerHTML = _batchTableHtml(files);
+    }
+
+    /* Skann flere filer sluppet samtidig i scanner-fanen → batch-tabell */
+    async function scanMultiple(fileList) {
+      const files = [...fileList];
+      clearResult();
+      setStatus(t("batchScanning").replace("{n}", files.length));
+      const opts = getOpts();
+      const results = [];
+      for (let idx = 0; idx < files.length; idx++) {
+        const file = files[idx];
+        setStatus(t("batchScanning").replace("{n}", `${idx + 1}/${files.length}`));
+        try {
+          let r;
+          const path = (file.path && file.path !== file.name) ? file.path : null;
+          if (path) {
+            r = await (await fetch(`${API}/scan`, {
+              method:"POST", headers:{"Content-Type":"application/json"},
+              body: JSON.stringify({ file_path: path, ...opts }),
+            })).json();
+          } else {
+            const buf = await file.arrayBuffer();
+            const fd  = new FormData();
+            fd.append("file", new Blob([buf]), file.name);
+            fd.append("ignore_xlent", opts.ignore_xlent);
+            fd.append("language",     opts.language);
+            r = await (await fetch(`${API}/scan-upload`, { method:"POST", body: fd })).json();
+          }
+          results.push({
+            file_name: r.file_name || file.name,
+            risk_level: r.risk_level || "grønn",
+            finding_count: (r.findings || []).filter(f => !f.category.startsWith("⚠")).length,
+            error: r.error,
+          });
+        } catch (e) {
+          results.push({ file_name: file.name, error: String(e) });
+        }
+      }
+      setStatus("");
+      lastResult = null; lastScan = null; _aiFindingsData = [];
+      resultEl.classList.add("show");
+      document.getElementById("result-header").style.display = "flex";
+      document.getElementById("btn-copy-findings").style.display = "none";
+      document.getElementById("severity-summary").innerHTML =
+        `<span style="font-size:12px;color:var(--muted);font-weight:600;">${t("batchTitle").replace("{n}", files.length)}</span>`;
+      resultEl.innerHTML = _batchTableHtml(results);
+      loadHistoryFromApi();
+    }
+
     /* Init */
     loadSettings();
+    // Anvend lagret språk (localStorage) – oppdaterer all statisk tekst hvis ≠ nb
+    if (uiLang !== "nb") setUiLang(uiLang);
     syncAboutLang();
     setStatus(t("statusReady"));
     // Apply initial placeholder translations
