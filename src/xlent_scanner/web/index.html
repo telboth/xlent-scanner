@@ -2563,15 +2563,31 @@
       } catch (_) { /* stille – prøver igjen */ }
     }
 
+    /* Speilet fra risk.py _SEVERITY_MAP – SAMME klassifisering i AI som i regelbasert. */
     function _dstSeverity(rawCat) {
       const c = (rawCat || "").replace(/^🤖\s*/u, "").toLowerCase();
-      if (c.includes("personnummer") || c.includes("fødselsnummer") ||
-          c.includes("bankkonto")    || c.includes("iban")          ||
-          c.includes("identity")     || c.includes("account number")) return "svart";
-      if (c.includes("navn") || c.includes("name") ||
-          c.includes("adresse") || c.includes("address") ||
-          c.includes("e-post") || c.includes("email") || c.includes("mail") ||
-          c.includes("telefon") || c.includes("phone")) return "rød";
+
+      // ── SVART ──────────────────────────────────────────────────────────
+      if (c.startsWith("fødselsnummer") || c.startsWith("d-nummer")      ||
+          c.startsWith("personnummer (sv)") || c.startsWith("samordningsnummer") ||
+          c.startsWith("cpr")              || c.startsWith("kontonummer") ||
+          c.startsWith("bankgiro")         || c.startsWith("plusgiro")    ||
+          c.startsWith("kredittkort")      ||
+          c.includes("national insurance") || c.includes("social security") ||
+          c.includes("private key")        || c.includes("aws access key") ||
+          c.includes("account number")     || c.includes("bankkonto"))
+        return "svart";
+
+      // ── RØD ────────────────────────────────────────────────────────────
+      if (c.startsWith("iban")                ||
+          c.includes("openai api")            || c.includes("anthropic api") ||
+          c.includes("github token")          || c.includes("azure storage") ||
+          c.includes("jwt token")             || c.includes("bearer token")  ||
+          c.includes("passord i konfig")      || c.includes("password")      ||
+          c.includes("konfidensielt dokument (overskrift)"))
+        return "rød";
+
+      // ── GUL – alt annet, inkl. navn, e-post, telefon, adresse, URL ──
       return "gul";
     }
 
@@ -2868,24 +2884,15 @@
       } catch (_) { /* stille – prøver igjen */ }
     }
 
-    /* ── Injiser AI-funn direkte inn i den eksisterende funnlisten ── */
+    /* ── Injiser AI-funn inn i den eksisterende funnlisten (sømløst, ingen separator) ── */
     function _injectAiFindingsIntoMainList(findings) {
-      // Fjern evt. tidligere injiserte AI-rader (fra forrige re-skann)
+      // Fjern evt. tidligere injiserte AI-rader
       resultEl.querySelectorAll(".ai-injected-finding, .ai-injected-sep").forEach(el => el.remove());
 
       const list = resultEl.querySelector("ul.findings-list");
-      if (!list) return;   // Ingen funnliste (tomt resultat eller feil)
+      if (!list || !findings.length) return;
 
-      if (!findings.length) return;
-
-      // Skillelinje
-      const sep = document.createElement("li");
-      sep.className = "ai-injected-sep";
-      sep.style.cssText = "list-style:none;padding:6px 0 2px;border-top:1px solid var(--border);margin-top:8px;";
-      sep.innerHTML = `<span style="font-size:11px;color:var(--muted);padding-left:4px;">🔬 ${t("aiResultsTitle")} – ${findings.length} ${t("metaFindings") || "funn"}</span>`;
-      list.appendChild(sep);
-
-      // Sorter etter alvorlighetsgrad
+      // Sorter etter alvorlighetsgrad – svart→rød→gul
       const ORDER = {svart:3, rød:2, gul:1, grønn:0};
       const sorted = [...findings].sort((a,b) =>
         (ORDER[_dstSeverity(b.category)]||0) - (ORDER[_dstSeverity(a.category)]||0));
@@ -2894,8 +2901,8 @@
         const sev   = _dstSeverity(f.category);
         const sc    = SEV_COLOR[sev] || "#ffb84d";
         const light = sev === "gul";
-        const li = document.createElement("li");
-        li.className = "finding-row ai-injected-finding";
+        const li    = document.createElement("li");
+        li.className          = "finding-row ai-injected-finding";
         li.style.borderLeftColor = sc;
         li.innerHTML = `
           <div class="finding-inner">
@@ -2910,7 +2917,7 @@
         list.appendChild(li);
       }
 
-      // Oppdater overskriften med totalt antall
+      // Oppdater overskriften med totalt antall (regelbasert + AI)
       const heading = resultEl.querySelector("h3.section-heading");
       if (heading) {
         const total = resultEl.querySelectorAll("li.finding-row").length;
