@@ -15,11 +15,14 @@ from xlent_scanner.detectors.financials import detect_financials
 from xlent_scanner.detectors.iban import detect_iban
 from xlent_scanner.detectors.keywords import detect_keywords
 from xlent_scanner.detectors.ner_names import detect_names, get_load_error
+from xlent_scanner.detectors.regex_da import detect_da_specific
+from xlent_scanner.detectors.regex_de import detect_de_specific
 from xlent_scanner.detectors.regex_en import detect_en_specific
+from xlent_scanner.detectors.regex_es import detect_es_specific
 from xlent_scanner.detectors.regex_extra import detect_extra
+from xlent_scanner.detectors.regex_fr import detect_fr_specific
 from xlent_scanner.detectors.regex_no import detect_no_specific, find_emails
 from xlent_scanner.detectors.regex_sv import detect_sv_specific
-from xlent_scanner.detectors.regex_da import detect_da_specific
 from xlent_scanner.detectors.regex_url import detect_urls
 from xlent_scanner.detectors.secrets import detect_secrets
 from xlent_scanner.ignore import filter_findings, load_ignore_list
@@ -345,14 +348,20 @@ def scan_text(text: str, language: str = "auto", source_name: str = "Innlimt tek
     _run(detect_secrets, text)
     _run(find_emails, text)
     _run(detect_urls, text)
-    if lang in ("nb", "en"):
+    if lang in ("nb", "en", "da"):
         _run(detect_no_specific, text)
     if lang in ("sv", "en"):
         _run(detect_sv_specific, text)
     if lang == "da":
         _run(detect_da_specific, text)
-    if lang == "en":
+    if lang in ("en", "de", "fr", "es"):
         _run(detect_en_specific, text)
+    if lang == "de":
+        _run(detect_de_specific, text)
+    if lang == "fr":
+        _run(detect_fr_specific, text)
+    if lang == "es":
+        _run(detect_es_specific, text)
     _run(detect_iban, text)
     _run(detect_creditcards, text)
     _run(detect_financials, text)
@@ -459,14 +468,20 @@ def scan_file(path: str | Path, ignore_xlent: bool = False, language: str = "aut
     _run(detect_secrets, text)
     _run(find_emails, text)
     _run(detect_urls, text)
-    if lang in ("nb", "en"):
+    if lang in ("nb", "en", "da"):
         _run(detect_no_specific, text)
     if lang in ("sv", "en"):
         _run(detect_sv_specific, text)
     if lang == "da":
         _run(detect_da_specific, text)
-    if lang == "en":
+    if lang in ("en", "de", "fr", "es"):
         _run(detect_en_specific, text)
+    if lang == "de":
+        _run(detect_de_specific, text)
+    if lang == "fr":
+        _run(detect_fr_specific, text)
+    if lang == "es":
+        _run(detect_es_specific, text)
     _run(detect_iban, text)
     _run(detect_creditcards, text)
     _run(detect_financials, text)

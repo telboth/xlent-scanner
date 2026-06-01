@@ -1,10 +1,17 @@
 """Språkdeteksjon og -konfigurasjon for scanneren.
 
-Støttede språk:
+Støttede dokumentspråk for detektorer:
   nb  – Norsk bokmål  (spaCy: nb_core_news_sm)
   sv  – Svenska       (spaCy: sv_core_news_sm)
   en  – English       (spaCy: en_core_web_sm)
   da  – Dansk         (spaCy: nb_core_news_sm — norsk brukes, skriftspråkene ligner)
+  de  – Deutsch       (spaCy: de_core_news_sm)
+  fr  – Français      (spaCy: fr_core_news_sm)
+  es  – Español       (spaCy: es_core_news_sm)
+
+UI-språk (grensesnittoversettelse) er uavhengig av dokumentspråket og
+håndteres i index.html (I18N-objekt). De tre nye språkene er gyldige
+UI-valg, men dokumentspråkene brukes for å velge riktige detektorer.
 """
 from __future__ import annotations
 
@@ -13,24 +20,27 @@ SUPPORTED: dict[str, str] = {
     "sv": "Svenska",
     "en": "English",
     "da": "Dansk",
+    "de": "Deutsch",
+    "fr": "Français",
+    "es": "Español",
 }
 
-# spaCy-modell og NER-label per språk.
-# Dansk gjenbruker norsk bokmål-modellen (nb_core_news_sm) — skriftspråkene
-# er tilstrekkelig like til at NER-treffkvaliteten er god nok, og
-# da_core_news_sm er ikke tilgjengelig via pip på alle plattformer.
+# spaCy-modell og NER-label per dokumentspråk.
 SPACY_CONFIG: dict[str, dict[str, str]] = {
     "nb": {"model": "nb_core_news_sm", "ner_label": "PER"},
     "sv": {"model": "sv_core_news_sm",  "ner_label": "PER"},
     "en": {"model": "en_core_web_sm",   "ner_label": "PERSON"},
-    "da": {"model": "nb_core_news_sm",  "ner_label": "PER"},
+    "da": {"model": "nb_core_news_sm",  "ner_label": "PER"},   # norsk brukes for dansk
+    "de": {"model": "de_core_news_sm",  "ner_label": "PER"},
+    "fr": {"model": "fr_core_news_sm",  "ner_label": "PER"},
+    "es": {"model": "es_core_news_sm",  "ner_label": "PER"},
 }
 
 _MIN_DETECT_CHARS = 80   # kortere tekster gir upålitelig deteksjon
 
 
 def detect_language(text: str) -> str:
-    """Detekter språk fra tekst. Returnerer 'nb', 'sv' eller 'en'.
+    """Detekter dokumentspråk. Returnerer én av kodene i SUPPORTED.
 
     Bruker de første 3000 tegnene for hastighet.
     Faller tilbake til 'nb' ved feil eller for kort tekst.
@@ -44,25 +54,15 @@ def detect_language(text: str) -> str:
         # Norsk bokmål og nynorsk → nb
         if lang in ("no", "nb", "nn"):
             return "nb"
-        if lang == "da":
-            return "da"
-        if lang == "sv":
-            return "sv"
+        if lang in SUPPORTED:
+            return lang
         return "en"
     except Exception:
         return "nb"
 
 
 def resolve_language(requested: str, text: str) -> str:
-    """Løs opp 'auto' → detektert språk; valider andre koder.
-
-    Args:
-        requested: 'auto', 'nb', 'sv' eller 'en' fra brukergrensesnittet.
-        text:      Ekstrahert dokumenttekst (brukes ved auto-deteksjon).
-
-    Returns:
-        Språkkode ('nb', 'sv' eller 'en').
-    """
+    """Løs opp 'auto' → detektert dokumentspråk; valider andre koder."""
     if requested == "auto":
         return detect_language(text)
     return requested if requested in SUPPORTED else "nb"

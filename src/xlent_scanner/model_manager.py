@@ -23,6 +23,9 @@ _MODEL_VERSIONS: dict[str, str] = {
     "nb_core_news_sm": "3.8.0",
     "sv_core_news_sm": "3.8.0",
     "en_core_web_sm":  "3.8.0",
+    "de_core_news_sm": "3.8.0",
+    "fr_core_news_sm": "3.8.0",
+    "es_core_news_sm": "3.8.0",
 }
 
 # Omtrentlig størrelse i MB (til visning i UI)
@@ -30,6 +33,9 @@ _MODEL_SIZE_MB: dict[str, int] = {
     "nb_core_news_sm": 15,
     "sv_core_news_sm": 90,
     "en_core_web_sm":  12,
+    "de_core_news_sm": 15,
+    "fr_core_news_sm": 16,
+    "es_core_news_sm": 38,
 }
 
 _BASE_URL = "https://github.com/explosion/spacy-models/releases/download"

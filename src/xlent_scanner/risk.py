@@ -11,6 +11,11 @@ _SEVERITY_MAP: list[tuple[str, str]] = [
     ("personnummer",                "svart"),   # norsk/svensk term (SV-detektor)
     ("samordningsnummer",           "svart"),
     ("cpr-nummer",                  "svart"),   # dansk personnummer
+    ("steueridentifikationsnummer", "svart"),   # tysk skatte-ID
+    ("sozialversicherungsnummer",   "svart"),   # tysk trygdenummer
+    ("numéro de sécurité",         "svart"),   # fransk trygdenummer (INSEE)
+    ("dni",                        "svart"),   # spansk nasjonalt ID
+    ("nie",                        "svart"),   # spansk utlendings-ID
     ("kontonummer",                 "svart"),
     ("bankgiro",                    "svart"),
     ("plusgiro",                    "svart"),
