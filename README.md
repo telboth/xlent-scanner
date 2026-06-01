@@ -1,6 +1,6 @@
 # XLENT Compliance-scanner
 
-> **v1.2.4** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
+> **v1.2.5** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
 
 Alt kjøres 100 % lokalt — ingen dokumenter, tekst eller funn sendes over internett.
 
@@ -258,7 +258,7 @@ En egen `create-release`-jobb oppretter releasen, deretter bygger Windows- og ma
 
 ```bash
 # Oppdater versjon i pyproject.toml + src/xlent_scanner/__init__.py, så:
-git tag v1.2.4
+git tag v1.2.5
 git push origin master --tags
 ```
 
@@ -323,6 +323,9 @@ src/xlent_scanner/
 ---
 
 ## Endringslogg
+
+### v1.2.5
+- Release-bump til 1.2.5 med samme distribusjonsoppsett som 1.2.4 (`.exe`, `.dmg`, `.AppImage`).
 
 ### v1.2.4
 - Rettet Linux-buildscript (`scripts/build_linux.sh`) med korrekt escaping for hidden imports.
