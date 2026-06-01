@@ -33,6 +33,12 @@ _SEVERITY_MAP: list[tuple[str, str]] = [
 
     # ── GUL ────────────────────────────────────────────────────────────────
     ("mulig personnummer",          "gul"),   # datoformat men ugyldig mod-11
+    ("passnummer",                  "svart"),  # biometrisk dokument-ID
+    ("ip-adresse",                  "gul"),
+    ("swift/bic",                   "gul"),
+    ("kjøretøyregistrering",        "gul"),
+    ("lønn",                        "gul"),
+    ("fødselsdato",                 "gul"),
     ("e-post",                      "gul"),
     ("telefonnummer",               "gul"),
     ("organisasjonsnummer",         "gul"),

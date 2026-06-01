@@ -16,6 +16,7 @@ from xlent_scanner.detectors.iban import detect_iban
 from xlent_scanner.detectors.keywords import detect_keywords
 from xlent_scanner.detectors.ner_names import detect_names, get_load_error
 from xlent_scanner.detectors.regex_en import detect_en_specific
+from xlent_scanner.detectors.regex_extra import detect_extra
 from xlent_scanner.detectors.regex_no import detect_no_specific, find_emails
 from xlent_scanner.detectors.regex_sv import detect_sv_specific
 from xlent_scanner.detectors.regex_da import detect_da_specific
@@ -98,17 +99,77 @@ def _extract_text_pdf(path: Path) -> str:
         return _extract_text_pdf_fitz(path)
 
 
+def _table_to_markdown(table) -> str:
+    """Konverterer en python-docx- eller python-pptx-tabell til Markdown-format.
+
+    Bevarer kolonnerelasjonene slik at AI og regelbasert skanner forstår
+    at «30» er en verdi i «Cost (NOK)»-kolonnen, ikke et løst tall.
+    Duplikate celler fra sammenslåtte celler (merged) dedupliseres per rad.
+    """
+    rows_text: list[list[str]] = []
+    for row in table.rows:
+        # python-docx gjentar samme _tc-objekt for sammenslåtte celler.
+        # Bruk XML-element-id for å deduplisere, ikke tekstinnhold –
+        # ellers mister vi reelle celler som tilfeldigvis har samme tekst.
+        seen_tc: set[int] = set()
+        cells: list[str] = []
+        for cell in row.cells:
+            tc_id = id(getattr(cell, "_tc", cell))
+            if tc_id not in seen_tc:
+                seen_tc.add(tc_id)
+                cells.append(cell.text.strip())
+        if any(c for c in cells):
+            rows_text.append(cells)
+
+    if not rows_text:
+        return ""
+
+    # Normaliser kolonnebredde
+    max_cols = max(len(r) for r in rows_text)
+    lines: list[str] = []
+    for i, row in enumerate(rows_text):
+        # Padder kortere rader
+        padded = row + [""] * (max_cols - len(row))
+        lines.append(" | ".join(padded))
+        if i == 0 and len(rows_text) > 1:
+            lines.append(" | ".join(["---"] * max_cols))
+    return "\n".join(lines)
+
+
 def _extract_text_docx(path: Path) -> str:
     from docx import Document as DocxDocument  # lazy import for packaged stability
 
     doc = DocxDocument(str(path))
     parts: list[str] = []
-    parts.extend(p.text for p in doc.paragraphs if p.text)
-    for table in doc.tables:
-        for row in table.rows:
-            for cell in row.cells:
-                if cell.text:
-                    parts.append(cell.text)
+
+    # Kombiner avsnitt og tabeller i dokumentets rekkefølge ved å iterere
+    # over XML-barna direkte, slik at tabeller dukker opp på riktig sted
+    # i teksten (f.eks. etter «Here is my budget:»-setningen).
+    from docx.oxml.ns import qn  # noqa: PLC0415
+    body = doc.element.body
+    tbl_idx = 0
+    para_idx = 0
+    for child in body:
+        tag = child.tag.split("}")[-1] if "}" in child.tag else child.tag
+        if tag == "p":
+            if para_idx < len(doc.paragraphs):
+                txt = doc.paragraphs[para_idx].text
+                if txt:
+                    parts.append(txt)
+                para_idx += 1
+        elif tag == "tbl":
+            if tbl_idx < len(doc.tables):
+                md = _table_to_markdown(doc.tables[tbl_idx])
+                if md:
+                    parts.append(md)
+                tbl_idx += 1
+
+    # Fall-back: legg til eventuelle urelaterte tabeller som ikke ble funnet i body
+    for i in range(tbl_idx, len(doc.tables)):
+        md = _table_to_markdown(doc.tables[i])
+        if md:
+            parts.append(md)
+
     return "\n".join(parts).strip()
 
 
@@ -122,10 +183,9 @@ def _extract_text_pptx(path: Path) -> str:
             if hasattr(shape, "text") and shape.text:
                 parts.append(shape.text)
             if getattr(shape, "has_table", False):
-                for row in shape.table.rows:
-                    for cell in row.cells:
-                        if cell.text:
-                            parts.append(cell.text)
+                md = _table_to_markdown(shape.table)
+                if md:
+                    parts.append(md)
         try:
             notes = slide.notes_slide.notes_text_frame.text
             if notes:
@@ -297,6 +357,7 @@ def scan_text(text: str, language: str = "auto", source_name: str = "Innlimt tek
     _run(detect_creditcards, text)
     _run(detect_financials, text)
     _run(detect_clients, text)
+    _run(detect_extra, text)
     _run(detect_names, text, lang)
 
     findings = mark_whitelist_findings(findings)
@@ -410,6 +471,7 @@ def scan_file(path: str | Path, ignore_xlent: bool = False, language: str = "aut
     _run(detect_creditcards, text)
     _run(detect_financials, text)
     _run(detect_clients, text)
+    _run(detect_extra, text)
     _run(detect_names, text, lang)
 
     if ignore_xlent:
