@@ -53,11 +53,54 @@ Alternativ B (System Settings):
 3. Bekreft at skanningen kjører uten feilmelding.
 4. Sjekk at språkvalg og oppdateringsvarsel fungerer.
 
+## Høyreklikk-skanning fra filutforsker
+
+Etter installasjon kan du skanne direkte fra filutforsker:
+
+1. Høyreklikk på en støttet fil.
+2. Velg `Scan with XLENT Scanner` (eller tilsvarende menyvalg).
+3. Appen åpner seg og starter skanning av valgt fil.
+
+## Nedlasting av spaCy-modeller
+
+Appen bruker spaCy-modeller for navnegjenkjenning (NER). Modellene lastes normalt ned automatisk ved første kjøring ved behov.
+
+Hvis automatisk nedlasting feiler:
+1. Åpne appen på nytt og prøv en ny skann (triggere ofte ny nedlasting).
+2. Kontroller at maskinen har internettilgang mot GitHub/PyPI.
+3. Kontakt intern IT hvis nettverkspolicy blokkerer nedlasting av Python-pakker.
+
+Merk:
+- Når modellene først er lastet ned, brukes de lokalt videre.
+- Dette påvirker primært navnedeteksjon, ikke de rene regex-basert kontrollene.
+
+## Ollama (kun hvis du skal bruke AI-dypskann)
+
+AI-dypskann krever lokal Ollama-installasjon. Uten Ollama fungerer vanlig skann fortsatt.
+
+1. Installer Ollama fra [https://ollama.com/download](https://ollama.com/download).
+2. Start Ollama lokalt.
+3. Åpne XLENT Scanner og aktiver dypskann.
+4. Velg ønsket modell i appen.
+
+Hvis dypskann ikke fungerer:
+1. Bekreft at Ollama kjører.
+2. Bekreft at modell er lastet ned i Ollama.
+3. Sjekk at lokal URL/port for Ollama ikke er blokkert av sikkerhetsprogramvare.
+
 ## Vanlige feil
 
 - **"Failed to fetch"**:
   - Start appen på nytt.
   - Kontroller at lokal backend kjører (for desktop starter den automatisk).
+
+- **Feil ved nedlasting av spaCy-modell**:
+  - Kontroller internettilgang og at sikkerhetsløsninger ikke blokkerer Python/GitHub/PyPI.
+  - Prøv igjen etter restart av appen.
+
+- **AI-dypskann feiler**:
+  - Kontroller at Ollama er installert og kjører.
+  - Bekreft at riktig modell er tilgjengelig i Ollama.
 
 - **Fil kan ikke leses**:
   - Test med en annen fil.
