@@ -1086,8 +1086,10 @@
         <div class="settings-section-title" data-i18n="settingsUpdateTitle">Oppdateringer</div>
         <div class="settings-row">
           <button id="btn-check-updates" class="ctrl-btn" data-i18n="updateCheckNow">Se etter oppdateringer nå</button>
+          <button id="btn-open-web-mode" class="ctrl-btn" data-i18n="openWebModeBtn">Start web-modus i nettleser</button>
         </div>
         <div class="settings-note" id="update-check-msg"></div>
+        <div class="settings-note" id="web-mode-msg"></div>
       </div>
 
       <div class="settings-note" data-i18n="settingsPersistNote">Innstillinger lagres automatisk i nettleseren.</div>
@@ -1193,6 +1195,10 @@
         updateDownload:     "Last ned siste versjon",
         updateDownloadNow:  "⬇ Last ned oppdatering",
         updateDirectInstall:"Direkte installasjon",
+        openWebModeBtn:     "🌐 Start web-modus",
+        openWebModeStarting:"Starter web-modus…",
+        openWebModeStarted: "Web-modus startet i nettleser.",
+        openWebModeFailed:  "Kunne ikke starte web-modus.",
         updateCheckNow: "Se etter oppdateringer nå",
         updateNoUpdate: "Du har nyeste versjon.",
         updateCheckFailed: "Kunne ikke sjekke oppdateringer.",
@@ -1345,6 +1351,10 @@
         updateDownload:     "Ladda ned senaste version",
         updateDownloadNow:  "⬇ Ladda ned uppdatering",
         updateDirectInstall:"Direkt installation",
+        openWebModeBtn:     "🌐 Starta webbläge",
+        openWebModeStarting:"Startar webbläge…",
+        openWebModeStarted: "Webbläge startat i webbläsaren.",
+        openWebModeFailed:  "Kunde inte starta webbläge.",
         updateCheckNow: "Sök efter uppdateringar nu",
         updateNoUpdate: "Du har senaste versionen.",
         updateCheckFailed: "Kunde inte kontrollera uppdateringar.",
@@ -1497,6 +1507,10 @@
         updateDownload:     "Download latest version",
         updateDownloadNow:  "⬇ Download update",
         updateDirectInstall:"Direct install",
+        openWebModeBtn:     "🌐 Start web mode",
+        openWebModeStarting:"Starting web mode…",
+        openWebModeStarted: "Web mode started in browser.",
+        openWebModeFailed:  "Could not start web mode.",
         updateCheckNow: "Check for updates now",
         updateNoUpdate: "You already have the latest version.",
         updateCheckFailed: "Could not check for updates.",
@@ -1608,6 +1622,10 @@
         updateDownload:      "Neueste Version herunterladen",
         updateDownloadNow:   "⬇ Update herunterladen",
         updateDirectInstall: "Direkte Installation",
+        openWebModeBtn:      "🌐 Webmodus starten",
+        openWebModeStarting: "Webmodus wird gestartet…",
+        openWebModeStarted:  "Webmodus im Browser gestartet.",
+        openWebModeFailed:   "Webmodus konnte nicht gestartet werden.",
         updateNoUpdate:      "Sie haben die neueste Version.",
         updateChecking:      "Prüfe auf Updates…",
         updateCheckBtn:      "Auf Updates prüfen",
@@ -1759,6 +1777,10 @@
         updateDownload:      "Télécharger la dernière version",
         updateDownloadNow:   "⬇ Télécharger la mise à jour",
         updateDirectInstall: "Installation directe",
+        openWebModeBtn:      "🌐 Démarrer le mode web",
+        openWebModeStarting: "Démarrage du mode web…",
+        openWebModeStarted:  "Mode web démarré dans le navigateur.",
+        openWebModeFailed:   "Impossible de démarrer le mode web.",
         updateNoUpdate:      "Vous avez la dernière version.",
         updateChecking:      "Vérification des mises à jour…",
         updateCheckBtn:      "Vérifier les mises à jour",
@@ -1910,6 +1932,10 @@
         updateDownload:      "Descargar última versión",
         updateDownloadNow:   "⬇ Descargar actualización",
         updateDirectInstall: "Instalación directa",
+        openWebModeBtn:      "🌐 Iniciar modo web",
+        openWebModeStarting: "Iniciando modo web…",
+        openWebModeStarted:  "Modo web iniciado en el navegador.",
+        openWebModeFailed:   "No se pudo iniciar el modo web.",
         updateNoUpdate:      "Tiene la versión más reciente.",
         updateChecking:      "Comprobando actualizaciones…",
         updateCheckBtn:      "Buscar actualizaciones",
@@ -2027,6 +2053,7 @@
     const updateBannerDownloadBtnEl = document.getElementById("update-banner-download-btn");
     const updateBannerBtnEl = document.getElementById("update-banner-btn");
     const updateCheckMsgEl = document.getElementById("update-check-msg");
+    const webModeMsgEl = document.getElementById("web-mode-msg");
     const ignorePathEl = document.getElementById("ignore-path");
     const ignoreEditorEl = document.getElementById("ignore-editor");
     const ignoreMsgEl = document.getElementById("ignore-msg");
@@ -2096,7 +2123,9 @@
       if (lastResult) renderResult(lastResult);
 
       // Update status if it shows a "ready" message
-      const readyMsgs = [I18N.nb.statusReady, I18N.sv.statusReady, I18N.en.statusReady];
+      const readyMsgs = Object.values(I18N)
+        .map(v => v && v.statusReady)
+        .filter(Boolean);
       if (readyMsgs.includes(statusEl.textContent)) setStatus(t("statusReady"));
 
       // Re-render history (button labels)
@@ -2163,6 +2192,26 @@
     function setUpdateCheckMessage(msg, color = "var(--muted)") {
       updateCheckMsgEl.textContent = msg;
       updateCheckMsgEl.style.color = color;
+    }
+
+    function setWebModeMessage(msg, color = "var(--muted)") {
+      if (!webModeMsgEl) return;
+      webModeMsgEl.textContent = msg;
+      webModeMsgEl.style.color = color;
+    }
+
+    async function startWebMode() {
+      setWebModeMessage(t("openWebModeStarting"), "var(--muted)");
+      try {
+        const d = await (await fetch(`${API}/web-mode/start`, { method: "POST" })).json();
+        if (d.ok) {
+          setWebModeMessage(t("openWebModeStarted"), "var(--ok)");
+        } else {
+          setWebModeMessage(`${t("openWebModeFailed")} ${d.error ? "(" + d.error + ")" : ""}`, "#f44336");
+        }
+      } catch (e) {
+        setWebModeMessage(`${t("openWebModeFailed")} ${String(e)}`, "#f44336");
+      }
     }
 
     async function runUpdateCheck(force = false) {
@@ -2787,12 +2836,32 @@
        FILE PICKER
     ══════════════════════════════════════════════════════════════════ */
     browseBtn.addEventListener("click", async () => {
+      const openBrowserFilePicker = () => {
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = ".pdf,.docx,.pptx,.xlsx,.txt,.md,.html,.csv,.eml,.rtf,.odt";
+        input.onchange = () => {
+          const file = input.files && input.files[0];
+          if (file) scanUpload(file, file.name);
+        };
+        input.click();
+      };
       try {
         const data = await (await fetch(`${API}/open-dialog`, { method:"POST" })).json();
-        if (data.path) scanPath(data.path);
+        if (data.path) {
+          scanPath(data.path);
+          return;
+        }
+        // Web-modus (eller fallback): bruk browserens innebygde filvelger
+        openBrowserFilePicker();
       } catch(e) {
-        resultEl.classList.add("show");
-        resultEl.innerHTML = `<div class="err">${escapeHtml(withLogHint(`${t("dlgErr")} ${String(e)}`))}</div>`;
+        // Hvis OS-dialog feiler i web-modus, prøv browser-filvelger før feilmelding
+        try {
+          openBrowserFilePicker();
+        } catch (_) {
+          resultEl.classList.add("show");
+          resultEl.innerHTML = `<div class="err">${escapeHtml(withLogHint(`${t("dlgErr")} ${String(e)}`))}</div>`;
+        }
       }
     });
 
@@ -2823,6 +2892,7 @@
     document.getElementById("ignoreXlent").addEventListener("change", saveSettings);
     document.getElementById("langSelect").addEventListener("change", saveSettings);
     document.getElementById("btn-check-updates").addEventListener("click", () => runUpdateCheck(true));
+    document.getElementById("btn-open-web-mode").addEventListener("click", startWebMode);
     document.getElementById("btn-ignore-reload").addEventListener("click", loadIgnoreEditor);
     document.getElementById("btn-ignore-save").addEventListener("click", saveIgnoreEditor);
     document.getElementById("btn-whitelist-reload").addEventListener("click", loadWhitelistEditor);

@@ -13,6 +13,7 @@ import logging
 import os
 import platform
 import socket
+import subprocess
 import sys
 import tempfile
 import threading
@@ -751,6 +752,17 @@ def update_check():
     return jsonify(check_for_update(current_version=__version__, force=force))
 
 
+@flask_app.route("/web-mode/start", methods=["POST"])
+def web_mode_start():
+    """Start web-modus i separat prosess fra desktop-GUI."""
+    try:
+        proc = _launch_web_mode_process()
+        return jsonify({"ok": True, "pid": proc.pid})
+    except Exception as exc:
+        LOGGER.error("web-mode/start failed: %s", traceback.format_exc())
+        return jsonify({"ok": False, "error": str(exc)})
+
+
 @flask_app.route("/whitelist/get", methods=["POST"])
 def whitelist_get():
     return jsonify({
@@ -954,6 +966,46 @@ def _start_flask(port: int) -> None:
     flask_app.run(host="127.0.0.1", port=port, threaded=True, use_reloader=False)
 
 
+def _web_mode_command() -> list[str]:
+    """Kommando for å starte web-modus i ny prosess."""
+    if getattr(sys, "frozen", False):
+        return [sys.executable, "--web"]
+    return [sys.executable, "-m", "xlent_scanner.app", "--web"]
+
+
+def _launch_web_mode_process() -> subprocess.Popen:
+    """Start web-modus i separat prosess uten å blokkere desktop-vinduet."""
+    cmd = _web_mode_command()
+    kwargs: dict = {"close_fds": True}
+    if os.name == "nt":
+        flags = 0
+        flags |= getattr(subprocess, "CREATE_NEW_PROCESS_GROUP", 0)
+        flags |= getattr(subprocess, "DETACHED_PROCESS", 0)
+        kwargs["creationflags"] = flags
+    else:
+        kwargs["start_new_session"] = True
+    return subprocess.Popen(cmd, **kwargs)
+
+
+def _run_web_mode() -> None:
+    """Kjør lokal web-modus (Flask + standard nettleser), uten PyWebView."""
+    global _port
+    _validate_runtime_dependencies()
+    _port = _free_port()
+    url = f"http://127.0.0.1:{_port}"
+    LOGGER.info("Starting WEB mode on %s", url)
+
+    def _open_browser() -> None:
+        time.sleep(0.5)
+        try:
+            webbrowser.open(url)
+        except Exception:
+            LOGGER.warning("Could not open browser automatically for %s", url)
+
+    threading.Thread(target=_open_browser, daemon=True, name="web-mode-browser").start()
+    _start_flask(_port)
+
+
 def _wait_for_flask(port: int, timeout: float = 10.0) -> None:
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
@@ -1072,6 +1124,11 @@ def main() -> None:
         _cli_scan()
         return  # _cli_scan kaller sys.exit, men for type-checker:
         return  # noqa: unreachable
+
+    # ── WEB-modus (lokal nettleser, uten desktop-vindu) ────────────────────
+    if "--web" in sys.argv:
+        _run_web_mode()
+        return
 
     # ── Fil fra Windows kontekstmeny (argv[1]) ──────────────────────────────
     if len(sys.argv) > 1 and not sys.argv[1].startswith("--"):
