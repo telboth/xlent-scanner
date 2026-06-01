@@ -168,4 +168,4 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="${{ needs.create-release.outputs.tag }}"
-          gh release upload "$TAG" artifacts/linux/installer/*.AppImage --clobber
+          gh release upload "$TAG" artifacts/linux/installer/xlent-scanner-linux-*.AppImage --clobber

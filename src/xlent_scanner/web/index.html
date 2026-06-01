@@ -844,6 +844,168 @@
         </div>
         <p style="color:var(--muted);font-size:12px;">Written by thomas.elboth@xlent.no</p>
       </div>
+
+      <!-- German -->
+      <div class="about-content" id="about-de">
+        <h2>XLENT Compliance-scanner</h2>
+        <p class="tagline">Schützen Sie sensible Kundendaten — prüfen Sie das Dokument, <em>bevor</em> Sie es in ChatGPT, Claude oder Copilot einfügen.</p>
+        <div class="about-section">
+          <h3>Was macht das Tool?</h3>
+          <p>Der Compliance-Scanner analysiert Dokumente automatisch und sucht nach sensiblen Informationen wie Personenkennzahlen, Namen, API-Schlüsseln, geschäftskritischen Kennzahlen (Stundensätze, Tagessätze, Projektsummen, Margen und Rabatte) sowie vertraulichen Schlüsselwörtern. Die Treffer werden als Ampel-Risikostufe dargestellt.</p>
+        </div>
+        <div class="about-section">
+          <div class="local-badge"><span class="icon">🔒</span><span><strong>100 % lokal</strong> — keine Dokumente, keine Texte und keine Treffer werden über das Internet gesendet.<br>Die Datei verlässt Ihren Rechner nie.</span></div>
+        </div>
+        <div class="about-section">
+          <h3>Wonach sucht das Tool?</h3>
+          <ul>
+            <li>Personenkennzahlen und Geburtsdaten (norwegische Mod-11-Validierung)</li>
+            <li>Personennamen — per Machine Learning (spaCy NER, Download über Einstellungen → Namensmodelle)</li>
+            <li>E-Mail-Adressen und Telefonnummern</li>
+            <li>Kontonummern und Organisationsnummern</li>
+            <li>API-Schlüssel, Tokens und Passwörter</li>
+            <li>Geschäftskennzahlen (Stundensatz, Tagessatz, Projektsumme, Marge und Rabatt)</li>
+            <li>Vertrauliche Schlüsselwörter ("vertraulich", "geheim" usw.)</li>
+            <li>Kundennamen aus interner Kundenliste</li>
+            <li>Hochentropie-Strings (mögliche geheime Schlüssel)</li>
+          </ul>
+        </div>
+        <div class="about-section">
+          <h3>Ampelstufen</h3>
+          <div class="tl-grid">
+            <div class="tl-dot" style="background:#4caf50"></div><span><strong>Grün</strong> — Keine sensiblen Treffer. Das Dokument ist wahrscheinlich sicher.</span>
+            <div class="tl-dot" style="background:#ffb84d"></div><span><strong>Gelb</strong> — Potenziell sensible Treffer. Prüfen und bewerten.</span>
+            <div class="tl-dot" style="background:#f44336"></div><span><strong>Rot</strong> — Sensible Treffer. Nicht ohne manuelle Prüfung teilen.</span>
+            <div class="tl-dot" style="background:#9c27b0"></div><span><strong>Schwarz</strong> — Kritische Treffer (Geheimnisse, ID-Nummern). Nicht teilen.</span>
+          </div>
+        </div>
+        <div class="about-section">
+          <h3>Whitelist — reduziert Fehlalarme</h3>
+          <p>Gelbe und rote Treffer können per Klick auf "+ Whitelist" zu Ihrer persönlichen Whitelist hinzugefügt werden. Diese Werte werden in künftigen Scans nicht mehr angezeigt.</p>
+          <p style="color:var(--muted);font-size:12px;">Die Whitelist wird lokal gespeichert und nie geteilt.</p>
+        </div>
+        <div class="about-section">
+          <h3>Anonymisierung und Export</h3>
+          <p>Nach dem Scan können Sie Treffer auswählen und eine anonymisierte Version erzeugen. Bei DOCX, PPTX, XLSX und PDF wird der Text direkt in der Datei ersetzt. Treffer lassen sich auch als JSON oder CSV exportieren.</p>
+          <p style="color:var(--muted);font-size:12px;">⚠ Bei PDF wird Text im Inhaltsstrom ersetzt, aber Text in Metadaten oder Bildern wird nicht anonymisiert. Ergebnis prüfen.</p>
+        </div>
+        <div class="about-section">
+          <h3>KI-Tiefenscan (Ollama)</h3>
+          <p>Der Tab Tiefenscan sendet den Dokumenttext an ein lokales KI-Modell über <strong>Ollama</strong> und identifiziert sensible Informationen, die regelbasierte Detektoren übersehen können — z. B. Namen in ungewöhnlichen Formaten, Adressen ohne Postleitzahl oder Budgetwerte in Freitext.</p>
+          <p>Sie wählen selbst die Kategorien: Namen, Adressen, Telefonnummern, Personenkennzahlen, Kontonummern, Firmennamen und Budgetbeträge. Ausgewählte Treffer können direkt im Tab anonymisiert und als Textdatei im Download-Ordner gespeichert werden.</p>
+          <div class="local-badge" style="margin-top:8px"><span class="icon">⏱️</span><span><strong>Hardware:</strong> Tiefenscan kann je nach Dokumentgröße wenige Sekunden bis mehrere Minuten dauern. Empfohlen: mindestens 8 GB RAM und eine relativ moderne CPU (ca. 2018 oder neuer). <strong>GPU-Beschleunigung</strong> (NVIDIA/AMD) wird automatisch genutzt, falls verfügbar, und verkürzt die Analysezeit deutlich. Die App zeigt an, ob CPU oder GPU verwendet wird.</span></div>
+          <p style="margin-top:8px;">Ollama ist kostenlos verfügbar unter <a href="https://ollama.ai" target="_blank" style="color:var(--accent)">ollama.ai</a>. Empfohlenes Modell: <strong>llama3.2:3b</strong> (~1,9 GB).</p>
+        </div>
+        <p style="color:var(--muted);font-size:12px;">Geschrieben von thomas.elboth@xlent.no</p>
+      </div>
+
+      <!-- French -->
+      <div class="about-content" id="about-fr">
+        <h2>XLENT Compliance-scanner</h2>
+        <p class="tagline">Protégez les données sensibles des clients — vérifiez le document <em>avant</em> de le coller dans ChatGPT, Claude ou Copilot.</p>
+        <div class="about-section">
+          <h3>Que fait l’outil ?</h3>
+          <p>Le scanner de conformité analyse automatiquement les documents et recherche des informations sensibles comme les identifiants personnels, les noms, les clés API, les chiffres commerciaux sensibles (taux horaire, taux journalier, total projet, marge et remise) et des mots-clés confidentiels. Les résultats sont présentés sous forme de niveau de risque type feu tricolore.</p>
+        </div>
+        <div class="about-section">
+          <div class="local-badge"><span class="icon">🔒</span><span><strong>100 % local</strong> — aucun document, aucun texte et aucun résultat n’est envoyé sur Internet.<br>Le fichier ne quitte jamais votre machine.</span></div>
+        </div>
+        <div class="about-section">
+          <h3>Que recherche l’outil ?</h3>
+          <ul>
+            <li>Identifiants personnels et dates de naissance (validation Mod-11 norvégienne)</li>
+            <li>Noms de personnes — via apprentissage automatique (spaCy NER, téléchargement via Paramètres → Modèles de noms)</li>
+            <li>Adresses e-mail et numéros de téléphone</li>
+            <li>Numéros de compte et numéros d’organisation</li>
+            <li>Clés API, tokens et mots de passe</li>
+            <li>Indicateurs commerciaux (taux horaire, taux journalier, total projet, marge et remise)</li>
+            <li>Mots-clés confidentiels ("confidentiel", "secret", etc.)</li>
+            <li>Noms de clients depuis la liste interne</li>
+            <li>Chaînes à forte entropie (clés secrètes possibles)</li>
+          </ul>
+        </div>
+        <div class="about-section">
+          <h3>Niveaux de risque</h3>
+          <div class="tl-grid">
+            <div class="tl-dot" style="background:#4caf50"></div><span><strong>Vert</strong> — Aucun résultat sensible. Le document est probablement sûr.</span>
+            <div class="tl-dot" style="background:#ffb84d"></div><span><strong>Jaune</strong> — Résultats potentiellement sensibles. Vérifiez et décidez.</span>
+            <div class="tl-dot" style="background:#f44336"></div><span><strong>Rouge</strong> — Résultats sensibles. Ne pas partager sans vérification manuelle.</span>
+            <div class="tl-dot" style="background:#9c27b0"></div><span><strong>Noir</strong> — Résultats critiques (secrets, identifiants). Ne pas partager.</span>
+          </div>
+        </div>
+        <div class="about-section">
+          <h3>Liste blanche — réduit les faux positifs</h3>
+          <p>Les résultats jaunes et rouges peuvent être ajoutés à votre liste blanche personnelle via "+ Liste blanche". Ces valeurs n’apparaîtront plus dans les futurs scans.</p>
+          <p style="color:var(--muted);font-size:12px;">La liste blanche est stockée localement et n’est jamais partagée.</p>
+        </div>
+        <div class="about-section">
+          <h3>Anonymisation et export</h3>
+          <p>Après le scan, vous pouvez sélectionner des résultats et générer une version anonymisée. Pour DOCX, PPTX, XLSX et PDF, le texte est remplacé directement dans le fichier. Les résultats peuvent aussi être exportés en JSON ou CSV.</p>
+          <p style="color:var(--muted);font-size:12px;">⚠ Dans les PDF, le texte est remplacé dans le flux de contenu, mais le texte des métadonnées ou des images n’est pas anonymisé. Vérifiez le résultat.</p>
+        </div>
+        <div class="about-section">
+          <h3>Analyse IA approfondie (Ollama)</h3>
+          <p>L’onglet d’analyse approfondie envoie le texte du document à un modèle IA local via <strong>Ollama</strong> pour identifier des informations sensibles que les détecteurs à règles peuvent manquer — par exemple des noms dans des formats inhabituels, des adresses sans code postal ou des montants de budget en texte libre.</p>
+          <p>Vous choisissez les catégories à rechercher : noms, adresses, numéros de téléphone, identifiants personnels, numéros de compte, noms d’entreprise et montants budgétaires. Les résultats sélectionnés peuvent être anonymisés directement depuis l’onglet et enregistrés en fichier texte dans le dossier Téléchargements.</p>
+          <div class="local-badge" style="margin-top:8px"><span class="icon">⏱️</span><span><strong>Configuration matérielle :</strong> l’analyse approfondie peut prendre de quelques secondes à plusieurs minutes selon la taille du document. Recommandé : au moins 8 Go de RAM et un CPU relativement moderne (vers 2018 ou plus récent). L’<strong>accélération GPU</strong> (NVIDIA/AMD) est utilisée automatiquement si disponible et réduit nettement le temps d’analyse. L’application indique si elle tourne sur CPU ou GPU.</span></div>
+          <p style="margin-top:8px;">Ollama est disponible gratuitement sur <a href="https://ollama.ai" target="_blank" style="color:var(--accent)">ollama.ai</a>. Modèle recommandé : <strong>llama3.2:3b</strong> (~1,9 Go).</p>
+        </div>
+        <p style="color:var(--muted);font-size:12px;">Écrit par thomas.elboth@xlent.no</p>
+      </div>
+
+      <!-- Spanish -->
+      <div class="about-content" id="about-es">
+        <h2>XLENT Compliance-scanner</h2>
+        <p class="tagline">Proteja los datos sensibles de clientes — revise el documento <em>antes</em> de pegarlo en ChatGPT, Claude o Copilot.</p>
+        <div class="about-section">
+          <h3>¿Qué hace la herramienta?</h3>
+          <p>El escáner de cumplimiento analiza documentos automáticamente y busca información sensible como números de identificación personal, nombres, claves API, métricas comerciales sensibles (tarifa por hora, tarifa diaria, total de proyecto, margen y descuento) y palabras clave confidenciales. Los hallazgos se muestran como nivel de riesgo tipo semáforo.</p>
+        </div>
+        <div class="about-section">
+          <div class="local-badge"><span class="icon">🔒</span><span><strong>Ejecución 100 % local</strong> — no se envían documentos, texto ni hallazgos por Internet.<br>El archivo nunca sale de su equipo.</span></div>
+        </div>
+        <div class="about-section">
+          <h3>¿Qué busca la herramienta?</h3>
+          <ul>
+            <li>Números de identificación y fechas de nacimiento (validación noruega Mod-11)</li>
+            <li>Nombres de personas — mediante aprendizaje automático (spaCy NER, descarga en Configuración → Modelos de nombres)</li>
+            <li>Direcciones de correo y números de teléfono</li>
+            <li>Números de cuenta y números de organización</li>
+            <li>Claves API, tokens y contraseñas</li>
+            <li>Métricas comerciales (tarifa por hora, tarifa diaria, total del proyecto, margen y descuento)</li>
+            <li>Palabras clave confidenciales ("confidencial", "secreto", etc.)</li>
+            <li>Nombres de clientes de la lista interna</li>
+            <li>Cadenas de alta entropía (posibles claves secretas)</li>
+          </ul>
+        </div>
+        <div class="about-section">
+          <h3>Niveles de semáforo</h3>
+          <div class="tl-grid">
+            <div class="tl-dot" style="background:#4caf50"></div><span><strong>Verde</strong> — No hay hallazgos sensibles. El documento probablemente es seguro.</span>
+            <div class="tl-dot" style="background:#ffb84d"></div><span><strong>Amarillo</strong> — Hallazgos potencialmente sensibles. Revise y evalúe.</span>
+            <div class="tl-dot" style="background:#f44336"></div><span><strong>Rojo</strong> — Hallazgos sensibles. No compartir sin revisión manual.</span>
+            <div class="tl-dot" style="background:#9c27b0"></div><span><strong>Negro</strong> — Hallazgos críticos (secretos, identificadores). No compartir.</span>
+          </div>
+        </div>
+        <div class="about-section">
+          <h3>Lista blanca — reduce falsos positivos</h3>
+          <p>Los hallazgos amarillos y rojos pueden añadirse a su lista blanca personal con "+ Lista blanca". Esos valores no aparecerán en análisis futuros.</p>
+          <p style="color:var(--muted);font-size:12px;">La lista blanca se guarda localmente y nunca se comparte.</p>
+        </div>
+        <div class="about-section">
+          <h3>Anonimización y exportación</h3>
+          <p>Después del análisis puede seleccionar hallazgos y generar una versión anonimizada. En DOCX, PPTX, XLSX y PDF el texto se reemplaza directamente en el archivo. También puede exportar hallazgos como JSON o CSV.</p>
+          <p style="color:var(--muted);font-size:12px;">⚠ En PDF se reemplaza texto en el flujo de contenido, pero el texto en metadatos o imágenes no se anonimiza. Verifique el resultado.</p>
+        </div>
+        <div class="about-section">
+          <h3>Escaneo profundo con IA (Ollama)</h3>
+          <p>La pestaña de escaneo profundo envía el texto del documento a un modelo de IA local vía <strong>Ollama</strong> para identificar información sensible que los detectores basados en reglas pueden pasar por alto — por ejemplo nombres en formatos inusuales, direcciones sin código postal o cifras de presupuesto en texto libre.</p>
+          <p>Usted elige las categorías que la IA debe buscar: nombres, direcciones, teléfonos, identificaciones personales, números de cuenta, nombres de empresa y montos de presupuesto. Los hallazgos seleccionados pueden anonimizarse directamente desde la pestaña y guardarse como archivo de texto en Descargas.</p>
+          <div class="local-badge" style="margin-top:8px"><span class="icon">⏱️</span><span><strong>Requisitos de hardware:</strong> el escaneo profundo puede tardar desde segundos hasta varios minutos según el tamaño del documento. Recomendado: al menos 8 GB de RAM y una CPU relativamente moderna (aprox. 2018 o posterior). La <strong>aceleración por GPU</strong> (NVIDIA/AMD) se usa automáticamente cuando está disponible y reduce significativamente el tiempo de análisis. La app muestra si se ejecuta en CPU o GPU.</span></div>
+          <p style="margin-top:8px;">Ollama se descarga gratis en <a href="https://ollama.ai" target="_blank" style="color:var(--accent)">ollama.ai</a>. Modelo recomendado: <strong>llama3.2:3b</strong> (~1,9 GB).</p>
+        </div>
+        <p style="color:var(--muted);font-size:12px;">Escrito por thomas.elboth@xlent.no</p>
+      </div>
     </div>
 
     <!-- ── Settings panel ────────────────────────────────────────── -->
@@ -859,6 +1021,9 @@
             <option value="nb">🇳🇴 Norsk</option>
             <option value="sv">🇸🇪 Svenska</option>
             <option value="en">🇬🇧 English</option>
+            <option value="de">🇩🇪 Deutsch</option>
+            <option value="fr">🇫🇷 Français</option>
+            <option value="es">🇪🇸 Español</option>
           </select>
         </div>
         <div class="settings-note" data-i18n="settingsDocLangNote">Auto-detektering bestemmer dokumentspråket automatisk og velger riktige mønstre.</div>
