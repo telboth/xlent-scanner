@@ -525,6 +525,7 @@
   </nav>
   <div id="update-banner" class="update-banner">
     <span class="msg" id="update-banner-msg"></span>
+    <button class="btn" id="update-banner-download-btn"></button>
     <button class="btn" id="update-banner-btn"></button>
   </div>
 
@@ -1190,6 +1191,7 @@
         updateAvailable: "Ny versjon tilgjengelig:",
         updateOpenRelease: "⬇ Åpne nedlasting",
         updateDownload:     "Last ned siste versjon",
+        updateDownloadNow:  "⬇ Last ned oppdatering",
         updateDirectInstall:"Direkte installasjon",
         updateCheckNow: "Se etter oppdateringer nå",
         updateNoUpdate: "Du har nyeste versjon.",
@@ -1341,6 +1343,7 @@
         updateAvailable: "Ny version tillgänglig:",
         updateOpenRelease: "⬇ Öppna nedladdning",
         updateDownload:     "Ladda ned senaste version",
+        updateDownloadNow:  "⬇ Ladda ned uppdatering",
         updateDirectInstall:"Direkt installation",
         updateCheckNow: "Sök efter uppdateringar nu",
         updateNoUpdate: "Du har senaste versionen.",
@@ -1492,6 +1495,7 @@
         updateAvailable: "New version available:",
         updateOpenRelease: "⬇ Open download",
         updateDownload:     "Download latest version",
+        updateDownloadNow:  "⬇ Download update",
         updateDirectInstall:"Direct install",
         updateCheckNow: "Check for updates now",
         updateNoUpdate: "You already have the latest version.",
@@ -1602,6 +1606,7 @@
         updateAvailable:     "Neue Version verfügbar:",
         updateOpenRelease:   "⬇ Download öffnen",
         updateDownload:      "Neueste Version herunterladen",
+        updateDownloadNow:   "⬇ Update herunterladen",
         updateDirectInstall: "Direkte Installation",
         updateNoUpdate:      "Sie haben die neueste Version.",
         updateChecking:      "Prüfe auf Updates…",
@@ -1752,6 +1757,7 @@
         updateAvailable:     "Nouvelle version disponible :",
         updateOpenRelease:   "⬇ Ouvrir le téléchargement",
         updateDownload:      "Télécharger la dernière version",
+        updateDownloadNow:   "⬇ Télécharger la mise à jour",
         updateDirectInstall: "Installation directe",
         updateNoUpdate:      "Vous avez la dernière version.",
         updateChecking:      "Vérification des mises à jour…",
@@ -1902,6 +1908,7 @@
         updateAvailable:     "Nueva versión disponible:",
         updateOpenRelease:   "⬇ Abrir descarga",
         updateDownload:      "Descargar última versión",
+        updateDownloadNow:   "⬇ Descargar actualización",
         updateDirectInstall: "Instalación directa",
         updateNoUpdate:      "Tiene la versión más reciente.",
         updateChecking:      "Comprobando actualizaciones…",
@@ -2017,6 +2024,7 @@
     const resultEl = document.getElementById("result");
     const updateBannerEl = document.getElementById("update-banner");
     const updateBannerMsgEl = document.getElementById("update-banner-msg");
+    const updateBannerDownloadBtnEl = document.getElementById("update-banner-download-btn");
     const updateBannerBtnEl = document.getElementById("update-banner-btn");
     const updateCheckMsgEl = document.getElementById("update-check-msg");
     const ignorePathEl = document.getElementById("ignore-path");
@@ -2140,19 +2148,15 @@
         "https://github.com/telboth/xlent-scanner/releases"
       );
       const installerUrl = String(lastUpdateCheck.installer_url || releaseUrl);
-      const showInstaller = installerUrl && installerUrl !== releaseUrl;
+      const installerName = String(lastUpdateCheck.installer_name || "");
+      const installerHint = installerName ? ` (${installerName})` : "";
       updateBannerMsgEl.innerHTML =
-        `${t("updateAvailable")} <strong>${latest}</strong> (v${APP_VERSION}) — `
-        + `<a href="${releaseUrl}" target="_blank" rel="noopener"
-             style="color:inherit;font-weight:600;text-decoration:underline;"
-             title="${t('updateOpenRelease')}">${t("updateDownload")}</a>`
-        + (showInstaller
-            ? ` · <a href="${installerUrl}" target="_blank" rel="noopener"
-                 style="color:inherit;font-weight:600;text-decoration:underline;"
-                 title="${t('updateDirectInstall')}">${t("updateDirectInstall")}</a>`
-            : "");
+        `${t("updateAvailable")} <strong>${latest}</strong> (v${APP_VERSION})${installerHint}`;
+      updateBannerDownloadBtnEl.textContent = t("updateDownloadNow");
+      updateBannerDownloadBtnEl.title = t("updateDirectInstall");
+      updateBannerDownloadBtnEl.onclick = () => window.open(installerUrl, "_blank");
       updateBannerBtnEl.textContent = t("updateOpenRelease");
-      updateBannerBtnEl.onclick = () => window.open(installerUrl, "_blank");
+      updateBannerBtnEl.onclick = () => window.open(releaseUrl, "_blank");
       updateBannerEl.style.display = "flex";
     }
 
@@ -2563,9 +2567,9 @@
       if (!sorted.length) return;
 
       document.getElementById("g-sel-all")?.addEventListener("click", () =>
-        document.querySelectorAll(".g-cb").forEach(cb => cb.checked = true));
+        document.querySelectorAll(".g-cb, .g-ai-cb").forEach(cb => cb.checked = true));
       document.getElementById("g-sel-none")?.addEventListener("click", () =>
-        document.querySelectorAll(".g-cb").forEach(cb => cb.checked = false));
+        document.querySelectorAll(".g-cb, .g-ai-cb").forEach(cb => cb.checked = false));
 
       // Null-sjekk: knappene finnes bare når det er funn (ellers TypeError ved høyreklikk/startup)
       if (canPatch) document.getElementById("g-patch")?.addEventListener("click", () => postAnon("patch"));
@@ -2594,10 +2598,14 @@
     ══════════════════════════════════════════════════════════════════ */
     async function postAnon(endpoint, format) {
       const indices = [...document.querySelectorAll(".g-cb:checked")].map(cb => +cb.value);
+      const aiTexts = [...document.querySelectorAll(".g-ai-cb:checked")]
+        .map(cb => (cb.dataset.aiText || "").trim())
+        .filter(Boolean);
+      const aiTextsUnique = [...new Set(aiTexts)];
       const msg = document.getElementById("g-anon-msg");
-      if (!indices.length) { msg.style.color="#ffb84d"; msg.textContent=t("selectOne"); return; }
+      if (!indices.length && !aiTextsUnique.length) { msg.style.color="#ffb84d"; msg.textContent=t("selectOne"); return; }
       msg.style.color="var(--muted)"; msg.textContent=t("processing");
-      const body = format ? { indices, format } : { indices };
+      const body = format ? { indices, ai_texts: aiTextsUnique, format } : { indices, ai_texts: aiTextsUnique };
       try {
         const d = await (await fetch(`${API}/${endpoint}`, {
           method:"POST", headers:{"Content-Type":"application/json"},
@@ -3334,6 +3342,7 @@
         li.style.borderLeftColor = sc;
         li.innerHTML = `
           <div class="finding-inner">
+            <input type="checkbox" class="g-ai-cb" checked>
             <div class="finding-body">
               <div>
                 <span class="cat" style="background:${sc};color:${light?"#1a1a1a":"#fff"}">${escapeHtml(f.category||"AI-funn")}</span>
@@ -3343,6 +3352,8 @@
             </div>
             ${wlBtn}
           </div>`;
+        const aiCb = li.querySelector(".g-ai-cb");
+        if (aiCb) aiCb.dataset.aiText = String(f.text || "");
         list.appendChild(li);
       }
 

@@ -1,6 +1,6 @@
 # XLENT Compliance-scanner
 
-> **v1.2.6** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
+> **v1.2.7** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
 
 Alt kjøres 100 % lokalt — ingen dokumenter, tekst eller funn sendes over internett.
 
@@ -258,7 +258,7 @@ En egen `create-release`-jobb oppretter releasen, deretter bygger Windows- og ma
 
 ```bash
 # Oppdater versjon i pyproject.toml + src/xlent_scanner/__init__.py, så:
-git tag v1.2.6
+git tag v1.2.7
 git push origin master --tags
 ```
 
@@ -323,6 +323,11 @@ src/xlent_scanner/
 ---
 
 ## Endringslogg
+
+### v1.2.7
+- La til avhuking for AI-dybdeskann-funn i den sammenslåtte funnlisten.
+- Knyttet avhukede AI-funn til anonymisering/patch, slik at de faktisk tas med eller utelates.
+- Oppdateringsbanner har egen knapp for direkte nedlasting av riktig installer for maskintype.
 
 ### v1.2.6
 - La til full «Om programmet»-tekst på tysk, fransk og spansk.

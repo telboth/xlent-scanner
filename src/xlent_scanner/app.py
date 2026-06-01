@@ -43,6 +43,7 @@ from xlent_scanner.ignore import (
     ignore_path_str,
     save_ignore_toml_text,
 )
+from xlent_scanner.models import Finding
 from xlent_scanner.patch import SUPPORTED_PATCH_SUFFIXES, patch_file
 from xlent_scanner.report import generate_html
 from xlent_scanner.history import add_history_entry, load_history, clear_history
@@ -549,11 +550,20 @@ def anonymize():
         return jsonify({"error": "Originaltekst ikke tilgjengelig. Re-skann filen."})
     data = request.get_json(force=True)
     indices = data.get("indices", [])
+    ai_texts_raw = data.get("ai_texts", [])
     selected = [
         _last_result.findings[i]
         for i in indices
         if isinstance(i, int) and 0 <= i < len(_last_result.findings)
     ]
+    ai_texts: list[str] = []
+    if isinstance(ai_texts_raw, list):
+        ai_texts = [str(t).strip() for t in ai_texts_raw if isinstance(t, str) and str(t).strip()]
+    if ai_texts:
+        selected.extend(
+            Finding(category="🤖 AI-funn", text=t, context="", severity="gul", raw_text=t)
+            for t in ai_texts
+        )
     cleaned = anonymize_text(_last_result.original_text, selected)
     fmt = (data.get("format") or "md").lower()
     if fmt not in ("md", "pdf"):
@@ -590,11 +600,20 @@ def patch():
 
     data = request.get_json(force=True)
     indices = data.get("indices", [])
+    ai_texts_raw = data.get("ai_texts", [])
     selected = [
         _last_result.findings[i]
         for i in indices
         if isinstance(i, int) and 0 <= i < len(_last_result.findings)
     ]
+    ai_texts: list[str] = []
+    if isinstance(ai_texts_raw, list):
+        ai_texts = [str(t).strip() for t in ai_texts_raw if isinstance(t, str) and str(t).strip()]
+    if ai_texts:
+        selected.extend(
+            Finding(category="🤖 AI-funn", text=t, context="", severity="gul", raw_text=t)
+            for t in ai_texts
+        )
     replacements = build_replacements(selected)
     if not replacements:
         return jsonify({"error": "Ingen av de valgte funnene kan anonymiseres direkte."})
