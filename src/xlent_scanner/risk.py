@@ -93,9 +93,16 @@ def _category_severity(category: str) -> str:
 
 
 def assess(result: ScanResult) -> ScanResult:
-    """Beriker ScanResult med risk_level, risk_summary og recommended_action."""
+    """Beriker ScanResult med risk_level, risk_summary og recommended_action.
+
+    Funn som allerede er markert som «grønn» (hvitelistede) beholder sin severity
+    og teller ikke med i det overordnede risikonivået.
+    """
     overall = "grønn"
     for f in result.findings:
+        if f.severity == "grønn":
+            # Hvitelistet funn – behold grønn, påvirker ikke risikonivå
+            continue
         sev = _category_severity(f.category)
         f.severity = sev
         if _LEVEL_ORDER[sev] > _LEVEL_ORDER[overall]:

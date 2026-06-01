@@ -456,16 +456,19 @@ def _run_deep_scan(
         if _CONF_ORDER.get(str(f.get("confidence", "medium")).lower(), 1) >= min_conf_val
     ]
 
-    # Filtrer mot brukerens whitelist – samme logikk som regelbasert skann
+    # Marker whitelist-funn som grønne (same logikk som regelbasert skann)
     try:
         from xlent_scanner.whitelist import load_whitelist  # noqa: PLC0415
         wl = load_whitelist()
         if wl:
-            before = len(deduped)
-            deduped = [f for f in deduped if f.get("text", "").lower() not in wl]
-            removed = before - len(deduped)
-            if removed:
-                LOGGER.info("AI-whitelist: fjernet %d funn", removed)
+            marked = 0
+            for f in deduped:
+                if f.get("text", "").lower() in wl:
+                    f["severity"] = "grønn"
+                    f["whitelisted"] = True
+                    marked += 1
+            if marked:
+                LOGGER.info("AI-whitelist: markerte %d funn som grønne", marked)
     except Exception as exc:
         LOGGER.warning("AI-whitelist-filter feilet: %s", exc)
 

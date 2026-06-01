@@ -1009,6 +1009,7 @@
         settingsPersistNote: "Innstillinger lagres automatisk i nettleseren.",
         updateAvailable: "Ny versjon tilgjengelig:",
         updateOpenRelease: "⬇ Åpne nedlasting",
+        updateDownload:     "Last ned siste versjon",
         updateCheckNow: "Se etter oppdateringer nå",
         updateNoUpdate: "Du har nyeste versjon.",
         updateCheckFailed: "Kunne ikke sjekke oppdateringer.",
@@ -1154,6 +1155,7 @@
         settingsPersistNote: "Inställningar sparas automatiskt i webbläsaren.",
         updateAvailable: "Ny version tillgänglig:",
         updateOpenRelease: "⬇ Öppna nedladdning",
+        updateDownload:     "Ladda ned senaste version",
         updateCheckNow: "Sök efter uppdateringar nu",
         updateNoUpdate: "Du har senaste versionen.",
         updateCheckFailed: "Kunde inte kontrollera uppdateringar.",
@@ -1299,6 +1301,7 @@
         settingsPersistNote: "Settings are saved automatically in the browser.",
         updateAvailable: "New version available:",
         updateOpenRelease: "⬇ Open download",
+        updateDownload:     "Download latest version",
         updateCheckNow: "Check for updates now",
         updateNoUpdate: "You already have the latest version.",
         updateCheckFailed: "Could not check for updates.",
@@ -1493,15 +1496,17 @@
         return;
       }
       const latest = String(lastUpdateCheck.latest_version || "");
-      updateBannerMsgEl.textContent = `${t("updateAvailable")} ${latest} (v${APP_VERSION})`;
+      const releaseUrl = String(
+        lastUpdateCheck.release_url ||
+        "https://github.com/telboth/xlent-scanner/releases"
+      );
+      updateBannerMsgEl.innerHTML =
+        `${t("updateAvailable")} <strong>${latest}</strong> (v${APP_VERSION}) — `
+        + `<a href="${releaseUrl}" target="_blank" rel="noopener"
+             style="color:inherit;font-weight:600;text-decoration:underline;"
+             title="${t('updateOpenRelease')}">${t("updateDownload")}</a>`;
       updateBannerBtnEl.textContent = t("updateOpenRelease");
-      updateBannerBtnEl.onclick = () => {
-        const url = String(
-          lastUpdateCheck.release_url ||
-          "https://github.com/telboth/xlent-scanner/releases"
-        );
-        window.open(url, "_blank");
-      };
+      updateBannerBtnEl.onclick = () => window.open(releaseUrl, "_blank");
       updateBannerEl.style.display = "flex";
     }
 
@@ -1674,24 +1679,26 @@
       setStatus("");
     }
 
-    /* Sammendragsrad: fargede badges med antall per alvorlighetsgrad (regel + AI) */
+    /* Sammendragsrad: fargede badges med antall per alvorlighetsgrad (regel + AI).
+       Grønne funn = hvitelistede (funnet men godkjent av brukeren). */
     function renderSeveritySummary() {
       const el = document.getElementById("severity-summary");
       if (!el) return;
-      const counts = { svart:0, rød:0, gul:0 };
+      const counts = { svart:0, rød:0, gul:0, grønn:0 };
       (lastResult?.findings || []).forEach(f => {
         if (counts[f.severity] !== undefined && !f.category.startsWith("⚠")) counts[f.severity]++;
       });
       (_aiFindingsData || []).forEach(f => {
-        const s = _dstSeverity(f.category);
+        const s = _aiSev(f);
         if (counts[s] !== undefined) counts[s]++;
       });
-      const defs = [["svart","⛔"], ["rød","🚫"], ["gul","⚠️"]];
-      const badges = defs.filter(([k]) => counts[k] > 0).map(([k, icon]) =>
-        `<span title="${k}" style="font-size:11px;font-weight:700;background:${SEV_COLOR[k]};`
-        + `color:${k==='gul'?'#1a1a1a':'#fff'};padding:1px 9px;border-radius:10px;">${icon} ${counts[k]}</span>`
-      ).join("");
-      el.innerHTML = badges || `<span style="font-size:11px;color:var(--ok);font-weight:600;">✅ 0</span>`;
+      const defs = [["svart","⛔"], ["rød","🚫"], ["gul","⚠️"], ["grønn","✅"]];
+      const badges = defs.filter(([k]) => counts[k] > 0).map(([k, icon]) => {
+        const light = (k === "gul" || k === "grønn");
+        return `<span title="${k}" style="font-size:11px;font-weight:700;background:${SEV_COLOR[k]};`
+          + `color:${light?'#1a1a1a':'#fff'};padding:1px 9px;border-radius:10px;">${icon} ${counts[k]}</span>`;
+      }).join("");
+      el.innerHTML = badges || `<span style="font-size:11px;color:var(--ok);font-weight:600;">✅ ${t("noFindings")}</span>`;
     }
 
     /* Samle alle funn (regel + AI) som ren tekst for utklippstavle */
@@ -1852,11 +1859,15 @@
 
       const rows = sorted_use.map(({ f, i }) => {
         const sc    = SEV_COLOR[f.severity] || "#ffb84d";
-        const light = f.severity === "gul";
+        const light = (f.severity === "gul" || f.severity === "grønn");
+        const isWl  = f.severity === "grønn";   // hvitelistet funn
         const canWl = (f.severity === "gul" || f.severity === "rød") && !f.category.startsWith("⚠");
-        const wlBtn = canWl
-          ? `<button class="wl-btn" data-text="${escapeHtml(f.text)}"
-               title="${t("wlAdd")}">${t("wlAdd")}</button>` : "";
+        const wlBtn = isWl
+          ? `<span style="font-size:11px;color:var(--ok);padding:0 4px">✓ ${t("wlAdded")}</span>`
+          : (canWl
+              ? `<button class="wl-btn" data-text="${escapeHtml(f.text)}"
+                   title="${t("wlAdd")}">${t("wlAdd")}</button>`
+              : "");
         return `
           <li class="finding-row" data-idx="${i}" style="border-left-color:${sc}">
             <div class="finding-inner">
@@ -1905,14 +1916,15 @@
 
       if (!sorted.length) return;
 
-      document.getElementById("g-sel-all").onclick  = () =>
-        document.querySelectorAll(".g-cb").forEach(cb => cb.checked = true);
-      document.getElementById("g-sel-none").onclick = () =>
-        document.querySelectorAll(".g-cb").forEach(cb => cb.checked = false);
+      document.getElementById("g-sel-all")?.addEventListener("click", () =>
+        document.querySelectorAll(".g-cb").forEach(cb => cb.checked = true));
+      document.getElementById("g-sel-none")?.addEventListener("click", () =>
+        document.querySelectorAll(".g-cb").forEach(cb => cb.checked = false));
 
-      if (canPatch) document.getElementById("g-patch").onclick = () => postAnon("patch");
-      document.getElementById("g-anon").onclick = () => postAnon("anonymize", "md");
-      document.getElementById("g-anon-pdf").onclick = () => postAnon("anonymize", "pdf");
+      // Null-sjekk: knappene finnes bare når det er funn (ellers TypeError ved høyreklikk/startup)
+      if (canPatch) document.getElementById("g-patch")?.addEventListener("click", () => postAnon("patch"));
+      document.getElementById("g-anon")?.addEventListener("click", () => postAnon("anonymize", "md"));
+      document.getElementById("g-anon-pdf")?.addEventListener("click", () => postAnon("anonymize", "pdf"));
 
       document.querySelectorAll(".wl-btn").forEach(btn =>
         btn.addEventListener("click", async () => {
@@ -2613,8 +2625,6 @@
 
       let list = resultEl.querySelector("ul.findings-list");
       if (!list) {
-        // Regelbasert skann fant 0 funn → ingen liste finnes. Bygg en minimal
-        // funn-seksjon slik at AI-funnene likevel vises i hovedlisten.
         if (resultEl.firstChild && resultEl.classList.contains("show")) {
           const sec = document.createElement("div");
           sec.innerHTML = `<h3 class="section-heading">${t("sectionFind")} (0)</h3><ul class="findings-list"></ul>`;
@@ -2625,17 +2635,48 @@
         }
       }
 
-      // Sorter etter alvorlighetsgrad – svart→rød→gul
+      // ── Deduplisering: ikke vis AI-funn som allerede finnes i regelbasert liste ──
+      const existingTexts = new Set();
+      resultEl.querySelectorAll("li.finding-row:not(.ai-injected-finding) .finding-body strong").forEach(el => {
+        existingTexts.add(el.textContent.trim().toLowerCase());
+      });
+      const deduped = [];
+      for (const f of findings) {
+        const key = (f.text || "").trim().toLowerCase();
+        if (!existingTexts.has(key)) {
+          existingTexts.add(key);   // unngå også duplikater mellom AI-funn
+          deduped.push(f);
+        }
+      }
+      if (!deduped.length) {
+        // Alle AI-funn var duplikater – oppdater likevel overskriften
+        const heading = resultEl.querySelector("h3.section-heading");
+        if (heading) {
+          const total = resultEl.querySelectorAll("li.finding-row").length;
+          heading.innerHTML = heading.innerHTML.replace(/\(\d+\)/, `(${total})`);
+        }
+        renderSeveritySummary();
+        return;
+      }
+
+      // Sorter etter alvorlighetsgrad – svart→rød→gul→grønn
       const ORDER = {svart:3, rød:2, gul:1, grønn:0};
-      const sorted = [...findings].sort((a,b) =>
-        (ORDER[_dstSeverity(b.category)]||0) - (ORDER[_dstSeverity(a.category)]||0));
+      const sorted = [...deduped].sort((a,b) =>
+        (ORDER[_aiSev(b)]||0) - (ORDER[_aiSev(a)]||0));
 
       for (const f of sorted) {
-        const sev   = _dstSeverity(f.category);
+        const sev   = _aiSev(f);
         const sc    = SEV_COLOR[sev] || "#ffb84d";
-        const light = sev === "gul";
-        const li    = document.createElement("li");
-        li.className          = "finding-row ai-injected-finding";
+        const light = (sev === "gul" || sev === "grønn");
+        const canWl = (sev !== "svart" && sev !== "grønn");   // grønne er allerede hvitelistet
+        const wlBtn = canWl
+          ? `<button class="wl-btn ai-wl-btn" data-text="${escapeHtml(f.text||"")}"
+               title="${t("wlAdd")}">${t("wlAdd")}</button>`
+          : (sev === "grønn"
+              ? `<span style="font-size:11px;color:var(--ok);padding:0 4px">✓ ${t("wlAdded")}</span>`
+              : "");
+        const li = document.createElement("li");
+        li.className = "finding-row ai-injected-finding";
         li.style.borderLeftColor = sc;
         li.innerHTML = `
           <div class="finding-inner">
@@ -2646,9 +2687,28 @@
               </div>
               ${f.context ? `<div class="ctx">${escapeHtml(f.context)}</div>` : ""}
             </div>
+            ${wlBtn}
           </div>`;
         list.appendChild(li);
       }
+
+      // Wire hvitelisteknapper på de nye AI-radene
+      list.querySelectorAll(".ai-wl-btn").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const text = btn.dataset.text;
+          try {
+            await fetch(`${API}/add-to-whitelist`, {
+              method:"POST", headers:{"Content-Type":"application/json"},
+              body: JSON.stringify({ text }),
+            });
+            const row = btn.closest(".finding-row");
+            row.style.opacity = "0.35";
+            row.style.textDecoration = "line-through";
+            btn.disabled = true;
+            btn.textContent = t("wlAdded");
+          } catch { btn.textContent = t("wlErr"); }
+        });
+      });
 
       // Oppdater overskriften med totalt antall (regelbasert + AI)
       const heading = resultEl.querySelector("h3.section-heading");
@@ -2656,8 +2716,14 @@
         const total = resultEl.querySelectorAll("li.finding-row").length;
         heading.innerHTML = heading.innerHTML.replace(/\(\d+\)/, `(${total})`);
       }
-      // Oppdater sammendragsraden med AI-funn inkludert
       renderSeveritySummary();
+    }
+
+    /* Severity for et AI-funn-dict: bruker f.severity hvis allerede satt (grønn = hvitelistet),
+       ellers mapping fra kategori-tekst. */
+    function _aiSev(f) {
+      if (f.severity === "grønn") return "grønn";
+      return _dstSeverity(f.category);
     }
 
     function _renderAiFindings(findings) {

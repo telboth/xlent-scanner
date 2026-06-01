@@ -25,7 +25,7 @@ from xlent_scanner.ignore import filter_findings, load_ignore_list
 from xlent_scanner.language import resolve_language
 from xlent_scanner.models import Finding, ScanResult  # noqa: F401
 from xlent_scanner.risk import assess
-from xlent_scanner.whitelist import filter_by_whitelist
+from xlent_scanner.whitelist import mark_whitelist_findings
 
 SUPPORTED_SUFFIXES = {
     ".pdf", ".docx", ".pptx", ".xlsx",
@@ -299,7 +299,7 @@ def scan_text(text: str, language: str = "auto", source_name: str = "Innlimt tek
     _run(detect_clients, text)
     _run(detect_names, text, lang)
 
-    findings = filter_by_whitelist(findings)
+    findings = mark_whitelist_findings(findings)
 
     ner_err = get_load_error(lang)
     if ner_err:
@@ -415,7 +415,7 @@ def scan_file(path: str | Path, ignore_xlent: bool = False, language: str = "aut
     if ignore_xlent:
         findings = filter_findings(findings, _get_ignore_list())
 
-    findings = filter_by_whitelist(findings)
+    findings = mark_whitelist_findings(findings)
 
     ner_err = get_load_error(lang)
     if ner_err:

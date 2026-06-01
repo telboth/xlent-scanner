@@ -119,7 +119,7 @@ Exit-kode reflekterer risikonivå: `0` grønn · `1` gul · `2` rød · `3` svar
 
 Last ned `xlent-scanner-setup-<versjon>.exe` fra [Releases](https://github.com/telboth/xlent-scanner/releases) og kjør installasjonsprogrammet (krever **ikke** administrator).
 
-Installasjonen legger til **«Skann med XLENT»** i Windows høyreklikk-meny for alle filtyper. Høyreklikk en fil → filen åpnes og skannes automatisk. Kjører appen allerede, sendes filen til det eksisterende vinduet.
+Installasjonen legger til **«Skann med XLENT»** i Windows høyreklikk-meny for alle filtyper. Høyreklikk en fil → filen åpnes og skannes automatisk. Kjører appen allerede, sendes filen til det eksisterende vinduet (single-instans IPC).
 
 ---
 
@@ -190,6 +190,34 @@ Egendefinert Ollama-adresse:
 ```bash
 OLLAMA_BASE_URL=http://192.168.1.10:11434 uv run xlent-scanner
 ```
+
+---
+
+## Høyreklikk-integrasjon
+
+### Windows
+Inkludert automatisk ved installasjon (registrert via HKCU\Software\Classes, krever ikke admin).
+
+### macOS — Quick Action
+```bash
+bash scripts/install_mac_service.sh
+# Følg instruksjonene — logg ut og inn igjen for å aktivere
+# Høyreklikk fil i Finder → Hurtighandlinger → Skann med XLENT
+```
+Krever at `XLENTScanner.app` er i `/Applications`. Scriptet installerer en Automator Quick Action som sender filstien som argument til appen.
+
+### Linux — «Åpne med» via .desktop-registrering
+Etter at AppImage er nedlastet:
+```bash
+# Gjør kjørbar og registrer
+chmod +x xlent-scanner-linux-*.AppImage
+./xlent-scanner-linux-*.AppImage --appimage-integrate   # noen AppImage-versjoner
+# Eller manuelt:
+cp xlent-scanner-linux-*.AppImage ~/.local/bin/xlent-scanner
+# Kopier .desktop-filen og oppdater PATH
+xdg-mime default xlent-scanner.desktop application/pdf
+```
+Etter registrering dukker «Åpne med XLENT Compliance-scanner» opp i høyreklikk-menyen for PDF, DOCX, PPTX, XLSX, TXT, CSV m.fl.
 
 ---
 

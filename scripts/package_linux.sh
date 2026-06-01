@@ -81,16 +81,17 @@ exec "$SELF_DIR/usr/bin/XLENTScanner" "$@"
 APPRUN
 chmod +x "$APPDIR/AppRun"
 
-# .desktop-fil
+# .desktop-fil (med %f for å motta enkeltfil fra høyreklikk-meny)
 cat > "$APPDIR/xlent-scanner.desktop" <<DESKTOP
 [Desktop Entry]
 Name=XLENT Compliance-scanner
 Comment=Sjekker dokumenter for sensitiv kundeinfo
-Exec=XLENTScanner
+Exec=XLENTScanner %f
 Icon=xlent-scanner
 Terminal=false
 Type=Application
 Categories=Office;Utility;
+MimeType=application/pdf;application/vnd.openxmlformats-officedocument.wordprocessingml.document;application/vnd.openxmlformats-officedocument.presentationml.presentation;application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;text/plain;text/markdown;text/html;text/csv;message/rfc822;application/rtf;
 DESKTOP
 
 # Ikon: lag et minimalt SVG-ikon hvis det finnes et i repo-et

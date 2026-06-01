@@ -120,8 +120,29 @@ def add_to_whitelist(text: str) -> None:
 
 
 def filter_by_whitelist(findings: list[Finding]) -> list[Finding]:
-    """Fjern funn der f.text (lowercase) finnes i hvitelisten."""
+    """Fjern funn der f.text (lowercase) finnes i hvitelisten.
+    Beholdt for bakoverkompatibilitet; bruk mark_whitelist_findings() for ny kode."""
     wl = load_whitelist()
     if not wl:
         return findings
     return [f for f in findings if f.text.lower() not in wl]
+
+
+def mark_whitelist_findings(findings: list[Finding]) -> list[Finding]:
+    """Markerer hvitelistede funn som grønne i stedet for å fjerne dem.
+
+    Grønne funn vises i listen (brukeren ser at de ble funnet men er godkjent)
+    og påvirker ikke det overordnede risikonivået (grønn = 0 i risikovektingen).
+    """
+    import dataclasses  # noqa: PLC0415
+    wl = load_whitelist()
+    if not wl:
+        return findings
+    result: list[Finding] = []
+    for f in findings:
+        if f.text.lower() in wl:
+            # Merk som grønn – preserve all other fields
+            result.append(dataclasses.replace(f, severity="grønn"))
+        else:
+            result.append(f)
+    return result
