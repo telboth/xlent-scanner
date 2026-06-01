@@ -51,6 +51,9 @@ PY
 
 uv pip install --python "$PYTHON_EXE" "pyinstaller>=6.0.0" "pyinstaller-hooks-contrib>=2024.0"
 
+# Linux-AppImage må holdes under GitHub sin 2GB-grense.
+# Docling er valgfri for PDF (scanner.py faller tilbake til PyMuPDF ved feil),
+# derfor unngår vi å bundle hele Docling/torch-stacken i Linux-pakken.
 "$PYTHON_EXE" -m PyInstaller \
   --noconfirm \
   --clean \
@@ -60,9 +63,6 @@ uv pip install --python "$PYTHON_EXE" "pyinstaller>=6.0.0" "pyinstaller-hooks-co
   \
   --collect-data xlent_scanner \
   --collect-data langdetect \
-  --collect-all docling \
-  --collect-all docling_core \
-  --collect-data docling_ibm_models \
   \
   --hidden-import "webview.platforms.gtk" \
   \
@@ -101,6 +101,12 @@ uv pip install --python "$PYTHON_EXE" "pyinstaller>=6.0.0" "pyinstaller-hooks-co
   --hidden-import "spacy.lang.es" \
   --hidden-import "spacy.lang.da" \
   \
+  --exclude-module "docling" \
+  --exclude-module "docling_core" \
+  --exclude-module "docling_ibm_models" \
+  --exclude-module "torch" \
+  --exclude-module "triton" \
+  --exclude-module "nvidia" \
   --exclude-module "torchvision" \
   \
   --distpath "$DIST_DIR" \
