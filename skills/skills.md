@@ -27,7 +27,7 @@ XLENT Scanner reference: `https://github.com/telboth/xlent-scanner`
 ## Routing Rules
 
 - Run XLENT document scan for document-like files:
-  `.pdf`, `.docx`, `.pptx`, `.xlsx`, `.md`, `.txt`, `.html`, `.csv`, `.eml`, `.rtf`, `.odt`
+  `.pdf`, `.docx`, `.pptx`, `.xlsx`, `.md`, `.txt`, `.csv`, `.eml`, `.rtf`, `.odt`
 - Skip XLENT document scan for software source files:
   `.c`, `.cpp`, `.h`, `.hpp`, `.cs`, `.py`, `.java`, `.js`, `.ts`, `.tsx`, `.jsx`, `.go`, `.rs`, `.php`, `.rb`, `.swift`, `.kt`, `.kts`, `.scala`, `.sql`, `.yaml`, `.yml`, `.json`, `.toml`, `.xml`, etc.
 - For software source files, run a local secret-check workflow instead of document scan.
