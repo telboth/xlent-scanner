@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import re
+import sys
 import urllib.error
 import urllib.request
 from datetime import datetime, timedelta, timezone
@@ -14,6 +15,7 @@ from xlent_scanner.paths import app_data_dir
 GITHUB_OWNER = "telboth"
 GITHUB_REPO = "xlent-scanner"
 CHECK_INTERVAL_DAYS = 30
+RELEASES_URL = f"https://github.com/{GITHUB_OWNER}/{GITHUB_REPO}/releases"
 
 
 def _state_path() -> Path:
@@ -82,6 +84,35 @@ def _is_newer(latest: str, current: str) -> bool:
     return tuple(a) > tuple(b)
 
 
+def _platform_installer_suffixes() -> list[str]:
+    plat = sys.platform
+    if plat.startswith("win"):
+        return [".exe", ".msi", ".zip"]
+    if plat == "darwin":
+        return [".dmg", ".pkg", ".zip"]
+    return [".appimage", ".deb", ".rpm", ".tar.gz", ".zip"]
+
+
+def _pick_installer_asset(assets: list[dict[str, Any]]) -> tuple[str, str]:
+    candidates: list[tuple[str, str]] = []
+    for asset in assets:
+        name = str(asset.get("name") or "")
+        url = str(asset.get("browser_download_url") or "")
+        if name and url:
+            candidates.append((name, url))
+
+    if not candidates:
+        return "", ""
+
+    suffixes = _platform_installer_suffixes()
+    for suffix in suffixes:
+        for name, url in candidates:
+            if name.lower().endswith(suffix):
+                return name, url
+
+    return candidates[0]
+
+
 def _fetch_latest_release() -> dict[str, str]:
     url = f"https://api.github.com/repos/{GITHUB_OWNER}/{GITHUB_REPO}/releases/latest"
     req = urllib.request.Request(
@@ -95,10 +126,16 @@ def _fetch_latest_release() -> dict[str, str]:
         payload = json.loads(resp.read().decode("utf-8"))
 
     latest = payload.get("tag_name") or payload.get("name") or ""
-    release_url = payload.get("html_url") or f"https://github.com/{GITHUB_OWNER}/{GITHUB_REPO}/releases"
+    release_url = payload.get("html_url") or RELEASES_URL
+    installer_name, installer_url = _pick_installer_asset(payload.get("assets") or [])
     if not latest:
         raise RuntimeError("Fant ikke gyldig versjon i GitHub release.")
-    return {"latest_version": str(latest), "release_url": str(release_url)}
+    return {
+        "latest_version": str(latest),
+        "release_url": str(release_url),
+        "installer_url": str(installer_url or release_url),
+        "installer_name": str(installer_name),
+    }
 
 
 def _fetch_latest_tag() -> dict[str, str]:
@@ -119,7 +156,9 @@ def _fetch_latest_tag() -> dict[str, str]:
         raise RuntimeError("Fant ikke gyldig versjon i Git-tags.")
     return {
         "latest_version": str(latest),
-        "release_url": f"https://github.com/{GITHUB_OWNER}/{GITHUB_REPO}/releases",
+        "release_url": RELEASES_URL,
+        "installer_url": RELEASES_URL,
+        "installer_name": "",
     }
 
 
@@ -143,8 +182,10 @@ def check_for_update(current_version: str, force: bool = False) -> dict[str, Any
             "latest_version": cached_latest,
             "release_url": state.get(
                 "release_url",
-                f"https://github.com/{GITHUB_OWNER}/{GITHUB_REPO}/releases",
+                RELEASES_URL,
             ),
+            "installer_url": state.get("installer_url", state.get("release_url", RELEASES_URL)),
+            "installer_name": state.get("installer_name", ""),
             # Re-evaluer alltid mot gjeldende versjon – cachen kan være utdatert
             # hvis brukeren har oppgradert siden siste nettsjekk.
             "update_available": _is_newer(cached_latest, current_version),
@@ -162,12 +203,16 @@ def check_for_update(current_version: str, force: bool = False) -> dict[str, Any
                 raise
         latest_version = latest["latest_version"]
         release_url = latest["release_url"]
+        installer_url = latest.get("installer_url", release_url)
+        installer_name = latest.get("installer_name", "")
         update_available = _is_newer(latest_version, current_version)
 
         new_state = {
             "last_checked_at": _to_iso(now),
             "latest_version": latest_version,
             "release_url": release_url,
+            "installer_url": installer_url,
+            "installer_name": installer_name,
             "update_available": update_available,
         }
         _save_state(new_state)
@@ -178,6 +223,8 @@ def check_for_update(current_version: str, force: bool = False) -> dict[str, Any
             "current_version": current_version,
             "latest_version": latest_version,
             "release_url": release_url,
+            "installer_url": installer_url,
+            "installer_name": installer_name,
             "update_available": update_available,
             "last_checked_at": new_state["last_checked_at"],
             "next_check_at": _to_iso(now + timedelta(days=CHECK_INTERVAL_DAYS)),
@@ -187,7 +234,9 @@ def check_for_update(current_version: str, force: bool = False) -> dict[str, Any
             new_state = {
                 "last_checked_at": _to_iso(now),
                 "latest_version": current_version,
-                "release_url": f"https://github.com/{GITHUB_OWNER}/{GITHUB_REPO}/releases",
+                "release_url": RELEASES_URL,
+                "installer_url": RELEASES_URL,
+                "installer_name": "",
                 "update_available": False,
             }
             _save_state(new_state)
@@ -197,6 +246,8 @@ def check_for_update(current_version: str, force: bool = False) -> dict[str, Any
                 "current_version": current_version,
                 "latest_version": current_version,
                 "release_url": new_state["release_url"],
+                "installer_url": new_state["installer_url"],
+                "installer_name": "",
                 "update_available": False,
                 "last_checked_at": new_state["last_checked_at"],
                 "next_check_at": _to_iso(now + timedelta(days=CHECK_INTERVAL_DAYS)),
@@ -209,8 +260,10 @@ def check_for_update(current_version: str, force: bool = False) -> dict[str, Any
             "latest_version": _cached_latest,
             "release_url": state.get(
                 "release_url",
-                f"https://github.com/{GITHUB_OWNER}/{GITHUB_REPO}/releases",
+                RELEASES_URL,
             ),
+            "installer_url": state.get("installer_url", state.get("release_url", RELEASES_URL)),
+            "installer_name": state.get("installer_name", ""),
             # Re-evaluer alltid – aldri bruk den cachede update_available-verdien direkte
             "update_available": _is_newer(_cached_latest, current_version),
             "last_checked_at": state.get("last_checked_at", ""),
@@ -226,8 +279,10 @@ def check_for_update(current_version: str, force: bool = False) -> dict[str, Any
             "latest_version": _cached_latest,
             "release_url": state.get(
                 "release_url",
-                f"https://github.com/{GITHUB_OWNER}/{GITHUB_REPO}/releases",
+                RELEASES_URL,
             ),
+            "installer_url": state.get("installer_url", state.get("release_url", RELEASES_URL)),
+            "installer_name": state.get("installer_name", ""),
             # Re-evaluer alltid – aldri bruk den cachede update_available-verdien direkte
             "update_available": _is_newer(_cached_latest, current_version),
             "last_checked_at": state.get("last_checked_at", ""),

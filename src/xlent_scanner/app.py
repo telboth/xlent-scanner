@@ -684,7 +684,7 @@ def open_dialog():
         webview.OPEN_DIALOG,
         allow_multiple=False,
         file_types=(
-            "Dokumenter (*.pdf;*.docx;*.pptx;*.xlsx;*.txt;*.md;*.html)",
+            "Dokumenter (*.pdf;*.docx;*.pptx;*.xlsx;*.txt;*.md;*.html;*.csv;*.eml;*.rtf;*.odt)",
             "Alle filer (*.*)",
         ),
     )

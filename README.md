@@ -1,6 +1,6 @@
 # XLENT Compliance-scanner
 
-> **v1.2.0** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
+> **v1.2.4** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
 
 Alt kjøres 100 % lokalt — ingen dokumenter, tekst eller funn sendes over internett.
 
@@ -57,7 +57,7 @@ Alt kjøres 100 % lokalt — ingen dokumenter, tekst eller funn sendes over inte
 | IBAN | 🚫 Rød | MOD-97-validering |
 | Passord i konfig | 🚫 Rød | `password=…`, connection strings |
 | Konfidensielt (overskrift) | 🚫 Rød | «KONFIDENSIELT» i tittel/heading |
-| Personnavn | ⚠️ Gul | Via spaCy NER (NO, SE, EN, DA) |
+| Personnavn | ⚠️ Gul | Via spaCy NER (NO, SE, EN, DA, DE, FR, ES) |
 | E-postadresser | ⚠️ Gul | Regex |
 | Telefonnummer | ⚠️ Gul | NO/SE, 8 siffer + landkode |
 | Organisasjonsnummer (NO) | ⚠️ Gul | Mod-11-validering |
@@ -84,8 +84,11 @@ Alt kjøres 100 % lokalt — ingen dokumenter, tekst eller funn sendes over inte
 | 🇸🇪 | Svensk | Personnummer, samordningsnummer, org.nummer, bankgiro, plusgiro |
 | 🇩🇰 | Dansk | CPR-nummer (mod-11) |
 | 🇬🇧 | Engelsk | UK NI, US SSN; norske og svenske mønstre gjelder også |
+| 🇩🇪 | Tysk | Steuer-ID og sosialforsikringsnummer |
+| 🇫🇷 | Fransk | Franske ID-/telefonmønstre |
+| 🇪🇸 | Spansk | Spanske ID-/telefonmønstre |
 
-Hele grensesnittet oversettes til **norsk, svensk og engelsk** via språkvelgeren øverst til høyre.
+Hele grensesnittet oversettes til **norsk, svensk, engelsk, tysk, fransk og spansk** via språkvelgeren øverst til høyre.
 Dokumentspråk auto-detekteres, eller velges manuelt i Innstillinger-fanen.
 
 ---
@@ -101,7 +104,7 @@ uv sync
 uv run xlent-scanner
 ```
 
-Ved første oppstart lastes spaCy-språkmodeller ned automatisk (~50 MB per modell).
+spaCy-språkmodeller lastes ned fra **Innstillinger → Name models (NER)** ved behov.
 
 ### Kommandolinje-modus (uten GUI)
 
@@ -255,7 +258,7 @@ En egen `create-release`-jobb oppretter releasen, deretter bygger Windows- og ma
 
 ```bash
 # Oppdater versjon i pyproject.toml + src/xlent_scanner/__init__.py, så:
-git tag v1.2.0
+git tag v1.2.4
 git push origin master --tags
 ```
 
@@ -285,7 +288,7 @@ src/xlent_scanner/
 ├── patch.py            # In-place teksterstatning i docx/pptx/xlsx/pdf
 ├── report.py           # HTML-rapportgenerering (inkl. AI-funn-seksjon)
 ├── history.py          # Persistent JSONL-historikk
-├── language.py         # Språkdeteksjon + spaCy-konfigurasjon (nb/sv/en/da)
+├── language.py         # Språkdeteksjon + spaCy-konfigurasjon (nb/sv/en/da/de/fr/es)
 ├── whitelist.py        # Personlig hviteliste
 ├── ignore.py           # ignore.toml (XLENT-interne navn etc.)
 ├── update_check.py     # Sjekker GitHub Releases for ny versjon
@@ -306,12 +309,12 @@ src/xlent_scanner/
 │   ├── keywords.py     # Konfidensielle nøkkelord
 │   └── clients.py      # Klientnavn fra clients.toml
 └── web/
-    └── index.html      # Komplett frontend (PyWebView + embedded Flask), full i18n nb/sv/en
+    └── index.html      # Komplett frontend (PyWebView + embedded Flask), full i18n nb/sv/en/de/fr/es
 ```
 
 **Teknologistakk:**
-- Dokumentekstraksjon: [Docling](https://github.com/DS4SD/docling) (IBM) — PDF/DOCX/PPTX/XLSX → tekst
-- NER: [spaCy](https://spacy.io/) med `nb_core_news_sm`, `sv_core_news_sm`, `en_core_web_sm` (dansk gjenbruker norsk modell)
+- Dokumentekstraksjon: Docling for PDF (med PyMuPDF fallback) + native ekstraksjon for DOCX/PPTX/XLSX/TXT/MD/HTML/CSV/EML/RTF/ODT
+- NER: [spaCy](https://spacy.io/) med `nb_core_news_sm`, `sv_core_news_sm`, `en_core_web_sm`, `de_core_news_sm`, `fr_core_news_sm`, `es_core_news_sm` (dansk gjenbruker norsk modell)
 - GUI: [PyWebView](https://pywebview.flowrl.com/) med innebygd Flask-server
 - AI-dybdeskann: [Ollama](https://ollama.ai) REST API (`/api/generate`)
 - PDF-anonymisering og -rapport: [PyMuPDF](https://pymupdf.readthedocs.io/) (fitz)
@@ -320,6 +323,13 @@ src/xlent_scanner/
 ---
 
 ## Endringslogg
+
+### v1.2.4
+- Rettet Linux-buildscript (`scripts/build_linux.sh`) med korrekt escaping for hidden imports.
+- Filvelger støtter nå alle skannbare formater i dialogfilteret (`pdf/docx/pptx/xlsx/txt/md/html/csv/eml/rtf/odt`).
+- Rettet stabilitetsfeil i nedlasting av spaCy-modeller (`model_manager.py`).
+- Oppdateringsvarsel i appen viser nå direkte installasjonslenke når release har matchende installer-asset.
+- Mindre forbedringer i tysk validering (Steuer-ID).
 
 ### v1.2.0
 - **Flerfil-batch** — slipp flere filer samtidig i scanner-fanen for en samlet oversikt

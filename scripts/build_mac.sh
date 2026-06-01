@@ -116,6 +116,10 @@ uv pip install --python "$PYTHON_EXE" "pyinstaller>=6.0.0" "pyinstaller-hooks-co
   --hidden-import "spacy.lang.nb" \
   --hidden-import "spacy.lang.sv" \
   --hidden-import "spacy.lang.en" \
+  --hidden-import "spacy.lang.de" \
+  --hidden-import "spacy.lang.fr" \
+  --hidden-import "spacy.lang.es" \
+  --hidden-import "spacy.lang.da" \
   \
   --exclude-module "torchvision" \
   \

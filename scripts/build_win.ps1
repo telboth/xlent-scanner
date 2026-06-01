@@ -125,6 +125,10 @@ $pyiArgs = @(
     "--hidden-import", "spacy.lang.nb",
     "--hidden-import", "spacy.lang.sv",
     "--hidden-import", "spacy.lang.en",
+    "--hidden-import", "spacy.lang.de",
+    "--hidden-import", "spacy.lang.fr",
+    "--hidden-import", "spacy.lang.es",
+    "--hidden-import", "spacy.lang.da",
 
     # Ekskluder pakker som ikke er i bruk
     "--exclude-module", "torchvision",

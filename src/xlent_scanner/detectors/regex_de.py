@@ -27,11 +27,10 @@ _STEUER_KW = re.compile(
 def _validate_steuer_id(s: str) -> bool:
     if len(s) != 11 or not s.isdigit() or s[0] == "0":
         return False
-    # Ingen to like sifre i posisjon 1-10 sammenhengende
+    # Ingen to like sifre sammenhengende i de første fem posisjonene
     for i in range(10):
         if s[i] == s[i + 1] and i < 4:
-            # Tillater like sifre etter posisjon 4 (mer permissiv enn streng regel)
-            pass
+            return False
     # Kontrollsiffer-algoritme (DBD-metode)
     product = 10
     for i in range(10):
