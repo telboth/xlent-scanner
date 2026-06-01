@@ -55,7 +55,8 @@ class TestReport:
         assert "test.txt" in html
         assert "a@b.no" in html
 
-    def test_ai_section_present_with_findings(self):
+    def test_ai_findings_merged_into_main_table(self):
+        """AI-funn flettes inn i hovedlisten, ikke en separat seksjon."""
         html = generate_html(
             _result_with_findings(),
             ai_findings=[
@@ -63,16 +64,54 @@ class TestReport:
                 {"category": "🤖 Fødselsnummer", "text": "01019000083", "context": "fnr"},
             ],
         )
-        assert "AI-dybdeskann-funn" in html
+        # Ingen separat AI-seksjon lenger
+        assert "AI-dybdeskann-funn" not in html
+        # AI-funn er i samme tabell
         assert "Shearwater" in html
+        assert "01019000083" in html
         # Fnr fra AI skal få svart badge
         assert "badge-svart" in html
+        # AI-badge (🔬) vises i kategoriraden
+        assert "ai-badge" in html
 
-    def test_no_ai_section_without_findings(self):
+    def test_ai_finding_whitelist_filtered(self):
+        """AI-funn som finnes i whitelisten skal vises som grønn (hvitelistet)."""
+        from unittest.mock import patch
+        wl = {"shearwater"}
+        with patch("xlent_scanner.whitelist.load_whitelist", return_value=wl):
+            html = generate_html(
+                _result_with_findings(),
+                ai_findings=[{"category": "🤖 Selskapsnavn", "text": "Shearwater", "context": "x"}],
+            )
+        assert "Shearwater" in html
+        assert "badge-grønn" in html      # vist som grønn/hvitelistet
+        assert "Hvitelistet" in html
+
+    def test_ai_duplicate_not_shown_twice(self):
+        """AI-funn med samme tekst som regelbasert funn vises ikke dobbelt."""
+        result = _result_with_findings()  # har a@b.no som e-post-funn
+        html = generate_html(
+            result,
+            ai_findings=[{"category": "🤖 E-post", "text": "a@b.no", "context": "x"}],
+        )
+        # Kun én forekomst av a@b.no i funn-tabellen
+        assert html.count("a@b.no") == html.count("<strong>a@b.no</strong>")
+
+    def test_no_ai_badge_in_rows_without_ai_findings(self):
+        """Ingen 🔬-badge i selve funnradene når det ikke er AI-funn."""
         html = generate_html(_result_with_findings(), ai_findings=[])
-        assert "AI-dybdeskann-funn" not in html
+        # CSS-klassen .ai-badge eksisterer alltid, men brukes kun i funnrader
+        assert '<span class="ai-badge">' not in html
 
     def test_ai_findings_none_safe(self):
-        # ai_findings=None skal ikke krasje
+        """ai_findings=None skal ikke krasje."""
         html = generate_html(_result_with_findings(), ai_findings=None)
         assert "test.txt" in html
+
+    def test_whitelist_button_present_for_ai_findings(self):
+        """AI-funn som IKKE er hvitelistet skal ha + Hviteliste-knapp."""
+        html = generate_html(
+            _result_with_findings(),
+            ai_findings=[{"category": "🤖 Selskapsnavn", "text": "Shearwater", "context": "x"}],
+        )
+        assert "wl-btn" in html
