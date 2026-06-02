@@ -81,6 +81,8 @@ uv pip install --python "$PYTHON_EXE" "pyinstaller>=6.0.0" "pyinstaller-hooks-co
   \
   --collect-data xlent_scanner \
   --collect-data langdetect \
+  --collect-data docx \
+  --collect-data pptx \
   --collect-all docling \
   --collect-all docling_core \
   --collect-data docling_ibm_models \

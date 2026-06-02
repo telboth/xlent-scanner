@@ -79,6 +79,8 @@ $pyiArgs = @(
     # Data-filer: web-grensesnitt + langdetect-profiler
     "--collect-data", "xlent_scanner",
     "--collect-data", "langdetect",
+    "--collect-data", "docx",
+    "--collect-data", "pptx",
 
     # Docling (PDF-parsing med layout-analyse og tabellgjenkjenning)
     "--collect-all", "docling",
