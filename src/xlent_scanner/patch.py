@@ -65,6 +65,16 @@ def _process_docx_paras(paragraphs, replacements: dict[str, str]) -> None:
         _replace_in_para(para, replacements)
 
 
+def _has_existing_header_footer_definition(header_footer) -> bool:
+    """Return True when python-docx can read this header/footer without creating one."""
+    current = header_footer
+    while current is not None:
+        if current._has_definition:  # noqa: SLF001 - avoids creating default header/footer parts
+            return True
+        current = current._prior_headerfooter  # noqa: SLF001
+    return False
+
+
 def patch_docx(source: Path, replacements: dict[str, str], output: Path) -> None:
     from docx import Document  # type: ignore[import-untyped]
 
@@ -82,6 +92,8 @@ def patch_docx(source: Path, replacements: dict[str, str], output: Path) -> None
     # Topptekst, bunntekst og tabeller der
     for section in doc.sections:
         for hf in (section.header, section.footer):
+            if not _has_existing_header_footer_definition(hf):
+                continue
             _process_docx_paras(hf.paragraphs, replacements)
             for table in hf.tables:
                 for row in table.rows:

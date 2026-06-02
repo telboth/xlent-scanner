@@ -1,6 +1,6 @@
 # XLENT Compliance-scanner
 
-> **v1.3.3** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
+> **v1.3.4** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
 
 Alt kjøres 100 % lokalt — ingen dokumenter, tekst eller funn sendes over internett.
 
@@ -272,7 +272,7 @@ En egen `create-release`-jobb oppretter releasen, deretter bygger Windows- og ma
 
 ```bash
 # Oppdater versjon i pyproject.toml + src/xlent_scanner/__init__.py, så:
-git tag v1.3.3
+git tag v1.3.4
 git push origin master --tags
 ```
 
@@ -337,6 +337,11 @@ src/xlent_scanner/
 ---
 
 ## Endringslogg
+
+### v1.3.4
+- Fikset DOCX-anonymisering/generering for dokumenter uten definert header/footer.
+- Unngår at `python-docx` oppretter default header/footer under patching, som kunne feile i pakket macOS-app.
+- La til regresjonstest for DOCX uten header/footer.
 
 ### v1.3.3
 - Fikset manglende `python-docx` templatefiler i pakkede builds, som kunne gi feil ved DOCX-generering/anonymisering på macOS.
