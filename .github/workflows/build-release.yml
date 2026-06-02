@@ -80,7 +80,12 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="${{ needs.create-release.outputs.tag }}"
-          gh release upload "$TAG" artifacts/macos/installer/*.dmg --clobber
+          gh release upload "$TAG" \
+            artifacts/macos/installer/*.dmg \
+            scripts/install_macos.sh \
+            scripts/install_mac_quick_action.sh \
+            scripts/install_mac_service.sh \
+            --clobber
 
   # ── Windows ───────────────────────────────────────────────────────────
   build-windows:

@@ -170,7 +170,9 @@ def redact_pdf(source: Path, replacements: dict[str, str], output: Path) -> None
                         fill=(1, 1, 1),
                         text_color=(0, 0, 0),
                     )
-        page.apply_redacts()
+        # PyMuPDF exposes apply_redactions(); older examples sometimes use
+        # apply_redacts(), which is not available in current builds.
+        page.apply_redactions()
 
     doc.save(str(output), garbage=4, deflate=True)
     doc.close()

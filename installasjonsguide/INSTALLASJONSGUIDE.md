@@ -27,8 +27,18 @@ Anbefaling:
 
 1. Gå til releases-siden og last ned siste `xlent-scanner-macos-<versjon>.dmg`.
 2. Åpne `.dmg`-filen.
-3. Dra `XLENT Scanner.app` til `Applications`.
+3. Dra `XLENTScanner.app` til `Applications`.
 4. Åpne programmet fra `Applications`.
+5. Valgfritt: installer Finder-høyreklikk fra appen under `Innstillinger` -> `macOS Finder Quick Action`.
+6. Alternativt kan `install_mac_quick_action.sh` lastes ned fra samme release og kjøres:
+   ```bash
+   bash ~/Downloads/install_mac_quick_action.sh
+   killall Finder
+   ```
+
+Merk:
+- macOS-DMG-en i MVP er for Apple Silicon (M-series).
+- Intel Mac er ikke støttet som ferdig DMG foreløpig. Kjør fra kildekode med `uv run xlent-scanner`.
 
 ### Hvis macOS blokkerer appen (Gatekeeper)
 
@@ -55,10 +65,18 @@ Alternativ B (System Settings):
 
 ## Høyreklikk-skanning fra filutforsker
 
-Etter installasjon kan du skanne direkte fra filutforsker:
+### Windows
 
 1. Høyreklikk på en støttet fil.
 2. Velg `Scan with XLENT Scanner` (eller tilsvarende menyvalg).
+3. Appen åpner seg og starter skanning av valgt fil.
+
+### macOS
+
+Etter at `install_mac_quick_action.sh` er kjørt:
+
+1. Høyreklikk på en støttet fil i Finder.
+2. Velg `Hurtighandlinger` -> `Skann med XLENT`.
 3. Appen åpner seg og starter skanning av valgt fil.
 
 ## Nedlasting av spaCy-modeller

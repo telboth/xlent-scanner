@@ -1092,6 +1092,26 @@
         <div class="settings-note" id="web-mode-msg"></div>
       </div>
 
+      <div class="settings-section" id="section-mac-quick-action" style="display:none;">
+        <div class="settings-section-title" data-i18n="settingsMacTitle">macOS Finder Quick Action</div>
+        <div class="settings-note" data-i18n="settingsMacNote">Installerer høyreklikk-valget «Skann med XLENT» i Finder for denne brukeren.</div>
+        <div class="settings-row" style="margin-top:8px;">
+          <button id="btn-install-mac-quick-action" class="ctrl-btn ctrl-btn-primary" data-i18n="installMacQuickAction">Installer Finder Quick Action</button>
+        </div>
+        <div class="settings-note" id="mac-quick-action-msg"></div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-section-title" data-i18n="settingsLogsTitle">Feilsøking</div>
+        <div class="settings-note" id="log-path-display"></div>
+        <div class="settings-row" style="margin-top:8px;">
+          <button id="btn-load-log" class="ctrl-btn" data-i18n="loadLog">Vis logg</button>
+          <button id="btn-open-log" class="ctrl-btn" data-i18n="openLog">Åpne loggfil</button>
+        </div>
+        <textarea id="log-viewer" class="settings-textarea" spellcheck="false" readonly style="display:none;min-height:180px;margin-top:8px;"></textarea>
+        <div class="settings-note" id="log-msg"></div>
+      </div>
+
       <div class="settings-note" data-i18n="settingsPersistNote">Innstillinger lagres automatisk i nettleseren.</div>
     </div>
 
@@ -1199,6 +1219,19 @@
         openWebModeStarting:"Starter web-modus…",
         openWebModeStarted: "Web-modus startet i nettleser.",
         openWebModeFailed:  "Kunne ikke starte web-modus.",
+        settingsMacTitle:   "macOS Finder Quick Action",
+        settingsMacNote:    "Installerer høyreklikk-valget «Skann med XLENT» i Finder for denne brukeren.",
+        installMacQuickAction:"Installer Finder Quick Action",
+        macQuickActionInstalling:"Installerer Finder Quick Action…",
+        macQuickActionInstalled:"Finder Quick Action installert. Høyreklikk en fil i Finder og velg Hurtighandlinger → Skann med XLENT.",
+        macQuickActionFailed:"Kunne ikke installere Finder Quick Action.",
+        settingsLogsTitle:  "Feilsøking",
+        loadLog:            "Vis logg",
+        openLog:            "Åpne loggfil",
+        logLoadFailed:      "Kunne ikke hente logg.",
+        logOpenFailed:      "Kunne ikke åpne loggfil.",
+        pdfPatchFailed:     "PDF-anonymisering feilet. Prøv PDF-rapport eller kontakt support med loggfil.",
+        pdfGenerateFailed:  "PDF-generering feilet. Se loggfil for tekniske detaljer.",
         updateCheckNow: "Se etter oppdateringer nå",
         updateNoUpdate: "Du har nyeste versjon.",
         updateCheckFailed: "Kunne ikke sjekke oppdateringer.",
@@ -1355,6 +1388,19 @@
         openWebModeStarting:"Startar webbläge…",
         openWebModeStarted: "Webbläge startat i webbläsaren.",
         openWebModeFailed:  "Kunde inte starta webbläge.",
+        settingsMacTitle:   "macOS Finder Quick Action",
+        settingsMacNote:    "Installerar högerklicksvalet ”Skanna med XLENT” i Finder för den här användaren.",
+        installMacQuickAction:"Installera Finder Quick Action",
+        macQuickActionInstalling:"Installerar Finder Quick Action…",
+        macQuickActionInstalled:"Finder Quick Action installerad. Högerklicka en fil i Finder och välj Snabbåtgärder → Skanna med XLENT.",
+        macQuickActionFailed:"Kunde inte installera Finder Quick Action.",
+        settingsLogsTitle:  "Felsökning",
+        loadLog:            "Visa logg",
+        openLog:            "Öppna loggfil",
+        logLoadFailed:      "Kunde inte hämta logg.",
+        logOpenFailed:      "Kunde inte öppna loggfil.",
+        pdfPatchFailed:     "PDF-anonymisering misslyckades. Prova PDF-rapport eller kontakta support med loggfilen.",
+        pdfGenerateFailed:  "PDF-generering misslyckades. Se loggfilen för tekniska detaljer.",
         updateCheckNow: "Sök efter uppdateringar nu",
         updateNoUpdate: "Du har senaste versionen.",
         updateCheckFailed: "Kunde inte kontrollera uppdateringar.",
@@ -1511,6 +1557,19 @@
         openWebModeStarting:"Starting web mode…",
         openWebModeStarted: "Web mode started in browser.",
         openWebModeFailed:  "Could not start web mode.",
+        settingsMacTitle:   "macOS Finder Quick Action",
+        settingsMacNote:    "Installs the Finder right-click action “Scan with XLENT” for this user.",
+        installMacQuickAction:"Install Finder Quick Action",
+        macQuickActionInstalling:"Installing Finder Quick Action…",
+        macQuickActionInstalled:"Finder Quick Action installed. Right-click a file in Finder and choose Quick Actions → Scan with XLENT.",
+        macQuickActionFailed:"Could not install Finder Quick Action.",
+        settingsLogsTitle:  "Troubleshooting",
+        loadLog:            "Show log",
+        openLog:            "Open log file",
+        logLoadFailed:      "Could not load log.",
+        logOpenFailed:      "Could not open log file.",
+        pdfPatchFailed:     "PDF anonymisation failed. Try the PDF report or contact support with the log file.",
+        pdfGenerateFailed:  "PDF generation failed. See the log file for technical details.",
         updateCheckNow: "Check for updates now",
         updateNoUpdate: "You already have the latest version.",
         updateCheckFailed: "Could not check for updates.",
@@ -1626,6 +1685,19 @@
         openWebModeStarting: "Webmodus wird gestartet…",
         openWebModeStarted:  "Webmodus im Browser gestartet.",
         openWebModeFailed:   "Webmodus konnte nicht gestartet werden.",
+        settingsMacTitle:    "macOS Finder Quick Action",
+        settingsMacNote:     "Installiert die Finder-Rechtsklickaktion „Mit XLENT scannen“ für diesen Benutzer.",
+        installMacQuickAction:"Finder Quick Action installieren",
+        macQuickActionInstalling:"Finder Quick Action wird installiert…",
+        macQuickActionInstalled:"Finder Quick Action installiert. Rechtsklicken Sie eine Datei im Finder und wählen Sie Schnellaktionen → Mit XLENT scannen.",
+        macQuickActionFailed:"Finder Quick Action konnte nicht installiert werden.",
+        settingsLogsTitle:   "Fehlerbehebung",
+        loadLog:             "Log anzeigen",
+        openLog:             "Logdatei öffnen",
+        logLoadFailed:       "Log konnte nicht geladen werden.",
+        logOpenFailed:       "Logdatei konnte nicht geöffnet werden.",
+        pdfPatchFailed:      "PDF-Anonymisierung fehlgeschlagen. Versuchen Sie den PDF-Bericht oder kontaktieren Sie den Support mit der Logdatei.",
+        pdfGenerateFailed:   "PDF-Erstellung fehlgeschlagen. Technische Details stehen in der Logdatei.",
         updateNoUpdate:      "Sie haben die neueste Version.",
         updateChecking:      "Prüfe auf Updates…",
         updateCheckBtn:      "Auf Updates prüfen",
@@ -1781,6 +1853,19 @@
         openWebModeStarting: "Démarrage du mode web…",
         openWebModeStarted:  "Mode web démarré dans le navigateur.",
         openWebModeFailed:   "Impossible de démarrer le mode web.",
+        settingsMacTitle:    "macOS Finder Quick Action",
+        settingsMacNote:     "Installe l’action clic droit Finder « Scanner avec XLENT » pour cet utilisateur.",
+        installMacQuickAction:"Installer Finder Quick Action",
+        macQuickActionInstalling:"Installation de Finder Quick Action…",
+        macQuickActionInstalled:"Finder Quick Action installée. Faites un clic droit sur un fichier dans Finder et choisissez Actions rapides → Scanner avec XLENT.",
+        macQuickActionFailed:"Impossible d’installer Finder Quick Action.",
+        settingsLogsTitle:   "Dépannage",
+        loadLog:             "Afficher le journal",
+        openLog:             "Ouvrir le fichier journal",
+        logLoadFailed:       "Impossible de charger le journal.",
+        logOpenFailed:       "Impossible d’ouvrir le fichier journal.",
+        pdfPatchFailed:      "L’anonymisation PDF a échoué. Essayez le rapport PDF ou contactez le support avec le fichier journal.",
+        pdfGenerateFailed:   "La génération PDF a échoué. Consultez le fichier journal pour les détails techniques.",
         updateNoUpdate:      "Vous avez la dernière version.",
         updateChecking:      "Vérification des mises à jour…",
         updateCheckBtn:      "Vérifier les mises à jour",
@@ -1936,6 +2021,19 @@
         openWebModeStarting: "Iniciando modo web…",
         openWebModeStarted:  "Modo web iniciado en el navegador.",
         openWebModeFailed:   "No se pudo iniciar el modo web.",
+        settingsMacTitle:    "macOS Finder Quick Action",
+        settingsMacNote:     "Instala la acción de clic derecho de Finder «Escanear con XLENT» para este usuario.",
+        installMacQuickAction:"Instalar Finder Quick Action",
+        macQuickActionInstalling:"Instalando Finder Quick Action…",
+        macQuickActionInstalled:"Finder Quick Action instalada. Haga clic derecho en un archivo en Finder y elija Acciones rápidas → Escanear con XLENT.",
+        macQuickActionFailed:"No se pudo instalar Finder Quick Action.",
+        settingsLogsTitle:   "Solución de problemas",
+        loadLog:             "Mostrar registro",
+        openLog:             "Abrir archivo de registro",
+        logLoadFailed:       "No se pudo cargar el registro.",
+        logOpenFailed:       "No se pudo abrir el archivo de registro.",
+        pdfPatchFailed:      "La anonimización de PDF falló. Pruebe el informe PDF o contacte con soporte con el archivo de registro.",
+        pdfGenerateFailed:   "La generación de PDF falló. Consulte el archivo de registro para detalles técnicos.",
         updateNoUpdate:      "Tiene la versión más reciente.",
         updateChecking:      "Comprobando actualizaciones…",
         updateCheckBtn:      "Buscar actualizaciones",
@@ -2044,6 +2142,7 @@
     const API      = (window.location.origin && window.location.origin !== "null") ? "" : "__API_BASE__";
     const APP_VERSION = "__APP_VERSION__";
     const LOG_PATH = "__LOG_PATH__";
+    const APP_PLATFORM = "__APP_PLATFORM__";
     const dz       = document.getElementById("dropzone");
     const browseBtn= document.getElementById("browse");
     const statusEl = document.getElementById("status");
@@ -2054,6 +2153,10 @@
     const updateBannerBtnEl = document.getElementById("update-banner-btn");
     const updateCheckMsgEl = document.getElementById("update-check-msg");
     const webModeMsgEl = document.getElementById("web-mode-msg");
+    const macQuickActionMsgEl = document.getElementById("mac-quick-action-msg");
+    const logPathDisplayEl = document.getElementById("log-path-display");
+    const logViewerEl = document.getElementById("log-viewer");
+    const logMsgEl = document.getElementById("log-msg");
     const ignorePathEl = document.getElementById("ignore-path");
     const ignoreEditorEl = document.getElementById("ignore-editor");
     const ignoreMsgEl = document.getElementById("ignore-msg");
@@ -2133,6 +2236,7 @@
       renderUpdateBanner();
       renderIgnorePath();
       renderWhitelistPath();
+      renderLogPath();
       loadNerStatus();
       if (!ignoreMsgEl.textContent || ignoreMsgEl.dataset.mode === "hint") {
         setIgnoreMessage(t("ignoreHint"), "var(--muted)", "hint");
@@ -2211,6 +2315,66 @@
         }
       } catch (e) {
         setWebModeMessage(`${t("openWebModeFailed")} ${String(e)}`, "#f44336");
+      }
+    }
+
+    function setMacQuickActionMessage(msg, color = "var(--muted)") {
+      if (!macQuickActionMsgEl) return;
+      macQuickActionMsgEl.textContent = msg;
+      macQuickActionMsgEl.style.color = color;
+    }
+
+    async function installMacQuickAction() {
+      setMacQuickActionMessage(t("macQuickActionInstalling"), "var(--muted)");
+      try {
+        const d = await (await fetch(`${API}/mac/quick-action/install`, { method: "POST" })).json();
+        if (d.ok) {
+          setMacQuickActionMessage(t("macQuickActionInstalled"), "var(--ok)");
+        } else {
+          setMacQuickActionMessage(`${t("macQuickActionFailed")} ${d.error ? "(" + d.error + ")" : ""}`, "#f44336");
+        }
+      } catch (e) {
+        setMacQuickActionMessage(`${t("macQuickActionFailed")} ${String(e)}`, "#f44336");
+      }
+    }
+
+    function renderLogPath() {
+      if (!logPathDisplayEl) return;
+      logPathDisplayEl.textContent = LOG_PATH && LOG_PATH !== "__LOG_PATH__"
+        ? `${t("logHint")} ${LOG_PATH}`
+        : "";
+    }
+
+    async function loadLog() {
+      if (!logViewerEl || !logMsgEl) return;
+      logMsgEl.textContent = "";
+      try {
+        const d = await (await fetch(`${API}/logs/get?max_bytes=80000`)).json();
+        if (!d.ok) {
+          logMsgEl.style.color = "#f44336";
+          logMsgEl.textContent = `${t("logLoadFailed")} ${d.error || ""}`;
+          return;
+        }
+        logViewerEl.style.display = "";
+        logViewerEl.value = d.text || "";
+        logViewerEl.scrollTop = logViewerEl.scrollHeight;
+      } catch (e) {
+        logMsgEl.style.color = "#f44336";
+        logMsgEl.textContent = `${t("logLoadFailed")} ${String(e)}`;
+      }
+    }
+
+    async function openLog() {
+      if (!logMsgEl) return;
+      try {
+        const d = await (await fetch(`${API}/logs/open`, { method: "POST" })).json();
+        if (!d.ok) {
+          logMsgEl.style.color = "#f44336";
+          logMsgEl.textContent = `${t("logOpenFailed")} ${d.error || ""}`;
+        }
+      } catch (e) {
+        logMsgEl.style.color = "#f44336";
+        logMsgEl.textContent = `${t("logOpenFailed")} ${String(e)}`;
       }
     }
 
@@ -2661,7 +2825,10 @@
           body: JSON.stringify(body),
         })).json();
         if (d.ok) { msg.style.color="#4caf50"; msg.textContent=`${t("saved")} ${d.path}`; }
-        else      { msg.style.color="#f44336"; msg.textContent=`${t("errPrefix")} ${d.error}`; }
+        else {
+          const err = d.error_code && I18N[uiLang][d.error_code] ? t(d.error_code) : d.error;
+          msg.style.color="#f44336"; msg.textContent=`${t("errPrefix")} ${err}`;
+        }
       } catch(e)  { msg.style.color="#f44336"; msg.textContent=`${t("netErr")} ${e}`; }
     }
 
@@ -2893,6 +3060,9 @@
     document.getElementById("langSelect").addEventListener("change", saveSettings);
     document.getElementById("btn-check-updates").addEventListener("click", () => runUpdateCheck(true));
     document.getElementById("btn-open-web-mode").addEventListener("click", startWebMode);
+    document.getElementById("btn-install-mac-quick-action").addEventListener("click", installMacQuickAction);
+    document.getElementById("btn-load-log").addEventListener("click", loadLog);
+    document.getElementById("btn-open-log").addEventListener("click", openLog);
     document.getElementById("btn-ignore-reload").addEventListener("click", loadIgnoreEditor);
     document.getElementById("btn-ignore-save").addEventListener("click", saveIgnoreEditor);
     document.getElementById("btn-whitelist-reload").addEventListener("click", loadWhitelistEditor);
@@ -3715,6 +3885,11 @@
     loadIgnoreEditor();
     setWhitelistMessage(t("whitelistHint"), "var(--muted)", "hint");
     renderWhitelistPath();
+    renderLogPath();
+    const macQuickActionSection = document.getElementById("section-mac-quick-action");
+    if (macQuickActionSection && APP_PLATFORM === "darwin") {
+      macQuickActionSection.style.display = "";
+    }
     loadWhitelistEditor();
     runUpdateCheck(false);
     loadNerStatus();

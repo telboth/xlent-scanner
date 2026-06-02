@@ -8,6 +8,7 @@ Flask kjører i en bakgrunnstråd og eksponerer:
 from __future__ import annotations
 
 import faulthandler
+import html
 import json
 import logging
 import os
@@ -148,7 +149,169 @@ def index():
     html = html.replace("__APP_VERSION__", __version__)
     html = html.replace("__APP_STARTED__", datetime.now().strftime("%d.%m.%Y %H:%M"))
     html = html.replace('"__LOG_PATH__"', json.dumps(str(LOG_PATH)))
+    html = html.replace('"__APP_PLATFORM__"', json.dumps(sys.platform))
     return html, 200, {"Content-Type": "text/html; charset=utf-8", **_NO_CACHE}
+
+
+def _open_path(path: Path) -> None:
+    if sys.platform.startswith("win"):
+        os.startfile(str(path))  # type: ignore[attr-defined]
+    elif sys.platform == "darwin":
+        subprocess.Popen(["open", str(path)])
+    else:
+        subprocess.Popen(["xdg-open", str(path)])
+
+
+def _mac_app_binary_path() -> Path:
+    if getattr(sys, "frozen", False):
+        exe = Path(sys.executable)
+        if exe.name == "XLENTScanner" and exe.parent.name == "MacOS":
+            return exe
+    return Path("/Applications/XLENTScanner.app/Contents/MacOS/XLENTScanner")
+
+
+def _install_mac_quick_action() -> Path:
+    if sys.platform != "darwin":
+        raise RuntimeError("Finder Quick Action kan bare installeres på macOS.")
+
+    binary = _mac_app_binary_path()
+    if not binary.exists():
+        raise RuntimeError(f"Fant ikke XLENTScanner-binær på: {binary}")
+
+    service_dir = Path.home() / "Library" / "Services"
+    service_path = service_dir / "Skann med XLENT.workflow"
+    contents_dir = service_path / "Contents"
+    contents_dir.mkdir(parents=True, exist_ok=True)
+
+    app_binary_xml = html.escape(str(binary), quote=True)
+    (contents_dir / "Info.plist").write_text(
+        """<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>NSServices</key>
+  <array>
+    <dict>
+      <key>NSMenuItem</key>
+      <dict>
+        <key>default</key>
+        <string>Skann med XLENT</string>
+      </dict>
+      <key>NSMessage</key>
+      <string>runWorkflow</string>
+      <key>NSRequiredContext</key>
+      <dict>
+        <key>NSApplicationIdentifier</key>
+        <string>com.apple.finder</string>
+      </dict>
+      <key>NSSendFileTypes</key>
+      <array>
+        <string>public.content</string>
+        <string>public.data</string>
+      </array>
+    </dict>
+  </array>
+</dict>
+</plist>
+""",
+        encoding="utf-8",
+    )
+
+    (contents_dir / "document.wflow").write_text(
+        f"""<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>AMApplicationBuild</key><string>521.1</string>
+  <key>AMApplicationVersion</key><string>2.10</string>
+  <key>AMDocumentVersion</key><string>2</string>
+  <key>actions</key>
+  <array>
+    <dict>
+      <key>action</key>
+      <dict>
+        <key>AMAccepts</key>
+        <dict>
+          <key>Container</key><string>List</string>
+          <key>Optional</key><true/>
+          <key>Types</key><array><string>com.apple.cocoa.path</string></array>
+        </dict>
+        <key>AMActionVersion</key><string>2.0.3</string>
+        <key>AMApplication</key><array><string>Automator</string></array>
+        <key>AMParameterProperties</key>
+        <dict>
+          <key>COMMAND_STRING</key><dict/>
+          <key>CheckedForUserDefaultShell</key><dict/>
+          <key>inputMethod</key><dict/>
+          <key>shell</key><dict/>
+          <key>source</key><dict/>
+        </dict>
+        <key>AMProvides</key>
+        <dict>
+          <key>Container</key><string>List</string>
+          <key>Types</key><array><string>com.apple.cocoa.path</string></array>
+        </dict>
+        <key>ActionBundlePath</key><string>/System/Library/Automator/Run Shell Script.action</string>
+        <key>ActionName</key><string>Run Shell Script</string>
+        <key>ActionParameters</key>
+        <dict>
+          <key>COMMAND_STRING</key>
+          <string>for f in "$@"; do
+  "{app_binary_xml}" "$f" &amp;
+done</string>
+          <key>CheckedForUserDefaultShell</key><true/>
+          <key>inputMethod</key><integer>1</integer>
+          <key>shell</key><string>/bin/bash</string>
+          <key>source</key><string></string>
+        </dict>
+        <key>BundleIdentifier</key><string>com.apple.RunShellScript</string>
+        <key>CFBundleVersion</key><string>2.0.3</string>
+        <key>CanShowSelectedItemsWhenRun</key><false/>
+        <key>CanShowWhenRun</key><true/>
+        <key>Category</key><array><string>AMCategoryUtilities</string></array>
+        <key>Class Name</key><string>RunShellScriptAction</string>
+        <key>InputUUID</key><string>00000000-0000-0000-0000-000000000001</string>
+        <key>Keywords</key><array><string>Shell</string><string>Script</string><string>Command</string></array>
+        <key>OutputUUID</key><string>00000000-0000-0000-0000-000000000002</string>
+        <key>UUID</key><string>00000000-0000-0000-0000-000000000003</string>
+        <key>UnlocalizedApplications</key><array><string>Automator</string></array>
+        <key>arguments</key>
+        <dict>
+          <key>0</key>
+          <dict>
+            <key>default value</key><integer>0</integer>
+            <key>name</key><string>inputMethod</string>
+            <key>required</key><string>0</string>
+            <key>type</key><string>0</string>
+            <key>uuid</key><string>0</string>
+          </dict>
+        </dict>
+        <key>isViewVisible</key><true/>
+        <key>location</key><string>321.000000:253.000000</string>
+        <key>nibPath</key><string>/System/Library/Automator/Run Shell Script.action/Contents/Resources/English.lproj/main.nib</string>
+      </dict>
+      <key>isViewVisible</key><true/>
+    </dict>
+  </array>
+  <key>connectors</key><dict/>
+  <key>workflowMetaData</key>
+  <dict>
+    <key>serviceInputTypeIdentifier</key><string>com.apple.Automator.fileSystemObject</string>
+    <key>serviceOutputTypeIdentifier</key><string>com.apple.Automator.nothing</string>
+    <key>serviceProcessesInput</key><integer>0</integer>
+    <key>workflowTypeIdentifier</key><string>com.apple.Automator.workflow</string>
+  </dict>
+</dict>
+</plist>
+""",
+        encoding="utf-8",
+    )
+
+    subprocess.run(["/System/Library/CoreServices/pbs", "-flush"], check=False)
+    subprocess.run(["killall", "Finder"], check=False)
+    return service_path
 
 
 @flask_app.route("/scan", methods=["POST"])
@@ -585,7 +748,10 @@ def anonymize():
             _write_text_pdf(cleaned, out, title=f"{stem} – anonymisert")
         except Exception as exc:
             LOGGER.error("anonymize pdf failed: %s", traceback.format_exc())
-            return jsonify({"error": f"PDF-generering feilet: {exc}"})
+            return jsonify({
+                "error": "PDF-generering feilet. Se loggfil for tekniske detaljer.",
+                "error_code": "pdfGenerateFailed",
+            })
     else:
         out.write_text(cleaned, encoding="utf-8")
     return jsonify({"ok": True, "path": str(out)})
@@ -632,6 +798,12 @@ def patch():
     try:
         patch_file(_last_path, replacements, out)
     except Exception as exc:
+        LOGGER.error("patch failed suffix=%s path=%s: %s", suffix, _last_path, traceback.format_exc())
+        if suffix == ".pdf":
+            return jsonify({
+                "error": "PDF-anonymisering feilet. Prøv PDF-rapport eller kontakt support med loggfil.",
+                "error_code": "pdfPatchFailed",
+            })
         return jsonify({"error": str(exc)})
 
     return jsonify({"ok": True, "path": str(out)})
@@ -760,6 +932,42 @@ def web_mode_start():
         return jsonify({"ok": True, "pid": proc.pid})
     except Exception as exc:
         LOGGER.error("web-mode/start failed: %s", traceback.format_exc())
+        return jsonify({"ok": False, "error": str(exc)})
+
+
+@flask_app.route("/mac/quick-action/install", methods=["POST"])
+def mac_quick_action_install():
+    try:
+        service_path = _install_mac_quick_action()
+        LOGGER.info("mac quick action installed path=%s", service_path)
+        return jsonify({"ok": True, "path": str(service_path)})
+    except Exception as exc:
+        LOGGER.error("mac quick action install failed: %s", traceback.format_exc())
+        return jsonify({"ok": False, "error": str(exc)})
+
+
+@flask_app.route("/logs/get", methods=["GET"])
+def logs_get():
+    try:
+        max_bytes = int(request.args.get("max_bytes", "50000"))
+        max_bytes = max(1000, min(max_bytes, 500000))
+        if not LOG_PATH.exists():
+            return jsonify({"ok": True, "path": str(LOG_PATH), "text": ""})
+        data = LOG_PATH.read_bytes()
+        text = data[-max_bytes:].decode("utf-8", errors="replace")
+        return jsonify({"ok": True, "path": str(LOG_PATH), "text": text})
+    except Exception as exc:
+        LOGGER.error("logs/get failed: %s", traceback.format_exc())
+        return jsonify({"ok": False, "error": str(exc)})
+
+
+@flask_app.route("/logs/open", methods=["POST"])
+def logs_open():
+    try:
+        _open_path(LOG_PATH)
+        return jsonify({"ok": True, "path": str(LOG_PATH)})
+    except Exception as exc:
+        LOGGER.error("logs/open failed: %s", traceback.format_exc())
         return jsonify({"ok": False, "error": str(exc)})
 
 

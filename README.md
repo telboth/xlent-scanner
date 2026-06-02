@@ -1,6 +1,6 @@
 # XLENT Compliance-scanner
 
-> **v1.2.8** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
+> **v1.2.9** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
 
 Alt kjøres 100 % lokalt — ingen dokumenter, tekst eller funn sendes over internett.
 
@@ -156,8 +156,14 @@ Last ned `xlent-scanner-macos-<versjon>.dmg` fra [Releases](https://github.com/t
 
 1. Åpne DMG-filen og dra **XLENTScanner** til **Applications**-mappen
 2. **Første gangs oppstart**: macOS Gatekeeper kan blokkere appen fordi den ikke er signert. Høyreklikk på appen og velg **Åpne**, deretter bekreft i dialogboksen.
+3. Valgfritt: åpne **Innstillinger → macOS Finder Quick Action** og trykk **Installer Finder Quick Action**.
+4. Alternativt kan Quick Action installeres fra release-scriptet:
+   ```bash
+   bash install_mac_quick_action.sh
+   killall Finder
+   ```
 
-> Appen er bygget for Apple Silicon (M-series). Intel Mac-brukere kan kjøre fra kildekode med `uv run xlent-scanner`.
+> macOS-DMG-en er for Apple Silicon (M-series). Intel Mac er ikke støttet som ferdig DMG i MVP; Intel-brukere kan kjøre fra kildekode med `uv run xlent-scanner`.
 
 ---
 
@@ -203,11 +209,12 @@ Inkludert automatisk ved installasjon (registrert via HKCU\Software\Classes, kre
 
 ### macOS — Quick Action
 ```bash
-bash scripts/install_mac_service.sh
+bash install_mac_quick_action.sh
 # Følg instruksjonene — logg ut og inn igjen for å aktivere
 # Høyreklikk fil i Finder → Hurtighandlinger → Skann med XLENT
 ```
-Krever at `XLENTScanner.app` er i `/Applications`. Scriptet installerer en Automator Quick Action som sender filstien som argument til appen.
+Kan også installeres direkte fra appen under **Innstillinger**. Krever at `XLENTScanner.app` er i `/Applications`. Scriptet installerer en Automator Quick Action som sender filstien som argument til appen.
+`scripts/install_mac_service.sh` finnes fortsatt som bakoverkompatibel wrapper.
 
 ### Linux — «Åpne med» via .desktop-registrering
 Etter at AppImage er nedlastet:
@@ -258,7 +265,7 @@ En egen `create-release`-jobb oppretter releasen, deretter bygger Windows- og ma
 
 ```bash
 # Oppdater versjon i pyproject.toml + src/xlent_scanner/__init__.py, så:
-git tag v1.2.8
+git tag v1.2.9
 git push origin master --tags
 ```
 
@@ -323,6 +330,15 @@ src/xlent_scanner/
 ---
 
 ## Endringslogg
+
+### v1.2.9
+- Fikset PDF-anonymisering på macOS/nyere PyMuPDF (`apply_redactions`).
+- La til regresjonstest for PDF-redaksjon.
+- La til Finder Quick Action-installasjon direkte fra appens Innstillinger på macOS.
+- Laster opp `install_mac_quick_action.sh` som release-asset og beholder `install_mac_service.sh` som wrapper.
+- La til loggvisning og «Åpne loggfil» i Innstillinger.
+- Forbedret PDF-feilmeldinger slik at teknisk detalj havner i loggfil, ikke bare i brukerfeilen.
+- Tydeliggjorde at macOS-DMG i MVP er Apple Silicon-build; Intel Mac må kjøre fra kildekode.
 
 ### v1.2.8
 - Fikset språkbug i statusfeltet slik at «Klar/Bereit/Ready/…» alltid følger valgt UI-språk.
