@@ -7,6 +7,25 @@ TAG="${3:-}"
 ASSET_REGEX='xlent-scanner-.*\.(dmg|pkg)$'
 DOWNLOAD_DIR="${HOME}/Downloads/xlent-scanner-install"
 QUICK_ACTION_SCRIPT="install_mac_quick_action.sh"
+APP_NAME="XLENTScanner.app"
+DEST_APP="/Applications/${APP_NAME}"
+MOUNT_POINT=""
+
+cleanup() {
+  if [[ -n "${MOUNT_POINT}" && -d "${MOUNT_POINT}" ]]; then
+    hdiutil detach "${MOUNT_POINT}" -quiet >/dev/null 2>&1 || true
+    rmdir "${MOUNT_POINT}" >/dev/null 2>&1 || true
+  fi
+}
+trap cleanup EXIT
+
+run_as_needed() {
+  if [[ -w "/Applications" ]]; then
+    "$@"
+  else
+    sudo "$@"
+  fi
+}
 
 if [[ -n "${TAG}" ]]; then
   API_URL="https://api.github.com/repos/${OWNER}/${REPO}/releases/tags/${TAG}"
@@ -39,11 +58,41 @@ if [[ -n "${QUICK_ACTION_URL}" ]]; then
   chmod +x "${QUICK_ACTION_PATH}"
 fi
 
-echo "Åpner installer: ${INSTALLER_PATH}"
-open "${INSTALLER_PATH}"
+echo "Monterer ${ASSET_NAME}..."
+MOUNT_POINT="$(mktemp -d /tmp/xlent-scanner-dmg.XXXXXX)"
+hdiutil attach "${INSTALLER_PATH}" -quiet -nobrowse -mountpoint "${MOUNT_POINT}"
+
+SOURCE_APP="${MOUNT_POINT}/${APP_NAME}"
+if [[ ! -d "${SOURCE_APP}" ]]; then
+  echo "Fant ikke ${APP_NAME} i DMG-en."
+  exit 1
+fi
+
+echo "Installerer ${APP_NAME} til /Applications..."
+if [[ -d "${DEST_APP}" ]]; then
+  run_as_needed rm -rf "${DEST_APP}"
+fi
+run_as_needed cp -R "${SOURCE_APP}" "/Applications/"
+
+echo "Fjerner macOS quarantine-attributt..."
+if command -v xattr >/dev/null 2>&1; then
+  run_as_needed xattr -dr com.apple.quarantine "${DEST_APP}" || true
+fi
+
+if command -v codesign >/dev/null 2>&1; then
+  codesign --verify --deep --strict "${DEST_APP}" >/dev/null 2>&1 || {
+    echo "Advarsel: macOS-signatur kunne ikke verifiseres lokalt. Appen kan fortsatt blokkeres av Gatekeeper."
+  }
+fi
+
+echo "Installerte ${DEST_APP}"
 
 if [[ -n "${QUICK_ACTION_URL}" ]]; then
   echo ""
-  echo "Etter at XLENTScanner er dratt til Applications, installer Finder Quick Action med:"
+  echo "Installer Finder Quick Action med:"
   echo "  bash \"${QUICK_ACTION_PATH}\""
 fi
+
+echo ""
+echo "Start appen fra Applications. Hvis macOS fortsatt blokkerer den, kjør:"
+echo "  xattr -dr com.apple.quarantine \"${DEST_APP}\""

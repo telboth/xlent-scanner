@@ -25,12 +25,16 @@ Anbefaling:
 
 ## macOS
 
-1. Gå til releases-siden og last ned siste `xlent-scanner-macos-<versjon>.dmg`.
-2. Åpne `.dmg`-filen.
-3. Dra `XLENTScanner.app` til `Applications`.
-4. Åpne programmet fra `Applications`.
-5. Valgfritt: installer Finder-høyreklikk fra appen under `Innstillinger` -> `macOS Finder Quick Action`.
-6. Alternativt kan `install_mac_quick_action.sh` lastes ned fra samme release og kjøres:
+Anbefalt MVP-installasjon:
+
+1. Gå til releases-siden og last ned `install_macos.sh`.
+2. Kjør:
+   ```bash
+   bash ~/Downloads/install_macos.sh
+   ```
+3. Start `XLENTScanner.app` fra `Applications`.
+4. Valgfritt: installer Finder-høyreklikk fra appen under `Innstillinger` -> `macOS Finder Quick Action`.
+5. Alternativt kan `install_mac_quick_action.sh` lastes ned fra samme release og kjøres:
    ```bash
    bash ~/Downloads/install_mac_quick_action.sh
    killall Finder
@@ -39,6 +43,7 @@ Anbefaling:
 Merk:
 - macOS-DMG-en i MVP er for Apple Silicon (M-series).
 - Intel Mac er ikke støttet som ferdig DMG foreløpig. Kjør fra kildekode med `uv run xlent-scanner`.
+- Manuell DMG-installasjon kan trigge Gatekeeper-meldingen «appen er skadet» fordi appen ikke er notarisert. `install_macos.sh` fjerner quarantine-attributtet etter kopiering.
 
 ### Hvis macOS blokkerer appen (Gatekeeper)
 
@@ -55,6 +60,11 @@ Alternativ B (System Settings):
 2. Gå til `System Settings` -> `Privacy & Security`.
 3. Finn meldingen om blokkert app nederst.
 4. Velg **Open Anyway** og bekreft.
+
+Hvis macOS sier at appen er skadet:
+```bash
+xattr -dr com.apple.quarantine /Applications/XLENTScanner.app
+```
 
 ## Verifisering etter installasjon
 

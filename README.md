@@ -1,6 +1,6 @@
 # XLENT Compliance-scanner
 
-> **v1.3.1** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
+> **v1.3.2** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
 
 Alt kjøres 100 % lokalt — ingen dokumenter, tekst eller funn sendes over internett.
 
@@ -153,16 +153,19 @@ sudo dnf install webkit2gtk4.0
 
 ## Installasjon (macOS — intern MVP)
 
-Last ned `xlent-scanner-macos-<versjon>.dmg` fra [Releases](https://github.com/telboth/xlent-scanner/releases).
+Anbefalt MVP-installasjon er via `install_macos.sh` fra [Releases](https://github.com/telboth/xlent-scanner/releases). Scriptet laster ned DMG, kopierer appen til `/Applications`, og fjerner macOS quarantine-attributtet som ellers kan gi meldingen «appen er skadet».
 
-1. Åpne DMG-filen og dra **XLENTScanner** til **Applications**-mappen
-2. **Første gangs oppstart**: macOS Gatekeeper kan blokkere appen fordi den ikke er signert. Høyreklikk på appen og velg **Åpne**, deretter bekreft i dialogboksen.
-3. Valgfritt: åpne **Innstillinger → macOS Finder Quick Action** og trykk **Installer Finder Quick Action**.
-4. Alternativt kan Quick Action installeres fra release-scriptet:
-   ```bash
-   bash install_mac_quick_action.sh
-   killall Finder
-   ```
+```bash
+bash install_macos.sh
+```
+
+Manuell DMG-installasjon kan fortsatt fungere, men kan kreve:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/XLENTScanner.app
+```
+
+Valgfritt: åpne **Innstillinger → macOS Finder Quick Action** og trykk **Installer Finder Quick Action**.
 
 > macOS-DMG-en er for Apple Silicon (M-series). Intel Mac er ikke støttet som ferdig DMG i MVP; Intel-brukere kan kjøre fra kildekode med `uv run xlent-scanner`.
 
@@ -269,7 +272,7 @@ En egen `create-release`-jobb oppretter releasen, deretter bygger Windows- og ma
 
 ```bash
 # Oppdater versjon i pyproject.toml + src/xlent_scanner/__init__.py, så:
-git tag v1.3.1
+git tag v1.3.2
 git push origin master --tags
 ```
 
@@ -334,6 +337,10 @@ src/xlent_scanner/
 ---
 
 ## Endringslogg
+
+### v1.3.2
+- Gjorde `install_macos.sh` til full macOS-installer for MVP: laster ned DMG, monterer den, kopierer `XLENTScanner.app` til `/Applications`, og fjerner `com.apple.quarantine`.
+- Oppdaterte macOS-dokumentasjon fordi manuell DMG-installasjon uten notarization kan gi «appen er skadet».
 
 ### v1.3.1
 - Fikset macOS-feilen «XLENTScanner.app er skadet og kan ikke åpnes».
