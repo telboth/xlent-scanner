@@ -9,3 +9,5 @@ def test_macos_build_enables_finder_open_with() -> None:
     assert "org.openxmlformats.wordprocessingml.document" in script
     assert "CFBundleTypeExtensions" in script
     assert '"docx"' in script
+    assert "codesign --force --deep --sign -" in script
+    assert "codesign --verify --deep --strict" in script

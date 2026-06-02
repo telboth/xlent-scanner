@@ -176,4 +176,11 @@ with plist_path.open("wb") as f:
     plistlib.dump(plist, f, sort_keys=False)
 PY
 
+if command -v codesign >/dev/null 2>&1; then
+  codesign --force --deep --sign - "$APP_PATH"
+  codesign --verify --deep --strict "$APP_PATH"
+else
+  echo "Warning: codesign not found; app bundle was not re-signed after Info.plist update." >&2
+fi
+
 echo "Build complete: $APP_PATH"

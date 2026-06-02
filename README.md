@@ -1,6 +1,6 @@
 # XLENT Compliance-scanner
 
-> **v1.3.0** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
+> **v1.3.1** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
 
 Alt kjøres 100 % lokalt — ingen dokumenter, tekst eller funn sendes over internett.
 
@@ -269,7 +269,7 @@ En egen `create-release`-jobb oppretter releasen, deretter bygger Windows- og ma
 
 ```bash
 # Oppdater versjon i pyproject.toml + src/xlent_scanner/__init__.py, så:
-git tag v1.3.0
+git tag v1.3.1
 git push origin master --tags
 ```
 
@@ -334,6 +334,11 @@ src/xlent_scanner/
 ---
 
 ## Endringslogg
+
+### v1.3.1
+- Fikset macOS-feilen «XLENTScanner.app er skadet og kan ikke åpnes».
+- Re-signerer app-bundlen med ad-hoc `codesign` etter at `Info.plist` patches med dokumenttyper.
+- Verifiserer macOS-signaturen i build-scriptet før DMG pakkes.
 
 ### v1.3.0
 - La til `Stopp aktiv AI-modell` i Ollama-innstillinger.
