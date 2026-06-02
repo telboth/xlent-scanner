@@ -74,6 +74,7 @@ uv pip install --python "$PYTHON_EXE" "pyinstaller>=6.0.0" "pyinstaller-hooks-co
   --noconfirm \
   --clean \
   --windowed \
+  --argv-emulation \
   --name "$APP_NAME" \
   --osx-bundle-identifier "no.xlent.xlent-scanner" \
   --paths "$REPO_ROOT/src" \
@@ -133,5 +134,46 @@ if [[ ! -d "$APP_PATH" ]]; then
   echo "Expected app bundle missing: $APP_PATH" >&2
   exit 1
 fi
+
+APP_PLIST="$APP_PATH/Contents/Info.plist"
+python3 - "$APP_PLIST" <<'PY'
+import plistlib
+import sys
+from pathlib import Path
+
+plist_path = Path(sys.argv[1])
+with plist_path.open("rb") as f:
+    plist = plistlib.load(f)
+
+supported_extensions = [
+    "pdf", "docx", "pptx", "xlsx", "txt", "md", "html", "csv", "eml", "rtf", "odt",
+]
+supported_utis = [
+    "com.adobe.pdf",
+    "org.openxmlformats.wordprocessingml.document",
+    "org.openxmlformats.presentationml.presentation",
+    "org.openxmlformats.spreadsheetml.sheet",
+    "public.plain-text",
+    "net.daringfireball.markdown",
+    "public.html",
+    "public.comma-separated-values-text",
+    "public.email-message",
+    "public.rtf",
+    "org.oasis-open.opendocument.text",
+]
+
+plist["CFBundleDocumentTypes"] = [
+    {
+        "CFBundleTypeName": "Documents supported by XLENT Scanner",
+        "CFBundleTypeRole": "Viewer",
+        "CFBundleTypeExtensions": supported_extensions,
+        "LSItemContentTypes": supported_utis,
+        "LSHandlerRank": "Alternate",
+    }
+]
+
+with plist_path.open("wb") as f:
+    plistlib.dump(plist, f, sort_keys=False)
+PY
 
 echo "Build complete: $APP_PATH"

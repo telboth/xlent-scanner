@@ -1,6 +1,6 @@
 # XLENT Compliance-scanner
 
-> **v1.2.9** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
+> **v1.2.10** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
 
 Alt kjøres 100 % lokalt — ingen dokumenter, tekst eller funn sendes over internett.
 
@@ -216,6 +216,9 @@ bash install_mac_quick_action.sh
 Kan også installeres direkte fra appen under **Innstillinger**. Krever at `XLENTScanner.app` er i `/Applications`. Scriptet installerer en Automator Quick Action som sender filstien som argument til appen.
 `scripts/install_mac_service.sh` finnes fortsatt som bakoverkompatibel wrapper.
 
+### macOS — Åpne med
+macOS-builden deklarerer støttede dokumenttyper (`pdf/docx/pptx/xlsx/txt/md/html/csv/eml/rtf/odt`) i app-bundlen. Finder kan derfor bruke **Åpne med → XLENTScanner** for disse filene.
+
 ### Linux — «Åpne med» via .desktop-registrering
 Etter at AppImage er nedlastet:
 ```bash
@@ -265,7 +268,7 @@ En egen `create-release`-jobb oppretter releasen, deretter bygger Windows- og ma
 
 ```bash
 # Oppdater versjon i pyproject.toml + src/xlent_scanner/__init__.py, så:
-git tag v1.2.9
+git tag v1.2.10
 git push origin master --tags
 ```
 
@@ -330,6 +333,11 @@ src/xlent_scanner/
 ---
 
 ## Endringslogg
+
+### v1.2.10
+- Fikset macOS `Åpne med XLENTScanner` for støttede filtyper ved å deklarere dokumenttyper i appens `Info.plist`.
+- Aktivert PyInstaller `--argv-emulation`, slik at Finder `Open With` sender filstien til appen ved oppstart.
+- La til test som sikrer at macOS-buildscriptet beholder denne konfigurasjonen.
 
 ### v1.2.9
 - Fikset PDF-anonymisering på macOS/nyere PyMuPDF (`apply_redactions`).

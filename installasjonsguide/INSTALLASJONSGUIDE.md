@@ -79,6 +79,8 @@ Etter at `install_mac_quick_action.sh` er kjørt:
 2. Velg `Hurtighandlinger` -> `Skann med XLENT`.
 3. Appen åpner seg og starter skanning av valgt fil.
 
+Alternativt kan du bruke `Åpne med` -> `XLENTScanner` for støttede filtyper (`pdf/docx/pptx/xlsx/txt/md/html/csv/eml/rtf/odt`).
+
 ## Nedlasting av spaCy-modeller
 
 Appen bruker spaCy-modeller for navnegjenkjenning (NER). Modellene lastes normalt ned automatisk ved første kjøring ved behov.
