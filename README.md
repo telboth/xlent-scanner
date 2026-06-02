@@ -1,6 +1,6 @@
 # XLENT Compliance-scanner
 
-> **v1.2.10** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
+> **v1.3.0** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
 
 Alt kjøres 100 % lokalt — ingen dokumenter, tekst eller funn sendes over internett.
 
@@ -24,6 +24,7 @@ Alt kjøres 100 % lokalt — ingen dokumenter, tekst eller funn sendes over inte
 - Regelbaserte detektorer (personnummer, e-post, konto, IBAN, URL) **supplerer** AI-en automatisk for 100 % pålitelig dekning
 - **Konfidensfilter**: `høy` / `medium` / `lav`
 - **Re-skann**-knapp + inline statusindikator
+- **Stopp aktiv AI-modell** i Innstillinger for å frigjøre minne/CPU/GPU uten å stoppe Ollama-tjenesten
 - Ollama-adresse kan overstyres med miljøvariabelen `OLLAMA_BASE_URL`
 
 ### Resultater og eksport
@@ -268,7 +269,7 @@ En egen `create-release`-jobb oppretter releasen, deretter bygger Windows- og ma
 
 ```bash
 # Oppdater versjon i pyproject.toml + src/xlent_scanner/__init__.py, så:
-git tag v1.2.10
+git tag v1.3.0
 git push origin master --tags
 ```
 
@@ -333,6 +334,12 @@ src/xlent_scanner/
 ---
 
 ## Endringslogg
+
+### v1.3.0
+- La til `Stopp aktiv AI-modell` i Ollama-innstillinger.
+- Stopper valgt Ollama-modell via API (`keep_alive: 0`) uten å stoppe Ollama-tjenesten.
+- Modellen lastes automatisk inn igjen ved neste dybdeskann.
+- La til test som sikrer korrekt Ollama-payload for modellstopp.
 
 ### v1.2.10
 - Fikset macOS `Åpne med XLENTScanner` for støttede filtyper ved å deklarere dokumenttyper i appens `Info.plist`.

@@ -122,6 +122,33 @@ def ollama_hardware_info() -> dict[str, Any]:
         return {"mode": "cpu", "gpu": False, "vram_mb": 0, "total_mb": 0}
 
 
+def stop_ollama_model(model: str) -> dict[str, Any]:
+    """Unload a model from Ollama without stopping the Ollama service."""
+    model = (model or "").strip()
+    if not model:
+        return {"ok": False, "error": "Ingen Ollama-modell oppgitt."}
+
+    try:
+        _post(
+            "/api/generate",
+            {
+                "model": model,
+                "prompt": "",
+                "stream": False,
+                "keep_alive": 0,
+            },
+            timeout=30,
+        )
+        LOGGER.info("Ollama model unloaded: %s", model)
+        return {"ok": True, "model": model}
+    except (urllib.error.URLError, OSError) as exc:
+        LOGGER.warning("Ollama model unload failed, service unavailable: %s", exc)
+        return {"ok": False, "model": model, "error": "Ollama kjører ikke."}
+    except Exception as exc:
+        LOGGER.warning("Ollama model unload failed for %s: %s", model, exc)
+        return {"ok": False, "model": model, "error": str(exc)}
+
+
 # ── Prompt-builder (dynamisk basert på valgte kategorier) ───────────────
 
 _SYS = (

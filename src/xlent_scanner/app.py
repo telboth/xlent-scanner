@@ -1046,6 +1046,18 @@ def ollama_hardware_info_endpoint():
     return jsonify(ollama_hardware_info())
 
 
+@flask_app.route("/ollama/model/stop", methods=["POST"])
+def ollama_model_stop_endpoint():
+    """Last ut valgt Ollama-modell uten å stoppe Ollama-tjenesten."""
+    from xlent_scanner.deep_scanner import stop_ollama_model  # noqa: PLC0415
+
+    data = request.get_json(force=True) or {}
+    model = (data.get("model") or "").strip()
+    result = stop_ollama_model(model)
+    LOGGER.info("ollama/model/stop model=%s ok=%s", model, result.get("ok"))
+    return jsonify(result)
+
+
 @flask_app.route("/ollama/last-file-info", methods=["GET"])
 def ollama_last_file_info():
     """Returnerer info om sist skannede fil for Dybdeskann-fanen."""
