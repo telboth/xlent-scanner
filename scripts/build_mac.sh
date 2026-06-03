@@ -147,30 +147,44 @@ plist_path = Path(sys.argv[1])
 with plist_path.open("rb") as f:
     plist = plistlib.load(f)
 
-document_types = [
-    ("PDF document", "pdf", "com.adobe.pdf", "application/pdf"),
-    ("Word document", "docx", "org.openxmlformats.wordprocessingml.document", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"),
-    ("PowerPoint presentation", "pptx", "org.openxmlformats.presentationml.presentation", "application/vnd.openxmlformats-officedocument.presentationml.presentation"),
-    ("Excel workbook", "xlsx", "org.openxmlformats.spreadsheetml.sheet", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
-    ("Text document", "txt", "public.plain-text", "text/plain"),
-    ("Markdown document", "md", "net.daringfireball.markdown", "text/markdown"),
-    ("HTML document", "html", "public.html", "text/html"),
-    ("CSV document", "csv", "public.comma-separated-values-text", "text/csv"),
-    ("Email message", "eml", "public.email-message", "message/rfc822"),
-    ("RTF document", "rtf", "public.rtf", "application/rtf"),
-    ("OpenDocument text", "odt", "org.oasis-open.opendocument.text", "application/vnd.oasis.opendocument.text"),
+supported_extensions = ["pdf", "docx", "pptx", "xlsx", "txt", "md", "html", "csv", "eml", "rtf", "odt"]
+supported_mime_types = [
+    "application/pdf",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "text/plain",
+    "text/markdown",
+    "text/html",
+    "text/csv",
+    "message/rfc822",
+    "application/rtf",
+    "application/vnd.oasis.opendocument.text",
+]
+supported_utis = [
+    "com.adobe.pdf",
+    "org.openxmlformats.wordprocessingml.document",
+    "org.openxmlformats.presentationml.presentation",
+    "org.openxmlformats.spreadsheetml.sheet",
+    "public.plain-text",
+    "net.daringfireball.markdown",
+    "public.html",
+    "public.comma-separated-values-text",
+    "public.email-message",
+    "public.rtf",
+    "org.oasis-open.opendocument.text",
+    "public.content",
+    "public.data",
 ]
 
-plist["CFBundleDocumentTypes"] = []
-for type_name, ext, uti, mime in document_types:
-    plist["CFBundleDocumentTypes"].append({
-        "CFBundleTypeName": f"XLENT Scanner {type_name}",
-        "CFBundleTypeRole": "Viewer",
-        "CFBundleTypeExtensions": [ext],
-        "CFBundleTypeMIMETypes": [mime],
-        "LSItemContentTypes": [uti],
-        "LSHandlerRank": "Alternate",
-    })
+plist["CFBundleDocumentTypes"] = [{
+    "CFBundleTypeName": "XLENT Scanner supported documents",
+    "CFBundleTypeRole": "Viewer",
+    "CFBundleTypeExtensions": supported_extensions,
+    "CFBundleTypeMIMETypes": supported_mime_types,
+    "LSItemContentTypes": supported_utis,
+    "LSHandlerRank": "Alternate",
+}]
 
 with plist_path.open("wb") as f:
     plistlib.dump(plist, f, sort_keys=False)

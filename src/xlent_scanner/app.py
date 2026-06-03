@@ -1720,6 +1720,20 @@ def _arg_value(name: str, default: str) -> str:
     return sys.argv[idx + 1]
 
 
+def _startup_file_from_argv(argv: list[str]) -> str | None:
+    """Finn filsti sendt fra OS shell/Finder uten å feiltolke macOS -psn_*.
+
+    macOS Finder kan starte bundle-apps med et prosess-serienummer-argument
+    som `-psn_0_...`. Ved Finder Open With kan filstien komme senere i argv.
+    """
+    for arg in argv[1:]:
+        if not arg or arg.startswith("--") or arg.startswith("-psn_") or arg.startswith("-"):
+            continue
+        if Path(arg).exists():
+            return arg
+    return None
+
+
 def _run_api_mode() -> None:
     """Kjør bare lokal API-server for eksterne frontender, uten GUI."""
     global _port
@@ -1864,9 +1878,10 @@ def main() -> None:
         _run_api_mode()
         return
 
-    # ── Fil fra Windows kontekstmeny (argv[1]) ──────────────────────────────
-    if len(sys.argv) > 1 and not sys.argv[1].startswith("--"):
-        _initial_file = sys.argv[1]
+    # ── Fil fra OS/Finder/Windows-kontekstmeny ─────────────────────────────
+    startup_file = _startup_file_from_argv(sys.argv)
+    if startup_file:
+        _initial_file = startup_file
         LOGGER.info("Startup file from argv: %s", _initial_file)
         # Enkel-instans: hvis en instans allerede kjører, send filen dit
         _ipc_send_and_exit(_initial_file)

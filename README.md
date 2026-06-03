@@ -1,6 +1,6 @@
 # XLENT Compliance-scanner
 
-> **v1.3.9** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
+> **v1.3.10** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
 
 Alt kjøres 100 % lokalt — ingen dokumenter, tekst eller funn sendes over internett.
 
@@ -337,6 +337,10 @@ src/xlent_scanner/
 ---
 
 ## Endringslogg
+
+### v1.3.10
+- Fikset macOS Finder/Open With-oppstart ved å ignorere Finder sitt `-psn_...` argument og bruke første faktiske filsti.
+- Gjorde macOS `Info.plist`-registrering for støttede dokumenter mer robust for Launch Services.
 
 ### v1.3.9
 - La til brukerredigerbar blacklist under Innstillinger. Ord og uttrykk i blacklist flagges alltid og fjernes ved redaction.
