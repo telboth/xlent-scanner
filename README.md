@@ -1,6 +1,6 @@
 # XLENT Compliance-scanner
 
-> **v1.3.6** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
+> **v1.3.7** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
 
 Alt kjøres 100 % lokalt — ingen dokumenter, tekst eller funn sendes over internett.
 
@@ -337,6 +337,12 @@ src/xlent_scanner/
 ---
 
 ## Endringslogg
+
+### v1.3.7
+- Fikset engelsk kategorioversettelse i «What do you want to find?» der manglende `scanCat...`-nøkler ble vist i UI.
+- Endret engelsk terminologi fra anonymisation/anonymised til redaction/redacted der appen beskriver dokumentredigering.
+- Fikset AI-dybdeskann-regresjon der re-scan-knappen kunne bli stående som spinner fordi frontend pollet siste jobb i stedet for konkret `job_id`.
+- La til GUI-endepunkter for dybdeskann-status og cancel per `job_id`.
 
 ### v1.3.6
 - Light mode er nå standard for nye brukere, mens lagret dark mode beholdes.

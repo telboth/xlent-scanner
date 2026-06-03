@@ -149,3 +149,27 @@ def test_settings_export_import_excludes_scan_history_and_document_text(monkeypa
     assert data["browser_settings"]["theme"] == "dark"
     assert data["whitelist"] == ["safe@example.com"]
     assert "Test User" in data["ignore_toml"]
+
+
+def test_gui_deep_scan_status_route_accepts_specific_job_id(monkeypatch):
+    from xlent_scanner import deep_scanner
+
+    monkeypatch.setattr(
+        deep_scanner,
+        "get_deep_scan_status",
+        lambda job_id=None: {
+            "job_id": job_id,
+            "status": "done",
+            "progress": "Ferdig",
+            "findings": [],
+        } if job_id == "abc123" else {},
+    )
+
+    client = app_module.flask_app.test_client()
+
+    found = client.get("/ollama/deep-scan/status/abc123")
+    missing = client.get("/ollama/deep-scan/status/missing")
+
+    assert found.status_code == 200
+    assert found.get_json()["job_id"] == "abc123"
+    assert missing.status_code == 404

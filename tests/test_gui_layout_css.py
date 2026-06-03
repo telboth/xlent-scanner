@@ -111,14 +111,49 @@ def test_settings_profile_and_ollama_pull_controls_exist_for_all_languages():
         assert html.count(f"{key}:") == 6
 
 
+def test_scan_category_translations_exist_for_all_languages():
+    html = HTML.read_text(encoding="utf-8")
+
+    for key in [
+        "scanCatId",
+        "scanCatKonto",
+        "scanCatKredittkort",
+        "scanCatNavn",
+        "scanCatHemmeligheter",
+        "scanCatFinansielt",
+        "scanCatKonfidensielt",
+        "scanCatKlient",
+        "scanCatOrgnummer",
+        "scanCatPassnummer",
+        "scanCatFodselsdato",
+        "scanCatSwift",
+        "scanCatLonn",
+    ]:
+        assert html.count(f"{key}:") == 6
+
+
 def test_ai_rescan_uses_spinner_instead_of_duplicate_analyzing_text():
     html = HTML.read_text(encoding="utf-8")
 
     assert ".btn-spinner" in html
     assert "@keyframes spin" in html
     assert "function _setRescanBtnLoading" in html
-    assert "'<span class=\"btn-spinner\" aria-label=\"Loading\"></span>'" in html
+    assert '<span class="btn-spinner" aria-label="Loading"></span>' in html
+    assert "${escapeHtml(t(\"aiAnalyzing\"))}" in html
     assert "rescanBtn.textContent = t(\"aiAnalyzingBtn\")" not in html
+
+
+def test_ai_deep_scan_polling_uses_job_id_and_restores_rescan_button():
+    html = HTML.read_text(encoding="utf-8")
+
+    assert 'let _aiCurrentJobId = "";' in html
+    assert '_aiCurrentJobId = String(r.job_id || "");' in html
+    assert 'const startedJobId = _aiCurrentJobId;' in html
+    assert 'setInterval(() => _pollAiScan(startedJobId), 1500)' in html
+    assert 'fetch(`${API}/ollama/deep-scan/status/${encodeURIComponent(jobId)}`)' in html
+    assert 'fetch(cancelUrl, { method:"POST" })' in html
+    assert "function _stopAiPolling()" in html
+    assert "_restoreRescanBtn(`✅ ${n} ${t(\"metaFindings\")}`);" in html
 
 
 def test_about_hardware_requirement_is_16gb_in_all_languages():

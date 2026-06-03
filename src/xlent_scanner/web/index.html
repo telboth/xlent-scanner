@@ -878,14 +878,14 @@
           <p style="color:var(--muted);font-size:12px;">The whitelist is stored locally and is never shared.</p>
         </div>
         <div class="about-section">
-          <h3>Anonymisation and export</h3>
-          <p>After scanning you can select findings and generate an anonymised version. For DOCX, PPTX, XLSX, and PDF the text is replaced directly in the file. Findings can also be exported as JSON or CSV.</p>
-          <p style="color:var(--muted);font-size:12px;">⚠ PDF redaction replaces text in the content stream, but text in metadata or images is not anonymised. Verify the result.</p>
+          <h3>Redaction and export</h3>
+          <p>After scanning you can select findings and generate a redacted version. For DOCX, PPTX, XLSX, and PDF the text is replaced directly in the file. Findings can also be exported as JSON or CSV.</p>
+          <p style="color:var(--muted);font-size:12px;">⚠ PDF redaction replaces text in the content stream, but text in metadata or images is not redacted. Verify the result.</p>
         </div>
         <div class="about-section">
           <h3>AI Deep Scan (Ollama)</h3>
           <p>The Deep Scan tab sends document text to a local AI model via <strong>Ollama</strong> and asks it to identify sensitive information that rule-based detectors may miss — for example names in unusual formats, addresses without postal codes, or budget figures embedded in free text.</p>
-          <p>You choose which categories the AI should look for: names, addresses, phone numbers, national ID numbers, bank account numbers, company names, and budget amounts. Selected findings can be anonymised directly from the tab and saved as a text file in the Downloads folder.</p>
+          <p>You choose which categories the AI should look for: names, addresses, phone numbers, national ID numbers, bank account numbers, company names, and budget amounts. Selected findings can be redacted directly from the tab and saved as a text file in the Downloads folder.</p>
           <div class="local-badge" style="margin-top:8px"><span class="icon">⏱️</span><span><strong>Hardware requirements:</strong> Deep scanning can take anywhere from a few seconds to several minutes depending on document size. Recommended: at least 16 GB RAM and a relatively modern CPU (circa 2018 or newer). <strong>GPU acceleration</strong> (NVIDIA/AMD) is used automatically when available and provides significantly faster analysis. The app shows whether it is running on CPU or GPU.</span></div>
           <p style="margin-top:8px;">Ollama is available free at <a href="https://ollama.ai" target="_blank" style="color:var(--accent)">ollama.ai</a>. Recommended model: <strong>llama3.2:3b</strong> (~1.9 GB).</p>
         </div>
@@ -1605,7 +1605,7 @@
         noFindings:   "✓ No sensitive findings detected.",
         selAll:       "Select all",
         selNone:      "Deselect all",
-        saveAnon:     "Save anonymised",
+        saveAnon:     "Save redacted",
         genMd:        "Generate .md file",
         genPdf:       "Generate PDF",
         selectOne:    "Select at least one finding.",
@@ -1622,7 +1622,7 @@
         exportJson:   "Export JSON",
         exportCsv:    "Export CSV",
         historyTitle: "Recent scans",
-        pdfCaveat:    "PDF redaction replaces text in the content stream. Note that text in metadata or images is not anonymised — verify the result.",
+        pdfCaveat:    "PDF redaction replaces text in the content stream. Note that text in metadata or images is not redacted — verify the result.",
         scanErr:      "Error during scan:",
         dragErr:      "Error during drag-drop:",
         dlgErr:       "Could not open file picker:",
@@ -1710,7 +1710,7 @@
         openLog:            "Open log file",
         logLoadFailed:      "Could not load log.",
         logOpenFailed:      "Could not open log file.",
-        pdfPatchFailed:     "PDF anonymisation failed. Try the PDF report or contact support with the log file.",
+        pdfPatchFailed:     "PDF redaction failed. Try the PDF report or contact support with the log file.",
         pdfGenerateFailed:  "PDF generation failed. See the log file for technical details.",
         updateCheckNow: "Check for updates now",
         updateNoUpdate: "You already have the latest version.",
@@ -1721,7 +1721,7 @@
         dstCatTelefon:      "Phone numbers",
         dstCatSelskapsnavn:  "Company names",
         dstCatNettadresse:   "Web addresses",
-        dstSelectOne:       "Select at least one finding to anonymise.",
+        dstSelectOne:       "Select at least one finding to redact.",
         dstHwReq:           "⚠ Deep scanning runs locally and may take several minutes depending on document size and hardware. Recommended: at least 16 GB RAM and a relatively modern CPU. GPU acceleration (NVIDIA/AMD) is used automatically and significantly reduces analysis time.",
         modeFile:           "File",
         modePaste:          "Paste",
@@ -1742,7 +1742,7 @@
         folderLevel:        "Level",
         folderFile:         "File",
         scanOptsTitle:       "What do you want to find?",
-        scanCatId:           "National ID / passport",
+        scanCatId:           "National / personal ID numbers",
         scanCatKonto:        "Account number / IBAN",
         scanCatKredittkort:  "Credit cards",
         scanCatNavn:         "Person names",
@@ -1750,7 +1750,11 @@
         scanCatFinansielt:   "Financial figures",
         scanCatKonfidensielt:"Confidential keywords",
         scanCatKlient:       "Client names",
-        scanCatOrgnummer:    "Org. number",
+        scanCatOrgnummer:    "Organisation numbers",
+        scanCatPassnummer:   "Passport numbers",
+        scanCatFodselsdato:  "Dates of birth",
+        scanCatSwift:        "SWIFT / BIC codes",
+        scanCatLonn:         "Salary / compensation",
         aiToggleLabel:       "Run AI deep scan (Ollama)",
         aiExtraCats:         "Extra AI categories:",
         aiResultsTitle:      "AI findings",
@@ -2396,6 +2400,7 @@
     let lastUpdateCheck = null;
     let ignorePath = "";
     let whitelistPath = "";
+    let _aiCurrentJobId = "";
 
     /* ══════════════════════════════════════════════════════════════════
        UI LANGUAGE
@@ -3829,7 +3834,9 @@
     function _setRescanBtnLoading(rescanBtn, loading) {
       if (!rescanBtn) return;
       rescanBtn.disabled = loading;
-      rescanBtn.innerHTML = loading ? '<span class="btn-spinner" aria-label="Loading"></span>' : escapeHtml(t("rescanAi"));
+      rescanBtn.innerHTML = loading
+        ? `<span class="btn-spinner" aria-label="Loading"></span> ${escapeHtml(t("aiAnalyzing"))}`
+        : escapeHtml(t("rescanAi"));
       rescanBtn.title = loading ? t("aiAnalyzing") : "";
     }
 
@@ -3838,6 +3845,10 @@
       if (!toggle?.checked) return;
 
       const rescanBtn = document.getElementById("ai-rescan-btn");
+      if (_aiPollTimer) {
+        _setAiInlineStatus(t("deepScanRunning"));
+        return;
+      }
 
       // Gi umiddelbar visuell tilbakemelding UTEN å vente på nettverks-kall
       _setRescanBtnLoading(rescanBtn, true);
@@ -3887,8 +3898,11 @@
           _setRescanBtnLoading(rescanBtn, false);
           return;
         }
+        _aiCurrentJobId = String(r.job_id || "");
         if (_aiPollTimer) clearInterval(_aiPollTimer);
-        _aiPollTimer = setInterval(_pollAiScan, 1500);
+        const startedJobId = _aiCurrentJobId;
+        _aiPollTimer = setInterval(() => _pollAiScan(startedJobId), 1500);
+        _pollAiScan(startedJobId);
       } catch (e) {
         progressEl.innerHTML = `<span style="color:var(--danger)">${escapeHtml(String(e))}</span>`;
         cancelBtn.style.display = "none";
@@ -3903,31 +3917,58 @@
       if (inlineMsg !== undefined) _setAiInlineStatus(inlineMsg);
     }
 
-    async function _pollAiScan() {
+    function _stopAiPolling() {
+      if (_aiPollTimer) {
+        clearInterval(_aiPollTimer);
+        _aiPollTimer = null;
+      }
+      _aiCurrentJobId = "";
+    }
+
+    async function _pollAiScan(jobId) {
+      if (!jobId) return;
       try {
-        const s = await (await fetch(`${API}/ollama/deep-scan/status`)).json();
+        const response = await fetch(`${API}/ollama/deep-scan/status/${encodeURIComponent(jobId)}`);
+        const s = await response.json();
+        if (!response.ok || s.ok === false) {
+          _stopAiPolling();
+          document.getElementById("ai-cancel-btn").style.display = "none";
+          document.getElementById("ai-progress").innerHTML =
+            `<span style="color:var(--danger)">${escapeHtml(s.error || "Ukjent dybdeskann-jobb.")}</span>`;
+          _restoreRescanBtn(`⚠ ${s.error || t("errPrefix")}`);
+          return;
+        }
         document.getElementById("ai-progress").textContent = s.progress || "";
         if (s.status === "done") {
-          clearInterval(_aiPollTimer); _aiPollTimer = null;
+          _stopAiPolling();
           document.getElementById("ai-cancel-btn").style.display = "none";
-          _aiFindingsData = s.findings || [];
-          _renderAiFindings(_aiFindingsData);
-          // Persistér AI-funn server-side slik at de inkluderes i rapporten
-          fetch(`${API}/report/ai-findings`, {
-            method: "POST", headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({ findings: _aiFindingsData, file_name: lastResult?.file_name || "" }),
-          }).catch(()=>{});
-          // Vis "ferdig"-melding med antall funn
-          const n = _aiFindingsData.length;
-          const doneMsg = `${t("deepScanDone")} – ${n} ${t("metaFindings")}`;
-          document.getElementById("ai-progress").textContent = doneMsg;
-          _restoreRescanBtn(`✅ ${n} ${t("metaFindings")}`);
+          try {
+            _aiFindingsData = s.findings || [];
+            _renderAiFindings(_aiFindingsData);
+            // Persistér AI-funn server-side slik at de inkluderes i rapporten
+            fetch(`${API}/report/ai-findings`, {
+              method: "POST", headers: {"Content-Type": "application/json"},
+              body: JSON.stringify({ findings: _aiFindingsData, file_name: lastResult?.file_name || "" }),
+            }).catch(()=>{});
+            // Vis "ferdig"-melding med antall funn
+            const n = _aiFindingsData.length;
+            const doneMsg = `${t("deepScanDone")} – ${n} ${t("metaFindings")}`;
+            document.getElementById("ai-progress").textContent = doneMsg;
+            _restoreRescanBtn(`✅ ${n} ${t("metaFindings")}`);
+          } catch (e) {
+            document.getElementById("ai-progress").innerHTML =
+              `<span style="color:var(--danger)">${escapeHtml(String(e))}</span>`;
+            _restoreRescanBtn(`⚠ ${String(e)}`);
+          }
         } else if (s.status === "cancelled" || s.status === "error") {
-          clearInterval(_aiPollTimer); _aiPollTimer = null;
+          _stopAiPolling();
           document.getElementById("ai-cancel-btn").style.display = "none";
           _restoreRescanBtn(t("aiCancelled"));
         }
-      } catch (_) { /* stille – prøver igjen */ }
+      } catch (e) {
+        // Ikke la en midlertidig nettverksfeil låse knappen permanent; neste poll prøver igjen.
+        document.getElementById("ai-progress").textContent = `${t("netErr")} ${String(e)}`;
+      }
     }
 
     /* ── Injiser AI-funn inn i den eksisterende funnlisten (sømløst, ingen separator) ── */
@@ -4083,8 +4124,12 @@
     }
 
     async function _cancelAiScan() {
-      if (_aiPollTimer) { clearInterval(_aiPollTimer); _aiPollTimer = null; }
-      await fetch(`${API}/ollama/deep-scan/cancel`, { method:"POST" }).catch(()=>{});
+      const jobId = _aiCurrentJobId;
+      _stopAiPolling();
+      const cancelUrl = jobId
+        ? `${API}/ollama/deep-scan/cancel/${encodeURIComponent(jobId)}`
+        : `${API}/ollama/deep-scan/cancel`;
+      await fetch(cancelUrl, { method:"POST" }).catch(()=>{});
       document.getElementById("ai-cancel-btn").style.display = "none";
       document.getElementById("ai-progress").textContent = t("deepScanCancelled");
       _restoreRescanBtn(t("aiCancelled"));

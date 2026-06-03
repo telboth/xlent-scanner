@@ -1578,12 +1578,33 @@ def ollama_deep_scan_status_endpoint():
     return jsonify(get_deep_scan_status())
 
 
+@flask_app.route("/ollama/deep-scan/status/<job_id>", methods=["GET"])
+def ollama_deep_scan_status_for_job_endpoint(job_id: str):
+    """Hent status / fremdrift / funn for en konkret dybdeskann-jobb."""
+    from xlent_scanner.deep_scanner import get_deep_scan_status  # noqa: PLC0415
+    status = get_deep_scan_status(job_id)
+    if not status:
+        return jsonify({"ok": False, "error": "Ukjent job_id."}), 404
+    status["ok"] = True
+    return jsonify(status)
+
+
 @flask_app.route("/ollama/deep-scan/cancel", methods=["POST"])
 def ollama_deep_scan_cancel_endpoint():
     """Avbryt pågående dybdeskann."""
     from xlent_scanner.deep_scanner import cancel_deep_scan  # noqa: PLC0415
     cancel_deep_scan()
     return jsonify({"ok": True})
+
+
+@flask_app.route("/ollama/deep-scan/cancel/<job_id>", methods=["POST"])
+def ollama_deep_scan_cancel_for_job_endpoint(job_id: str):
+    """Avbryt en konkret dybdeskann-jobb."""
+    from xlent_scanner.deep_scanner import cancel_deep_scan, get_deep_scan_status  # noqa: PLC0415
+    if not get_deep_scan_status(job_id):
+        return jsonify({"ok": False, "error": "Ukjent job_id."}), 404
+    cancel_deep_scan(job_id)
+    return jsonify({"ok": True, "job_id": job_id})
 
 
 @flask_app.route("/ignore/save", methods=["POST"])
