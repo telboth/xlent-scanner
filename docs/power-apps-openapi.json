@@ -1,0 +1,243 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "XLENT Scanner API",
+    "description": "Additive local API for Power Apps/custom connector. Does not replace existing desktop/web GUI endpoints.",
+    "version": "1.0"
+  },
+  "host": "localhost:51291",
+  "basePath": "/",
+  "schemes": ["http"],
+  "consumes": ["application/json"],
+  "produces": ["application/json"],
+  "securityDefinitions": {
+    "ApiKeyAuth": {
+      "type": "apiKey",
+      "name": "X-API-Key",
+      "in": "header"
+    }
+  },
+  "paths": {
+    "/api/health": {
+      "get": {
+        "operationId": "Health",
+        "summary": "Check scanner API health",
+        "responses": {
+          "200": { "description": "OK", "schema": { "$ref": "#/definitions/HealthResponse" } }
+        }
+      }
+    },
+    "/api/version": {
+      "get": {
+        "operationId": "Version",
+        "summary": "Get scanner version",
+        "responses": {
+          "200": { "description": "OK", "schema": { "$ref": "#/definitions/VersionResponse" } }
+        }
+      }
+    },
+    "/api/scan-text": {
+      "post": {
+        "operationId": "ScanText",
+        "summary": "Scan pasted text",
+        "security": [{ "ApiKeyAuth": [] }],
+        "parameters": [
+          { "name": "body", "in": "body", "required": true, "schema": { "$ref": "#/definitions/ScanTextRequest" } }
+        ],
+        "responses": {
+          "200": { "description": "Scan result", "schema": { "$ref": "#/definitions/ScanResult" } },
+          "400": { "description": "Bad request", "schema": { "$ref": "#/definitions/ErrorResponse" } },
+          "401": { "description": "Unauthorized", "schema": { "$ref": "#/definitions/ErrorResponse" } }
+        }
+      }
+    },
+    "/api/scan-file": {
+      "post": {
+        "operationId": "ScanFile",
+        "summary": "Scan a base64 encoded file",
+        "security": [{ "ApiKeyAuth": [] }],
+        "parameters": [
+          { "name": "body", "in": "body", "required": true, "schema": { "$ref": "#/definitions/ScanFileRequest" } }
+        ],
+        "responses": {
+          "200": { "description": "Scan result", "schema": { "$ref": "#/definitions/ScanResult" } },
+          "400": { "description": "Bad request", "schema": { "$ref": "#/definitions/ErrorResponse" } },
+          "401": { "description": "Unauthorized", "schema": { "$ref": "#/definitions/ErrorResponse" } },
+          "413": { "description": "File too large", "schema": { "$ref": "#/definitions/ErrorResponse" } }
+        }
+      }
+    },
+    "/api/scans/{scan_id}": {
+      "get": {
+        "operationId": "GetScan",
+        "summary": "Get a cached scan result",
+        "security": [{ "ApiKeyAuth": [] }],
+        "parameters": [
+          { "name": "scan_id", "in": "path", "required": true, "type": "string" },
+          { "name": "include_preview", "in": "query", "required": false, "type": "boolean" }
+        ],
+        "responses": {
+          "200": { "description": "Scan result", "schema": { "$ref": "#/definitions/ScanResult" } },
+          "401": { "description": "Unauthorized", "schema": { "$ref": "#/definitions/ErrorResponse" } },
+          "404": { "description": "Not found", "schema": { "$ref": "#/definitions/ErrorResponse" } }
+        }
+      }
+    },
+    "/api/deep-scan": {
+      "post": {
+        "operationId": "StartDeepScan",
+        "summary": "Start Ollama deep scan for an existing scan_id",
+        "security": [{ "ApiKeyAuth": [] }],
+        "parameters": [
+          { "name": "body", "in": "body", "required": true, "schema": { "$ref": "#/definitions/DeepScanRequest" } }
+        ],
+        "responses": {
+          "200": { "description": "Deep scan started", "schema": { "$ref": "#/definitions/DeepScanStartResponse" } },
+          "400": { "description": "Bad request", "schema": { "$ref": "#/definitions/ErrorResponse" } },
+          "401": { "description": "Unauthorized", "schema": { "$ref": "#/definitions/ErrorResponse" } },
+          "404": { "description": "Not found", "schema": { "$ref": "#/definitions/ErrorResponse" } }
+        }
+      }
+    },
+    "/api/deep-scan/{job_id}": {
+      "get": {
+        "operationId": "GetDeepScanStatus",
+        "summary": "Get Ollama deep scan status",
+        "security": [{ "ApiKeyAuth": [] }],
+        "parameters": [
+          { "name": "job_id", "in": "path", "required": true, "type": "string" }
+        ],
+        "responses": {
+          "200": { "description": "Deep scan status", "schema": { "$ref": "#/definitions/DeepScanStatus" } },
+          "401": { "description": "Unauthorized", "schema": { "$ref": "#/definitions/ErrorResponse" } },
+          "404": { "description": "Not found", "schema": { "$ref": "#/definitions/ErrorResponse" } }
+        }
+      }
+    },
+    "/api/deep-scan/{job_id}/cancel": {
+      "post": {
+        "operationId": "CancelDeepScan",
+        "summary": "Cancel Ollama deep scan",
+        "security": [{ "ApiKeyAuth": [] }],
+        "parameters": [
+          { "name": "job_id", "in": "path", "required": true, "type": "string" }
+        ],
+        "responses": {
+          "200": { "description": "Cancelled", "schema": { "$ref": "#/definitions/DeepScanCancelResponse" } },
+          "401": { "description": "Unauthorized", "schema": { "$ref": "#/definitions/ErrorResponse" } },
+          "404": { "description": "Not found", "schema": { "$ref": "#/definitions/ErrorResponse" } }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "HealthResponse": {
+      "type": "object",
+      "properties": {
+        "ok": { "type": "boolean" },
+        "service": { "type": "string" },
+        "version": { "type": "string" },
+        "api_key_configured": { "type": "boolean" },
+        "max_file_mb": { "type": "integer" }
+      }
+    },
+    "VersionResponse": {
+      "type": "object",
+      "properties": {
+        "ok": { "type": "boolean" },
+        "version": { "type": "string" }
+      }
+    },
+    "ScanTextRequest": {
+      "type": "object",
+      "required": ["text"],
+      "properties": {
+        "text": { "type": "string" },
+        "language": { "type": "string", "default": "auto" },
+        "include_preview": { "type": "boolean", "default": false }
+      }
+    },
+    "ScanFileRequest": {
+      "type": "object",
+      "required": ["file_name", "content_base64"],
+      "properties": {
+        "file_name": { "type": "string" },
+        "content_base64": { "type": "string" },
+        "language": { "type": "string", "default": "auto" },
+        "ignore_xlent": { "type": "boolean", "default": false },
+        "include_preview": { "type": "boolean", "default": false }
+      }
+    },
+    "ScanResult": {
+      "type": "object",
+      "properties": {
+        "ok": { "type": "boolean" },
+        "scan_id": { "type": "string" },
+        "file_name": { "type": "string" },
+        "file_size": { "type": "integer" },
+        "text_length": { "type": "integer" },
+        "risk_level": { "type": "string" },
+        "risk_summary": { "type": "string" },
+        "recommended_action": { "type": "string" },
+        "language": { "type": "string" },
+        "warning": { "type": "string" },
+        "error": { "type": "string" },
+        "findings": { "type": "array", "items": { "$ref": "#/definitions/Finding" } },
+        "text_preview": { "type": "string" }
+      }
+    },
+    "Finding": {
+      "type": "object",
+      "properties": {
+        "category": { "type": "string" },
+        "text": { "type": "string" },
+        "context": { "type": "string" },
+        "severity": { "type": "string" }
+      }
+    },
+    "DeepScanRequest": {
+      "type": "object",
+      "required": ["scan_id", "model"],
+      "properties": {
+        "scan_id": { "type": "string" },
+        "model": { "type": "string", "default": "llama3.2:3b" },
+        "min_confidence": { "type": "string", "default": "medium" },
+        "categories": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "DeepScanStartResponse": {
+      "type": "object",
+      "properties": {
+        "ok": { "type": "boolean" },
+        "scan_id": { "type": "string" },
+        "job_id": { "type": "string" }
+      }
+    },
+    "DeepScanStatus": {
+      "type": "object",
+      "properties": {
+        "ok": { "type": "boolean" },
+        "job_id": { "type": "string" },
+        "status": { "type": "string" },
+        "progress": { "type": "string" },
+        "findings": { "type": "array", "items": { "type": "object" } }
+      }
+    },
+    "DeepScanCancelResponse": {
+      "type": "object",
+      "properties": {
+        "ok": { "type": "boolean" },
+        "job_id": { "type": "string" },
+        "status": { "type": "string" }
+      }
+    },
+    "ErrorResponse": {
+      "type": "object",
+      "properties": {
+        "ok": { "type": "boolean" },
+        "error": { "type": "string" },
+        "error_code": { "type": "string" }
+      }
+    }
+  }
+}

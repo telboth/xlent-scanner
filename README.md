@@ -1,6 +1,6 @@
 # XLENT Compliance-scanner
 
-> **v1.3.4** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
+> **v1.3.5** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
 
 Alt kjøres 100 % lokalt — ingen dokumenter, tekst eller funn sendes over internett.
 
@@ -272,7 +272,7 @@ En egen `create-release`-jobb oppretter releasen, deretter bygger Windows- og ma
 
 ```bash
 # Oppdater versjon i pyproject.toml + src/xlent_scanner/__init__.py, så:
-git tag v1.3.4
+git tag v1.3.5
 git push origin master --tags
 ```
 
@@ -337,6 +337,11 @@ src/xlent_scanner/
 ---
 
 ## Endringslogg
+
+### v1.3.5
+- La til stabilt `/api/...`-lag for Power Apps/custom connectors, med `--api --port` startmodus, API-key-støtte og OpenAPI-dokumentasjon.
+- La til Light/Dark mode under Innstillinger, med grå header i light mode slik at XLENT-logoen forblir synlig.
+- Fikset WebView-layout der hvit høyre-/bunnflate kunne dekke innhold i store vinduer.
 
 ### v1.3.4
 - Fikset DOCX-anonymisering/generering for dokumenter uten definert header/footer.
@@ -438,3 +443,4 @@ src/xlent_scanner/
 ---
 
 *Skrevet av thomas.elboth@xlent.no*
+

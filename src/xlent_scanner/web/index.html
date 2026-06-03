@@ -3,30 +3,62 @@
 <head>
   <meta charset="UTF-8" />
   <title>XLENT Compliance-scanner</title>
+  <script>
+    try {
+      const s = JSON.parse(localStorage.getItem("xlentScannerSettings") || "{}");
+      if (s.theme === "light") document.documentElement.dataset.theme = "light";
+    } catch (_) {}
+  </script>
   <style>
     :root {
       --bg: #0f1620; --panel: #1a2331; --panel2: #232f42;
-      --text: #e8edf3; --muted: #8a96a8; --accent: #4f9eff;
+      --text: #e8edf3; --fg: #e8edf3; --muted: #8a96a8; --accent: #4f9eff;
       --danger: #ff6b6b; --warn: #ffb84d; --ok: #4caf50;
       --border: #2a3648; --svart: #9c27b0; --rød: #f44336;
+      --header-bg: #1a2331; --header-text: #e8edf3; --header-muted: #8a96a8;
+      --button-text-on-accent: #ffffff; --badge-text-dark: #1a1a1a; --badge-text-light: #ffffff;
+    }
+    :root[data-theme="light"] {
+      --bg: #eef2f6; --panel: #ffffff; --panel2: #f5f7fa;
+      --text: #17202b; --fg: #17202b; --muted: #5f6d7d; --accent: #1f6fbf;
+      --danger: #c62828; --warn: #b46a00; --ok: #237a35;
+      --border: #d2dbe6; --svart: #7b1fa2; --rød: #c62828;
+      --header-bg: #5b6673; --header-text: #ffffff; --header-muted: #d7dde5;
+      --button-text-on-accent: #ffffff; --badge-text-dark: #111827; --badge-text-light: #ffffff;
     }
     * { box-sizing: border-box; }
+    *::before, *::after { box-sizing: border-box; }
+    html {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      min-width: 100vw;
+      min-height: 100vh;
+      overflow: hidden;
+      background: var(--bg);
+    }
     body {
       margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background: var(--bg); color: var(--text);
-      height: 100vh; display: flex; flex-direction: column;
+      width: 100vw;
+      height: 100vh;
+      min-width: 0;
+      min-height: 0;
+      overflow: hidden;
+      display: flex; flex-direction: column;
     }
 
     /* ── Header ────────────────────────────────────────────────────── */
     header {
       padding: 10px 20px; border-bottom: 1px solid var(--border);
-      background: var(--panel); display: flex; align-items: center; gap: 14px;
+      background: var(--header-bg); color: var(--header-text);
+      display: flex; align-items: center; gap: 14px;
       position: relative;
     }
     header img.logo { height: 30px; width: auto; }
     header .title-block { }
     header h1 { margin: 0; font-size: 16px; font-weight: 700; }
-    header .sub { color: var(--muted); font-size: 11px; margin-top: 1px; }
+    header .sub { color: var(--header-muted); font-size: 11px; margin-top: 1px; }
 
     /* UI-språkvelger (i tab-raden, høyrejustert) */
     .ui-lang-sel {
@@ -100,9 +132,9 @@
     .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
 
     /* ── Tab panels ─────────────────────────────────────────────────── */
-    .tab-panel { display: none; flex-direction: column; flex: 1; overflow-y: auto; }
+    .tab-panel { display: none; flex-direction: column; flex: 1; min-height: 0; overflow-y: auto; }
     .tab-panel.active { display: flex; }
-    main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    main { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; background: var(--bg); }
 
     /* ── Scanner panel ──────────────────────────────────────────────── */
     #panel-scanner { padding: 18px 22px; gap: 12px; }
@@ -118,7 +150,7 @@
     #dropzone .big { font-size: 15px; }
     #dropzone .muted { color: var(--muted); font-size: 12px; }
     #dropzone button {
-      margin-top: 9px; background: var(--accent); color: #fff;
+      margin-top: 9px; background: var(--accent); color: var(--button-text-on-accent);
       border: none; padding: 7px 16px; border-radius: 6px; cursor: pointer; font-size: 13px;
     }
 
@@ -436,7 +468,7 @@
     .batch-table tr:hover td { background: rgba(138,150,168,.05); }
 
     /* ── Settings panel ─────────────────────────────────────────────── */
-    #panel-settings { padding: 24px 28px; gap: 0; max-width: 680px; }
+    #panel-settings { padding: 24px 28px; gap: 0; width: 100%; }
     .settings-section {
       background: var(--panel); border: 1px solid var(--border);
       border-radius: 8px; padding: 16px 20px; margin-bottom: 14px;
@@ -474,7 +506,10 @@
     }
 
     /* ── About panel ────────────────────────────────────────────────── */
-    #panel-about { padding: 26px 30px; gap: 0; max-width: 820px; }
+    #panel-about { padding: 26px 30px; gap: 0; width: 100%; }
+    .about-content, #panel-settings > .settings-section, #panel-settings > .settings-note {
+      max-width: 820px;
+    }
     .about-content { display: none; }
     .about-content.active { display: block; }
     .about-content h2 { font-size: 20px; font-weight: 700; margin: 0 0 5px; color: var(--accent); }
@@ -1012,6 +1047,19 @@
     <!-- ── Settings panel ────────────────────────────────────────── -->
     <div id="panel-settings" class="tab-panel">
 
+      <!-- Tema -->
+      <div class="settings-section">
+        <div class="settings-section-title" data-i18n="settingsThemeTitle">Utseende</div>
+        <div class="settings-row">
+          <label for="themeSelect" data-i18n="themeLabel">Tema:</label>
+          <select id="themeSelect">
+            <option value="dark" data-i18n="themeDark">Mørk modus</option>
+            <option value="light" data-i18n="themeLight">Lys modus</option>
+          </select>
+        </div>
+        <div class="settings-note" data-i18n="themeNote">Lys modus bruker en grå header slik at XLENT-logoen fortsatt er synlig.</div>
+      </div>
+
       <!-- Dokumentspråk -->
       <div class="settings-section">
         <div class="settings-section-title" data-i18n="settingsDocLangTitle">Dokumentspråk</div>
@@ -1173,6 +1221,11 @@
         dragErr:      "Feil under drag-drop:",
         dlgErr:       "Klarte ikke å åpne filvelger:",
         tabSettings:         "⚙️ Innstillinger",
+        settingsThemeTitle:  "Utseende",
+        themeLabel:          "Tema:",
+        themeDark:           "Mørk modus",
+        themeLight:          "Lys modus",
+        themeNote:           "Lys modus bruker en grå header slik at XLENT-logoen fortsatt er synlig.",
         settingsDocLangTitle:"Dokumentspråk",
         settingsDocLangNote: "Auto-detektering bestemmer dokumentspråket automatisk og velger riktige mønstre.",
         settingsFilterTitle: "Filtrering",
@@ -1348,6 +1401,11 @@
         dragErr:      "Fel vid drag och släpp:",
         dlgErr:       "Kunde inte öppna filväljaren:",
         tabSettings:         "⚙️ Inställningar",
+        settingsThemeTitle:  "Utseende",
+        themeLabel:          "Tema:",
+        themeDark:           "Mörkt läge",
+        themeLight:          "Ljust läge",
+        themeNote:           "Ljust läge använder en grå header så att XLENT-logotypen fortfarande syns.",
         settingsDocLangTitle:"Dokumentspråk",
         settingsDocLangNote: "Automatisk identifiering väljer dokumentspråk och rätt mönster.",
         settingsFilterTitle: "Filtrering",
@@ -1523,6 +1581,11 @@
         dragErr:      "Error during drag-drop:",
         dlgErr:       "Could not open file picker:",
         tabSettings:         "⚙️ Settings",
+        settingsThemeTitle:  "Appearance",
+        themeLabel:          "Theme:",
+        themeDark:           "Dark mode",
+        themeLight:          "Light mode",
+        themeNote:           "Light mode uses a grey header so the white XLENT logo remains visible.",
         settingsDocLangTitle:"Document language",
         settingsDocLangNote: "Auto-detection determines the document language and selects the right detection patterns.",
         settingsFilterTitle: "Filtering",
@@ -1653,6 +1716,11 @@
         tabScanner:          "🔍 Scanner",
         tabAbout:            "ℹ Über das Programm",
         tabSettings:         "⚙️ Einstellungen",
+        settingsThemeTitle:  "Darstellung",
+        themeLabel:          "Design:",
+        themeDark:           "Dunkler Modus",
+        themeLight:          "Heller Modus",
+        themeNote:           "Der helle Modus verwendet eine graue Kopfzeile, damit das weiße XLENT-Logo sichtbar bleibt.",
         statusReady:         "Bereit. Datei ablegen oder auswählen.",
         statusScan:          "Wird gescannt…",
         statusUp:            "Datei wird hochgeladen…",
@@ -1827,6 +1895,11 @@
         tabScanner:          "🔍 Scanner",
         tabAbout:            "ℹ À propos",
         tabSettings:         "⚙️ Paramètres",
+        settingsThemeTitle:  "Apparence",
+        themeLabel:          "Thème :",
+        themeDark:           "Mode sombre",
+        themeLight:          "Mode clair",
+        themeNote:           "Le mode clair utilise un en-tête gris afin que le logo blanc XLENT reste visible.",
         statusReady:         "Prêt. Déposez ou choisissez un fichier.",
         statusScan:          "Analyse en cours…",
         statusUp:            "Téléversement en cours…",
@@ -2001,6 +2074,11 @@
         tabScanner:          "🔍 Escáner",
         tabAbout:            "ℹ Acerca del programa",
         tabSettings:         "⚙️ Configuración",
+        settingsThemeTitle:  "Apariencia",
+        themeLabel:          "Tema:",
+        themeDark:           "Modo oscuro",
+        themeLight:          "Modo claro",
+        themeNote:           "El modo claro usa una cabecera gris para que el logotipo blanco de XLENT siga siendo visible.",
         statusReady:         "Listo. Suelte o seleccione un archivo.",
         statusScan:          "Escaneando…",
         statusUp:            "Subiendo archivo…",
@@ -3074,6 +3152,17 @@
     /* ══════════════════════════════════════════════════════════════════
        SETTINGS PERSISTENCE
     ══════════════════════════════════════════════════════════════════ */
+    function normalizeTheme(theme) {
+      return theme === "light" ? "light" : "dark";
+    }
+
+    function applyTheme(theme) {
+      const normalized = normalizeTheme(theme);
+      document.documentElement.dataset.theme = normalized;
+      const themeSelect = document.getElementById("themeSelect");
+      if (themeSelect) themeSelect.value = normalized;
+    }
+
     function loadSettings() {
       try {
         const s = JSON.parse(localStorage.getItem("xlentScannerSettings") || "{}");
@@ -3082,6 +3171,7 @@
         // language: default "auto"
         const ls = document.getElementById("langSelect");
         if (ls && s.language) ls.value = s.language;
+        applyTheme(s.theme);
       } catch (_) {}
     }
 
@@ -3090,11 +3180,16 @@
         localStorage.setItem("xlentScannerSettings", JSON.stringify({
           ignoreXlent: document.getElementById("ignoreXlent").checked,
           language:    document.getElementById("langSelect").value,
+          theme:       normalizeTheme(document.getElementById("themeSelect").value),
         }));
       } catch (_) {}
     }
 
     // Lagre automatisk når innstillinger endres
+    document.getElementById("themeSelect").addEventListener("change", e => {
+      applyTheme(e.target.value);
+      saveSettings();
+    });
     document.getElementById("ignoreXlent").addEventListener("change", saveSettings);
     document.getElementById("langSelect").addEventListener("change", saveSettings);
     document.getElementById("btn-check-updates").addEventListener("click", () => runUpdateCheck(true));

@@ -8,11 +8,14 @@ Flask kjører i en bakgrunnstråd og eksponerer:
 from __future__ import annotations
 
 import faulthandler
+import base64
+import binascii
 import html
 import json
 import logging
 import os
 import platform
+import secrets
 import socket
 import subprocess
 import sys
@@ -20,6 +23,7 @@ import tempfile
 import threading
 import time
 import traceback
+import uuid
 import warnings
 import webbrowser
 from dataclasses import asdict
@@ -63,12 +67,18 @@ _last_path: Path | None = None
 _last_tmp_path: Path | None = None   # temp-fil fra forrige upload – ryddes opp ved neste upload
 _last_ai_findings: list[dict] = []   # AI-dybdeskann-funn for sist skannede fil (vises i rapport)
 _last_ai_findings_file: dict = {"name": ""}   # filnavnet AI-funnene tilhører
+_api_scan_results: dict[str, dict] = {}  # Separat state for eksternt API; påvirker ikke GUI-state.
+_api_scan_lock = threading.Lock()
 
 _window: webview.Window | None = None
 _initial_file: str | None = None     # fil sendt via Windows kontekstmeny (sys.argv[1])
 flask_app = Flask(__name__, static_folder=None)
 _web_dir = Path(__file__).parent / "web"
 _port: int = 0
+_API_SCAN_TTL_SECONDS = 60 * 60
+_API_MAX_SCAN_RESULTS = 50
+_API_DEFAULT_PORT = 51291
+_API_ALLOWED_LANGUAGES = {"auto", "nb", "sv", "en", "de", "fr", "es"}
 
 _NO_CACHE = {
     "Cache-Control": "no-cache, no-store, must-revalidate",
@@ -482,6 +492,331 @@ def diagnostics():
         "log_path": str(LOG_PATH),
         "version": __version__,
     })
+
+
+# ── Stabilt API-lag for eksterne frontender / Power Apps ─────────────────────
+# Disse endepunktene er additive og bruker separat scan-state. De skal ikke sette
+# _last_result/_last_path, siden det ville påvirket eksisterende desktop/web-GUI.
+
+def _api_max_file_bytes() -> int:
+    raw = os.environ.get("XLENT_SCANNER_API_MAX_FILE_MB", "25").strip()
+    try:
+        mb = max(1, int(raw))
+    except ValueError:
+        mb = 25
+    return mb * 1024 * 1024
+
+
+def _api_key_configured() -> bool:
+    return bool(os.environ.get("XLENT_SCANNER_API_KEY", "").strip())
+
+
+def _api_auth_error():
+    expected = os.environ.get("XLENT_SCANNER_API_KEY", "").strip()
+    if not expected:
+        return None
+
+    provided = request.headers.get("X-API-Key", "").strip()
+    auth = request.headers.get("Authorization", "").strip()
+    if auth.lower().startswith("bearer "):
+        provided = auth[7:].strip()
+
+    if not secrets.compare_digest(provided, expected):
+        return jsonify({
+            "ok": False,
+            "error": "Ugyldig eller manglende API-nøkkel.",
+            "error_code": "unauthorized",
+        }), 401
+    return None
+
+
+def _api_json_body() -> dict:
+    data = request.get_json(force=True, silent=True)
+    return data if isinstance(data, dict) else {}
+
+
+def _api_bool(value, default: bool = False) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        return value.strip().lower() in {"1", "true", "yes", "ja"}
+    return default
+
+
+def _api_language(value) -> str:
+    lang = str(value or "auto").strip().lower()
+    if lang not in _API_ALLOWED_LANGUAGES:
+        raise ValueError(
+            "Ugyldig språk. Bruk auto, nb, sv, en, de, fr eller es."
+        )
+    return lang
+
+
+def _api_cleanup_locked(now: float) -> None:
+    expired = [
+        scan_id for scan_id, entry in _api_scan_results.items()
+        if now - float(entry.get("created_at", 0)) > _API_SCAN_TTL_SECONDS
+    ]
+    for scan_id in expired:
+        _api_delete_scan_locked(scan_id)
+
+    while len(_api_scan_results) > _API_MAX_SCAN_RESULTS:
+        oldest = min(
+            _api_scan_results,
+            key=lambda sid: float(_api_scan_results[sid].get("created_at", 0)),
+        )
+        _api_delete_scan_locked(oldest)
+
+
+def _api_delete_scan_locked(scan_id: str) -> None:
+    entry = _api_scan_results.pop(scan_id, None)
+    if not entry:
+        return
+    path = entry.get("path")
+    if entry.get("owns_path") and isinstance(path, Path):
+        try:
+            path.unlink(missing_ok=True)
+        except OSError:
+            pass
+
+
+def _api_store_scan_result(result, path: Path | None = None, owns_path: bool = False) -> str:
+    scan_id = str(uuid.uuid4())
+    now = time.time()
+    with _api_scan_lock:
+        _api_cleanup_locked(now)
+        _api_scan_results[scan_id] = {
+            "result": result,
+            "path": path,
+            "owns_path": owns_path,
+            "created_at": now,
+        }
+    return scan_id
+
+
+def _api_get_scan(scan_id: str) -> dict | None:
+    now = time.time()
+    with _api_scan_lock:
+        _api_cleanup_locked(now)
+        return _api_scan_results.get(scan_id)
+
+
+def _api_result_payload(result, scan_id: str, include_preview: bool = False) -> dict:
+    payload = {
+        "ok": not bool(result.error),
+        "scan_id": scan_id,
+        "file_name": result.file_name,
+        "file_size": result.file_size,
+        "text_length": result.text_length,
+        "risk_level": result.risk_level,
+        "risk_summary": result.risk_summary,
+        "recommended_action": result.recommended_action,
+        "language": result.language,
+        "warning": result.warning,
+        "error": result.error,
+        "findings": [
+            {
+                "category": f.category,
+                "text": f.text,
+                "context": f.context,
+                "severity": f.severity,
+            }
+            for f in result.findings
+        ],
+    }
+    if include_preview:
+        payload["text_preview"] = result.text_preview
+    return payload
+
+
+@flask_app.route("/api/health", methods=["GET"])
+def api_health():
+    return jsonify({
+        "ok": True,
+        "service": "xlent-scanner",
+        "version": __version__,
+        "api_key_configured": _api_key_configured(),
+        "max_file_mb": _api_max_file_bytes() // (1024 * 1024),
+    })
+
+
+@flask_app.route("/api/version", methods=["GET"])
+def api_version():
+    return jsonify({"ok": True, "version": __version__})
+
+
+@flask_app.route("/api/scan-text", methods=["POST"])
+def api_scan_text():
+    auth_error = _api_auth_error()
+    if auth_error:
+        return auth_error
+
+    try:
+        data = _api_json_body()
+        text = str(data.get("text") or "")
+        if not text.strip():
+            return jsonify({"ok": False, "error": "Mangler tekst.", "error_code": "missing_text"}), 400
+        language = _api_language(data.get("language"))
+        include_preview = _api_bool(data.get("include_preview"), False)
+
+        result = scan_text(text, language=language, source_name="Power Apps tekst")
+        scan_id = _api_store_scan_result(result)
+        return jsonify(_api_result_payload(result, scan_id, include_preview=include_preview))
+    except ValueError as exc:
+        return jsonify({"ok": False, "error": str(exc), "error_code": "bad_request"}), 400
+    except Exception as exc:
+        LOGGER.error("api/scan-text failed: %s", traceback.format_exc())
+        return jsonify({"ok": False, "error": str(exc), "error_code": "scan_failed"}), 500
+
+
+@flask_app.route("/api/scan-file", methods=["POST"])
+def api_scan_file():
+    auth_error = _api_auth_error()
+    if auth_error:
+        return auth_error
+
+    tmp_path: Path | None = None
+    try:
+        data = _api_json_body()
+        file_name = Path(str(data.get("file_name") or "document.txt")).name
+        content_base64 = str(data.get("content_base64") or "")
+        if not content_base64:
+            return jsonify({
+                "ok": False,
+                "error": "Mangler content_base64.",
+                "error_code": "missing_file_content",
+            }), 400
+
+        try:
+            raw = base64.b64decode(content_base64, validate=True)
+        except binascii.Error:
+            return jsonify({
+                "ok": False,
+                "error": "content_base64 er ikke gyldig base64.",
+                "error_code": "invalid_base64",
+            }), 400
+
+        max_bytes = _api_max_file_bytes()
+        if len(raw) > max_bytes:
+            return jsonify({
+                "ok": False,
+                "error": f"Filen er for stor. Maks er {max_bytes // (1024 * 1024)} MB.",
+                "error_code": "file_too_large",
+            }), 413
+
+        language = _api_language(data.get("language"))
+        ignore_xlent = _api_bool(data.get("ignore_xlent"), False)
+        include_preview = _api_bool(data.get("include_preview"), False)
+
+        suffix = Path(file_name).suffix.lower() or ".txt"
+        fd, tmp = tempfile.mkstemp(prefix="xlent-api-", suffix=suffix)
+        tmp_path = Path(tmp)
+        with os.fdopen(fd, "wb") as fh:
+            fh.write(raw)
+
+        result = scan_file(tmp_path, ignore_xlent=ignore_xlent, language=language)
+        result.file_name = file_name
+        scan_id = _api_store_scan_result(result, path=tmp_path, owns_path=True)
+        tmp_path = None  # Eies nå av API-cache og ryddes derfra.
+        return jsonify(_api_result_payload(result, scan_id, include_preview=include_preview))
+    except ValueError as exc:
+        return jsonify({"ok": False, "error": str(exc), "error_code": "bad_request"}), 400
+    except Exception as exc:
+        LOGGER.error("api/scan-file failed: %s", traceback.format_exc())
+        return jsonify({"ok": False, "error": str(exc), "error_code": "scan_failed"}), 500
+    finally:
+        if tmp_path is not None:
+            try:
+                tmp_path.unlink(missing_ok=True)
+            except OSError:
+                pass
+
+
+@flask_app.route("/api/scans/<scan_id>", methods=["GET"])
+def api_get_scan_result(scan_id: str):
+    auth_error = _api_auth_error()
+    if auth_error:
+        return auth_error
+
+    entry = _api_get_scan(scan_id)
+    if not entry:
+        return jsonify({"ok": False, "error": "Ukjent eller utløpt scan_id.", "error_code": "not_found"}), 404
+    include_preview = _api_bool(request.args.get("include_preview"), False)
+    return jsonify(_api_result_payload(entry["result"], scan_id, include_preview=include_preview))
+
+
+@flask_app.route("/api/deep-scan", methods=["POST"])
+def api_deep_scan():
+    auth_error = _api_auth_error()
+    if auth_error:
+        return auth_error
+
+    try:
+        from xlent_scanner.deep_scanner import start_deep_scan  # noqa: PLC0415
+
+        data = _api_json_body()
+        scan_id = str(data.get("scan_id") or "").strip()
+        model = str(data.get("model") or "").strip()
+        if not scan_id:
+            return jsonify({"ok": False, "error": "Mangler scan_id.", "error_code": "missing_scan_id"}), 400
+        if not model:
+            return jsonify({"ok": False, "error": "Mangler Ollama-modell.", "error_code": "missing_model"}), 400
+
+        entry = _api_get_scan(scan_id)
+        if not entry:
+            return jsonify({"ok": False, "error": "Ukjent eller utløpt scan_id.", "error_code": "not_found"}), 404
+        result = entry["result"]
+        text = getattr(result, "original_text", "") or ""
+        if not text.strip():
+            return jsonify({
+                "ok": False,
+                "error": "Ingen ekstrahert tekst tilgjengelig for scan_id.",
+                "error_code": "no_text",
+            }), 400
+
+        min_confidence = str(data.get("min_confidence") or "medium").strip().lower()
+        if min_confidence not in {"high", "medium", "low"}:
+            min_confidence = "medium"
+        categories = data.get("categories") or None
+        if categories is not None and not isinstance(categories, list):
+            return jsonify({"ok": False, "error": "categories må være en liste.", "error_code": "bad_request"}), 400
+        lang = getattr(result, "language", "nb") or "nb"
+
+        job_id = start_deep_scan(text, model, lang, categories=categories, min_confidence=min_confidence)
+        return jsonify({"ok": True, "job_id": job_id, "scan_id": scan_id})
+    except Exception as exc:
+        LOGGER.error("api/deep-scan failed: %s", traceback.format_exc())
+        return jsonify({"ok": False, "error": str(exc), "error_code": "deep_scan_failed"}), 500
+
+
+@flask_app.route("/api/deep-scan/<job_id>", methods=["GET"])
+def api_deep_scan_status(job_id: str):
+    auth_error = _api_auth_error()
+    if auth_error:
+        return auth_error
+
+    from xlent_scanner.deep_scanner import get_deep_scan_status  # noqa: PLC0415
+
+    status = get_deep_scan_status()
+    if status.get("job_id") != job_id:
+        return jsonify({"ok": False, "error": "Ukjent job_id.", "error_code": "not_found"}), 404
+    status["ok"] = True
+    return jsonify(status)
+
+
+@flask_app.route("/api/deep-scan/<job_id>/cancel", methods=["POST"])
+def api_deep_scan_cancel(job_id: str):
+    auth_error = _api_auth_error()
+    if auth_error:
+        return auth_error
+
+    from xlent_scanner.deep_scanner import cancel_deep_scan, get_deep_scan_status  # noqa: PLC0415
+
+    status = get_deep_scan_status()
+    if status.get("job_id") != job_id:
+        return jsonify({"ok": False, "error": "Ukjent job_id.", "error_code": "not_found"}), 404
+    cancel_deep_scan()
+    return jsonify({"ok": True, "job_id": job_id, "status": "cancelled"})
 
 
 @flask_app.route("/startup-file", methods=["GET"])
@@ -1226,6 +1561,29 @@ def _run_web_mode() -> None:
     _start_flask(_port)
 
 
+def _arg_value(name: str, default: str) -> str:
+    try:
+        idx = sys.argv.index(name)
+    except ValueError:
+        return default
+    if idx + 1 >= len(sys.argv) or sys.argv[idx + 1].startswith("--"):
+        return default
+    return sys.argv[idx + 1]
+
+
+def _run_api_mode() -> None:
+    """Kjør bare lokal API-server for eksterne frontender, uten GUI."""
+    global _port
+    _validate_runtime_dependencies()
+    raw_port = _arg_value("--port", str(_API_DEFAULT_PORT))
+    try:
+        _port = int(raw_port)
+    except ValueError:
+        raise RuntimeError(f"Ugyldig port: {raw_port!r}") from None
+    LOGGER.info("Starting API mode on http://127.0.0.1:%s", _port)
+    _start_flask(_port)
+
+
 def _wait_for_flask(port: int, timeout: float = 10.0) -> None:
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
@@ -1350,6 +1708,11 @@ def main() -> None:
         _run_web_mode()
         return
 
+    # ── API-modus (lokal REST-server for Power Apps/gateway) ───────────────
+    if "--api" in sys.argv:
+        _run_api_mode()
+        return
+
     # ── Fil fra Windows kontekstmeny (argv[1]) ──────────────────────────────
     if len(sys.argv) > 1 and not sys.argv[1].startswith("--"):
         _initial_file = sys.argv[1]
@@ -1393,6 +1756,7 @@ def main() -> None:
         width=900,
         height=700,
         min_size=(700, 500),
+        background_color="#0f1620",
     )
     threading.Thread(target=_force_fresh_load, daemon=True).start()
     LOGGER.info("Window created. API base: http://127.0.0.1:%s", _port)
