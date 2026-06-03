@@ -4,6 +4,7 @@
 # Kilde: www.xlent.no (oslo, trondheim, alesund, om-oss) – hentet 2026-05-26
 
 email_domains = ["xlent.no", "xlent.se"]
+emails = []
 
 names = [
   # Oslo

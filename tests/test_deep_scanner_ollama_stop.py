@@ -76,3 +76,82 @@ def test_pull_ollama_model_tracks_status(monkeypatch):
         {"name": "llama3.2:3b", "stream": False},
         900,
     )
+
+
+def test_deep_scan_ignores_email_domain_case_insensitive(monkeypatch):
+    monkeypatch.setattr(
+        deep_scanner,
+        "_call_ollama",
+        lambda model, prompt: [
+            {
+                "category": "E-post",
+                "text": "Thomas.elboth@xlent.no",
+                "context": "Kontakt Thomas.elboth@xlent.no",
+                "confidence": "high",
+            },
+            {
+                "category": "E-post",
+                "text": "external@example.com",
+                "context": "Kontakt external@example.com",
+                "confidence": "high",
+            },
+        ],
+    )
+    deep_scanner._jobs.clear()
+    deep_scanner._job = {}
+    job_id = "ignore01"
+    deep_scanner._jobs[job_id] = {
+        "job_id": job_id,
+        "status": "running",
+        "progress": "",
+        "findings": [],
+        "cancelled": False,
+        "started_at": time.time(),
+    }
+
+    deep_scanner._run_deep_scan(
+        "Kontakt Thomas.elboth@xlent.no og external@example.com",
+        "llama3.2:3b",
+        "nb",
+        job_id,
+        ["epost"],
+    )
+
+    findings = deep_scanner.get_deep_scan_status(job_id)["findings"]
+    texts = {f["text"] for f in findings}
+    assert "Thomas.elboth@xlent.no" not in texts
+    assert "external@example.com" in texts
+
+
+def test_deep_scan_ignores_exact_email_case_insensitive(monkeypatch):
+    monkeypatch.setattr(deep_scanner, "_call_ollama", lambda model, prompt: [])
+    deep_scanner._jobs.clear()
+    job_id = "ignore02"
+    deep_scanner._jobs[job_id] = {
+        "job_id": job_id,
+        "status": "running",
+        "progress": "",
+        "findings": [],
+        "cancelled": False,
+        "started_at": time.time(),
+    }
+
+    from xlent_scanner import ignore  # noqa: PLC0415
+
+    monkeypatch.setattr(
+        ignore,
+        "load_ignore_list",
+        lambda: {"email_domains": [], "emails": ["thomas.elboth@xlent.no"], "names": []},
+    )
+
+    deep_scanner._run_deep_scan(
+        "Kontakt Thomas.elboth@xlent.no og other@xlent.no",
+        "llama3.2:3b",
+        "nb",
+        job_id,
+        ["epost"],
+    )
+
+    texts = {f["text"] for f in deep_scanner.get_deep_scan_status(job_id)["findings"]}
+    assert "Thomas.elboth@xlent.no" not in texts
+    assert "other@xlent.no" in texts

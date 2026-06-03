@@ -10,3 +10,6 @@ def test_macos_installer_removes_quarantine() -> None:
     assert "xattr -dr" in script
     assert 'APP_NAME="XLENTScanner.app"' in script
     assert 'DEST_APP="/Applications/${APP_NAME}"' in script
+    assert "lsregister" in script
+    assert "Launch Services" in script
+    assert "pbs -flush" in script

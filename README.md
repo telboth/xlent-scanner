@@ -1,6 +1,6 @@
 # XLENT Compliance-scanner
 
-> **v1.3.7** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
+> **v1.3.8** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
 
 Alt kjøres 100 % lokalt — ingen dokumenter, tekst eller funn sendes over internett.
 
@@ -337,6 +337,12 @@ src/xlent_scanner/
 ---
 
 ## Endringslogg
+
+### v1.3.8
+- Fikset macOS «Open With»/Finder-filåpning ved å registrere støttede dokumenttyper separat i app-bundlen.
+- macOS-installer oppdaterer nå Launch Services-cache etter installasjon.
+- AI-dybdeskann bruker nå `ignore.toml`, slik at interne e-postdomener og eksakte e-postadresser ignoreres også der.
+- `ignore.toml` støtter nå `emails = []` i tillegg til `email_domains`.
 
 ### v1.3.7
 - Fikset engelsk kategorioversettelse i «What do you want to find?» der manglende `scanCat...`-nøkler ble vist i UI.

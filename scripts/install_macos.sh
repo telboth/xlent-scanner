@@ -85,6 +85,16 @@ if command -v codesign >/dev/null 2>&1; then
   }
 fi
 
+LSREGISTER="/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister"
+if [[ -x "${LSREGISTER}" ]]; then
+  echo "Oppdaterer macOS Launch Services-registrering..."
+  "${LSREGISTER}" -f "${DEST_APP}" >/dev/null 2>&1 || true
+fi
+
+if [[ -x "/System/Library/CoreServices/pbs" ]]; then
+  /System/Library/CoreServices/pbs -flush >/dev/null 2>&1 || true
+fi
+
 echo "Installerte ${DEST_APP}"
 
 if [[ -n "${QUICK_ACTION_URL}" ]]; then

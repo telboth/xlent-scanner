@@ -39,7 +39,7 @@ def get_ignore_toml_text() -> str:
 def save_ignore_toml_text(content: str) -> None:
     """Validate and save user override ignore.toml."""
     parsed = tomllib.loads(content)
-    for key in ("email_domains", "names"):
+    for key in ("email_domains", "emails", "names"):
         if key in parsed:
             value = parsed[key]
             if not isinstance(value, list) or not all(isinstance(v, str) for v in value):
@@ -51,7 +51,7 @@ def save_ignore_toml_text(content: str) -> None:
 
 
 def load_ignore_list() -> dict:
-    data: dict = {"email_domains": [], "names": []}
+    data: dict = {"email_domains": [], "emails": [], "names": []}
     for path in [_BUNDLED, _user_override_path()]:
         if path.exists():
             with open(path, "rb") as f:
@@ -59,6 +59,10 @@ def load_ignore_list() -> dict:
             data["email_domains"] = list({
                 *data["email_domains"],
                 *loaded.get("email_domains", []),
+            })
+            data["emails"] = list({
+                *data["emails"],
+                *loaded.get("emails", []),
             })
             data["names"] = list({
                 *data["names"],
@@ -69,23 +73,24 @@ def load_ignore_list() -> dict:
 
 def filter_findings(findings: list[Finding], ignore: dict) -> list[Finding]:
     """Fjerner funn som matcher ignore-listen."""
-    domains = {d.lower() for d in ignore.get("email_domains", [])}
+    domains = {str(d).strip().casefold() for d in ignore.get("email_domains", []) if str(d).strip()}
+    emails = {str(e).strip().casefold() for e in ignore.get("emails", []) if str(e).strip()}
     names_raw = ignore.get("names", [])
-    ignore_names = {n.lower() for n in names_raw}
+    ignore_names = {str(n).strip().casefold() for n in names_raw if str(n).strip()}
     ignore_name_parts = {
-        part.lower()
+        part.casefold()
         for name in names_raw
-        for part in name.split()
+        for part in str(name).split()
         if len(part) > 2
     }
 
     result = []
     for f in findings:
-        val = f.text.lower()
+        val = f.text.strip().casefold()
 
         if f.category == "e-post":
             domain = val.split("@")[-1] if "@" in val else ""
-            if any(domain == d or domain.endswith("." + d) for d in domains):
+            if val in emails or any(domain == d or domain.endswith("." + d) for d in domains):
                 continue
 
         if f.category == "navn (person)":

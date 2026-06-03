@@ -481,6 +481,40 @@ def _deduplicate(raw: list[dict]) -> list[dict]:
     return out
 
 
+def _category_key(category: str) -> str:
+    return category.replace("🤖", "").strip().casefold()
+
+
+def _filter_ignored_findings(findings: list[dict], ignore: dict) -> list[dict]:
+    domains = {str(d).strip().casefold() for d in ignore.get("email_domains", []) if str(d).strip()}
+    emails = {str(e).strip().casefold() for e in ignore.get("emails", []) if str(e).strip()}
+    names_raw = ignore.get("names", [])
+    ignore_names = {str(n).strip().casefold() for n in names_raw if str(n).strip()}
+    ignore_name_parts = {
+        part.casefold()
+        for name in names_raw
+        for part in str(name).split()
+        if len(part) > 2
+    }
+
+    result: list[dict] = []
+    for f in findings:
+        val = str(f.get("text") or "").strip().casefold()
+        cat = _category_key(str(f.get("category") or ""))
+
+        if cat in {"e-post", "epost", "email", "email address"}:
+            domain = val.split("@")[-1] if "@" in val else ""
+            if val in emails or any(domain == d or domain.endswith("." + d) for d in domains):
+                continue
+
+        if cat in {"personnavn", "navn", "navn (person)", "person name"}:
+            if val in ignore_names or val in ignore_name_parts:
+                continue
+
+        result.append(f)
+    return result
+
+
 def _run_deep_scan(
     text: str, model: str, lang: str, job_id: str, categories: list[str],
     min_confidence: str = "medium",
@@ -578,6 +612,18 @@ def _run_deep_scan(
         f for f in deduped
         if _CONF_ORDER.get(str(f.get("confidence", "medium")).lower(), 1) >= min_conf_val
     ]
+
+    # Fjern interne/ignorerte funn også for AI-dypscan. Regelbasert scan gjør
+    # dette tidligere, men dypscan har egne LLM- og regex-funn.
+    try:
+        from xlent_scanner.ignore import load_ignore_list  # noqa: PLC0415
+        before = len(deduped)
+        deduped = _filter_ignored_findings(deduped, load_ignore_list())
+        removed = before - len(deduped)
+        if removed:
+            LOGGER.info("AI-ignore: fjernet %d funn fra ignore.toml", removed)
+    except Exception as exc:
+        LOGGER.warning("AI-ignore-filter feilet: %s", exc)
 
     # Marker whitelist-funn som grønne (same logikk som regelbasert skann)
     try:
