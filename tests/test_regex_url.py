@@ -76,3 +76,8 @@ def test_domain_without_protocol_not_matched():
     f = list(detect_urls("Domenet example.com er kjent."))
     texts = _texts(f)
     assert not any("example.com" in t for t in texts)
+
+
+def test_us_phone_numbers_not_matched_as_url():
+    f = list(detect_urls("Call (234) 567-8901 or +01 (234) 567-4902."))
+    assert f == []

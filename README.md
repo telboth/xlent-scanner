@@ -1,6 +1,6 @@
 # XLENT Compliance-scanner
 
-> **v1.3.8** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
+> **v1.3.9** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
 
 Alt kjøres 100 % lokalt — ingen dokumenter, tekst eller funn sendes over internett.
 
@@ -337,6 +337,15 @@ src/xlent_scanner/
 ---
 
 ## Endringslogg
+
+### v1.3.9
+- La til brukerredigerbar blacklist under Innstillinger. Ord og uttrykk i blacklist flagges alltid og fjernes ved redaction.
+- La til valg for å fjerne kommentarer og speaker notes ved redaction av støttede originalformater.
+- Fjerner DOCX-kommentarer, PPTX speaker notes/kommentarer, XLSX-kommentarer og PDF-annotasjoner når valget er aktivert.
+- Gjorde AI-dybdeskann mer treffsikker for finansielle tall i tabell-/regnearkkontekst, uten å blanke løse tall globalt.
+- La til opt-in medisinsk kategori for AI-dybdeskann.
+- Strammet inn telefon-/URL-regler for amerikanske telefonnummer, årstallintervaller og datoer.
+- Forbedret ignore-støtte for e-postfunn i AI-dybdeskann.
 
 ### v1.3.8
 - Fikset macOS «Open With»/Finder-filåpning ved å registrere støttede dokumenttyper separat i app-bundlen.

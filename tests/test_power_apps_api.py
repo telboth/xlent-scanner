@@ -132,6 +132,7 @@ def test_settings_export_import_excludes_scan_history_and_document_text(monkeypa
     payload = exported.get_json()
     assert payload["ok"] is True
     assert payload["format"] == "xlent-scanner-settings"
+    assert payload["blacklist"] == []
     assert "scan_history" not in payload
     assert "original_text" not in payload
 
@@ -139,6 +140,7 @@ def test_settings_export_import_excludes_scan_history_and_document_text(monkeypa
         "format": "xlent-scanner-settings",
         "browser_settings": {"theme": "dark", "language": "en"},
         "whitelist": ["safe@example.com"],
+        "blacklist": ["Project Raven"],
         "ignore_toml": 'email_domains = ["xlent.no"]\nnames = ["Test User"]\n',
     }
     imported = client.post("/settings/import", json=profile)
@@ -148,6 +150,7 @@ def test_settings_export_import_excludes_scan_history_and_document_text(monkeypa
     assert data["ok"] is True
     assert data["browser_settings"]["theme"] == "dark"
     assert data["whitelist"] == ["safe@example.com"]
+    assert data["blacklist"] == ["Project Raven"]
     assert "Test User" in data["ignore_toml"]
 
 

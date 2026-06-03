@@ -141,6 +141,14 @@ class TestTelefon:
         f = list(find_telefon("800000009"))
         assert f == []
 
+    def test_no_false_positive_on_year_range(self):
+        f = list(find_telefon("Budsjettperiode 2025-2026"))
+        assert f == []
+
+    def test_no_false_positive_on_iso_date(self):
+        f = list(find_telefon("Signert 2021-03-09"))
+        assert f == []
+
 
 class TestEmail:
     def test_simple_email(self):
@@ -245,7 +253,7 @@ class TestSvBankgiro:
 #  regex_en
 # ════════════════════════════════════════════════════════════
 
-from xlent_scanner.detectors.regex_en import find_uk_ni, find_us_ssn
+from xlent_scanner.detectors.regex_en import find_uk_ni, find_us_phone, find_us_ssn
 
 
 class TestUkNi:
@@ -288,6 +296,23 @@ class TestUsSsn:
     def test_no_hyphens_no_match(self):
         """Uten bindestrek: for mange falske positiver — ignorer."""
         f = list(find_us_ssn("123456789"))
+        assert f == []
+
+
+class TestUsPhone:
+    def test_parenthesized_us_phone(self):
+        f = list(find_us_phone("Call (234) 567-8901"))
+        assert len(f) == 1
+        assert f[0].category == "telefonnummer"
+        assert f[0].text == "(234) 567-8901"
+
+    def test_plus01_us_phone(self):
+        f = list(find_us_phone("Call +01 (234) 567-4902"))
+        assert len(f) == 1
+        assert f[0].text == "+01 (234) 567-4902"
+
+    def test_reject_invalid_area_prefix(self):
+        f = list(find_us_phone("Call (034) 567-8901"))
         assert f == []
 
 

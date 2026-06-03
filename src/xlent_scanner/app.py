@@ -43,6 +43,11 @@ from flask import Flask, jsonify, request
 
 from xlent_scanner import __version__
 from xlent_scanner.anonymize import anonymize_text, build_replacements
+from xlent_scanner.blacklist import (
+    blacklist_path_str,
+    get_blacklist_entries,
+    save_blacklist_entries,
+)
 from xlent_scanner.paths import app_data_dir
 from xlent_scanner.ignore import (
     get_ignore_toml_text,
@@ -1118,6 +1123,7 @@ def patch():
     data = request.get_json(force=True)
     indices = data.get("indices", [])
     ai_texts_raw = data.get("ai_texts", [])
+    strip_annotations = bool(data.get("strip_annotations", False))
     selected = [
         _last_result.findings[i]
         for i in indices
@@ -1132,7 +1138,7 @@ def patch():
             for t in ai_texts
         )
     replacements = build_replacements(selected)
-    if not replacements:
+    if not replacements and not strip_annotations:
         return jsonify({"error": "Ingen av de valgte funnene kan anonymiseres direkte."})
 
     stem = _last_path.stem
@@ -1146,7 +1152,7 @@ def patch():
         counter += 1
 
     try:
-        patch_file(_last_path, replacements, out)
+        patch_file(_last_path, replacements, out, strip_annotations=strip_annotations)
     except Exception as exc:
         LOGGER.error("patch failed suffix=%s path=%s: %s", suffix, _last_path, traceback.format_exc())
         if suffix == ".pdf":
@@ -1344,6 +1350,29 @@ def whitelist_save():
     })
 
 
+@flask_app.route("/blacklist/get", methods=["POST"])
+def blacklist_get():
+    return jsonify({
+        "ok": True,
+        "path": blacklist_path_str(),
+        "texts": get_blacklist_entries(),
+    })
+
+
+@flask_app.route("/blacklist/save", methods=["POST"])
+def blacklist_save():
+    data = request.get_json(force=True)
+    texts = data.get("texts", [])
+    if not isinstance(texts, list):
+        return jsonify({"ok": False, "error": "Ugyldig format for blacklist."})
+    save_blacklist_entries([str(t) for t in texts])
+    return jsonify({
+        "ok": True,
+        "path": blacklist_path_str(),
+        "texts": get_blacklist_entries(),
+    })
+
+
 @flask_app.route("/settings/export", methods=["POST"])
 def settings_export():
     """Eksporter lokale brukerinnstillinger uten dokument- eller scan-data."""
@@ -1359,6 +1388,7 @@ def settings_export():
         "exported_at": int(time.time()),
         "browser_settings": browser_settings,
         "whitelist": get_whitelist_entries(),
+        "blacklist": get_blacklist_entries(),
         "ignore_toml": get_ignore_toml_text(),
     })
 
@@ -1377,6 +1407,12 @@ def settings_import():
                 return jsonify({"ok": False, "error": "whitelist må være en liste."})
             save_whitelist_entries([str(t) for t in whitelist])
 
+        blacklist = data.get("blacklist", [])
+        if blacklist is not None:
+            if not isinstance(blacklist, list):
+                return jsonify({"ok": False, "error": "blacklist må være en liste."})
+            save_blacklist_entries([str(t) for t in blacklist])
+
         ignore_toml = data.get("ignore_toml")
         if ignore_toml is not None:
             if not isinstance(ignore_toml, str):
@@ -1392,6 +1428,7 @@ def settings_import():
             "ok": True,
             "browser_settings": browser_settings,
             "whitelist": get_whitelist_entries(),
+            "blacklist": get_blacklist_entries(),
             "ignore_toml": get_ignore_toml_text(),
         })
     except Exception as exc:
@@ -1530,6 +1567,7 @@ def ollama_anonymize_findings():
         return jsonify({"error": "Ingen fil skannet."})
     data = request.get_json(force=True) or {}
     texts_to_remove = [str(t).strip() for t in (data.get("texts") or []) if t and str(t).strip()]
+    strip_annotations = bool(data.get("strip_annotations", False))
     if not texts_to_remove:
         return jsonify({"error": "Ingen tekst valgt for anonymisering."})
 
@@ -1548,7 +1586,7 @@ def ollama_anonymize_findings():
             out = downloads / f"{stem}-ai-anonymisert-{counter}{suffix}"
             counter += 1
         try:
-            patch_file(_last_path, replacements, out)
+            patch_file(_last_path, replacements, out, strip_annotations=strip_annotations)
             LOGGER.info("ollama/anonymize-findings patch: wrote %s (%d replacements)", out, len(texts_to_remove))
             return jsonify({"ok": True, "path": str(out)})
         except Exception as exc:

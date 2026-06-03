@@ -3,6 +3,7 @@
 Kategorier:
   - UK National Insurance Number  (format AA 99 99 99 A)
   - US Social Security Number     (format XXX-XX-XXXX)
+  - US phone number               ((234) 567-8901, +1 (234) 567-8901)
 """
 from __future__ import annotations
 
@@ -103,11 +104,41 @@ def find_us_ssn(text: str) -> Iterator[Finding]:
             yield f
 
 
+# ── US/NANP telefonnummer ────────────────────────────────────────────────────
+#
+# Presist format for å unngå vanlige tall-falskpositiver:
+#   (234) 567-8901
+#   234-567-8901
+#   234 567 8901
+#   +1 (234) 567-8901 / +01 (234) 567-8901
+# NANP krever at area code og central office code ikke starter med 0/1.
+
+_US_PHONE_RE = re.compile(
+    r"(?<![\w])"
+    r"(?:(?:\+?1|\+01|001)[\s.\-]*)?"
+    r"(?:\(([2-9]\d{2})\)|([2-9]\d{2}))"
+    r"[\s.\-]*"
+    r"([2-9]\d{2})"
+    r"[\s.\-]*"
+    r"(\d{4})"
+    r"(?![\w])"
+)
+
+
+def find_us_phone(text: str) -> Iterator[Finding]:
+    for m in _US_PHONE_RE.finditer(text):
+        yield Finding(
+            "telefonnummer",
+            m.group(0).strip(),
+            _ctx(text, m.start(), m.end()),
+        )
+
+
 # ── Samlet ────────────────────────────────────────────────────────────────────
 
 def detect_en_specific(text: str) -> list[Finding]:
-    """Engelske mønstre: UK NI-nummer og US SSN."""
+    """Engelske mønstre: UK NI-nummer, US SSN og US telefonnummer."""
     findings: list[Finding] = []
-    for fn in (find_uk_ni, find_us_ssn):
+    for fn in (find_uk_ni, find_us_ssn, find_us_phone):
         findings.extend(fn(text))
     return findings

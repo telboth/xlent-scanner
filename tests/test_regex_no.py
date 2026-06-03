@@ -162,5 +162,11 @@ class TestFindTelefon:
     def test_year_not_matched(self):
         assert not self._texts("Rapport fra 2024.")
 
+    def test_year_range_not_matched_as_phone(self):
+        assert not self._texts("Avtaleperioden er 2025-2026.")
+
+    def test_iso_date_not_matched_as_phone(self):
+        assert not self._texts("Dato: 2021-03-09.")
+
     def test_postcode_not_matched(self):
         assert not self._texts("Postnummer: 0150")

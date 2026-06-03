@@ -216,10 +216,17 @@ _PHONE_RE = re.compile(
     r"(?!\d)",
 )
 
+_YEAR_RANGE_RE = re.compile(r"^(?:19|20)\d{2}-(?:19|20)\d{2}$")
+_ISO_DATE_RE = re.compile(r"^(?:19|20)\d{2}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])$")
+
 
 def find_telefon(text: str) -> Iterator[Finding]:
     for m in _PHONE_RE.finditer(text):
         raw = m.group(0).strip()
+        if _YEAR_RANGE_RE.match(raw.replace(" ", "")):
+            continue
+        if _ISO_DATE_RE.match(raw.replace(" ", "")):
+            continue
         # Fjern landkode for visning av råverdi
         yield Finding("telefonnummer", raw, _ctx(text, m.start(), m.end()))
 

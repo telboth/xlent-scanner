@@ -21,6 +21,10 @@ class TestSeverity:
         for cat in ["IBAN", "OpenAI API Key", "Passord i konfig"]:
             assert _category_severity(cat) == "rød", cat
 
+    def test_medical_is_rod(self):
+        for cat in ["Medisinsk", "Medical", "Diagnose", "Medication"]:
+            assert _category_severity(cat) == "rød", cat
+
     def test_pii_gul(self):
         for cat in ["e-post", "telefonnummer", "navn (person)",
                     "organisasjonsnummer", "nettadresse", "mulig personnummer (format)"]:
@@ -33,6 +37,7 @@ class TestAiSeverity:
     def test_ai_prefix_stripped(self):
         assert ai_severity("🤖 Fødselsnummer") == "svart"
         assert ai_severity("🤖 IBAN") == "rød"
+        assert ai_severity("🤖 Medisinsk") == "rød"
         assert ai_severity("🤖 Selskapsnavn") == "gul"
         assert ai_severity("🤖 Personnavn") == "gul"
 

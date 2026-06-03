@@ -91,12 +91,29 @@ def test_settings_profile_and_ollama_pull_controls_exist_for_all_languages():
     assert 'id="btn-import-settings"' in html
     assert 'id="settings-import-file"' in html
     assert 'id="btn-pull-ollama-model"' in html
+    assert 'id="stripAnnotations"' in html
+    assert 'id="blacklist-editor"' in html
+    assert 'id="btn-blacklist-save"' in html
     assert "function exportSettingsProfile" in html
     assert "function importSettingsProfile" in html
     assert "function pullRecommendedOllamaModel" in html
+    assert "function loadBlacklistEditor" in html
+    assert "strip_annotations: stripAnnotations" in html
     for key in [
         "settingsProfileTitle",
         "settingsProfileNote",
+        "settingsRedactionTitle",
+        "stripAnnotationsLabel",
+        "stripAnnotationsNote",
+        "settingsBlacklistTitle",
+        "blacklistNote",
+        "blacklistReload",
+        "blacklistSave",
+        "blacklistPathLabel",
+        "blacklistHint",
+        "blacklistSaved",
+        "blacklistLoadErr",
+        "blacklistSaveErr",
         "settingsExport",
         "settingsImport",
         "settingsExported",
@@ -128,8 +145,17 @@ def test_scan_category_translations_exist_for_all_languages():
         "scanCatFodselsdato",
         "scanCatSwift",
         "scanCatLonn",
+        "dstCatMedisinsk",
     ]:
         assert html.count(f"{key}:") == 6
+
+
+def test_medical_ai_category_is_available_but_default_off():
+    html = HTML.read_text(encoding="utf-8")
+
+    assert 'class="ai-extra-cat" value="medisinsk"' in html
+    assert 'class="ai-extra-cat" value="medisinsk" checked' not in html
+    assert 'data-i18n="dstCatMedisinsk"' in html
 
 
 def test_ai_rescan_uses_spinner_instead_of_duplicate_analyzing_text():

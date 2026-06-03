@@ -648,6 +648,7 @@
               <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:6px;">
                 <label class="dst-cat-label"><input type="checkbox" class="ai-extra-cat" value="adresse" checked> <span data-i18n="dstCatAdresse">Adresse</span></label>
                 <label class="dst-cat-label"><input type="checkbox" class="ai-extra-cat" value="selskapsnavn" checked> <span data-i18n="dstCatSelskapsnavn">Selskapsnavn</span></label>
+                <label class="dst-cat-label"><input type="checkbox" class="ai-extra-cat" value="medisinsk"> <span data-i18n="dstCatMedisinsk">Medisinsk</span></label>
               </div>
               <div class="dst-hw-req" data-i18n="dstHwReq">⚠ Dybdeskanning kjøres lokalt og kan ta opptil flere minutter. Anbefalt: minst 16 GB RAM.</div>
             </div>
@@ -777,7 +778,7 @@
         <div class="about-section">
           <h3>Dybdeskann med AI (Ollama)</h3>
           <p>Dybdeskann-fanen sender dokumentteksten til en lokal AI-modell via <strong>Ollama</strong> og ber den identifisere sensitiv informasjon som regel-baserte detektorer kan misse – for eksempel navn i uvanlige formater, adresser uten postnummer, eller budsjettall i fritekst.</p>
-          <p>Du velger selv hvilke kategorier AI-en skal lete etter: navn, adresser, telefonnumre, personnumre, bankkontonumre, selskapsnavn og budsjetttall. Valgte funn kan anonymiseres direkte fra fanen og lagres som tekstfil i nedlastingsmappen.</p>
+          <p>Du velger selv hvilke kategorier AI-en skal lete etter: navn, adresser, telefonnumre, personnumre, bankkontonumre, selskapsnavn, budsjetttall og valgfritt medisinske opplysninger. Valgte funn kan anonymiseres direkte fra fanen og lagres som tekstfil i nedlastingsmappen.</p>
           <div class="local-badge" style="margin-top:8px"><span class="icon">⏱️</span><span><strong>Maskinvarekrav:</strong> Dybdeskanning kan ta fra noen sekunder til flere minutter avhengig av dokumentstørrelse. Anbefalt maskin: minst 16 GB RAM og en relativt moderne CPU (fra ca. 2018 eller nyere). <strong>GPU-akselerasjon</strong> (NVIDIA/AMD) benyttes automatisk dersom det er tilgjengelig og gir betydelig kortere analysetid. Programmet viser om det kjører på CPU eller GPU.</span></div>
           <p style="margin-top:8px;">Ollama lastes ned gratis fra <a href="https://ollama.ai" target="_blank" style="color:var(--accent)">ollama.ai</a>. Anbefalt modell: <strong>llama3.2:3b</strong> (~1,9 GB).</p>
         </div>
@@ -831,7 +832,7 @@
         <div class="about-section">
           <h3>Djupskanning med AI (Ollama)</h3>
           <p>Fliken Djupskanning skickar dokumenttexten till en lokal AI-modell via <strong>Ollama</strong> och ber den identifiera känslig information som regelbaserade detektorer kan missa – till exempel namn i ovanliga format, adresser utan postnummer eller budgetsiffror i fritext.</p>
-          <p>Du väljer själv vilka kategorier AI:n ska leta efter: namn, adresser, telefonnummer, personnummer, bankkontonummer, företagsnamn och budgetbelopp. Valda fynd kan anonymiseras direkt från fliken och sparas som en textfil i nedladdningsmappen.</p>
+          <p>Du väljer själv vilka kategorier AI:n ska leta efter: namn, adresser, telefonnummer, personnummer, bankkontonummer, företagsnamn, budgetbelopp och valfritt medicinska uppgifter. Valda fynd kan anonymiseras direkt från fliken och sparas som en textfil i nedladdningsmappen.</p>
           <div class="local-badge" style="margin-top:8px"><span class="icon">⏱️</span><span><strong>Maskinvarukrav:</strong> Djupskanning kan ta från några sekunder till flera minuter beroende på dokumentets storlek. Rekommenderat: minst 16 GB RAM och en relativt modern CPU (från ca 2018 eller senare). <strong>GPU-acceleration</strong> (NVIDIA/AMD) används automatiskt om tillgänglig och ger avsevärt kortare analystid. Programmet visar om det körs på CPU eller GPU.</span></div>
           <p style="margin-top:8px;">Ollama laddas ned gratis från <a href="https://ollama.ai" target="_blank" style="color:var(--accent)">ollama.ai</a>. Rekommenderad modell: <strong>llama3.2:3b</strong> (~1,9 GB).</p>
         </div>
@@ -885,7 +886,7 @@
         <div class="about-section">
           <h3>AI Deep Scan (Ollama)</h3>
           <p>The Deep Scan tab sends document text to a local AI model via <strong>Ollama</strong> and asks it to identify sensitive information that rule-based detectors may miss — for example names in unusual formats, addresses without postal codes, or budget figures embedded in free text.</p>
-          <p>You choose which categories the AI should look for: names, addresses, phone numbers, national ID numbers, bank account numbers, company names, and budget amounts. Selected findings can be redacted directly from the tab and saved as a text file in the Downloads folder.</p>
+          <p>You choose which categories the AI should look for: names, addresses, phone numbers, national ID numbers, bank account numbers, company names, budget amounts, and optional medical information. Selected findings can be redacted directly from the tab and saved as a text file in the Downloads folder.</p>
           <div class="local-badge" style="margin-top:8px"><span class="icon">⏱️</span><span><strong>Hardware requirements:</strong> Deep scanning can take anywhere from a few seconds to several minutes depending on document size. Recommended: at least 16 GB RAM and a relatively modern CPU (circa 2018 or newer). <strong>GPU acceleration</strong> (NVIDIA/AMD) is used automatically when available and provides significantly faster analysis. The app shows whether it is running on CPU or GPU.</span></div>
           <p style="margin-top:8px;">Ollama is available free at <a href="https://ollama.ai" target="_blank" style="color:var(--accent)">ollama.ai</a>. Recommended model: <strong>llama3.2:3b</strong> (~1.9 GB).</p>
         </div>
@@ -939,7 +940,7 @@
         <div class="about-section">
           <h3>KI-Tiefenscan (Ollama)</h3>
           <p>Der Tab Tiefenscan sendet den Dokumenttext an ein lokales KI-Modell über <strong>Ollama</strong> und identifiziert sensible Informationen, die regelbasierte Detektoren übersehen können — z. B. Namen in ungewöhnlichen Formaten, Adressen ohne Postleitzahl oder Budgetwerte in Freitext.</p>
-          <p>Sie wählen selbst die Kategorien: Namen, Adressen, Telefonnummern, Personenkennzahlen, Kontonummern, Firmennamen und Budgetbeträge. Ausgewählte Treffer können direkt im Tab anonymisiert und als Textdatei im Download-Ordner gespeichert werden.</p>
+          <p>Sie wählen selbst die Kategorien: Namen, Adressen, Telefonnummern, Personenkennzahlen, Kontonummern, Firmennamen, Budgetbeträge und optional medizinische Informationen. Ausgewählte Treffer können direkt im Tab anonymisiert und als Textdatei im Download-Ordner gespeichert werden.</p>
           <div class="local-badge" style="margin-top:8px"><span class="icon">⏱️</span><span><strong>Hardware:</strong> Tiefenscan kann je nach Dokumentgröße wenige Sekunden bis mehrere Minuten dauern. Empfohlen: mindestens 16 GB RAM und eine relativ moderne CPU (ca. 2018 oder neuer). <strong>GPU-Beschleunigung</strong> (NVIDIA/AMD) wird automatisch genutzt, falls verfügbar, und verkürzt die Analysezeit deutlich. Die App zeigt an, ob CPU oder GPU verwendet wird.</span></div>
           <p style="margin-top:8px;">Ollama ist kostenlos verfügbar unter <a href="https://ollama.ai" target="_blank" style="color:var(--accent)">ollama.ai</a>. Empfohlenes Modell: <strong>llama3.2:3b</strong> (~1,9 GB).</p>
         </div>
@@ -993,7 +994,7 @@
         <div class="about-section">
           <h3>Analyse IA approfondie (Ollama)</h3>
           <p>L’onglet d’analyse approfondie envoie le texte du document à un modèle IA local via <strong>Ollama</strong> pour identifier des informations sensibles que les détecteurs à règles peuvent manquer — par exemple des noms dans des formats inhabituels, des adresses sans code postal ou des montants de budget en texte libre.</p>
-          <p>Vous choisissez les catégories à rechercher : noms, adresses, numéros de téléphone, identifiants personnels, numéros de compte, noms d’entreprise et montants budgétaires. Les résultats sélectionnés peuvent être anonymisés directement depuis l’onglet et enregistrés en fichier texte dans le dossier Téléchargements.</p>
+          <p>Vous choisissez les catégories à rechercher : noms, adresses, numéros de téléphone, identifiants personnels, numéros de compte, noms d’entreprise, montants budgétaires et, en option, informations médicales. Les résultats sélectionnés peuvent être anonymisés directement depuis l’onglet et enregistrés en fichier texte dans le dossier Téléchargements.</p>
           <div class="local-badge" style="margin-top:8px"><span class="icon">⏱️</span><span><strong>Configuration matérielle :</strong> l’analyse approfondie peut prendre de quelques secondes à plusieurs minutes selon la taille du document. Recommandé : au moins 16 Go de RAM et un CPU relativement moderne (vers 2018 ou plus récent). L’<strong>accélération GPU</strong> (NVIDIA/AMD) est utilisée automatiquement si disponible et réduit nettement le temps d’analyse. L’application indique si elle tourne sur CPU ou GPU.</span></div>
           <p style="margin-top:8px;">Ollama est disponible gratuitement sur <a href="https://ollama.ai" target="_blank" style="color:var(--accent)">ollama.ai</a>. Modèle recommandé : <strong>llama3.2:3b</strong> (~1,9 Go).</p>
         </div>
@@ -1047,7 +1048,7 @@
         <div class="about-section">
           <h3>Escaneo profundo con IA (Ollama)</h3>
           <p>La pestaña de escaneo profundo envía el texto del documento a un modelo de IA local vía <strong>Ollama</strong> para identificar información sensible que los detectores basados en reglas pueden pasar por alto — por ejemplo nombres en formatos inusuales, direcciones sin código postal o cifras de presupuesto en texto libre.</p>
-          <p>Usted elige las categorías que la IA debe buscar: nombres, direcciones, teléfonos, identificaciones personales, números de cuenta, nombres de empresa y montos de presupuesto. Los hallazgos seleccionados pueden anonimizarse directamente desde la pestaña y guardarse como archivo de texto en Descargas.</p>
+          <p>Usted elige las categorías que la IA debe buscar: nombres, direcciones, teléfonos, identificaciones personales, números de cuenta, nombres de empresa, montos de presupuesto e información médica opcional. Los hallazgos seleccionados pueden anonimizarse directamente desde la pestaña y guardarse como archivo de texto en Descargas.</p>
           <div class="local-badge" style="margin-top:8px"><span class="icon">⏱️</span><span><strong>Requisitos de hardware:</strong> el escaneo profundo puede tardar desde segundos hasta varios minutos según el tamaño del documento. Recomendado: al menos 16 GB de RAM y una CPU relativamente moderna (aprox. 2018 o posterior). La <strong>aceleración por GPU</strong> (NVIDIA/AMD) se usa automáticamente cuando está disponible y reduce significativamente el tiempo de análisis. La app muestra si se ejecuta en CPU o GPU.</span></div>
           <p style="margin-top:8px;">Ollama se descarga gratis en <a href="https://ollama.ai" target="_blank" style="color:var(--accent)">ollama.ai</a>. Modelo recomendado: <strong>llama3.2:3b</strong> (~1,9 GB).</p>
         </div>
@@ -1087,6 +1088,16 @@
           </select>
         </div>
         <div class="settings-note" data-i18n="settingsDocLangNote">Auto-detektering bestemmer dokumentspråket automatisk og velger riktige mønstre.</div>
+      </div>
+
+      <!-- Redaction -->
+      <div class="settings-section">
+        <div class="settings-section-title" data-i18n="settingsRedactionTitle">Redaction</div>
+        <div class="settings-row">
+          <input type="checkbox" id="stripAnnotations" />
+          <label for="stripAnnotations" data-i18n="stripAnnotationsLabel">Fjern kommentarer og speaker notes ved anonymisering</label>
+        </div>
+        <div class="settings-note" data-i18n="stripAnnotationsNote">Gjelder støttede originalformater: DOCX-kommentarer, PPTX speaker notes/kommentarer, XLSX-kommentarer og PDF-annotasjoner.</div>
       </div>
 
       <!-- Navnemodeller (NER) -->
@@ -1147,8 +1158,20 @@
       </div>
 
       <div class="settings-section">
+        <div class="settings-section-title" data-i18n="settingsBlacklistTitle">Blacklist</div>
+        <div class="settings-note" data-i18n="blacklistNote">Ord og uttrykk her flagges alltid og fjernes ved redaction. Ett element per linje.</div>
+        <div class="settings-note" id="blacklist-path"></div>
+        <textarea id="blacklist-editor" class="settings-textarea" spellcheck="false"></textarea>
+        <div class="settings-row" style="margin-top:8px;">
+          <button id="btn-blacklist-reload" class="ctrl-btn" data-i18n="blacklistReload">Last inn</button>
+          <button id="btn-blacklist-save" class="ctrl-btn ctrl-btn-primary" data-i18n="blacklistSave">Lagre blacklist</button>
+        </div>
+        <div class="settings-note" id="blacklist-msg"></div>
+      </div>
+
+      <div class="settings-section">
         <div class="settings-section-title" data-i18n="settingsProfileTitle">Innstillingsprofil</div>
-        <div class="settings-note" data-i18n="settingsProfileNote">Eksporterer og importerer tema, dokumentspråk, hviteliste og ignore.toml. Scan-historikk og dokumentinnhold tas ikke med.</div>
+        <div class="settings-note" data-i18n="settingsProfileNote">Eksporterer og importerer tema, dokumentspråk, hviteliste, blacklist og ignore.toml. Scan-historikk og dokumentinnhold tas ikke med.</div>
         <div class="settings-row" style="margin-top:8px;">
           <button id="btn-export-settings" class="ctrl-btn" data-i18n="settingsExport">Eksporter innstillinger</button>
           <button id="btn-import-settings" class="ctrl-btn ctrl-btn-primary" data-i18n="settingsImport">Importer innstillinger</button>
@@ -1252,6 +1275,9 @@
         themeNote:           "Lys modus bruker en grå header slik at XLENT-logoen fortsatt er synlig.",
         settingsDocLangTitle:"Dokumentspråk",
         settingsDocLangNote: "Auto-detektering bestemmer dokumentspråket automatisk og velger riktige mønstre.",
+        settingsRedactionTitle: "Redaction",
+        stripAnnotationsLabel: "Fjern kommentarer og speaker notes ved anonymisering",
+        stripAnnotationsNote: "Gjelder støttede originalformater: DOCX-kommentarer, PPTX speaker notes/kommentarer, XLSX-kommentarer og PDF-annotasjoner.",
         settingsFilterTitle: "Filtrering",
         settingsWhitelistTitle: "Hviteliste",
         whitelistPersonalNote: "Denne hvitelisten er personlig og bygges opp av den enkelte bruker.",
@@ -1262,6 +1288,15 @@
         whitelistSaved: "Hviteliste lagret.",
         whitelistLoadErr: "Kunne ikke lese hviteliste:",
         whitelistSaveErr: "Kunne ikke lagre hviteliste:",
+        settingsBlacklistTitle: "Blacklist",
+        blacklistNote: "Ord og uttrykk her flagges alltid og fjernes ved redaction. Ett element per linje.",
+        blacklistReload: "Last inn",
+        blacklistSave: "Lagre blacklist",
+        blacklistPathLabel: "Fil:",
+        blacklistHint: "Én verdi per linje. Disse overstyrer hvitelisten.",
+        blacklistSaved: "Blacklist lagret.",
+        blacklistLoadErr: "Kunne ikke lese blacklist:",
+        blacklistSaveErr: "Kunne ikke lagre blacklist:",
         settingsNerTitle:    "Navnemodeller (NER)",
         settingsNerNote:     "Navnegjenkjenning krever spaCy-modeller som lastes ned én gang og lagres lokalt på maskinen. Nedlastingen krever internettforbindelse.",
         nerDownloadAll:      "⬇ Last ned alle modeller",
@@ -1300,7 +1335,7 @@
         deepScanNoFindings:  "Ingen ekstra funn fra AI-analyse.",
         settingsUpdateTitle: "Oppdateringer",
         settingsProfileTitle:"Innstillingsprofil",
-        settingsProfileNote: "Eksporterer og importerer tema, dokumentspråk, hviteliste og ignore.toml. Scan-historikk og dokumentinnhold tas ikke med.",
+        settingsProfileNote: "Eksporterer og importerer tema, dokumentspråk, hviteliste, blacklist og ignore.toml. Scan-historikk og dokumentinnhold tas ikke med.",
         settingsExport:      "Eksporter innstillinger",
         settingsImport:      "Importer innstillinger",
         settingsExported:    "Innstillinger eksportert.",
@@ -1338,6 +1373,7 @@
         dstCatEpost:        "E-post",
         dstCatTelefon:      "Telefon",
         dstCatSelskapsnavn:  "Selskapsnavn",
+        dstCatMedisinsk:     "Medisinsk",
         dstCatNettadresse:   "Nettadresser",
         dstSelectOne:       "Velg minst ett funn å anonymisere.",
         dstHwReq:           "⚠ Dybdeskanning kjøres lokalt og kan ta opptil flere minutter, avhengig av dokumentstørrelse og maskinvare. Anbefalt: minst 16 GB RAM og en relativt moderne CPU. GPU-akselerasjon (NVIDIA/AMD) brukes automatisk og gir vesentlig kortere analysetid.",
@@ -1443,6 +1479,9 @@
         themeNote:           "Ljust läge använder en grå header så att XLENT-logotypen fortfarande syns.",
         settingsDocLangTitle:"Dokumentspråk",
         settingsDocLangNote: "Automatisk identifiering väljer dokumentspråk och rätt mönster.",
+        settingsRedactionTitle: "Redigering",
+        stripAnnotationsLabel: "Ta bort kommentarer och speaker notes vid redigering",
+        stripAnnotationsNote: "Gäller stödda originalformat: DOCX-kommentarer, PPTX speaker notes/kommentarer, XLSX-kommentarer och PDF-annoteringar.",
         settingsFilterTitle: "Filtrering",
         settingsWhitelistTitle: "Vitlista",
         whitelistPersonalNote: "Denna vitlista är personlig och byggs upp av varje enskild användare.",
@@ -1453,6 +1492,15 @@
         whitelistSaved: "Vitlista sparad.",
         whitelistLoadErr: "Kunde inte läsa vitlista:",
         whitelistSaveErr: "Kunde inte spara vitlista:",
+        settingsBlacklistTitle: "Blacklist",
+        blacklistNote: "Ord och uttryck här flaggas alltid och tas bort vid redigering. Ett element per rad.",
+        blacklistReload: "Läs in",
+        blacklistSave: "Spara blacklist",
+        blacklistPathLabel: "Fil:",
+        blacklistHint: "Ett värde per rad. Dessa åsidosätter vitlistan.",
+        blacklistSaved: "Blacklist sparad.",
+        blacklistLoadErr: "Kunde inte läsa blacklist:",
+        blacklistSaveErr: "Kunde inte spara blacklist:",
         settingsNerTitle:    "Namnigenkänning (NER)",
         settingsNerNote:     "Namnigenkänning kräver spaCy-modeller som laddas ned en gång och sparas lokalt. Nedladdningen kräver internetanslutning.",
         nerDownloadAll:      "⬇ Ladda ned alla modeller",
@@ -1491,7 +1539,7 @@
         deepScanNoFindings:  "Inga extra fynd från AI-analysen.",
         settingsUpdateTitle: "Uppdateringar",
         settingsProfileTitle:"Inställningsprofil",
-        settingsProfileNote: "Exporterar och importerar tema, dokumentspråk, vitlista och ignore.toml. Skanningshistorik och dokumentinnehåll tas inte med.",
+        settingsProfileNote: "Exporterar och importerar tema, dokumentspråk, vitlista, blacklist och ignore.toml. Skanningshistorik och dokumentinnehåll tas inte med.",
         settingsExport:      "Exportera inställningar",
         settingsImport:      "Importera inställningar",
         settingsExported:    "Inställningar exporterade.",
@@ -1529,6 +1577,7 @@
         dstCatEpost:        "E-post",
         dstCatTelefon:      "Telefon",
         dstCatSelskapsnavn:  "Företagsnamn",
+        dstCatMedisinsk:     "Medicinskt",
         dstCatNettadresse:   "Webbadresser",
         dstSelectOne:       "Välj minst ett fynd att anonymisera.",
         dstHwReq:           "⚠ Djupskanning körs lokalt och kan ta upp till flera minuter beroende på dokumentstorlek och hårdvara. Rekommenderat: minst 16 GB RAM och en relativt modern CPU. GPU-acceleration (NVIDIA/AMD) används automatiskt och ger avsevärt kortare analystid.",
@@ -1634,6 +1683,9 @@
         themeNote:           "Light mode uses a grey header so the white XLENT logo remains visible.",
         settingsDocLangTitle:"Document language",
         settingsDocLangNote: "Auto-detection determines the document language and selects the right detection patterns.",
+        settingsRedactionTitle: "Redaction",
+        stripAnnotationsLabel: "Remove comments and speaker notes during redaction",
+        stripAnnotationsNote: "Applies to supported original formats: DOCX comments, PPTX speaker notes/comments, XLSX comments and PDF annotations.",
         settingsFilterTitle: "Filtering",
         settingsWhitelistTitle: "Whitelist",
         whitelistPersonalNote: "This whitelist is personal and built by each individual user.",
@@ -1644,6 +1696,15 @@
         whitelistSaved: "Whitelist saved.",
         whitelistLoadErr: "Could not read whitelist:",
         whitelistSaveErr: "Could not save whitelist:",
+        settingsBlacklistTitle: "Blacklist",
+        blacklistNote: "Words and phrases here are always flagged and removed during redaction. One item per line.",
+        blacklistReload: "Load",
+        blacklistSave: "Save blacklist",
+        blacklistPathLabel: "File:",
+        blacklistHint: "One value per line. These override the whitelist.",
+        blacklistSaved: "Blacklist saved.",
+        blacklistLoadErr: "Could not read blacklist:",
+        blacklistSaveErr: "Could not save blacklist:",
         settingsNerTitle:    "Name models (NER)",
         settingsNerNote:     "Name recognition requires spaCy models that are downloaded once and stored locally. An internet connection is required for the download.",
         nerDownloadAll:      "⬇ Download all models",
@@ -1682,7 +1743,7 @@
         deepScanNoFindings:  "No additional findings from AI analysis.",
         settingsUpdateTitle: "Updates",
         settingsProfileTitle:"Settings profile",
-        settingsProfileNote: "Exports and imports theme, document language, whitelist, and ignore.toml. Scan history and document content are not included.",
+        settingsProfileNote: "Exports and imports theme, document language, whitelist, blacklist, and ignore.toml. Scan history and document content are not included.",
         settingsExport:      "Export settings",
         settingsImport:      "Import settings",
         settingsExported:    "Settings exported.",
@@ -1720,6 +1781,7 @@
         dstCatEpost:        "Email addresses",
         dstCatTelefon:      "Phone numbers",
         dstCatSelskapsnavn:  "Company names",
+        dstCatMedisinsk:     "Medical",
         dstCatNettadresse:   "Web addresses",
         dstSelectOne:       "Select at least one finding to redact.",
         dstHwReq:           "⚠ Deep scanning runs locally and may take several minutes depending on document size and hardware. Recommended: at least 16 GB RAM and a relatively modern CPU. GPU acceleration (NVIDIA/AMD) is used automatically and significantly reduces analysis time.",
@@ -1815,12 +1877,26 @@
         wlErr:               "Fehler!",
         pdfCaveat:           "PDF-Direktbearbeitung: Text wird in Suchschichten ersetzt.",
         docLangAuto:         "Automatisch erkennen",
+        settingsDocLangTitle:"Dokumentsprache",
+        settingsDocLangNote: "Automatische Erkennung bestimmt die Dokumentsprache und wählt die passenden Muster.",
+        settingsRedactionTitle: "Redaktion",
+        stripAnnotationsLabel: "Kommentare und Sprechernotizen bei der Redaktion entfernen",
+        stripAnnotationsNote: "Gilt für unterstützte Originalformate: DOCX-Kommentare, PPTX-Sprechernotizen/Kommentare, XLSX-Kommentare und PDF-Anmerkungen.",
         ignoreXlent:         "Interne Begriffe filtern",
         ignoreHint:          "Domainnamen, interne E-Mails und Namen werden herausgefiltert.",
         whitelistHint:       "Werte, die in zukünftigen Scans nicht mehr gemeldet werden sollen.",
         whitelistPath:       "Whitelist-Datei:",
         whitelistSaveOk:     "✓ Whitelist gespeichert.",
         whitelistSaveErr:    "Fehler beim Speichern:",
+        settingsBlacklistTitle: "Blacklist",
+        blacklistNote: "Wörter und Ausdrücke hier werden immer markiert und bei der Redaktion entfernt. Ein Eintrag pro Zeile.",
+        blacklistReload: "Laden",
+        blacklistSave: "Blacklist speichern",
+        blacklistPathLabel: "Datei:",
+        blacklistHint: "Ein Wert pro Zeile. Diese Einträge überschreiben die Whitelist.",
+        blacklistSaved: "Blacklist gespeichert.",
+        blacklistLoadErr: "Blacklist konnte nicht gelesen werden:",
+        blacklistSaveErr: "Blacklist konnte nicht gespeichert werden:",
         whitelistClear:      "Eintrag entfernen",
         whitelistEmpty:      "Whitelist ist leer.",
         ignorePath:          "Ignore-Datei:",
@@ -1853,7 +1929,7 @@
         updateCheckBtn:      "Auf Updates prüfen",
         settingsUpdateTitle: "Updates",
         settingsProfileTitle:"Einstellungsprofil",
-        settingsProfileNote: "Exportiert und importiert Design, Dokumentsprache, Whitelist und ignore.toml. Scan-Verlauf und Dokumentinhalte werden nicht übernommen.",
+        settingsProfileNote: "Exportiert und importiert Design, Dokumentsprache, Whitelist, Blacklist und ignore.toml. Scan-Verlauf und Dokumentinhalte werden nicht übernommen.",
         settingsExport:      "Einstellungen exportieren",
         settingsImport:      "Einstellungen importieren",
         settingsExported:    "Einstellungen exportiert.",
@@ -1915,6 +1991,7 @@
         dstCatAdresse:       "Adresse",
         dstCatNettadresse:   "Webadressen / IP",
         dstCatSelskapsnavn:  "Firmenname",
+        dstCatMedisinsk:     "Medizinisch",
         dstCatBudsjett:      "Budget / Betrag",
         dstCatNavn:          "Name",
         dstCatPersonnummer:  "Personennummer",
@@ -2005,12 +2082,26 @@
         wlErr:               "Erreur !",
         pdfCaveat:           "Édition PDF directe : le texte est remplacé dans les calques de recherche.",
         docLangAuto:         "Détection automatique",
+        settingsDocLangTitle:"Langue du document",
+        settingsDocLangNote: "La détection automatique détermine la langue du document et choisit les bons modèles.",
+        settingsRedactionTitle: "Biffage",
+        stripAnnotationsLabel: "Supprimer les commentaires et notes de présentation lors du biffage",
+        stripAnnotationsNote: "S’applique aux formats originaux pris en charge : commentaires DOCX, notes/commentaires PPTX, commentaires XLSX et annotations PDF.",
         ignoreXlent:         "Filtrer les termes internes",
         ignoreHint:          "Les noms de domaine, e-mails internes et noms sont filtrés.",
         whitelistHint:       "Valeurs à ne plus signaler dans les analyses futures.",
         whitelistPath:       "Fichier liste blanche :",
         whitelistSaveOk:     "✓ Liste blanche enregistrée.",
         whitelistSaveErr:    "Erreur d'enregistrement :",
+        settingsBlacklistTitle: "Blacklist",
+        blacklistNote: "Les mots et expressions ici sont toujours signalés et supprimés lors du biffage. Un élément par ligne.",
+        blacklistReload: "Charger",
+        blacklistSave: "Enregistrer la blacklist",
+        blacklistPathLabel: "Fichier :",
+        blacklistHint: "Une valeur par ligne. Ces entrées remplacent la liste blanche.",
+        blacklistSaved: "Blacklist enregistrée.",
+        blacklistLoadErr: "Impossible de lire la blacklist :",
+        blacklistSaveErr: "Impossible d’enregistrer la blacklist :",
         whitelistClear:      "Supprimer l'entrée",
         whitelistEmpty:      "Liste blanche vide.",
         ignorePath:          "Fichier ignore :",
@@ -2043,7 +2134,7 @@
         updateCheckBtn:      "Vérifier les mises à jour",
         settingsUpdateTitle: "Mises à jour",
         settingsProfileTitle:"Profil de paramètres",
-        settingsProfileNote: "Exporte et importe le thème, la langue du document, la liste blanche et ignore.toml. L’historique d’analyse et le contenu des documents ne sont pas inclus.",
+        settingsProfileNote: "Exporte et importe le thème, la langue du document, la liste blanche, la blacklist et ignore.toml. L’historique d’analyse et le contenu des documents ne sont pas inclus.",
         settingsExport:      "Exporter les paramètres",
         settingsImport:      "Importer les paramètres",
         settingsExported:    "Paramètres exportés.",
@@ -2105,6 +2196,7 @@
         dstCatAdresse:       "Adresse",
         dstCatNettadresse:   "Adresses web / IP",
         dstCatSelskapsnavn:  "Nom de société",
+        dstCatMedisinsk:     "Médical",
         dstCatBudsjett:      "Budget / montant",
         dstCatNavn:          "Nom",
         dstCatPersonnummer:  "Numéro de sécurité sociale",
@@ -2195,12 +2287,26 @@
         wlErr:               "¡Error!",
         pdfCaveat:           "Edición directa de PDF: el texto se reemplaza en capas de búsqueda.",
         docLangAuto:         "Detección automática",
+        settingsDocLangTitle:"Idioma del documento",
+        settingsDocLangNote: "La detección automática determina el idioma del documento y elige los patrones correctos.",
+        settingsRedactionTitle: "Redacción",
+        stripAnnotationsLabel: "Eliminar comentarios y notas del presentador durante la redacción",
+        stripAnnotationsNote: "Se aplica a formatos originales compatibles: comentarios DOCX, notas/comentarios PPTX, comentarios XLSX y anotaciones PDF.",
         ignoreXlent:         "Filtrar términos internos",
         ignoreHint:          "Los nombres de dominio, correos internos y nombres se filtran.",
         whitelistHint:       "Valores que no se reportarán en análisis futuros.",
         whitelistPath:       "Archivo lista blanca:",
         whitelistSaveOk:     "✓ Lista blanca guardada.",
         whitelistSaveErr:    "Error al guardar:",
+        settingsBlacklistTitle: "Blacklist",
+        blacklistNote: "Las palabras y expresiones aquí siempre se marcan y se eliminan durante la redacción. Un elemento por línea.",
+        blacklistReload: "Cargar",
+        blacklistSave: "Guardar blacklist",
+        blacklistPathLabel: "Archivo:",
+        blacklistHint: "Un valor por línea. Estas entradas prevalecen sobre la lista blanca.",
+        blacklistSaved: "Blacklist guardada.",
+        blacklistLoadErr: "No se pudo leer la blacklist:",
+        blacklistSaveErr: "No se pudo guardar la blacklist:",
         whitelistClear:      "Eliminar entrada",
         whitelistEmpty:      "Lista blanca vacía.",
         ignorePath:          "Archivo ignore:",
@@ -2233,7 +2339,7 @@
         updateCheckBtn:      "Buscar actualizaciones",
         settingsUpdateTitle: "Actualizaciones",
         settingsProfileTitle:"Perfil de configuración",
-        settingsProfileNote: "Exporta e importa tema, idioma del documento, lista blanca e ignore.toml. No incluye historial de escaneos ni contenido de documentos.",
+        settingsProfileNote: "Exporta e importa tema, idioma del documento, lista blanca, blacklist e ignore.toml. No incluye historial de escaneos ni contenido de documentos.",
         settingsExport:      "Exportar configuración",
         settingsImport:      "Importar configuración",
         settingsExported:    "Configuración exportada.",
@@ -2295,6 +2401,7 @@
         dstCatAdresse:       "Dirección",
         dstCatNettadresse:   "Direcciones web / IP",
         dstCatSelskapsnavn:  "Nombre de empresa",
+        dstCatMedisinsk:     "Médico",
         dstCatBudsjett:      "Presupuesto / importe",
         dstCatNavn:          "Nombre",
         dstCatPersonnummer:  "Número de identidad",
@@ -2374,6 +2481,9 @@
     const whitelistPathEl = document.getElementById("whitelist-path");
     const whitelistEditorEl = document.getElementById("whitelist-editor");
     const whitelistMsgEl = document.getElementById("whitelist-msg");
+    const blacklistPathEl = document.getElementById("blacklist-path");
+    const blacklistEditorEl = document.getElementById("blacklist-editor");
+    const blacklistMsgEl = document.getElementById("blacklist-msg");
     const settingsProfileMsgEl = document.getElementById("settings-profile-msg");
 
     const LEVEL_COLOR = { grønn:"#4caf50", gul:"#ffb84d", rød:"#f44336", svart:"#9c27b0" };
@@ -2400,6 +2510,7 @@
     let lastUpdateCheck = null;
     let ignorePath = "";
     let whitelistPath = "";
+    let blacklistPath = "";
     let _aiCurrentJobId = "";
 
     /* ══════════════════════════════════════════════════════════════════
@@ -2449,6 +2560,7 @@
       renderUpdateBanner();
       renderIgnorePath();
       renderWhitelistPath();
+      renderBlacklistPath();
       renderLogPath();
       loadNerStatus();
       if (!ignoreMsgEl.textContent || ignoreMsgEl.dataset.mode === "hint") {
@@ -2456,6 +2568,9 @@
       }
       if (!whitelistMsgEl.textContent || whitelistMsgEl.dataset.mode === "hint") {
         setWhitelistMessage(t("whitelistHint"), "var(--muted)", "hint");
+      }
+      if (!blacklistMsgEl.textContent || blacklistMsgEl.dataset.mode === "hint") {
+        setBlacklistMessage(t("blacklistHint"), "var(--muted)", "hint");
       }
     }
 
@@ -2630,6 +2745,14 @@
       whitelistPathEl.textContent = `${t("whitelistPathLabel")} ${whitelistPath}`;
     }
 
+    function renderBlacklistPath() {
+      if (!blacklistPath) {
+        blacklistPathEl.textContent = "";
+        return;
+      }
+      blacklistPathEl.textContent = `${t("blacklistPathLabel")} ${blacklistPath}`;
+    }
+
     function renderIgnorePath() {
       if (!ignorePath) {
         ignorePathEl.textContent = "";
@@ -2730,6 +2853,54 @@
       }
     }
 
+    function setBlacklistMessage(text, color = "var(--muted)", mode = "") {
+      blacklistMsgEl.textContent = text;
+      blacklistMsgEl.style.color = color;
+      blacklistMsgEl.dataset.mode = mode;
+    }
+
+    async function loadBlacklistEditor() {
+      setBlacklistMessage(t("processing"), "var(--muted)", "status");
+      try {
+        const d = await (await fetch(`${API}/blacklist/get`, { method:"POST" })).json();
+        if (!d.ok) {
+          setBlacklistMessage(`${t("blacklistLoadErr")} ${d.error || ""}`, "#f44336", "status");
+          return;
+        }
+        blacklistPath = String(d.path || "");
+        renderBlacklistPath();
+        blacklistEditorEl.value = (d.texts || []).join("\n");
+        setBlacklistMessage(t("blacklistHint"), "var(--muted)", "hint");
+      } catch (e) {
+        setBlacklistMessage(`${t("blacklistLoadErr")} ${e}`, "#f44336", "status");
+      }
+    }
+
+    async function saveBlacklistEditor() {
+      setBlacklistMessage(t("processing"), "var(--muted)", "status");
+      const texts = blacklistEditorEl.value
+        .split(/\r?\n/)
+        .map(v => v.trim())
+        .filter(v => v.length > 0);
+      try {
+        const d = await (await fetch(`${API}/blacklist/save`, {
+          method: "POST",
+          headers: {"Content-Type":"application/json"},
+          body: JSON.stringify({ texts }),
+        })).json();
+        if (!d.ok) {
+          setBlacklistMessage(`${t("blacklistSaveErr")} ${d.error || ""}`, "#f44336", "status");
+          return;
+        }
+        blacklistPath = String(d.path || blacklistPath);
+        renderBlacklistPath();
+        blacklistEditorEl.value = (d.texts || []).join("\n");
+        setBlacklistMessage(t("blacklistSaved"), "#4caf50", "status");
+      } catch (e) {
+        setBlacklistMessage(`${t("blacklistSaveErr")} ${e}`, "#f44336", "status");
+      }
+    }
+
     function setSettingsProfileMessage(text, color = "var(--muted)") {
       if (!settingsProfileMsgEl) return;
       settingsProfileMsgEl.textContent = text;
@@ -2749,6 +2920,7 @@
       try {
         await saveIgnoreEditor();
         await saveWhitelistEditor();
+        await saveBlacklistEditor();
         const d = await (await fetch(`${API}/settings/export`, {
           method: "POST",
           headers: {"Content-Type": "application/json"},
@@ -2795,6 +2967,7 @@
         }
         ignoreEditorEl.value = String(d.ignore_toml || ignoreEditorEl.value || "");
         whitelistEditorEl.value = (d.whitelist || []).join("\n");
+        blacklistEditorEl.value = (d.blacklist || []).join("\n");
         setSettingsProfileMessage(t("settingsImported"), "var(--ok)");
       } catch (e) {
         setSettingsProfileMessage(`${t("settingsImportErr")} ${String(e)}`, "#f44336");
@@ -3100,9 +3273,14 @@
         .filter(Boolean);
       const aiTextsUnique = [...new Set(aiTexts)];
       const msg = document.getElementById("g-anon-msg");
-      if (!indices.length && !aiTextsUnique.length) { msg.style.color="#ffb84d"; msg.textContent=t("selectOne"); return; }
+      const stripAnnotations = document.getElementById("stripAnnotations")?.checked === true;
+      if (!indices.length && !aiTextsUnique.length && !(endpoint === "patch" && stripAnnotations)) {
+        msg.style.color="#ffb84d"; msg.textContent=t("selectOne"); return;
+      }
       msg.style.color="var(--muted)"; msg.textContent=t("processing");
-      const body = format ? { indices, ai_texts: aiTextsUnique, format } : { indices, ai_texts: aiTextsUnique };
+      const body = format
+        ? { indices, ai_texts: aiTextsUnique, format, strip_annotations: stripAnnotations }
+        : { indices, ai_texts: aiTextsUnique, strip_annotations: stripAnnotations };
       try {
         const d = await (await fetch(`${API}/${endpoint}`, {
           method:"POST", headers:{"Content-Type":"application/json"},
@@ -3338,6 +3516,8 @@
         // language: default "auto"
         const ls = document.getElementById("langSelect");
         if (ls && s.language) ls.value = s.language;
+        const sa = document.getElementById("stripAnnotations");
+        if (sa) sa.checked = s.stripAnnotations === true;
         applyTheme(s.theme);
       } catch (_) {}
     }
@@ -3347,6 +3527,7 @@
         localStorage.setItem("xlentScannerSettings", JSON.stringify({
           ignoreXlent: document.getElementById("ignoreXlent").checked,
           language:    document.getElementById("langSelect").value,
+          stripAnnotations: document.getElementById("stripAnnotations").checked,
           theme:       normalizeTheme(document.getElementById("themeSelect").value),
         }));
       } catch (_) {}
@@ -3359,6 +3540,7 @@
     });
     document.getElementById("ignoreXlent").addEventListener("change", saveSettings);
     document.getElementById("langSelect").addEventListener("change", saveSettings);
+    document.getElementById("stripAnnotations").addEventListener("change", saveSettings);
     document.getElementById("btn-check-updates").addEventListener("click", () => runUpdateCheck(true));
     document.getElementById("btn-open-web-mode").addEventListener("click", startWebMode);
     document.getElementById("btn-install-mac-quick-action").addEventListener("click", installMacQuickAction);
@@ -3368,6 +3550,8 @@
     document.getElementById("btn-ignore-save").addEventListener("click", saveIgnoreEditor);
     document.getElementById("btn-whitelist-reload").addEventListener("click", loadWhitelistEditor);
     document.getElementById("btn-whitelist-save").addEventListener("click", saveWhitelistEditor);
+    document.getElementById("btn-blacklist-reload").addEventListener("click", loadBlacklistEditor);
+    document.getElementById("btn-blacklist-save").addEventListener("click", saveBlacklistEditor);
     document.getElementById("btn-export-settings").addEventListener("click", exportSettingsProfile);
     document.getElementById("btn-import-settings").addEventListener("click", () => document.getElementById("settings-import-file").click());
     document.getElementById("settings-import-file").addEventListener("change", importSettingsProfile);
@@ -3691,6 +3875,11 @@
           c.includes("github token")          || c.includes("azure storage") ||
           c.includes("jwt token")             || c.includes("bearer token")  ||
           c.includes("passord i konfig")      || c.includes("password")      ||
+          c.startsWith("blacklist")           ||
+          c.startsWith("medisinsk")           || c.startsWith("medicinsk")   ||
+          c.startsWith("medical")             || c.startsWith("diagnose")    ||
+          c.startsWith("diagnosis")           || c.startsWith("legemiddel")  ||
+          c.startsWith("läkemedel")           || c.startsWith("medication")  ||
           c.includes("konfidensielt dokument (overskrift)"))
         return "rød";
 
@@ -4144,7 +4333,10 @@
       try {
         const d = await (await fetch(`${API}/ollama/anonymize-findings`, {
           method:"POST", headers:{"Content-Type":"application/json"},
-          body: JSON.stringify({ texts }),
+          body: JSON.stringify({
+            texts,
+            strip_annotations: document.getElementById("stripAnnotations")?.checked === true,
+          }),
         })).json();
         if (d.ok) { msg.style.color="#4caf50"; msg.textContent=`${t("saved")} ${d.path}`; }
         else      { msg.style.color="#f44336"; msg.textContent=`${t("errPrefix")} ${d.error}`; }
@@ -4342,12 +4534,15 @@
     loadIgnoreEditor();
     setWhitelistMessage(t("whitelistHint"), "var(--muted)", "hint");
     renderWhitelistPath();
+    setBlacklistMessage(t("blacklistHint"), "var(--muted)", "hint");
+    renderBlacklistPath();
     renderLogPath();
     const macQuickActionSection = document.getElementById("section-mac-quick-action");
     if (macQuickActionSection && APP_PLATFORM === "darwin") {
       macQuickActionSection.style.display = "";
     }
     loadWhitelistEditor();
+    loadBlacklistEditor();
     runUpdateCheck(false);
     loadNerStatus();
     loadOllamaSettingsStatus();

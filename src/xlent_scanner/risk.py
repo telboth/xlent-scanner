@@ -35,6 +35,16 @@ _SEVERITY_MAP: list[tuple[str, str]] = [
     ("bearer token",                "rød"),
     ("passord i konfig",            "rød"),
     ("konfidensielt dokument (overskrift)", "rød"),
+    ("medisinsk",                   "rød"),
+    ("medicinsk",                   "rød"),
+    ("medical",                     "rød"),
+    ("diagnose",                    "rød"),
+    ("diagnosis",                   "rød"),
+    ("legemiddel",                  "rød"),
+    ("lægemiddel",                  "rød"),
+    ("läkemedel",                   "rød"),
+    ("medication",                  "rød"),
+    ("blacklist",                   "rød"),
 
     # ── GUL ────────────────────────────────────────────────────────────────
     ("mulig personnummer",          "gul"),   # datoformat men ugyldig mod-11

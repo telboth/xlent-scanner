@@ -8,6 +8,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 import threading
 import time
 import urllib.error
@@ -46,7 +47,9 @@ CATEGORIES: dict[str, str] = {
     "selskapsnavn":  "offisielle firma- og organisasjonsnavn (ikke produkter eller teknologier)",
     "budsjett_tall": "pengebeløp MED valutasymbol/-kode: kr, NOK, EUR, USD, $, € (ikke tidsuttrykk eller tall uten valuta)",
     "nettadresse":   "nettadresser/URL-er som begynner med http://, https:// eller www.",
+    "medisinsk":     "medisinske opplysninger – sykdommer, diagnoser, symptomer, behandlinger og legemidler når de gjelder en person",
 }
+DEFAULT_CATEGORIES: tuple[str, ...] = tuple(c for c in CATEGORIES if c != "medisinsk")
 
 # GUI-et bruker fortsatt "siste jobb", men API-et kan hente/cancelle konkret job_id.
 _job: dict[str, Any] = {}
@@ -289,7 +292,10 @@ Pengebeløp – beløp med valutasymbol/-kode ELLER tall i en tydelig budsjettko
   ✅ «500 000 kr»  ✅ «NOK 1 200»  ✅ «€50 000»  ✅ «3 MNOK»  ✅ «15 mill kr»
   ✅ «Total NOK 180»  ✅ «Total Cost (NOK)» etterfulgt av tall
   ✅ Tall i kolonne merket «Cost (NOK)», «Amount», «Price» i et budsjett (eks: «30», «60», «100»)
+  ✅ I regneark/tabeller: rapporter tall i økonomiske kolonner som «Cost», «Amount», «Price», «Total», «Budget», «Revenue», «Fee», «Rate», «Invoice»
+  ✅ Ta med små tall som «30», «60», «100» når de står i slike økonomiske kolonner
   ❌ «4-6 week pilot»  ❌ «4-6 weeks»  ❌ «Q1 2025»  ❌ «50 ansatte»  ❌ «15 %»  ❌ tidsuttrykk
+  ❌ tall i kolonner som «Hours», «Quantity», «Qty», «Count», «Year», «Date», «ID», «No.»
   ❌ løse tall uten noen form for budsjettkontekst
 
 Nettadresse – URL som begynner med http://, https:// eller www.:
@@ -331,7 +337,10 @@ Företagsnamn – officiellt bolag, org. eller stiftelse:
 Penningbelopp – belopp med valutasymbol/-kod ELLER tal i tydlig budgetkontext:
   ✅ «500 000 kr»  ✅ «SEK 1 200»  ✅ «€50 000»  ✅ «Totalt SEK 180»
   ✅ Tal i kolumn märkt «Kostnad (SEK)», «Belopp», «Pris» i ett budget (t.ex. «30», «60»)
-  ❌ «4-6 veckor»  ❌ «Q1 2025»  ❌ «50 anställda»  ❌ tidsuttryck  ❌ lösa tal utan kontext
+  ✅ I kalkylblad/tabeller: rapportera tal i ekonomiska kolumner som «Kostnad», «Belopp», «Pris», «Totalt», «Budget», «Intäkt», «Avgift», «Timpris», «Faktura»
+  ✅ Ta med små tal som «30», «60», «100» när de står i sådana ekonomiska kolumner
+  ❌ «4-6 veckor»  ❌ «Q1 2025»  ❌ «50 anställda»  ❌ tidsuttryck
+  ❌ tal i kolumner som «Timmar», «Antal», «År», «Datum», «ID», «Nr.»  ❌ lösa tal utan kontext
 
 Webbadress – URL som börjar med http://, https:// eller www.:
   ✅ «www.vg.no»  ✅ «https://xlent.se»  ✅ «http://intern.foretag.se/dokument»
@@ -372,7 +381,10 @@ Company name – official company, org., or foundation:
 Monetary amount – amounts with a currency symbol/code OR numbers in a clear budget context:
   ✅ «NOK 500 000»  ✅ «$1,200»  ✅ «€50 000»  ✅ «3 MNOK»  ✅ «Total NOK 180»
   ✅ Numbers in columns labelled «Cost (NOK)», «Amount», «Price» in a budget table (e.g. «30», «60», «100»)
+  ✅ In spreadsheets/tables: report numbers in financial columns such as «Cost», «Amount», «Price», «Total», «Budget», «Revenue», «Fee», «Rate», «Invoice»
+  ✅ Include small numbers such as «30», «60», «100» when they are in those financial columns
   ❌ «4-6 week pilot»  ❌ «4-6 weeks»  ❌ «Q1 2025»  ❌ «50 employees»  ❌ time expressions
+  ❌ numbers in columns such as «Hours», «Quantity», «Qty», «Count», «Year», «Date», «ID», «No.»
   ❌ isolated numbers with no budget or price context
 
 Web address – URL starting with http://, https:// or www.:
@@ -380,34 +392,62 @@ Web address – URL starting with http://, https:// or www.:
   ❌ email addresses  ❌ file paths  ❌ domain names without a protocol or www.
 """
 
+_MEDICAL_RULES_NB = """\
+Medisinsk informasjon – sykdommer, diagnoser, symptomer, behandlinger eller legemidler knyttet til en person:
+  ✅ «Anne har diabetes type 2»  ✅ «diagnose: ADHD»  ✅ «bruker Metformin»  ✅ «behandles med Sertralin»
+  ✅ «sykmeldt for depresjon»  ✅ «astma», «kreft», «migrene» når teksten beskriver en person/pasient
+  ❌ generelle medisinske ord uten personkontekst  ❌ firmanavn  ❌ produktnavn uten helse-/pasientkontekst
+  Rapporter den eksakte teksten som må redigeres bort, for eksempel sykdomsnavnet, diagnosen eller medisinnavnet.
+"""
+
+_MEDICAL_RULES_SV = """\
+Medicinsk information – sjukdomar, diagnoser, symtom, behandlingar eller läkemedel kopplade till en person:
+  ✅ «Anna har typ 2-diabetes»  ✅ «diagnos: ADHD»  ✅ «använder Metformin»  ✅ «behandlas med Sertralin»
+  ✅ «sjukskriven för depression»  ✅ «astma», «cancer», «migrän» när texten beskriver en person/patient
+  ❌ generella medicinska ord utan personkontext  ❌ företagsnamn  ❌ produktnamn utan vård-/patientkontext
+  Rapportera den exakta text som ska redigeras bort, till exempel sjukdomsnamnet, diagnosen eller läkemedelsnamnet.
+"""
+
+_MEDICAL_RULES_EN = """\
+Medical information – diseases, diagnoses, symptoms, treatments, or medication names linked to a person:
+  ✅ «Anne has type 2 diabetes»  ✅ «diagnosis: ADHD»  ✅ «uses Metformin»  ✅ «treated with Sertraline»
+  ✅ «on sick leave for depression»  ✅ «asthma», «cancer», «migraine» when the text describes a person/patient
+  ❌ generic medical words without person context  ❌ company names  ❌ product names without health/patient context
+  Report the exact text that should be redacted, for example the disease name, diagnosis, or medication name.
+"""
+
 
 def _build_prompt(categories: list[str], chunk: str, lang: str = "nb") -> str:
     """Bygg LLM-prompt dynamisk basert på valgte søkekategorier."""
     active = [CATEGORIES[c] for c in categories if c in CATEGORIES]
     if not active:
-        active = list(CATEGORIES.values())
+        active = [CATEGORIES[c] for c in DEFAULT_CATEGORIES]
     cat_list = "\n".join(f"- {a}" for a in active)
+    include_medical = "medisinsk" in categories
 
     if lang == "sv":
+        rules = _RULES_SV + ("\n" + _MEDICAL_RULES_SV if include_medical else "")
         return (
             f"Analysera texten nedan. Sök efter dessa kategorier:\n{cat_list}\n\n"
-            f"{_RULES_SV}\n"
+            f"{rules}\n"
             "Svara BARA med JSON i detta format (ingen annan text):\n"
             '{{"findings":[{{"category":"Kategori","text":"hittad text","context":"omgivande ord","confidence":"high"}}]}}\n'
             "Inga fynd → {{\"findings\":[]}}\n\nText:\n" + chunk
         )
     elif lang == "en":
+        rules = _RULES_EN + ("\n" + _MEDICAL_RULES_EN if include_medical else "")
         return (
             f"Analyse the text below. Search for these categories:\n{cat_list}\n\n"
-            f"{_RULES_EN}\n"
+            f"{rules}\n"
             "Respond ONLY with JSON in this format (no other text):\n"
             '{{"findings":[{{"category":"Category","text":"found text","context":"surrounding words","confidence":"high"}}]}}\n'
             "No findings → {{\"findings\":[]}}\n\nText:\n" + chunk
         )
     else:  # nb
+        rules = _RULES_NB + ("\n" + _MEDICAL_RULES_NB if include_medical else "")
         return (
             f"Analyser teksten nedenfor. Søk etter disse kategoriene:\n{cat_list}\n\n"
-            f"{_RULES_NB}\n"
+            f"{rules}\n"
             "Svar KUN med JSON på denne formen (ingen annen tekst):\n"
             '{{"findings":[{{"category":"Kategori","text":"funnet tekst","context":"noen ord rundt funnet","confidence":"high"}}]}}\n'
             "Ingen funn → {{\"findings\":[]}}\n\nTekst:\n" + chunk
@@ -485,6 +525,137 @@ def _category_key(category: str) -> str:
     return category.replace("🤖", "").strip().casefold()
 
 
+_EMAIL_RE = re.compile(r"[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}", re.IGNORECASE)
+_US_PHONE_RE = re.compile(
+    r"(?<![\w])"
+    r"(?:(?:\+?1|\+01|001)[\s.\-]*)?"
+    r"(?:\([2-9]\d{2}\)|[2-9]\d{2})"
+    r"[\s.\-]*[2-9]\d{2}[\s.\-]*\d{4}"
+    r"(?![\w])"
+)
+_URL_CATEGORIES = {"nettadresse", "url", "web address", "webbadress", "webadresse"}
+_FINANCIAL_HEADER_RE = re.compile(
+    r"\b("
+    r"cost|amount|price|total|budget|revenue|fee|rate|invoice|quote|value"
+    r"|kostnad|beløp|belop|pris|sum|totalt|budsjett|inntekt|avgift|faktura|tilbud"
+    r"|kostnad|belopp|intäkt|intakt|offert"
+    r")\b",
+    re.IGNORECASE,
+)
+_NON_FINANCIAL_HEADER_RE = re.compile(
+    r"\b(hours?|timer|timmar|quantity|qty|count|antall|antal|year|år|aar|date|dato|id|nr|no)\b",
+    re.IGNORECASE,
+)
+_AMOUNT_CELL_RE = re.compile(
+    r"^\s*(?:NOK|SEK|DKK|EUR|USD|GBP|CHF|kr|£|€|\$)?\s*"
+    r"-?\d{1,9}(?:[ .,\t]\d{3})*(?:[.,]\d{1,2})?\s*"
+    r"(?:NOK|SEK|DKK|EUR|USD|GBP|CHF|kr|£|€|\$)?\s*$",
+    re.IGNORECASE,
+)
+_DATE_LIKE_RE = re.compile(
+    r"^\s*(?:\d{4}[-/.]\d{1,2}[-/.]\d{1,2}|\d{1,2}[-/.]\d{1,2}[-/.]\d{2,4}|(?:19|20)\d{2})\s*$"
+)
+
+
+def _email_matches_ignore(value: str, domains: set[str], emails: set[str]) -> bool:
+    candidates = {m.group(0).strip().casefold() for m in _EMAIL_RE.finditer(value)}
+    raw = value.strip().strip("<>()[]{}.,;:'\"").casefold()
+    if "@" in raw:
+        candidates.add(raw)
+
+    for email in candidates:
+        domain = email.split("@")[-1] if "@" in email else ""
+        if email in emails or any(domain == d or domain.endswith("." + d) for d in domains):
+            return True
+    return False
+
+
+def _looks_like_us_phone(value: str) -> bool:
+    return bool(_US_PHONE_RE.search(value))
+
+
+def _normalize_misclassified_phone_findings(
+    findings: list[dict],
+    categories: list[str],
+) -> list[dict]:
+    include_phone = "telefon" in categories
+    result: list[dict] = []
+    for f in findings:
+        cat = _category_key(str(f.get("category") or ""))
+        if cat in _URL_CATEGORIES and _looks_like_us_phone(str(f.get("text") or "")):
+            if include_phone:
+                f = dict(f)
+                f["category"] = "Telefonnummer"
+                f["confidence"] = f.get("confidence") or "high"
+                result.append(f)
+            continue
+        result.append(f)
+    return result
+
+
+def _split_table_line(line: str) -> list[str]:
+    return [cell.strip() for cell in line.strip().strip("|").split("|")]
+
+
+def _financial_columns(cells: list[str]) -> set[int]:
+    cols: set[int] = set()
+    for idx, cell in enumerate(cells):
+        if _FINANCIAL_HEADER_RE.search(cell) and not _NON_FINANCIAL_HEADER_RE.search(cell):
+            cols.add(idx)
+    return cols
+
+
+def _looks_like_financial_amount_cell(cell: str) -> bool:
+    value = cell.strip()
+    if not value or "%" in value:
+        return False
+    if _DATE_LIKE_RE.match(value):
+        return False
+    return bool(_AMOUNT_CELL_RE.match(value))
+
+
+def _find_tabular_financial_values(text: str) -> list[dict]:
+    findings: list[dict] = []
+    active_cols: set[int] = set()
+    active_headers: list[str] = []
+    seen: set[tuple[str, str]] = set()
+
+    for line in text.splitlines():
+        if "|" not in line:
+            active_cols = set()
+            active_headers = []
+            continue
+        cells = _split_table_line(line)
+        if not cells or all(not c or set(c) <= {"-"} for c in cells):
+            continue
+
+        header_cols = _financial_columns(cells)
+        if header_cols:
+            active_cols = header_cols
+            active_headers = cells
+            continue
+
+        if not active_cols or len(cells) <= max(active_cols):
+            continue
+
+        for col in sorted(active_cols):
+            value = cells[col]
+            if not _looks_like_financial_amount_cell(value):
+                continue
+            header = active_headers[col] if col < len(active_headers) else "financial column"
+            key = (header.casefold(), value.casefold())
+            if key in seen:
+                continue
+            seen.add(key)
+            findings.append({
+                "category": "Budsjettall",
+                "text": value,
+                "context": line.strip(),
+                "confidence": "high",
+            })
+    return findings
+
+
 def _filter_ignored_findings(findings: list[dict], ignore: dict) -> list[dict]:
     domains = {str(d).strip().casefold() for d in ignore.get("email_domains", []) if str(d).strip()}
     emails = {str(e).strip().casefold() for e in ignore.get("emails", []) if str(e).strip()}
@@ -499,13 +670,12 @@ def _filter_ignored_findings(findings: list[dict], ignore: dict) -> list[dict]:
 
     result: list[dict] = []
     for f in findings:
-        val = str(f.get("text") or "").strip().casefold()
+        raw_val = str(f.get("text") or "")
+        val = raw_val.strip().casefold()
         cat = _category_key(str(f.get("category") or ""))
 
-        if cat in {"e-post", "epost", "email", "email address"}:
-            domain = val.split("@")[-1] if "@" in val else ""
-            if val in emails or any(domain == d or domain.endswith("." + d) for d in domains):
-                continue
+        if _email_matches_ignore(raw_val, domains, emails):
+            continue
 
         if cat in {"personnavn", "navn", "navn (person)", "person name"}:
             if val in ignore_names or val in ignore_name_parts:
@@ -581,6 +751,20 @@ def _run_deep_scan(
         except Exception as exc:
             LOGGER.warning("E-post regex-supplement feilet: %s", exc)
 
+    # Telefon: legg til presise US/NANP-telefoner for engelske/internasjonale dokumenter.
+    if "telefon" in categories:
+        try:
+            from xlent_scanner.detectors.regex_en import find_us_phone  # noqa: PLC0415
+            for f in find_us_phone(text):
+                all_raw.append({
+                    "category":   "Telefonnummer",
+                    "text":       f.text,
+                    "context":    f.context,
+                    "confidence": "high",
+                })
+        except Exception as exc:
+            LOGGER.warning("US-telefon regex-supplement feilet: %s", exc)
+
     # Bankkontonummer: mod-11-validering er 100 % pålitelig.
     if "bankkonto" in categories:
         try:
@@ -603,6 +787,14 @@ def _run_deep_scan(
         except Exception as exc:
             LOGGER.warning("Bankkonto regex-supplement feilet: %s", exc)
 
+    # Finansielle tabeller/regneark: vær mer aggressiv når tall står i tydelig
+    # økonomiske kolonner, men unngå løse tall uten tabell-/header-kontekst.
+    if "budsjett_tall" in categories:
+        try:
+            all_raw.extend(_find_tabular_financial_values(text))
+        except Exception as exc:
+            LOGGER.warning("Finansiell tabell-supplement feilet: %s", exc)
+
     deduped = _deduplicate(all_raw)
 
     # Filtrer etter minimumskonfidens
@@ -612,6 +804,7 @@ def _run_deep_scan(
         f for f in deduped
         if _CONF_ORDER.get(str(f.get("confidence", "medium")).lower(), 1) >= min_conf_val
     ]
+    deduped = _deduplicate(_normalize_misclassified_phone_findings(deduped, categories))
 
     # Fjern interne/ignorerte funn også for AI-dypscan. Regelbasert scan gjør
     # dette tidligere, men dypscan har egne LLM- og regex-funn.
@@ -641,6 +834,21 @@ def _run_deep_scan(
     except Exception as exc:
         LOGGER.warning("AI-whitelist-filter feilet: %s", exc)
 
+    # Blacklist er eksplisitt "fjern alltid" og skal derfor legges til etter
+    # ignore/whitelist slik at den ikke kan gjøres grønn ved et uhell.
+    try:
+        from xlent_scanner.blacklist import detect_blacklist  # noqa: PLC0415
+        for f in detect_blacklist(text):
+            deduped.append({
+                "category": f.category,
+                "text": f.text,
+                "context": f.context,
+                "confidence": "high",
+            })
+        deduped = _deduplicate(deduped)
+    except Exception as exc:
+        LOGGER.warning("AI-blacklist-supplement feilet: %s", exc)
+
     # Legg til 🤖-prefiks på kategori
     for f in deduped:
         cat = str(f.get("category") or "AI-funn").strip()
@@ -667,7 +875,7 @@ def start_deep_scan(
     """Start dybdeskanning i bakgrunn. Returnerer job_id."""
     global _job
     job_id = str(uuid.uuid4())[:8]
-    cats = categories or list(CATEGORIES.keys())
+    cats = categories or list(DEFAULT_CATEGORIES)
     job = {
         "job_id":         job_id,
         "status":         "running",
