@@ -3,11 +3,16 @@ from __future__ import annotations
 
 import html
 import re
+import warnings
 from pathlib import Path
 
 import fitz  # type: ignore[import-untyped]  # fallback PDF-parser
 
 _pdf_converter = None  # Docling DocumentConverter – lazy-initialisert ved første PDF-scan
+_DOCLING_TABLE_IMAGE_DEPRECATION = (
+    r"This field is deprecated\. Use `generate_page_images=True` and call "
+    r"`TableItem\.get_image\(\)` to extract table images from page images\."
+)
 
 from xlent_scanner.detectors.clients import detect_clients
 from xlent_scanner.detectors.creditcards import detect_creditcards
@@ -61,6 +66,15 @@ def _read_text_file(path: Path) -> str:
     return path.read_text(encoding="utf-8", errors="ignore")
 
 
+def _ignore_docling_table_image_deprecation() -> None:
+    warnings.filterwarnings(
+        "ignore",
+        message=_DOCLING_TABLE_IMAGE_DEPRECATION,
+        category=DeprecationWarning,
+        module=r"docling\..*",
+    )
+
+
 def _get_pdf_converter():
     """Returnerer (og cacher) en Docling DocumentConverter for PDF-parsing.
     Raises RuntimeError hvis Docling eller en av dens avhengigheter ikke er tilgjengelig.
@@ -74,9 +88,13 @@ def _get_pdf_converter():
         opts = PdfPipelineOptions()
         opts.do_ocr = False  # hopp over EasyOCR (tung avhengighet, ikke nødvendig her)
         # Docling laster layout-modell automatisk ved første konvertering.
-        _pdf_converter = DocumentConverter(
-            format_options={InputFormat.PDF: PdfFormatOption(pipeline_options=opts)}
-        )
+        # Docling 2.x leser et deprecated internt bildefelt selv om vi ikke bruker det.
+        # Filtrer kun denne kjente tredjeparts-warningen uten å endre PDF-oppførsel.
+        with warnings.catch_warnings():
+            _ignore_docling_table_image_deprecation()
+            _pdf_converter = DocumentConverter(
+                format_options={InputFormat.PDF: PdfFormatOption(pipeline_options=opts)}
+            )
     return _pdf_converter
 
 
@@ -96,8 +114,10 @@ def _extract_text_pdf(path: Path) -> str:
     Faller tilbake til PyMuPDF ved feil (f.eks. hvis Docling ikke er tilgjengelig i frozen build).
     """
     try:
-        converter = _get_pdf_converter()
-        return converter.convert(str(path)).document.export_to_markdown()
+        with warnings.catch_warnings():
+            _ignore_docling_table_image_deprecation()
+            converter = _get_pdf_converter()
+            return converter.convert(str(path)).document.export_to_markdown()
     except Exception:
         return _extract_text_pdf_fitz(path)
 

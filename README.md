@@ -1,6 +1,6 @@
 # XLENT Compliance-scanner
 
-> **v1.3.5** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
+> **v1.3.6** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
 
 Alt kjøres 100 % lokalt — ingen dokumenter, tekst eller funn sendes over internett.
 
@@ -337,6 +337,14 @@ src/xlent_scanner/
 ---
 
 ## Endringslogg
+
+### v1.3.6
+- Light mode er nå standard for nye brukere, mens lagret dark mode beholdes.
+- API-dybdeskann kan hente/cancelle status per `job_id`, slik at parallelle API-jobber ikke overskriver hverandre.
+- API nekter nettverksbinding (`--host 0.0.0.0`) uten `XLENT_SCANNER_API_KEY`.
+- La til import/eksport av lokal innstillingsprofil: tema, dokumentspråk, hviteliste og `ignore.toml`.
+- La til nedlasting/status for anbefalt Ollama-modell fra Innstillinger.
+- La til release-smoketest for runtime-data, `python-docx` templates og PyMuPDF-redaction API.
 
 ### v1.3.5
 - La til stabilt `/api/...`-lag for Power Apps/custom connectors, med `--api --port` startmodus, API-key-støtte og OpenAPI-dokumentasjon.

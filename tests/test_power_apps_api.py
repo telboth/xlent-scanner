@@ -101,3 +101,51 @@ def test_api_scan_file_rejects_invalid_base64(monkeypatch):
 
     assert response.status_code == 400
     assert response.get_json()["error_code"] == "invalid_base64"
+
+
+def test_api_refuses_network_bind_without_api_key(monkeypatch):
+    monkeypatch.delenv("XLENT_SCANNER_API_KEY", raising=False)
+
+    try:
+        app_module._validate_api_bind("0.0.0.0")
+    except RuntimeError as exc:
+        assert "XLENT_SCANNER_API_KEY" in str(exc)
+    else:
+        raise AssertionError("Expected network bind without API key to fail")
+
+    app_module._validate_api_bind("127.0.0.1")
+
+    monkeypatch.setenv("XLENT_SCANNER_API_KEY", "secret-key")
+    app_module._validate_api_bind("0.0.0.0")
+
+
+def test_settings_export_import_excludes_scan_history_and_document_text(monkeypatch, tmp_path):
+    monkeypatch.setenv("APPDATA", str(tmp_path))
+    client = app_module.flask_app.test_client()
+
+    exported = client.post(
+        "/settings/export",
+        json={"browser_settings": {"theme": "light", "language": "nb"}},
+    )
+
+    assert exported.status_code == 200
+    payload = exported.get_json()
+    assert payload["ok"] is True
+    assert payload["format"] == "xlent-scanner-settings"
+    assert "scan_history" not in payload
+    assert "original_text" not in payload
+
+    profile = {
+        "format": "xlent-scanner-settings",
+        "browser_settings": {"theme": "dark", "language": "en"},
+        "whitelist": ["safe@example.com"],
+        "ignore_toml": 'email_domains = ["xlent.no"]\nnames = ["Test User"]\n',
+    }
+    imported = client.post("/settings/import", json=profile)
+
+    assert imported.status_code == 200
+    data = imported.get_json()
+    assert data["ok"] is True
+    assert data["browser_settings"]["theme"] == "dark"
+    assert data["whitelist"] == ["safe@example.com"]
+    assert "Test User" in data["ignore_toml"]

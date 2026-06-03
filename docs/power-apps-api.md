@@ -20,12 +20,22 @@ $env:XLENT_SCANNER_API_KEY = "bytt-denne-til-en-lang-hemmelig-verdi"
 
 Serveren lytter på `http://127.0.0.1:51291`. Dette er bevisst lokalt. Hvis Power Apps skal nå API-et, bruk Power Platform on-premises data gateway på samme maskin eller en bevisst intern gateway/proxy.
 
+Hvis API-et eksplisitt skal bindes til nettverket, må API-nøkkel være satt:
+
+```powershell
+$env:XLENT_SCANNER_API_KEY = "bytt-denne-til-en-lang-hemmelig-verdi"
+uv run xlent-scanner --api --host 0.0.0.0 --port 51291
+```
+
+Uten `XLENT_SCANNER_API_KEY` nekter appen å starte når `--host` ikke er `127.0.0.1`, `localhost` eller `::1`.
+
 ## Sikkerhet
 
 - Sett alltid `XLENT_SCANNER_API_KEY` når API-et skal brukes fra Power Apps/gateway.
 - Send API-nøkkelen som header: `X-API-Key: <nøkkel>`.
 - API-et returnerer ikke `original_text`, for å unngå at hele dokumentinnholdet flyttes inn i Power Platform.
 - Standard maks filstørrelse er 25 MB. Kan endres med `XLENT_SCANNER_API_MAX_FILE_MB`.
+- Dybdeskann-status hentes per `job_id`, slik at flere API-kall ikke overskriver hverandres jobbstatus.
 
 ## Power Apps Custom Connector
 

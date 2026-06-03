@@ -6,13 +6,13 @@
   <script>
     try {
       const s = JSON.parse(localStorage.getItem("xlentScannerSettings") || "{}");
-      if (s.theme === "light") document.documentElement.dataset.theme = "light";
+      document.documentElement.dataset.theme = s.theme === "dark" ? "dark" : "light";
     } catch (_) {}
   </script>
   <style>
     :root {
       --bg: #0f1620; --panel: #1a2331; --panel2: #232f42;
-      --text: #e8edf3; --fg: #e8edf3; --muted: #8a96a8; --accent: #4f9eff;
+      --text: #e8edf3; --muted: #8a96a8; --accent: #4f9eff;
       --danger: #ff6b6b; --warn: #ffb84d; --ok: #4caf50;
       --border: #2a3648; --svart: #9c27b0; --rød: #f44336;
       --header-bg: #1a2331; --header-text: #e8edf3; --header-muted: #8a96a8;
@@ -20,7 +20,7 @@
     }
     :root[data-theme="light"] {
       --bg: #eef2f6; --panel: #ffffff; --panel2: #f5f7fa;
-      --text: #17202b; --fg: #17202b; --muted: #5f6d7d; --accent: #1f6fbf;
+      --text: #17202b; --muted: #5f6d7d; --accent: #1f6fbf;
       --danger: #c62828; --warn: #b46a00; --ok: #237a35;
       --border: #d2dbe6; --svart: #7b1fa2; --rød: #c62828;
       --header-bg: #5b6673; --header-text: #ffffff; --header-muted: #d7dde5;
@@ -77,7 +77,7 @@
       position: absolute;
       top: 10px;
       right: 20px;
-      color: var(--muted);
+      color: var(--header-text);
       font-size: 12px;
       font-weight: 600;
       white-space: nowrap;
@@ -87,7 +87,7 @@
       display: block;
       font-size: 10px;
       font-weight: 400;
-      color: var(--muted);
+      color: var(--header-muted);
       opacity: 0.75;
     }
     .update-banner {
@@ -207,7 +207,7 @@
     .ds-model-row select {
       flex: 1; min-width: 180px; max-width: 320px;
       padding: 5px 8px; border-radius: 5px;
-      border: 1px solid var(--border); background: var(--bg); color: var(--fg); font-size: 13px;
+      border: 1px solid var(--border); background: var(--bg); color: var(--text); font-size: 13px;
     }
     .ds-progress { font-size: 12.5px; color: var(--muted); margin: 6px 0; min-height: 18px; }
     .ds-findings-title { font-size: 12px; font-weight: 600; color: var(--muted); margin: 12px 0 6px; text-transform: uppercase; letter-spacing: .04em; }
@@ -331,7 +331,7 @@
       display: none; align-items: center; gap: 10px;
       background: rgba(138,150,168,.08); border: 1px solid var(--border);
       border-left: 4px solid var(--muted); border-radius: 6px;
-      padding: 9px 13px; font-size: 12.5px; color: var(--fg); line-height: 1.5;
+      padding: 9px 13px; font-size: 12.5px; color: var(--text); line-height: 1.5;
     }
     .ner-notice.show { display: flex; }
     .ner-notice .ner-notice-icon { font-size: 17px; flex-shrink: 0; }
@@ -362,6 +362,17 @@
       background: var(--panel); color: var(--text); cursor: pointer; font-size: 12px;
     }
     .ctrl-btn:hover { background: var(--panel2); }
+    .btn-spinner {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border: 2px solid currentColor;
+      border-right-color: transparent;
+      border-radius: 50%;
+      vertical-align: -2px;
+      animation: spin .75s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
     .ctrl-btn-primary { background: #1a4a8a; border-color: #2060b0; font-weight: 600; }
     .ctrl-btn-primary:hover { background: #1f5aa8; }
     .ctrl-btn-accent  { background: #2d5a1b; border-color: #3a7a22; font-weight: 600; }
@@ -767,7 +778,7 @@
           <h3>Dybdeskann med AI (Ollama)</h3>
           <p>Dybdeskann-fanen sender dokumentteksten til en lokal AI-modell via <strong>Ollama</strong> og ber den identifisere sensitiv informasjon som regel-baserte detektorer kan misse – for eksempel navn i uvanlige formater, adresser uten postnummer, eller budsjettall i fritekst.</p>
           <p>Du velger selv hvilke kategorier AI-en skal lete etter: navn, adresser, telefonnumre, personnumre, bankkontonumre, selskapsnavn og budsjetttall. Valgte funn kan anonymiseres direkte fra fanen og lagres som tekstfil i nedlastingsmappen.</p>
-          <div class="local-badge" style="margin-top:8px"><span class="icon">⏱️</span><span><strong>Maskinvarekrav:</strong> Dybdeskanning kan ta fra noen sekunder til flere minutter avhengig av dokumentstørrelse. Anbefalt maskin: minst 8 GB RAM og en relativt moderne CPU (fra ca. 2018 eller nyere). <strong>GPU-akselerasjon</strong> (NVIDIA/AMD) benyttes automatisk dersom det er tilgjengelig og gir betydelig kortere analysetid. Programmet viser om det kjører på CPU eller GPU.</span></div>
+          <div class="local-badge" style="margin-top:8px"><span class="icon">⏱️</span><span><strong>Maskinvarekrav:</strong> Dybdeskanning kan ta fra noen sekunder til flere minutter avhengig av dokumentstørrelse. Anbefalt maskin: minst 16 GB RAM og en relativt moderne CPU (fra ca. 2018 eller nyere). <strong>GPU-akselerasjon</strong> (NVIDIA/AMD) benyttes automatisk dersom det er tilgjengelig og gir betydelig kortere analysetid. Programmet viser om det kjører på CPU eller GPU.</span></div>
           <p style="margin-top:8px;">Ollama lastes ned gratis fra <a href="https://ollama.ai" target="_blank" style="color:var(--accent)">ollama.ai</a>. Anbefalt modell: <strong>llama3.2:3b</strong> (~1,9 GB).</p>
         </div>
         <p style="color:var(--muted);font-size:12px;">Skrevet av thomas.elboth@xlent.no</p>
@@ -821,7 +832,7 @@
           <h3>Djupskanning med AI (Ollama)</h3>
           <p>Fliken Djupskanning skickar dokumenttexten till en lokal AI-modell via <strong>Ollama</strong> och ber den identifiera känslig information som regelbaserade detektorer kan missa – till exempel namn i ovanliga format, adresser utan postnummer eller budgetsiffror i fritext.</p>
           <p>Du väljer själv vilka kategorier AI:n ska leta efter: namn, adresser, telefonnummer, personnummer, bankkontonummer, företagsnamn och budgetbelopp. Valda fynd kan anonymiseras direkt från fliken och sparas som en textfil i nedladdningsmappen.</p>
-          <div class="local-badge" style="margin-top:8px"><span class="icon">⏱️</span><span><strong>Maskinvarukrav:</strong> Djupskanning kan ta från några sekunder till flera minuter beroende på dokumentets storlek. Rekommenderat: minst 8 GB RAM och en relativt modern CPU (från ca 2018 eller senare). <strong>GPU-acceleration</strong> (NVIDIA/AMD) används automatiskt om tillgänglig och ger avsevärt kortare analystid. Programmet visar om det körs på CPU eller GPU.</span></div>
+          <div class="local-badge" style="margin-top:8px"><span class="icon">⏱️</span><span><strong>Maskinvarukrav:</strong> Djupskanning kan ta från några sekunder till flera minuter beroende på dokumentets storlek. Rekommenderat: minst 16 GB RAM och en relativt modern CPU (från ca 2018 eller senare). <strong>GPU-acceleration</strong> (NVIDIA/AMD) används automatiskt om tillgänglig och ger avsevärt kortare analystid. Programmet visar om det körs på CPU eller GPU.</span></div>
           <p style="margin-top:8px;">Ollama laddas ned gratis från <a href="https://ollama.ai" target="_blank" style="color:var(--accent)">ollama.ai</a>. Rekommenderad modell: <strong>llama3.2:3b</strong> (~1,9 GB).</p>
         </div>
         <p style="color:var(--muted);font-size:12px;">Skriven av thomas.elboth@xlent.no</p>
@@ -875,7 +886,7 @@
           <h3>AI Deep Scan (Ollama)</h3>
           <p>The Deep Scan tab sends document text to a local AI model via <strong>Ollama</strong> and asks it to identify sensitive information that rule-based detectors may miss — for example names in unusual formats, addresses without postal codes, or budget figures embedded in free text.</p>
           <p>You choose which categories the AI should look for: names, addresses, phone numbers, national ID numbers, bank account numbers, company names, and budget amounts. Selected findings can be anonymised directly from the tab and saved as a text file in the Downloads folder.</p>
-          <div class="local-badge" style="margin-top:8px"><span class="icon">⏱️</span><span><strong>Hardware requirements:</strong> Deep scanning can take anywhere from a few seconds to several minutes depending on document size. Recommended: at least 8 GB RAM and a relatively modern CPU (circa 2018 or newer). <strong>GPU acceleration</strong> (NVIDIA/AMD) is used automatically when available and provides significantly faster analysis. The app shows whether it is running on CPU or GPU.</span></div>
+          <div class="local-badge" style="margin-top:8px"><span class="icon">⏱️</span><span><strong>Hardware requirements:</strong> Deep scanning can take anywhere from a few seconds to several minutes depending on document size. Recommended: at least 16 GB RAM and a relatively modern CPU (circa 2018 or newer). <strong>GPU acceleration</strong> (NVIDIA/AMD) is used automatically when available and provides significantly faster analysis. The app shows whether it is running on CPU or GPU.</span></div>
           <p style="margin-top:8px;">Ollama is available free at <a href="https://ollama.ai" target="_blank" style="color:var(--accent)">ollama.ai</a>. Recommended model: <strong>llama3.2:3b</strong> (~1.9 GB).</p>
         </div>
         <p style="color:var(--muted);font-size:12px;">Written by thomas.elboth@xlent.no</p>
@@ -929,7 +940,7 @@
           <h3>KI-Tiefenscan (Ollama)</h3>
           <p>Der Tab Tiefenscan sendet den Dokumenttext an ein lokales KI-Modell über <strong>Ollama</strong> und identifiziert sensible Informationen, die regelbasierte Detektoren übersehen können — z. B. Namen in ungewöhnlichen Formaten, Adressen ohne Postleitzahl oder Budgetwerte in Freitext.</p>
           <p>Sie wählen selbst die Kategorien: Namen, Adressen, Telefonnummern, Personenkennzahlen, Kontonummern, Firmennamen und Budgetbeträge. Ausgewählte Treffer können direkt im Tab anonymisiert und als Textdatei im Download-Ordner gespeichert werden.</p>
-          <div class="local-badge" style="margin-top:8px"><span class="icon">⏱️</span><span><strong>Hardware:</strong> Tiefenscan kann je nach Dokumentgröße wenige Sekunden bis mehrere Minuten dauern. Empfohlen: mindestens 8 GB RAM und eine relativ moderne CPU (ca. 2018 oder neuer). <strong>GPU-Beschleunigung</strong> (NVIDIA/AMD) wird automatisch genutzt, falls verfügbar, und verkürzt die Analysezeit deutlich. Die App zeigt an, ob CPU oder GPU verwendet wird.</span></div>
+          <div class="local-badge" style="margin-top:8px"><span class="icon">⏱️</span><span><strong>Hardware:</strong> Tiefenscan kann je nach Dokumentgröße wenige Sekunden bis mehrere Minuten dauern. Empfohlen: mindestens 16 GB RAM und eine relativ moderne CPU (ca. 2018 oder neuer). <strong>GPU-Beschleunigung</strong> (NVIDIA/AMD) wird automatisch genutzt, falls verfügbar, und verkürzt die Analysezeit deutlich. Die App zeigt an, ob CPU oder GPU verwendet wird.</span></div>
           <p style="margin-top:8px;">Ollama ist kostenlos verfügbar unter <a href="https://ollama.ai" target="_blank" style="color:var(--accent)">ollama.ai</a>. Empfohlenes Modell: <strong>llama3.2:3b</strong> (~1,9 GB).</p>
         </div>
         <p style="color:var(--muted);font-size:12px;">Geschrieben von thomas.elboth@xlent.no</p>
@@ -983,7 +994,7 @@
           <h3>Analyse IA approfondie (Ollama)</h3>
           <p>L’onglet d’analyse approfondie envoie le texte du document à un modèle IA local via <strong>Ollama</strong> pour identifier des informations sensibles que les détecteurs à règles peuvent manquer — par exemple des noms dans des formats inhabituels, des adresses sans code postal ou des montants de budget en texte libre.</p>
           <p>Vous choisissez les catégories à rechercher : noms, adresses, numéros de téléphone, identifiants personnels, numéros de compte, noms d’entreprise et montants budgétaires. Les résultats sélectionnés peuvent être anonymisés directement depuis l’onglet et enregistrés en fichier texte dans le dossier Téléchargements.</p>
-          <div class="local-badge" style="margin-top:8px"><span class="icon">⏱️</span><span><strong>Configuration matérielle :</strong> l’analyse approfondie peut prendre de quelques secondes à plusieurs minutes selon la taille du document. Recommandé : au moins 8 Go de RAM et un CPU relativement moderne (vers 2018 ou plus récent). L’<strong>accélération GPU</strong> (NVIDIA/AMD) est utilisée automatiquement si disponible et réduit nettement le temps d’analyse. L’application indique si elle tourne sur CPU ou GPU.</span></div>
+          <div class="local-badge" style="margin-top:8px"><span class="icon">⏱️</span><span><strong>Configuration matérielle :</strong> l’analyse approfondie peut prendre de quelques secondes à plusieurs minutes selon la taille du document. Recommandé : au moins 16 Go de RAM et un CPU relativement moderne (vers 2018 ou plus récent). L’<strong>accélération GPU</strong> (NVIDIA/AMD) est utilisée automatiquement si disponible et réduit nettement le temps d’analyse. L’application indique si elle tourne sur CPU ou GPU.</span></div>
           <p style="margin-top:8px;">Ollama est disponible gratuitement sur <a href="https://ollama.ai" target="_blank" style="color:var(--accent)">ollama.ai</a>. Modèle recommandé : <strong>llama3.2:3b</strong> (~1,9 Go).</p>
         </div>
         <p style="color:var(--muted);font-size:12px;">Écrit par thomas.elboth@xlent.no</p>
@@ -1037,7 +1048,7 @@
           <h3>Escaneo profundo con IA (Ollama)</h3>
           <p>La pestaña de escaneo profundo envía el texto del documento a un modelo de IA local vía <strong>Ollama</strong> para identificar información sensible que los detectores basados en reglas pueden pasar por alto — por ejemplo nombres en formatos inusuales, direcciones sin código postal o cifras de presupuesto en texto libre.</p>
           <p>Usted elige las categorías que la IA debe buscar: nombres, direcciones, teléfonos, identificaciones personales, números de cuenta, nombres de empresa y montos de presupuesto. Los hallazgos seleccionados pueden anonimizarse directamente desde la pestaña y guardarse como archivo de texto en Descargas.</p>
-          <div class="local-badge" style="margin-top:8px"><span class="icon">⏱️</span><span><strong>Requisitos de hardware:</strong> el escaneo profundo puede tardar desde segundos hasta varios minutos según el tamaño del documento. Recomendado: al menos 8 GB de RAM y una CPU relativamente moderna (aprox. 2018 o posterior). La <strong>aceleración por GPU</strong> (NVIDIA/AMD) se usa automáticamente cuando está disponible y reduce significativamente el tiempo de análisis. La app muestra si se ejecuta en CPU o GPU.</span></div>
+          <div class="local-badge" style="margin-top:8px"><span class="icon">⏱️</span><span><strong>Requisitos de hardware:</strong> el escaneo profundo puede tardar desde segundos hasta varios minutos según el tamaño del documento. Recomendado: al menos 16 GB de RAM y una CPU relativamente moderna (aprox. 2018 o posterior). La <strong>aceleración por GPU</strong> (NVIDIA/AMD) se usa automáticamente cuando está disponible y reduce significativamente el tiempo de análisis. La app muestra si se ejecuta en CPU o GPU.</span></div>
           <p style="margin-top:8px;">Ollama se descarga gratis en <a href="https://ollama.ai" target="_blank" style="color:var(--accent)">ollama.ai</a>. Modelo recomendado: <strong>llama3.2:3b</strong> (~1,9 GB).</p>
         </div>
         <p style="color:var(--muted);font-size:12px;">Escrito por thomas.elboth@xlent.no</p>
@@ -1053,8 +1064,8 @@
         <div class="settings-row">
           <label for="themeSelect" data-i18n="themeLabel">Tema:</label>
           <select id="themeSelect">
-            <option value="dark" data-i18n="themeDark">Mørk modus</option>
             <option value="light" data-i18n="themeLight">Lys modus</option>
+            <option value="dark" data-i18n="themeDark">Mørk modus</option>
           </select>
         </div>
         <div class="settings-note" data-i18n="themeNote">Lys modus bruker en grå header slik at XLENT-logoen fortsatt er synlig.</div>
@@ -1097,10 +1108,12 @@
         <div class="settings-row" style="margin-top:10px; align-items:center; gap:10px;">
           <span id="ollama-settings-status" style="font-size:13px;"></span>
           <button id="btn-refresh-ollama" class="ctrl-btn" data-i18n="ollamaRefresh">↻ Sjekk status</button>
+          <button id="btn-pull-ollama-model" class="ctrl-btn ctrl-btn-primary" data-i18n="ollamaPullRecommended">Last ned anbefalt modell</button>
           <button id="btn-stop-ollama-model" class="ctrl-btn" data-i18n="ollamaStopModel" disabled>Stopp aktiv AI-modell</button>
         </div>
         <div class="settings-note" data-i18n="ollamaStopNote">Dette frigjør minne/CPU/GPU brukt av modellen. Modellen lastes inn igjen automatisk ved neste dybdeskann.</div>
         <div class="settings-note" id="ollama-stop-msg"></div>
+        <div class="settings-note" id="ollama-pull-msg"></div>
         <div id="ollama-models-list" style="margin-top:8px;"></div>
         <div id="ollama-instructions" style="display:none; margin-top:10px;" class="ds-ollama-instructions"></div>
       </div>
@@ -1131,6 +1144,17 @@
           <button id="btn-whitelist-save" class="ctrl-btn ctrl-btn-primary" data-i18n="whitelistSave">Lagre hviteliste</button>
         </div>
         <div class="settings-note" id="whitelist-msg"></div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-section-title" data-i18n="settingsProfileTitle">Innstillingsprofil</div>
+        <div class="settings-note" data-i18n="settingsProfileNote">Eksporterer og importerer tema, dokumentspråk, hviteliste og ignore.toml. Scan-historikk og dokumentinnhold tas ikke med.</div>
+        <div class="settings-row" style="margin-top:8px;">
+          <button id="btn-export-settings" class="ctrl-btn" data-i18n="settingsExport">Eksporter innstillinger</button>
+          <button id="btn-import-settings" class="ctrl-btn ctrl-btn-primary" data-i18n="settingsImport">Importer innstillinger</button>
+          <input type="file" id="settings-import-file" accept="application/json,.json" style="display:none" />
+        </div>
+        <div class="settings-note" id="settings-profile-msg"></div>
       </div>
 
       <div class="settings-section">
@@ -1265,12 +1289,24 @@
         ollamaStopped:       "AI-modell stoppet. Den lastes inn igjen automatisk ved neste dybdeskann.",
         ollamaStopFailed:    "Kunne ikke stoppe AI-modell.",
         ollamaNoSelectedModel:"Ingen AI-modell er valgt.",
+        ollamaPullRecommended:"Last ned anbefalt modell",
+        ollamaPullStarting:  "Starter modellnedlasting:",
+        ollamaPullFailed:    "Kunne ikke laste ned modell:",
+        ollamaRecommendedMissing:"Anbefalt modell mangler. Du kan laste den ned her eller kjøre:",
         deepScanCancel:      "✕ Avbryt",
         deepScanModelLabel:  "Velg modell:",
         deepScanRunning:     "🔬 Dybdeskanning pågår… (kan ta opptil flere minutter avhengig av maskin og dokumentstørrelse)",
         deepScanDone:        "✅ Dybdeskann ferdig",
         deepScanNoFindings:  "Ingen ekstra funn fra AI-analyse.",
         settingsUpdateTitle: "Oppdateringer",
+        settingsProfileTitle:"Innstillingsprofil",
+        settingsProfileNote: "Eksporterer og importerer tema, dokumentspråk, hviteliste og ignore.toml. Scan-historikk og dokumentinnhold tas ikke med.",
+        settingsExport:      "Eksporter innstillinger",
+        settingsImport:      "Importer innstillinger",
+        settingsExported:    "Innstillinger eksportert.",
+        settingsImported:    "Innstillinger importert.",
+        settingsExportErr:   "Kunne ikke eksportere innstillinger:",
+        settingsImportErr:   "Kunne ikke importere innstillinger:",
         settingsPersistNote: "Innstillinger lagres automatisk i nettleseren.",
         updateAvailable: "Ny versjon tilgjengelig:",
         updateOpenRelease: "⬇ Åpne nedlasting",
@@ -1344,7 +1380,6 @@
         aiCheckingOllama:    "⏳ Sjekker Ollama…",
         aiNoModel:           "⚠ Ollama kjører ikke eller ingen modell er installert",
         aiAnalyzing:         "🔬 Analyserer…",
-        aiAnalyzingBtn:      "⏳ Analyserer…",
         aiCancelled:         "⛔ Avbrutt",
         deepScanCancelled:   "Avbrutt.",
         clearResult:         "🗑 Tøm",
@@ -1445,12 +1480,24 @@
         ollamaStopped:       "AI-modell stoppad. Den laddas in igen automatiskt vid nästa djupskanning.",
         ollamaStopFailed:    "Kunde inte stoppa AI-modell.",
         ollamaNoSelectedModel:"Ingen AI-modell är vald.",
+        ollamaPullRecommended:"Ladda ned rekommenderad modell",
+        ollamaPullStarting:  "Startar modellnedladdning:",
+        ollamaPullFailed:    "Kunde inte ladda ned modell:",
+        ollamaRecommendedMissing:"Rekommenderad modell saknas. Du kan ladda ned den här eller köra:",
         deepScanCancel:      "✕ Avbryt",
         deepScanModelLabel:  "Välj modell:",
         deepScanRunning:     "🔬 Djupskanning pågår… (kan ta upp till flera minuter beroende på maskin och dokumentstorlek)",
         deepScanDone:        "✅ Djupskanning klar",
         deepScanNoFindings:  "Inga extra fynd från AI-analysen.",
         settingsUpdateTitle: "Uppdateringar",
+        settingsProfileTitle:"Inställningsprofil",
+        settingsProfileNote: "Exporterar och importerar tema, dokumentspråk, vitlista och ignore.toml. Skanningshistorik och dokumentinnehåll tas inte med.",
+        settingsExport:      "Exportera inställningar",
+        settingsImport:      "Importera inställningar",
+        settingsExported:    "Inställningar exporterade.",
+        settingsImported:    "Inställningar importerade.",
+        settingsExportErr:   "Kunde inte exportera inställningar:",
+        settingsImportErr:   "Kunde inte importera inställningar:",
         settingsPersistNote: "Inställningar sparas automatiskt i webbläsaren.",
         updateAvailable: "Ny version tillgänglig:",
         updateOpenRelease: "⬇ Öppna nedladdning",
@@ -1524,7 +1571,6 @@
         aiCheckingOllama:    "⏳ Kontrollerar Ollama…",
         aiNoModel:           "⚠ Ollama körs inte eller ingen modell är installerad",
         aiAnalyzing:         "🔬 Analyserar…",
-        aiAnalyzingBtn:      "⏳ Analyserar…",
         aiCancelled:         "⛔ Avbruten",
         deepScanCancelled:   "Avbruten.",
         clearResult:         "🗑 Töm",
@@ -1625,12 +1671,24 @@
         ollamaStopped:       "AI model stopped. It loads again automatically on the next deep scan.",
         ollamaStopFailed:    "Could not stop AI model.",
         ollamaNoSelectedModel:"No AI model is selected.",
+        ollamaPullRecommended:"Download recommended model",
+        ollamaPullStarting:  "Starting model download:",
+        ollamaPullFailed:    "Could not download model:",
+        ollamaRecommendedMissing:"Recommended model is missing. Download it here or run:",
         deepScanCancel:      "✕ Cancel",
         deepScanModelLabel:  "Select model:",
         deepScanRunning:     "🔬 Deep scan in progress… (may take several minutes depending on machine and document size)",
         deepScanDone:        "✅ Deep scan complete",
         deepScanNoFindings:  "No additional findings from AI analysis.",
         settingsUpdateTitle: "Updates",
+        settingsProfileTitle:"Settings profile",
+        settingsProfileNote: "Exports and imports theme, document language, whitelist, and ignore.toml. Scan history and document content are not included.",
+        settingsExport:      "Export settings",
+        settingsImport:      "Import settings",
+        settingsExported:    "Settings exported.",
+        settingsImported:    "Settings imported.",
+        settingsExportErr:   "Could not export settings:",
+        settingsImportErr:   "Could not import settings:",
         settingsPersistNote: "Settings are saved automatically in the browser.",
         updateAvailable: "New version available:",
         updateOpenRelease: "⬇ Open download",
@@ -1700,7 +1758,6 @@
         aiCheckingOllama:    "⏳ Checking Ollama…",
         aiNoModel:           "⚠ Ollama is not running or no model is installed",
         aiAnalyzing:         "🔬 Analyzing…",
-        aiAnalyzingBtn:      "⏳ Analyzing…",
         aiCancelled:         "⛔ Cancelled",
         deepScanCancelled:   "Cancelled.",
         clearResult:         "🗑 Clear",
@@ -1791,6 +1848,14 @@
         updateChecking:      "Prüfe auf Updates…",
         updateCheckBtn:      "Auf Updates prüfen",
         settingsUpdateTitle: "Updates",
+        settingsProfileTitle:"Einstellungsprofil",
+        settingsProfileNote: "Exportiert und importiert Design, Dokumentsprache, Whitelist und ignore.toml. Scan-Verlauf und Dokumentinhalte werden nicht übernommen.",
+        settingsExport:      "Einstellungen exportieren",
+        settingsImport:      "Einstellungen importieren",
+        settingsExported:    "Einstellungen exportiert.",
+        settingsImported:    "Einstellungen importiert.",
+        settingsExportErr:   "Einstellungen konnten nicht exportiert werden:",
+        settingsImportErr:   "Einstellungen konnten nicht importiert werden:",
         settingsPersistNote: "Einstellungen werden automatisch im Browser gespeichert.",
         nerTitle:            "KI-Namenerkennung (spaCy)",
         nerInstalled:        "Installiert",
@@ -1811,6 +1876,10 @@
         ollamaStopped:       "KI-Modell gestoppt. Es wird beim nächsten Tiefenscan automatisch erneut geladen.",
         ollamaStopFailed:    "KI-Modell konnte nicht gestoppt werden.",
         ollamaNoSelectedModel:"Kein KI-Modell ausgewählt.",
+        ollamaPullRecommended:"Empfohlenes Modell herunterladen",
+        ollamaPullStarting:  "Modelldownload wird gestartet:",
+        ollamaPullFailed:    "Modell konnte nicht heruntergeladen werden:",
+        ollamaRecommendedMissing:"Empfohlenes Modell fehlt. Sie können es hier herunterladen oder ausführen:",
         ollamaRefresh:       "Aktualisieren",
         confidenceLabel:     "Konfidenz:",
         confidenceHigh:      "Hoch (nur sichere Treffer)",
@@ -1830,7 +1899,6 @@
         aiCheckingOllama:    "⏳ Prüfe Ollama…",
         aiNoModel:           "⚠ Ollama läuft nicht oder kein Modell installiert",
         aiAnalyzing:         "🔬 Analysiere…",
-        aiAnalyzingBtn:      "⏳ Analysiere…",
         aiCancelled:         "⛔ Abgebrochen",
         rescanAi:            "🔄 Erneut scannen",
         clearResult:         "🗑 Leeren",
@@ -1970,6 +2038,14 @@
         updateChecking:      "Vérification des mises à jour…",
         updateCheckBtn:      "Vérifier les mises à jour",
         settingsUpdateTitle: "Mises à jour",
+        settingsProfileTitle:"Profil de paramètres",
+        settingsProfileNote: "Exporte et importe le thème, la langue du document, la liste blanche et ignore.toml. L’historique d’analyse et le contenu des documents ne sont pas inclus.",
+        settingsExport:      "Exporter les paramètres",
+        settingsImport:      "Importer les paramètres",
+        settingsExported:    "Paramètres exportés.",
+        settingsImported:    "Paramètres importés.",
+        settingsExportErr:   "Impossible d’exporter les paramètres :",
+        settingsImportErr:   "Impossible d’importer les paramètres :",
         settingsPersistNote: "Les paramètres sont automatiquement sauvegardés dans le navigateur.",
         nerTitle:            "Reconnaissance de noms par IA (spaCy)",
         nerInstalled:        "Installé",
@@ -1990,6 +2066,10 @@
         ollamaStopped:       "Modèle IA arrêté. Il sera rechargé automatiquement lors du prochain scan approfondi.",
         ollamaStopFailed:    "Impossible d’arrêter le modèle IA.",
         ollamaNoSelectedModel:"Aucun modèle IA sélectionné.",
+        ollamaPullRecommended:"Télécharger le modèle recommandé",
+        ollamaPullStarting:  "Démarrage du téléchargement du modèle :",
+        ollamaPullFailed:    "Impossible de télécharger le modèle :",
+        ollamaRecommendedMissing:"Le modèle recommandé est manquant. Téléchargez-le ici ou exécutez :",
         ollamaRefresh:       "Actualiser",
         confidenceLabel:     "Confiance :",
         confidenceHigh:      "Haute (résultats certains uniquement)",
@@ -2009,7 +2089,6 @@
         aiCheckingOllama:    "⏳ Vérification d'Ollama…",
         aiNoModel:           "⚠ Ollama ne fonctionne pas ou aucun modèle installé",
         aiAnalyzing:         "🔬 Analyse en cours…",
-        aiAnalyzingBtn:      "⏳ Analyse en cours…",
         aiCancelled:         "⛔ Annulé",
         rescanAi:            "🔄 Réanalyser",
         clearResult:         "🗑 Vider",
@@ -2149,6 +2228,14 @@
         updateChecking:      "Comprobando actualizaciones…",
         updateCheckBtn:      "Buscar actualizaciones",
         settingsUpdateTitle: "Actualizaciones",
+        settingsProfileTitle:"Perfil de configuración",
+        settingsProfileNote: "Exporta e importa tema, idioma del documento, lista blanca e ignore.toml. No incluye historial de escaneos ni contenido de documentos.",
+        settingsExport:      "Exportar configuración",
+        settingsImport:      "Importar configuración",
+        settingsExported:    "Configuración exportada.",
+        settingsImported:    "Configuración importada.",
+        settingsExportErr:   "No se pudo exportar la configuración:",
+        settingsImportErr:   "No se pudo importar la configuración:",
         settingsPersistNote: "La configuración se guarda automáticamente en el navegador.",
         nerTitle:            "Reconocimiento de nombres con IA (spaCy)",
         nerInstalled:        "Instalado",
@@ -2169,6 +2256,10 @@
         ollamaStopped:       "Modelo de IA detenido. Se cargará de nuevo automáticamente en el siguiente escaneo profundo.",
         ollamaStopFailed:    "No se pudo detener el modelo de IA.",
         ollamaNoSelectedModel:"No hay ningún modelo de IA seleccionado.",
+        ollamaPullRecommended:"Descargar modelo recomendado",
+        ollamaPullStarting:  "Iniciando descarga del modelo:",
+        ollamaPullFailed:    "No se pudo descargar el modelo:",
+        ollamaRecommendedMissing:"Falta el modelo recomendado. Descárguelo aquí o ejecute:",
         ollamaRefresh:       "Actualizar",
         confidenceLabel:     "Confianza:",
         confidenceHigh:      "Alta (solo resultados seguros)",
@@ -2188,7 +2279,6 @@
         aiCheckingOllama:    "⏳ Comprobando Ollama…",
         aiNoModel:           "⚠ Ollama no está en ejecución o no hay modelo instalado",
         aiAnalyzing:         "🔬 Analizando…",
-        aiAnalyzingBtn:      "⏳ Analizando…",
         aiCancelled:         "⛔ Cancelado",
         rescanAi:            "🔄 Volver a escanear",
         clearResult:         "🗑 Vaciar",
@@ -2280,6 +2370,7 @@
     const whitelistPathEl = document.getElementById("whitelist-path");
     const whitelistEditorEl = document.getElementById("whitelist-editor");
     const whitelistMsgEl = document.getElementById("whitelist-msg");
+    const settingsProfileMsgEl = document.getElementById("settings-profile-msg");
 
     const LEVEL_COLOR = { grønn:"#4caf50", gul:"#ffb84d", rød:"#f44336", svart:"#9c27b0" };
     const LEVEL_ICON  = { grønn:"✅", gul:"⚠️", rød:"🚫", svart:"⛔" };
@@ -2631,6 +2722,77 @@
         setWhitelistMessage(t("whitelistSaved"), "#4caf50", "status");
       } catch (e) {
         setWhitelistMessage(`${t("whitelistSaveErr")} ${e}`, "#f44336", "status");
+      }
+    }
+
+    function setSettingsProfileMessage(text, color = "var(--muted)") {
+      if (!settingsProfileMsgEl) return;
+      settingsProfileMsgEl.textContent = text;
+      settingsProfileMsgEl.style.color = color;
+    }
+
+    function _browserSettingsForExport() {
+      try {
+        return JSON.parse(localStorage.getItem("xlentScannerSettings") || "{}");
+      } catch (_) {
+        return {};
+      }
+    }
+
+    async function exportSettingsProfile() {
+      setSettingsProfileMessage(t("processing"), "var(--muted)");
+      try {
+        await saveIgnoreEditor();
+        await saveWhitelistEditor();
+        const d = await (await fetch(`${API}/settings/export`, {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({ browser_settings: _browserSettingsForExport() }),
+        })).json();
+        if (!d.ok) {
+          setSettingsProfileMessage(`${t("settingsExportErr")} ${d.error || ""}`, "#f44336");
+          return;
+        }
+        const blob = new Blob([JSON.stringify(d, null, 2)], {type: "application/json"});
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = `xlent-scanner-settings-v${APP_VERSION}.json`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+        setSettingsProfileMessage(t("settingsExported"), "var(--ok)");
+      } catch (e) {
+        setSettingsProfileMessage(`${t("settingsExportErr")} ${String(e)}`, "#f44336");
+      }
+    }
+
+    async function importSettingsProfile(event) {
+      const file = event.target.files && event.target.files[0];
+      event.target.value = "";
+      if (!file) return;
+      setSettingsProfileMessage(t("processing"), "var(--muted)");
+      try {
+        const text = await file.text();
+        const profile = JSON.parse(text);
+        const d = await (await fetch(`${API}/settings/import`, {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify(profile),
+        })).json();
+        if (!d.ok) {
+          setSettingsProfileMessage(`${t("settingsImportErr")} ${d.error || ""}`, "#f44336");
+          return;
+        }
+        if (d.browser_settings && typeof d.browser_settings === "object") {
+          localStorage.setItem("xlentScannerSettings", JSON.stringify(d.browser_settings));
+          loadSettings();
+        }
+        ignoreEditorEl.value = String(d.ignore_toml || ignoreEditorEl.value || "");
+        whitelistEditorEl.value = (d.whitelist || []).join("\n");
+        setSettingsProfileMessage(t("settingsImported"), "var(--ok)");
+      } catch (e) {
+        setSettingsProfileMessage(`${t("settingsImportErr")} ${String(e)}`, "#f44336");
       }
     }
 
@@ -3153,7 +3315,7 @@
        SETTINGS PERSISTENCE
     ══════════════════════════════════════════════════════════════════ */
     function normalizeTheme(theme) {
-      return theme === "light" ? "light" : "dark";
+      return theme === "dark" ? "dark" : "light";
     }
 
     function applyTheme(theme) {
@@ -3201,6 +3363,9 @@
     document.getElementById("btn-ignore-save").addEventListener("click", saveIgnoreEditor);
     document.getElementById("btn-whitelist-reload").addEventListener("click", loadWhitelistEditor);
     document.getElementById("btn-whitelist-save").addEventListener("click", saveWhitelistEditor);
+    document.getElementById("btn-export-settings").addEventListener("click", exportSettingsProfile);
+    document.getElementById("btn-import-settings").addEventListener("click", () => document.getElementById("settings-import-file").click());
+    document.getElementById("settings-import-file").addEventListener("change", importSettingsProfile);
 
     /* ══════════════════════════════════════════════════════════════════
        NER MODELS
@@ -3358,6 +3523,8 @@
 
     // ── Innstillinger: Ollama-seksjon ────────────────────────────────
     let _ollamaSettingsModels = [];
+    let _ollamaRecommendedModel = "llama3.2:3b";
+    let _ollamaPullPoll = null;
 
     function _selectedOllamaModel() {
       const models = _ollamaSettingsModels || [];
@@ -3377,6 +3544,13 @@
       el.style.color = color;
     }
 
+    function setOllamaPullMessage(msg, color = "var(--muted)") {
+      const el = document.getElementById("ollama-pull-msg");
+      if (!el) return;
+      el.textContent = msg;
+      el.style.color = color;
+    }
+
     async function loadOllamaSettingsStatus() {
       const statusEl = document.getElementById("ollama-settings-status");
       const listEl   = document.getElementById("ollama-models-list");
@@ -3386,12 +3560,16 @@
       try {
         const s = await (await fetch(`${API}/ollama/status`)).json();
         _ollamaSettingsModels = s.models || [];
+        _ollamaRecommendedModel = s.recommended_model || _ollamaRecommendedModel;
         if (s.running) {
           statusEl.innerHTML = `<span style="color:var(--ok)">${t("ollamaRunning")}</span>`;
           if (s.models && s.models.length) {
             listEl.innerHTML = `<div style="font-size:12px;color:var(--muted);margin-bottom:4px">${t("ollamaModelsLabel")}</div>` +
-              s.models.map(m => `<div style="font-size:13px;padding:3px 0;color:var(--fg)">${escapeHtml(m)}</div>`).join("");
-            instrEl.style.display = "none";
+              s.models.map(m => `<div style="font-size:13px;padding:3px 0;color:var(--text)">${escapeHtml(m)}</div>`).join("");
+            instrEl.innerHTML = s.recommended_installed
+              ? ""
+              : `${t("ollamaRecommendedMissing")} <code>${escapeHtml(s.install_command || "")}</code>`;
+            instrEl.style.display = s.recommended_installed ? "none" : "block";
             if (stopBtn) stopBtn.disabled = false;
           } else {
             listEl.innerHTML = `<div style="font-size:12.5px;color:var(--muted)">${t("ollamaNoModels")}</div>`;
@@ -3410,6 +3588,43 @@
         statusEl.innerHTML = `<span style="color:var(--danger)">${t("ollamaNotRunning")}</span>`;
         _ollamaSettingsModels = [];
         if (stopBtn) stopBtn.disabled = true;
+      }
+    }
+
+    async function refreshOllamaPullStatus() {
+      try {
+        const d = await (await fetch(`${API}/ollama/model/pull/status`)).json();
+        const status = d.status || "idle";
+        if (status === "idle") return;
+        const color = status === "done" ? "var(--ok)" : (status === "error" ? "#f44336" : "var(--muted)");
+        setOllamaPullMessage(d.progress || status, color);
+        if (status === "running" || status === "queued") {
+          if (!_ollamaPullPoll) _ollamaPullPoll = setInterval(refreshOllamaPullStatus, 2500);
+        } else if (_ollamaPullPoll) {
+          clearInterval(_ollamaPullPoll);
+          _ollamaPullPoll = null;
+          await loadOllamaSettingsStatus();
+        }
+      } catch (e) {
+        setOllamaPullMessage(`${t("ollamaPullFailed")} ${String(e)}`, "#f44336");
+      }
+    }
+
+    async function pullRecommendedOllamaModel() {
+      setOllamaPullMessage(`${t("ollamaPullStarting")} ${_ollamaRecommendedModel}`, "var(--muted)");
+      try {
+        const d = await (await fetch(`${API}/ollama/model/pull`, {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({model: _ollamaRecommendedModel}),
+        })).json();
+        if (!d.ok) {
+          setOllamaPullMessage(`${t("ollamaPullFailed")} ${d.error || ""}`, "#f44336");
+          return;
+        }
+        await refreshOllamaPullStatus();
+      } catch (e) {
+        setOllamaPullMessage(`${t("ollamaPullFailed")} ${String(e)}`, "#f44336");
       }
     }
 
@@ -3441,6 +3656,7 @@
     }
 
     document.getElementById("btn-refresh-ollama").addEventListener("click", loadOllamaSettingsStatus);
+    document.getElementById("btn-pull-ollama-model").addEventListener("click", pullRecommendedOllamaModel);
     document.getElementById("btn-stop-ollama-model").addEventListener("click", stopActiveOllamaModel);
 
     document.querySelectorAll(".tab-btn").forEach(btn => {
@@ -3610,6 +3826,13 @@
       if (el) el.textContent = msg;
     }
 
+    function _setRescanBtnLoading(rescanBtn, loading) {
+      if (!rescanBtn) return;
+      rescanBtn.disabled = loading;
+      rescanBtn.innerHTML = loading ? '<span class="btn-spinner" aria-label="Loading"></span>' : escapeHtml(t("rescanAi"));
+      rescanBtn.title = loading ? t("aiAnalyzing") : "";
+    }
+
     async function autoAiScan() {
       const toggle = document.getElementById("ai-scan-toggle");
       if (!toggle?.checked) return;
@@ -3617,7 +3840,7 @@
       const rescanBtn = document.getElementById("ai-rescan-btn");
 
       // Gi umiddelbar visuell tilbakemelding UTEN å vente på nettverks-kall
-      if (rescanBtn) { rescanBtn.disabled = true; rescanBtn.textContent = t("aiAnalyzingBtn"); }
+      _setRescanBtnLoading(rescanBtn, true);
       _setAiInlineStatus(t("aiCheckingOllama"));
 
       // Hent/oppdater modelliste (asynkron – vises inline)
@@ -3629,13 +3852,13 @@
 
       if (!model) {
         _setAiInlineStatus(t("aiNoModel"));
-        if (rescanBtn) { rescanBtn.disabled = false; rescanBtn.textContent = t("rescanAi"); }
+        _setRescanBtnLoading(rescanBtn, false);
         return;
       }
 
       // Start scan – oppdater status inline OG i statusfeltet under
       _setAiInlineStatus(t("aiAnalyzing"));
-      if (rescanBtn) { rescanBtn.disabled = true; rescanBtn.textContent = t("aiAnalyzingBtn"); }
+      _setRescanBtnLoading(rescanBtn, true);
 
       const statusEl   = document.getElementById("ai-scan-status");
       const progressEl = document.getElementById("ai-progress");
@@ -3661,7 +3884,7 @@
           progressEl.innerHTML = `<span style="color:var(--danger)">${errMsg}</span>`;
           cancelBtn.style.display = "none";
           _setAiInlineStatus(`⚠ ${r.error || t("errPrefix")}`);
-          if (rescanBtn) { rescanBtn.disabled = false; rescanBtn.textContent = t("rescanAi"); }
+          _setRescanBtnLoading(rescanBtn, false);
           return;
         }
         if (_aiPollTimer) clearInterval(_aiPollTimer);
@@ -3670,13 +3893,13 @@
         progressEl.innerHTML = `<span style="color:var(--danger)">${escapeHtml(String(e))}</span>`;
         cancelBtn.style.display = "none";
         _setAiInlineStatus(`⚠ ${String(e)}`);
-        if (rescanBtn) { rescanBtn.disabled = false; rescanBtn.textContent = t("rescanAi"); }
+        _setRescanBtnLoading(rescanBtn, false);
       }
     }
 
     function _restoreRescanBtn(inlineMsg) {
       const rb = document.getElementById("ai-rescan-btn");
-      if (rb) { rb.disabled = false; rb.textContent = t("rescanAi"); }
+      _setRescanBtnLoading(rb, false);
       if (inlineMsg !== undefined) _setAiInlineStatus(inlineMsg);
     }
 
@@ -4098,6 +4321,6 @@
         }
       } catch(_) { /* ingen fil, eller Flask ikke klar ennå */ }
     })();
-  </script>
+</script>
 </body>
 </html>

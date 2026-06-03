@@ -12,6 +12,7 @@ import threading
 import time
 import urllib.error
 import urllib.request
+import uuid
 from typing import Any
 
 LOGGER = logging.getLogger(__name__)
@@ -47,9 +48,15 @@ CATEGORIES: dict[str, str] = {
     "nettadresse":   "nettadresser/URL-er som begynner med http://, https:// eller www.",
 }
 
-# Én aktiv jobb om gangen
+# GUI-et bruker fortsatt "siste jobb", men API-et kan hente/cancelle konkret job_id.
 _job: dict[str, Any] = {}
+_jobs: dict[str, dict[str, Any]] = {}
 _job_lock = threading.Lock()
+_JOB_TTL_SECONDS = 60 * 60
+_MAX_JOBS = 20
+
+_pull_job: dict[str, Any] = {}
+_pull_lock = threading.Lock()
 
 
 # ── Ollama REST-hjelpere ────────────────────────────────────────────────
@@ -75,18 +82,106 @@ def _post(path: str, data: dict, timeout: int = 180) -> Any:
         return json.loads(resp.read().decode("utf-8"))
 
 
+def _cleanup_jobs_locked(now: float | None = None) -> None:
+    now = now or time.time()
+    expired = [
+        jid for jid, job in _jobs.items()
+        if now - float(job.get("started_at", 0)) > _JOB_TTL_SECONDS
+    ]
+    for jid in expired:
+        _jobs.pop(jid, None)
+    while len(_jobs) > _MAX_JOBS:
+        oldest = min(_jobs, key=lambda jid: float(_jobs[jid].get("started_at", 0)))
+        _jobs.pop(oldest, None)
+
+
 # ── Status ──────────────────────────────────────────────────────────────
 
 def ollama_status() -> dict[str, Any]:
     """Sjekk om Ollama kjører og hent liste over installerte modeller."""
+    recommended = RECOMMENDED_MODELS[0]
     try:
         data = _get("/api/tags")
         models = [m["name"] for m in (data.get("models") or [])]
-        return {"running": True, "models": sorted(models)}
+        sorted_models = sorted(models)
+        return {
+            "running": True,
+            "models": sorted_models,
+            "ollama_base": OLLAMA_BASE,
+            "recommended_model": recommended,
+            "recommended_installed": recommended in sorted_models,
+            "install_command": f"ollama pull {recommended}",
+        }
     except (urllib.error.URLError, OSError):
-        return {"running": False, "models": []}
+        return {
+            "running": False,
+            "models": [],
+            "ollama_base": OLLAMA_BASE,
+            "recommended_model": recommended,
+            "recommended_installed": False,
+            "install_command": f"ollama pull {recommended}",
+        }
     except Exception as exc:
-        return {"running": False, "models": [], "error": str(exc)}
+        return {
+            "running": False,
+            "models": [],
+            "error": str(exc),
+            "ollama_base": OLLAMA_BASE,
+            "recommended_model": recommended,
+            "recommended_installed": False,
+            "install_command": f"ollama pull {recommended}",
+        }
+
+
+def _run_pull_model(model: str, job_id: str) -> None:
+    with _pull_lock:
+        if _pull_job.get("job_id") != job_id:
+            return
+        _pull_job.update({"status": "running", "progress": f"Laster ned {model}…"})
+    try:
+        _post("/api/pull", {"name": model, "stream": False}, timeout=900)
+        with _pull_lock:
+            if _pull_job.get("job_id") == job_id:
+                _pull_job.update({"status": "done", "progress": f"{model} er installert."})
+    except (urllib.error.URLError, OSError) as exc:
+        with _pull_lock:
+            if _pull_job.get("job_id") == job_id:
+                _pull_job.update({"status": "error", "progress": "Ollama kjører ikke.", "error": str(exc)})
+    except Exception as exc:
+        with _pull_lock:
+            if _pull_job.get("job_id") == job_id:
+                _pull_job.update({"status": "error", "progress": str(exc), "error": str(exc)})
+
+
+def pull_ollama_model(model: str | None = None) -> dict[str, Any]:
+    """Start nedlasting av en Ollama-modell i bakgrunnstråd."""
+    model = (model or RECOMMENDED_MODELS[0]).strip()
+    if model not in RECOMMENDED_MODELS:
+        return {"ok": False, "error": f"Ukjent eller ikke-anbefalt modell: {model}"}
+    job_id = str(uuid.uuid4())[:8]
+    with _pull_lock:
+        if _pull_job.get("status") in {"queued", "running"}:
+            return {"ok": True, "already_running": True, **dict(_pull_job)}
+        _pull_job.clear()
+        _pull_job.update({
+            "job_id": job_id,
+            "status": "queued",
+            "progress": f"Køet nedlasting av {model}…",
+            "model": model,
+            "started_at": time.time(),
+        })
+    threading.Thread(
+        target=_run_pull_model,
+        args=(model, job_id),
+        daemon=True,
+        name=f"ollama-pull-{job_id}",
+    ).start()
+    return {"ok": True, **get_ollama_pull_status()}
+
+
+def get_ollama_pull_status() -> dict[str, Any]:
+    with _pull_lock:
+        return dict(_pull_job) if _pull_job else {"status": "idle", "progress": ""}
 
 
 def ollama_hardware_info() -> dict[str, Any]:
@@ -396,9 +491,10 @@ def _run_deep_scan(
 
     for idx, chunk in enumerate(chunks, 1):
         with _job_lock:
-            if _job.get("job_id") != job_id or _job.get("cancelled"):
+            job = _jobs.get(job_id)
+            if not job or job.get("cancelled"):
                 return
-            _job["progress"] = f"Analyserer del {idx} av {n}…"
+            job["progress"] = f"Analyserer del {idx} av {n}…"
 
         prompt = _build_prompt(categories, chunk, lang)
         findings = _call_ollama(model, prompt)
@@ -506,8 +602,9 @@ def _run_deep_scan(
             f["category"] = f"🤖 {cat}"
 
     with _job_lock:
-        if _job.get("job_id") == job_id:
-            _job.update({
+        job = _jobs.get(job_id)
+        if job:
+            job.update({
                 "status":   "done",
                 "progress": f"Ferdig – {len(deduped)} nye funn",
                 "findings": deduped,
@@ -522,22 +619,24 @@ def start_deep_scan(
     min_confidence: str = "medium",
 ) -> str:
     """Start dybdeskanning i bakgrunn. Returnerer job_id."""
-    import uuid
+    global _job
     job_id = str(uuid.uuid4())[:8]
     cats = categories or list(CATEGORIES.keys())
+    job = {
+        "job_id":         job_id,
+        "status":         "running",
+        "progress":       "Starter…",
+        "findings":       [],
+        "cancelled":      False,
+        "model":          model,
+        "categories":     cats,
+        "min_confidence": min_confidence,
+        "started_at":     time.time(),
+    }
     with _job_lock:
-        _job.clear()
-        _job.update({
-            "job_id":         job_id,
-            "status":         "running",
-            "progress":       "Starter…",
-            "findings":       [],
-            "cancelled":      False,
-            "model":          model,
-            "categories":     cats,
-            "min_confidence": min_confidence,
-            "started_at":     time.time(),
-        })
+        _cleanup_jobs_locked()
+        _jobs[job_id] = job
+        _job = job
     t = threading.Thread(
         target=_run_deep_scan,
         args=(text, model, lang, job_id, cats, min_confidence),
@@ -549,15 +648,21 @@ def start_deep_scan(
     return job_id
 
 
-def get_deep_scan_status() -> dict[str, Any]:
-    """Hent status/resultat for siste dybdeskann."""
+def get_deep_scan_status(job_id: str | None = None) -> dict[str, Any]:
+    """Hent status/resultat for en bestemt jobb, eller siste GUI-jobb."""
     with _job_lock:
+        _cleanup_jobs_locked()
+        if job_id:
+            return dict(_jobs.get(job_id, {}))
         return dict(_job)
 
 
-def cancel_deep_scan() -> None:
-    """Avbryt pågående dybdeskann."""
+def cancel_deep_scan(job_id: str | None = None) -> None:
+    """Avbryt en bestemt dybdeskann, eller siste GUI-jobb."""
     with _job_lock:
-        _job["cancelled"] = True
-        _job["status"]    = "cancelled"
-        _job["progress"]  = "Avbrutt"
+        job = _jobs.get(job_id) if job_id else _job
+        if not job:
+            return
+        job["cancelled"] = True
+        job["status"]    = "cancelled"
+        job["progress"]  = "Avbrutt"

@@ -78,7 +78,9 @@ _port: int = 0
 _API_SCAN_TTL_SECONDS = 60 * 60
 _API_MAX_SCAN_RESULTS = 50
 _API_DEFAULT_PORT = 51291
+_API_DEFAULT_HOST = "127.0.0.1"
 _API_ALLOWED_LANGUAGES = {"auto", "nb", "sv", "en", "de", "fr", "es"}
+_LOCAL_API_HOSTS = {"127.0.0.1", "localhost", "::1"}
 
 _NO_CACHE = {
     "Cache-Control": "no-cache, no-store, must-revalidate",
@@ -151,7 +153,7 @@ def _free_port() -> int:
 @flask_app.route("/")
 def index():
     idx = _web_dir / "index.html"
-    print(f"[flask] Serving {idx}  (mtime {idx.stat().st_mtime:.0f})", flush=True)
+    LOGGER.debug("Serving %s (mtime %.0f)", idx, idx.stat().st_mtime)
     html = idx.read_text("utf-8")
     # Injiser port slik at JS kan bruke absolutte URL-er
     from datetime import datetime  # noqa: PLC0415
@@ -511,6 +513,19 @@ def _api_key_configured() -> bool:
     return bool(os.environ.get("XLENT_SCANNER_API_KEY", "").strip())
 
 
+def _is_local_host(host: str) -> bool:
+    return host.strip().lower() in _LOCAL_API_HOSTS
+
+
+def _validate_api_bind(host: str) -> None:
+    if _is_local_host(host) or _api_key_configured():
+        return
+    raise RuntimeError(
+        "API kan ikke bindes til nettverk uten XLENT_SCANNER_API_KEY. "
+        "Sett miljøvariabelen eller bruk --host 127.0.0.1."
+    )
+
+
 def _api_auth_error():
     expected = os.environ.get("XLENT_SCANNER_API_KEY", "").strip()
     if not expected:
@@ -797,8 +812,8 @@ def api_deep_scan_status(job_id: str):
 
     from xlent_scanner.deep_scanner import get_deep_scan_status  # noqa: PLC0415
 
-    status = get_deep_scan_status()
-    if status.get("job_id") != job_id:
+    status = get_deep_scan_status(job_id)
+    if not status:
         return jsonify({"ok": False, "error": "Ukjent job_id.", "error_code": "not_found"}), 404
     status["ok"] = True
     return jsonify(status)
@@ -812,10 +827,10 @@ def api_deep_scan_cancel(job_id: str):
 
     from xlent_scanner.deep_scanner import cancel_deep_scan, get_deep_scan_status  # noqa: PLC0415
 
-    status = get_deep_scan_status()
-    if status.get("job_id") != job_id:
+    status = get_deep_scan_status(job_id)
+    if not status:
         return jsonify({"ok": False, "error": "Ukjent job_id.", "error_code": "not_found"}), 404
-    cancel_deep_scan()
+    cancel_deep_scan(job_id)
     return jsonify({"ok": True, "job_id": job_id, "status": "cancelled"})
 
 
@@ -1329,6 +1344,60 @@ def whitelist_save():
     })
 
 
+@flask_app.route("/settings/export", methods=["POST"])
+def settings_export():
+    """Eksporter lokale brukerinnstillinger uten dokument- eller scan-data."""
+    data = request.get_json(silent=True) or {}
+    browser_settings = data.get("browser_settings")
+    if not isinstance(browser_settings, dict):
+        browser_settings = {}
+    return jsonify({
+        "ok": True,
+        "format": "xlent-scanner-settings",
+        "format_version": 1,
+        "app_version": __version__,
+        "exported_at": int(time.time()),
+        "browser_settings": browser_settings,
+        "whitelist": get_whitelist_entries(),
+        "ignore_toml": get_ignore_toml_text(),
+    })
+
+
+@flask_app.route("/settings/import", methods=["POST"])
+def settings_import():
+    """Importer lokale brukerinnstillinger. Validerer ignore.toml før lagring."""
+    try:
+        data = request.get_json(force=True)
+        if not isinstance(data, dict) or data.get("format") != "xlent-scanner-settings":
+            return jsonify({"ok": False, "error": "Ugyldig innstillingsfil."})
+
+        whitelist = data.get("whitelist", [])
+        if whitelist is not None:
+            if not isinstance(whitelist, list):
+                return jsonify({"ok": False, "error": "whitelist må være en liste."})
+            save_whitelist_entries([str(t) for t in whitelist])
+
+        ignore_toml = data.get("ignore_toml")
+        if ignore_toml is not None:
+            if not isinstance(ignore_toml, str):
+                return jsonify({"ok": False, "error": "ignore_toml må være tekst."})
+            save_ignore_toml_text(ignore_toml)
+            reset_ignore_cache()
+
+        browser_settings = data.get("browser_settings")
+        if not isinstance(browser_settings, dict):
+            browser_settings = {}
+
+        return jsonify({
+            "ok": True,
+            "browser_settings": browser_settings,
+            "whitelist": get_whitelist_entries(),
+            "ignore_toml": get_ignore_toml_text(),
+        })
+    except Exception as exc:
+        return jsonify({"ok": False, "error": str(exc)})
+
+
 
 @flask_app.route("/ignore/get", methods=["POST"])
 def ignore_get():
@@ -1391,6 +1460,27 @@ def ollama_model_stop_endpoint():
     result = stop_ollama_model(model)
     LOGGER.info("ollama/model/stop model=%s ok=%s", model, result.get("ok"))
     return jsonify(result)
+
+
+@flask_app.route("/ollama/model/pull", methods=["POST"])
+def ollama_model_pull_endpoint():
+    """Last ned anbefalt Ollama-modell via lokal Ollama-tjeneste."""
+    from xlent_scanner.deep_scanner import pull_ollama_model  # noqa: PLC0415
+
+    data = request.get_json(force=True) or {}
+    model = (data.get("model") or "").strip() or None
+    result = pull_ollama_model(model)
+    LOGGER.info("ollama/model/pull model=%s ok=%s", model, result.get("ok"))
+    return jsonify(result)
+
+
+@flask_app.route("/ollama/model/pull/status", methods=["GET"])
+def ollama_model_pull_status_endpoint():
+    from xlent_scanner.deep_scanner import get_ollama_pull_status  # noqa: PLC0415
+
+    status = get_ollama_pull_status()
+    status["ok"] = True
+    return jsonify(status)
 
 
 @flask_app.route("/ollama/last-file-info", methods=["GET"])
@@ -1514,11 +1604,11 @@ def ignore_save():
         return jsonify({"ok": False, "error": str(exc)})
 
 
-def _start_flask(port: int) -> None:
+def _start_flask(port: int, host: str = "127.0.0.1") -> None:
     import logging
     logging.getLogger("werkzeug").setLevel(logging.ERROR)
-    LOGGER.info("Starting Flask on 127.0.0.1:%s", port)
-    flask_app.run(host="127.0.0.1", port=port, threaded=True, use_reloader=False)
+    LOGGER.info("Starting Flask on %s:%s", host, port)
+    flask_app.run(host=host, port=port, threaded=True, use_reloader=False)
 
 
 def _web_mode_command() -> list[str]:
@@ -1576,12 +1666,14 @@ def _run_api_mode() -> None:
     global _port
     _validate_runtime_dependencies()
     raw_port = _arg_value("--port", str(_API_DEFAULT_PORT))
+    host = _arg_value("--host", _API_DEFAULT_HOST).strip() or _API_DEFAULT_HOST
     try:
         _port = int(raw_port)
     except ValueError:
         raise RuntimeError(f"Ugyldig port: {raw_port!r}") from None
-    LOGGER.info("Starting API mode on http://127.0.0.1:%s", _port)
-    _start_flask(_port)
+    _validate_api_bind(host)
+    LOGGER.info("Starting API mode on http://%s:%s api_key_configured=%s", host, _port, _api_key_configured())
+    _start_flask(_port, host=host)
 
 
 def _wait_for_flask(port: int, timeout: float = 10.0) -> None:
@@ -1756,7 +1848,7 @@ def main() -> None:
         width=900,
         height=700,
         min_size=(700, 500),
-        background_color="#0f1620",
+        background_color="#eef2f6",
     )
     threading.Thread(target=_force_fresh_load, daemon=True).start()
     LOGGER.info("Window created. API base: http://127.0.0.1:%s", _port)
