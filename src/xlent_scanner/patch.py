@@ -15,6 +15,8 @@ import zipfile
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
+from xlent_scanner.anonymize import _clean_replacement_text, _replace_literal_safe, _token
+
 
 # ── Normalisering ─────────────────────────────────────────────────────────────
 
@@ -29,16 +31,19 @@ def _apply_replacements(text: str, replacements: dict[str, str]) -> str:
     if not replacements:
         return text
 
-    # Fase 1: erstatt med null-byte-tokens (lengste-først)
+    # Fase 1: erstatt med XML-kompatible private-use tokens (lengste-først).
     tokens: list[tuple[str, str]] = []
     sorted_items = sorted(replacements.items(), key=lambda x: len(x[0]), reverse=True)
     for i, (old, new) in enumerate(sorted_items):
-        token = f"\x00{i}\x00"
-        text = text.replace(old, token)
+        old = _clean_replacement_text(old)
+        if not old:
+            continue
+        token = _token(i)
+        text = _replace_literal_safe(text, old, token)
         norm_old = _norm(old)
         if norm_old != old:
-            text = text.replace(norm_old, token)
-        tokens.append((token, new))
+            text = _replace_literal_safe(text, norm_old, token)
+        tokens.append((token, _clean_replacement_text(new)))
 
     # Fase 2: tokens → endelige plassholdere
     for token, new in tokens:

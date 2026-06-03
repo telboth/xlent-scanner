@@ -10,6 +10,9 @@ Konsistent anonymisering:
 """
 from __future__ import annotations
 
+import re
+import unicodedata
+
 from xlent_scanner.models import Finding
 
 _ALPHA = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -59,6 +62,41 @@ _FIXED_PLACEHOLDER: list[tuple[str, str]] = [
 
 # AI-funn (fra dybdeskann) bruker [ANONYMISERT]
 _AI_PREFIX = "🤖"
+_TOKEN_BASE = 0xE000
+_XML_INVALID_RE = re.compile(
+    r"[\x00-\x08\x0B\x0C\x0E-\x1F\uFFFE\uFFFF]"
+)
+
+
+def _clean_replacement_text(value: str) -> str:
+    """Fjern tegn som ikke kan skrives til XML-baserte Office-filer."""
+    value = unicodedata.normalize("NFC", str(value))
+    value = _XML_INVALID_RE.sub("", value)
+    return re.sub(r"\s+", " ", value).strip()
+
+
+def _token(index: int) -> str:
+    """XML-kompatibel privat Unicode-token uten sifre/bokstaver."""
+    alphabet_size = 0x1900
+    if index < alphabet_size:
+        return chr(_TOKEN_BASE + index)
+    chars = []
+    value = index
+    while value:
+        chars.append(chr(_TOKEN_BASE + (value % alphabet_size)))
+        value //= alphabet_size
+    return "\uE000" + "".join(chars) + "\uE001"
+
+
+def _replace_literal_safe(text: str, old: str, token: str) -> str:
+    """Erstatt literal tekst, men bruk tallgrenser for rene tall.
+
+    Dypscan kan gi korte finansielle tall som `10`, `20`, `30`. De skal ikke
+    kunne erstatte delstrenger inne i andre tall eller tidligere tokens.
+    """
+    if old.isdigit():
+        return re.sub(rf"(?<!\d){re.escape(old)}(?!\d)", token, text)
+    return text.replace(old, token)
 
 
 def _fixed_placeholder(category: str) -> str:
@@ -92,6 +130,7 @@ def build_replacements(findings: list[Finding]) -> dict[str, str]:
 
     for f in findings:
         target = f.raw_text if f.raw_text else f.text
+        target = _clean_replacement_text(target)
         if not target or "…" in target or f.category.startswith("⚠"):
             continue
         if target in result:
@@ -136,7 +175,7 @@ def anonymize_text(text: str, findings: list[Finding]) -> str:
     """Erstatter alle valgte funn i teksten med plassholdere.
 
     To-fase strategi for å unngå kollisjon mellom erstatninger:
-    1. Erstatt originalverdier (lengste-først) med midlertidige null-byte-tokens.
+    1. Erstatt originalverdier (lengste-først) med midlertidige XML-trygge tokens.
     2. Erstatt tokens med de endelige lesbare plassholderne.
 
     Dette hindrer at f.eks. «Per Hansen» → «<Person A>» → «<Person B>son A>»
@@ -146,15 +185,15 @@ def anonymize_text(text: str, findings: list[Finding]) -> str:
     if not replacements:
         return text
 
-    # Fase 1: midlertidige tokens (null-bytes kan ikke oppstå i vanlig tekst)
+    # Fase 1: midlertidige XML-kompatible private-use tokens.
     tokens: list[tuple[str, str]] = []
     result = text
     for i, (old, new) in enumerate(
         sorted(replacements.items(), key=lambda x: len(x[0]), reverse=True)
     ):
-        token = f"\x00{i}\x00"
-        result = result.replace(old, token)
-        tokens.append((token, new))
+        token = _token(i)
+        result = _replace_literal_safe(result, old, token)
+        tokens.append((token, _clean_replacement_text(new)))
 
     # Fase 2: bytt tokens med endelige plassholdere
     for token, new in tokens:

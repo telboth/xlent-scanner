@@ -31,6 +31,50 @@ def test_patch_docx_without_header_footer_does_not_create_defaults(
     assert "[ANONYMISERT]" in text
 
 
+def test_patch_docx_deep_scan_numeric_replacements_stay_xml_safe(tmp_path: Path) -> None:
+    source = tmp_path / "budget.docx"
+    output = tmp_path / "budget_out.docx"
+
+    doc = Document()
+    table = doc.add_table(rows=4, cols=4)
+    rows = [
+        ("Item", "Cost (NOK)", "Amount", "Total Cost (NOK)"),
+        ("Bread", "30", "2", "60"),
+        ("Milk", "20", "1", "20"),
+        ("Eggs", "10", "10", "100"),
+    ]
+    for row, values in zip(table.rows, rows, strict=True):
+        for cell, value in zip(row.cells, values, strict=True):
+            cell.text = value
+    doc.save(source)
+
+    patch_docx(
+        source,
+        {
+            "30": "[ANONYMISERT]",
+            "20": "[ANONYMISERT]",
+            "10": "[ANONYMISERT]",
+            "100": "[ANONYMISERT]",
+            "0": "<PNR 1>",
+            "1": "<Person A>",
+            "2": "<Tlf 3>",
+        },
+        output,
+    )
+
+    patched = Document(output)
+    text = "\n".join(
+        cell.text for table in patched.tables for row in table.rows for cell in row.cells
+    )
+    assert "\x00" not in text
+    assert "29<" not in text
+    assert "30<" not in text
+    assert "20<" not in text
+    assert "10<" not in text
+    assert "100<" not in text
+    assert "60" in text
+
+
 def test_strip_docx_annotations_removes_comment_parts_and_refs(tmp_path: Path) -> None:
     docx = tmp_path / "commented.docx"
     with zipfile.ZipFile(docx, "w") as z:

@@ -121,6 +121,10 @@ class TestAnonymizeText:
         assert "Ola Normann" not in out
         assert "[ANONYMISERT]" in out
 
+    def test_ai_finding_control_chars_are_removed_from_replacement_key(self):
+        replacements = build_replacements([_f("🤖 Personnavn", "Ola\x00Normann\x07")])
+        assert replacements == {"OlaNormann": "[ANONYMISERT]"}
+
     def test_fixed_placeholder_for_credit_card(self):
         findings = [_f("kredittkort (Visa)", "4532 **** **** 0002", raw_text="4532015112830002")]
         txt = "Betalt med 4532015112830002"
@@ -161,6 +165,32 @@ class TestTwoPhaseTokenization:
         assert "Per Erik Hansen" not in out
         assert "Hansen" not in out, f"Hansen lekker: {out}"
         assert "<<" not in out
+
+    def test_short_numeric_findings_do_not_corrupt_deep_scan_budget(self):
+        findings = [
+            _f("🤖 Finansielt tall", "30", "30"),
+            _f("🤖 Finansielt tall", "20", "20"),
+            _f("🤖 Finansielt tall", "10", "10"),
+            _f("🤖 Finansielt tall", "100", "100"),
+            _f("mulig personnummer", "0", "0"),
+            _f("navn (person)", "1", "1"),
+            _f("telefonnummer", "2", "2"),
+        ]
+        txt = (
+            "Item | Cost (NOK) | Amount | Total Cost (NOK)\n"
+            "Bread | 30 | 2 | 60\n"
+            "Milk | 20 | 1 | 20\n"
+            "Eggs | 10 | 10 | 100"
+        )
+        out = anonymize_text(txt, findings)
+
+        assert "\x00" not in out
+        assert "29<" not in out
+        assert "30<" not in out
+        assert "20<" not in out
+        assert "10<" not in out
+        assert "100<" not in out
+        assert "60" in out
 
 
 # ── Integrasjon: scanner + anonymize ─────────────────────────────────────────
