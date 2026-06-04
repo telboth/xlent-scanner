@@ -335,7 +335,7 @@ def _install_mac_quick_action() -> Path:
     contents_dir = service_path / "Contents"
     contents_dir.mkdir(parents=True, exist_ok=True)
 
-    app_path_xml = html.escape(str(app_path), quote=True)
+    app_binary_xml = html.escape(str(binary), quote=True)
     (contents_dir / "Info.plist").write_text(
         """<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
@@ -427,7 +427,7 @@ def _install_mac_quick_action() -> Path:
         <dict>
           <key>COMMAND_STRING</key>
           <string>for f in "$@"; do
-  /usr/bin/open -n "{app_path_xml}" --args "$f" &gt;/dev/null 2&gt;&amp;1 &amp;
+  "{app_binary_xml}" "$f" &gt;/dev/null 2&gt;&amp;1 &amp;
 done</string>
           <key>CheckedForUserDefaultShell</key><true/>
           <key>inputMethod</key><integer>1</integer>

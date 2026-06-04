@@ -130,7 +130,7 @@ install_finder_quick_action() {
   local service_dir
   local service_name
   local service_path
-  local app_path_xml
+  local app_binary_xml
 
   user="$(target_user)"
   home_dir="$(target_home "${user}")"
@@ -142,7 +142,7 @@ install_finder_quick_action() {
   service_dir="$home_dir/Library/Services"
   service_name="Skann med XLENT.workflow"
   service_path="$service_dir/$service_name"
-  app_path_xml="$(xml_escape "$app_path")"
+  app_binary_xml="$(xml_escape "$binary")"
 
   mkdir -p "$service_dir"
   rm -rf "$service_path"
@@ -252,7 +252,7 @@ PLIST
         <dict>
           <key>COMMAND_STRING</key>
           <string>for f in "\$@"; do
-  /usr/bin/open -n "${app_path_xml}" --args "\$f" &gt;/dev/null 2&gt;&amp;1 &amp;
+  "${app_binary_xml}" "\$f" &gt;/dev/null 2&gt;&amp;1 &amp;
 done</string>
           <key>CheckedForUserDefaultShell</key>
           <true/>

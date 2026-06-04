@@ -34,10 +34,8 @@ def test_macos_quick_action_accepts_finder_file_inputs() -> None:
     assert "chmod -R u+rwX,go+rX" in script
     assert "plutil -lint" in script
     assert "Privacy & Security" in script
-    assert "/usr/bin/open -n" in script
-    assert "/usr/bin/open -n" in app
-    assert "--args" in script
-    assert "--args" in app
+    assert '"${app_binary_xml}" "\\$f"' in script
+    assert '"{app_binary_xml}" "$f"' in app
     assert "killall Finder" in script
 
 
