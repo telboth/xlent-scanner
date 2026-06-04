@@ -33,14 +33,14 @@ Anbefalt MVP-installasjon:
    bash ~/Downloads/install_macos.sh
    ```
 3. Start `XLENTScanner.app` fra `Applications`.
-4. Valgfritt: installer Finder-høyreklikk fra appen under `Innstillinger` -> `macOS Finder Quick Action`.
+4. Finder-hurtighandlingen `Skann med XLENT` installeres automatisk for brukeren som kjører scriptet.
 5. Alternativt kan `install_mac_quick_action.sh` lastes ned fra samme release og kjøres:
    ```bash
    bash ~/Downloads/install_mac_quick_action.sh
-   killall Finder
    ```
 
 Merk:
+- Ikke start `install_macos.sh` med `sudo`; scriptet bruker selv `sudo` der det trengs. Hvis det likevel kjøres via `sudo`, forsøker installasjonen å legge Finder-hurtighandlingen på den opprinnelige brukeren, ikke på `root`.
 - macOS-DMG-en i MVP er for Apple Silicon (M-series).
 - Intel Mac er ikke støttet som ferdig DMG foreløpig. Kjør fra kildekode med `uv run xlent-scanner`.
 - Manuell DMG-installasjon kan trigge Gatekeeper-meldingen «appen er skadet» fordi appen ikke er notarisert. `install_macos.sh` fjerner quarantine-attributtet etter kopiering.

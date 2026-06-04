@@ -159,13 +159,15 @@ Anbefalt MVP-installasjon er via `install_macos.sh` fra [Releases](https://githu
 bash install_macos.sh
 ```
 
+Ikke start scriptet med `sudo`; scriptet bruker selv `sudo` der det trengs. Hvis det likevel kjøres via `sudo`, forsøker det nå å installere Finder-hurtighandlingen for den opprinnelige innloggede brukeren, ikke for `root`.
+
 Manuell DMG-installasjon kan fortsatt fungere, men kan kreve:
 
 ```bash
 xattr -dr com.apple.quarantine /Applications/XLENTScanner.app
 ```
 
-Valgfritt: åpne **Innstillinger → macOS Finder Quick Action** og trykk **Installer Finder Quick Action**.
+Finder-hurtighandlingen installeres automatisk av `install_macos.sh`. Hvis den må installeres manuelt: åpne **Innstillinger → macOS Finder-hurtighandling** og trykk **Installer Finder-hurtighandling**.
 
 > macOS-DMG-en er for Apple Silicon (M-series). Intel Mac er ikke støttet som ferdig DMG i MVP; Intel-brukere kan kjøre fra kildekode med `uv run xlent-scanner`.
 
@@ -214,10 +216,9 @@ Inkludert automatisk ved installasjon (registrert via HKCU\Software\Classes, kre
 ### macOS — Quick Action
 ```bash
 bash install_mac_quick_action.sh
-# Følg instruksjonene — logg ut og inn igjen for å aktivere
 # Høyreklikk fil i Finder → Hurtighandlinger → Skann med XLENT
 ```
-Kan også installeres direkte fra appen under **Innstillinger**. Krever at `XLENTScanner.app` er i `/Applications`. Scriptet installerer en Automator Quick Action som sender filstien som argument til appen.
+Kan også installeres direkte fra appen under **Innstillinger**. Krever at `XLENTScanner.app` er i `/Applications`. Scriptet installerer en Automator Quick Action som sender filstien som argument til appen. Hvis scriptet kjøres med `sudo`, installeres den for `SUDO_USER`, ikke for `root`.
 `scripts/install_mac_service.sh` finnes fortsatt som bakoverkompatibel wrapper.
 
 ### macOS — Åpne med

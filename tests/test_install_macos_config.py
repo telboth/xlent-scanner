@@ -27,4 +27,8 @@ def test_macos_quick_action_accepts_finder_file_inputs() -> None:
     assert "<key>serviceProcessesInput</key>" in script
     assert "<integer>1</integer>" in script
     assert "<key>serviceProcessesInput</key><integer>1</integer>" in app
+    assert "SUDO_USER" in script
+    assert "TARGET_USER" in script
+    assert "TARGET_HOME" in script
+    assert "chown -R" in script
     assert "killall Finder" in script

@@ -13,6 +13,26 @@ if [[ ! -x "$BINARY" ]]; then
   exit 1
 fi
 
+target_user() {
+  if [[ "$(id -u)" == "0" && -n "${SUDO_USER:-}" && "${SUDO_USER}" != "root" ]]; then
+    printf '%s' "${SUDO_USER}"
+  else
+    id -un
+  fi
+}
+
+target_home() {
+  local user="$1"
+  local home_dir=""
+  if command -v dscl >/dev/null 2>&1; then
+    home_dir="$(dscl . -read "/Users/${user}" NFSHomeDirectory 2>/dev/null | awk '{print $2}' || true)"
+  fi
+  if [[ -z "${home_dir}" ]]; then
+    home_dir="$(eval echo "~${user}")"
+  fi
+  printf '%s' "${home_dir}"
+}
+
 xml_escape() {
   local s="$1"
   s="${s//&/&amp;}"
@@ -22,10 +42,17 @@ xml_escape() {
   printf '%s' "$s"
 }
 
-SERVICE_DIR="$HOME/Library/Services"
+TARGET_USER="$(target_user)"
+TARGET_HOME="$(target_home "${TARGET_USER}")"
+SERVICE_DIR="$TARGET_HOME/Library/Services"
 SERVICE_NAME="Skann med XLENT.workflow"
 SERVICE_PATH="$SERVICE_DIR/$SERVICE_NAME"
 APP_BINARY_XML="$(xml_escape "$BINARY")"
+
+if [[ -z "${TARGET_HOME}" || "${TARGET_HOME}" == "~${TARGET_USER}" ]]; then
+  echo "Fant ikke hjemmekatalog for bruker: ${TARGET_USER}"
+  exit 1
+fi
 
 mkdir -p "$SERVICE_DIR"
 rm -rf "$SERVICE_PATH"
@@ -212,11 +239,17 @@ done</string>
 </plist>
 WFLOW
 
+if [[ "$(id -u)" == "0" && "${TARGET_USER}" != "root" ]]; then
+  chown -R "${TARGET_USER}:staff" "$SERVICE_PATH" 2>/dev/null || chown -R "${TARGET_USER}" "$SERVICE_PATH" 2>/dev/null || true
+fi
+
 /System/Library/CoreServices/pbs -flush 2>/dev/null || true
+touch "$SERVICE_PATH" 2>/dev/null || true
 killall Finder 2>/dev/null || true
 
 echo ""
 echo "Quick Action installert: $SERVICE_PATH"
+echo "Bruker: $TARGET_USER"
 echo ""
 echo "Aktivering:"
 echo "  Hoyreklikk en fil i Finder -> Hurtighandlinger -> Skann med XLENT"
