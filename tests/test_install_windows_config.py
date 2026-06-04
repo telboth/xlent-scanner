@@ -9,8 +9,11 @@ def test_windows_installer_script_downloads_latest_release_asset() -> None:
     assert "Invoke-WebRequest" in script
     assert "Unblock-File" in script
     assert "Start-Process" in script
-    assert "-PassThru" in script
+    assert "PassThru = $true" in script
     assert "ExitCode" in script
+    assert "$startParams" in script
+    assert "ArgumentList = $args" in script
+    assert "Start-Process @startParams" in script
 
 
 def test_github_release_uploads_windows_install_script() -> None:

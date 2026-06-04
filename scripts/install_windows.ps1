@@ -58,7 +58,16 @@ if ($Silent) {
 }
 
 Write-Host "Starter installasjon..."
-$process = Start-Process -FilePath $installerPath -ArgumentList $args -Wait -PassThru
+$startParams = @{
+    FilePath = $installerPath
+    Wait = $true
+    PassThru = $true
+}
+if ($args.Count -gt 0) {
+    $startParams.ArgumentList = $args
+}
+
+$process = Start-Process @startParams
 if ($process.ExitCode -ne 0) {
     throw "Installer feilet med exit-kode $($process.ExitCode). Installer brukt: $installerPath"
 }
