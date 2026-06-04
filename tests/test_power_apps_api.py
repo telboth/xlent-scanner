@@ -181,6 +181,24 @@ def test_gui_deep_scan_status_route_accepts_specific_job_id(monkeypatch):
     assert missing.status_code == 404
 
 
+def test_openapi_json_and_swagger_docs_are_available():
+    client = app_module.flask_app.test_client()
+
+    spec_response = client.get("/api/openapi.json")
+    docs_response = client.get("/api/docs")
+
+    assert spec_response.status_code == 200
+    spec = spec_response.get_json()
+    assert spec["openapi"] == "3.0.3"
+    assert spec["info"]["title"] == "XLENT Scanner API"
+    assert "/api/scan-text" in spec["paths"]
+    assert "/api/scan-file" in spec["paths"]
+    assert "/api/deep-scan" in spec["paths"]
+    assert "ApiKeyAuth" in spec["components"]["securitySchemes"]
+    assert docs_response.status_code == 200
+    assert "SwaggerUIBundle" in docs_response.get_data(as_text=True)
+
+
 def test_patch_docx_expands_financial_ai_table_finding_to_cells(tmp_path: Path, monkeypatch):
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     downloads = tmp_path / "Downloads"

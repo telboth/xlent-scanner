@@ -162,6 +162,7 @@ supported_mime_types = [
     "application/vnd.oasis.opendocument.text",
 ]
 supported_utis = [
+    "public.item",
     "com.adobe.pdf",
     "org.openxmlformats.wordprocessingml.document",
     "org.openxmlformats.presentationml.presentation",

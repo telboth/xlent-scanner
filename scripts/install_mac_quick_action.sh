@@ -54,8 +54,10 @@ cat > "$SERVICE_PATH/Contents/Info.plist" <<'PLIST'
       </dict>
       <key>NSSendFileTypes</key>
       <array>
+        <string>public.item</string>
         <string>public.content</string>
         <string>public.data</string>
+        <string>public.file-url</string>
       </array>
     </dict>
   </array>
@@ -87,7 +89,13 @@ cat > "$SERVICE_PATH/Contents/document.wflow" <<WFLOW
           <key>Optional</key>
           <true/>
           <key>Types</key>
-          <array><string>com.apple.cocoa.path</string></array>
+          <array>
+            <string>com.apple.cocoa.path</string>
+            <string>public.file-url</string>
+            <string>public.item</string>
+            <string>public.content</string>
+            <string>public.data</string>
+          </array>
         </dict>
         <key>AMActionVersion</key>
         <string>2.0.3</string>
@@ -111,7 +119,13 @@ cat > "$SERVICE_PATH/Contents/document.wflow" <<WFLOW
           <key>Container</key>
           <string>List</string>
           <key>Types</key>
-          <array><string>com.apple.cocoa.path</string></array>
+          <array>
+            <string>com.apple.cocoa.path</string>
+            <string>public.file-url</string>
+            <string>public.item</string>
+            <string>public.content</string>
+            <string>public.data</string>
+          </array>
         </dict>
         <key>ActionBundlePath</key>
         <string>/System/Library/Automator/Run Shell Script.action</string>

@@ -23,6 +23,8 @@ import tempfile
 import threading
 import time
 import traceback
+import urllib.parse
+import urllib.request
 import uuid
 import warnings
 import webbrowser
@@ -349,8 +351,10 @@ def _install_mac_quick_action() -> Path:
       </dict>
       <key>NSSendFileTypes</key>
       <array>
+        <string>public.item</string>
         <string>public.content</string>
         <string>public.data</string>
+        <string>public.file-url</string>
       </array>
     </dict>
   </array>
@@ -378,7 +382,14 @@ def _install_mac_quick_action() -> Path:
         <dict>
           <key>Container</key><string>List</string>
           <key>Optional</key><true/>
-          <key>Types</key><array><string>com.apple.cocoa.path</string></array>
+          <key>Types</key>
+          <array>
+            <string>com.apple.cocoa.path</string>
+            <string>public.file-url</string>
+            <string>public.item</string>
+            <string>public.content</string>
+            <string>public.data</string>
+          </array>
         </dict>
         <key>AMActionVersion</key><string>2.0.3</string>
         <key>AMApplication</key><array><string>Automator</string></array>
@@ -393,7 +404,14 @@ def _install_mac_quick_action() -> Path:
         <key>AMProvides</key>
         <dict>
           <key>Container</key><string>List</string>
-          <key>Types</key><array><string>com.apple.cocoa.path</string></array>
+          <key>Types</key>
+          <array>
+            <string>com.apple.cocoa.path</string>
+            <string>public.file-url</string>
+            <string>public.item</string>
+            <string>public.content</string>
+            <string>public.data</string>
+          </array>
         </dict>
         <key>ActionBundlePath</key><string>/System/Library/Automator/Run Shell Script.action</string>
         <key>ActionName</key><string>Run Shell Script</string>
@@ -788,6 +806,262 @@ def api_health():
 @flask_app.route("/api/version", methods=["GET"])
 def api_version():
     return jsonify({"ok": True, "version": __version__})
+
+
+def _api_openapi_spec() -> dict:
+    base_url = request.url_root.rstrip("/")
+    error_schema = {
+        "type": "object",
+        "properties": {
+            "ok": {"type": "boolean", "example": False},
+            "error": {"type": "string"},
+            "error_code": {"type": "string"},
+        },
+        "required": ["ok", "error"],
+    }
+    finding_schema = {
+        "type": "object",
+        "properties": {
+            "category": {"type": "string", "example": "e-post"},
+            "text": {"type": "string", "example": "masked@example.com"},
+            "context": {"type": "string"},
+            "severity": {"type": "string", "enum": ["grønn", "gul", "rød", "svart"]},
+        },
+    }
+    scan_result_schema = {
+        "type": "object",
+        "properties": {
+            "ok": {"type": "boolean"},
+            "scan_id": {"type": "string", "format": "uuid"},
+            "file_name": {"type": "string"},
+            "file_size": {"type": "integer"},
+            "text_length": {"type": "integer"},
+            "risk_level": {"type": "string", "enum": ["grønn", "gul", "rød", "svart"]},
+            "risk_summary": {"type": "string"},
+            "recommended_action": {"type": "string"},
+            "language": {"type": "string"},
+            "warning": {"type": "string", "nullable": True},
+            "error": {"type": "string", "nullable": True},
+            "findings": {"type": "array", "items": finding_schema},
+            "text_preview": {"type": "string"},
+        },
+        "required": ["ok", "scan_id", "file_name", "findings"],
+    }
+    return {
+        "openapi": "3.0.3",
+        "info": {
+            "title": "XLENT Scanner API",
+            "version": __version__,
+            "description": (
+                "Stabilt lokalt API for XLENT Compliance-scanner. "
+                "Dokumentinnhold returneres ikke i API-responsene."
+            ),
+        },
+        "servers": [{"url": base_url, "description": "Denne lokale app-instansen"}],
+        "components": {
+            "securitySchemes": {
+                "ApiKeyAuth": {
+                    "type": "apiKey",
+                    "in": "header",
+                    "name": "X-API-Key",
+                    "description": "Påkrevd når XLENT_SCANNER_API_KEY er satt.",
+                },
+                "BearerAuth": {
+                    "type": "http",
+                    "scheme": "bearer",
+                    "description": "Alternativ til X-API-Key når XLENT_SCANNER_API_KEY er satt.",
+                },
+            },
+            "schemas": {
+                "Finding": finding_schema,
+                "ScanResult": scan_result_schema,
+                "Error": error_schema,
+            },
+        },
+        "paths": {
+            "/api/health": {
+                "get": {
+                    "summary": "Sjekk API-status",
+                    "responses": {
+                        "200": {
+                            "description": "API er tilgjengelig",
+                            "content": {"application/json": {"schema": {"type": "object"}}},
+                        }
+                    },
+                }
+            },
+            "/api/version": {
+                "get": {
+                    "summary": "Hent appversjon",
+                    "responses": {
+                        "200": {
+                            "description": "Versjonsinformasjon",
+                            "content": {"application/json": {"schema": {"type": "object"}}},
+                        }
+                    },
+                }
+            },
+            "/api/scan-text": {
+                "post": {
+                    "summary": "Skann tekst",
+                    "security": [{"ApiKeyAuth": []}, {"BearerAuth": []}],
+                    "requestBody": {
+                        "required": True,
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": ["text"],
+                                    "properties": {
+                                        "text": {"type": "string"},
+                                        "language": {
+                                            "type": "string",
+                                            "enum": ["auto", "nb", "sv", "en", "de", "fr", "es"],
+                                            "default": "auto",
+                                        },
+                                        "include_preview": {"type": "boolean", "default": False},
+                                    },
+                                }
+                            }
+                        },
+                    },
+                    "responses": {
+                        "200": {"description": "Scan-resultat", "content": {"application/json": {"schema": scan_result_schema}}},
+                        "400": {"description": "Ugyldig forespørsel", "content": {"application/json": {"schema": error_schema}}},
+                        "401": {"description": "Ugyldig API-nøkkel", "content": {"application/json": {"schema": error_schema}}},
+                    },
+                }
+            },
+            "/api/scan-file": {
+                "post": {
+                    "summary": "Skann fil som base64",
+                    "security": [{"ApiKeyAuth": []}, {"BearerAuth": []}],
+                    "requestBody": {
+                        "required": True,
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": ["file_name", "content_base64"],
+                                    "properties": {
+                                        "file_name": {"type": "string", "example": "document.docx"},
+                                        "content_base64": {"type": "string", "format": "byte"},
+                                        "language": {
+                                            "type": "string",
+                                            "enum": ["auto", "nb", "sv", "en", "de", "fr", "es"],
+                                            "default": "auto",
+                                        },
+                                        "ignore_xlent": {"type": "boolean", "default": False},
+                                        "include_preview": {"type": "boolean", "default": False},
+                                    },
+                                }
+                            }
+                        },
+                    },
+                    "responses": {
+                        "200": {"description": "Scan-resultat", "content": {"application/json": {"schema": scan_result_schema}}},
+                        "400": {"description": "Ugyldig forespørsel", "content": {"application/json": {"schema": error_schema}}},
+                        "401": {"description": "Ugyldig API-nøkkel", "content": {"application/json": {"schema": error_schema}}},
+                        "413": {"description": "Filen er for stor", "content": {"application/json": {"schema": error_schema}}},
+                    },
+                }
+            },
+            "/api/scans/{scan_id}": {
+                "get": {
+                    "summary": "Hent cached scan-resultat",
+                    "security": [{"ApiKeyAuth": []}, {"BearerAuth": []}],
+                    "parameters": [
+                        {"name": "scan_id", "in": "path", "required": True, "schema": {"type": "string"}},
+                        {"name": "include_preview", "in": "query", "required": False, "schema": {"type": "boolean"}},
+                    ],
+                    "responses": {
+                        "200": {"description": "Scan-resultat", "content": {"application/json": {"schema": scan_result_schema}}},
+                        "404": {"description": "Ukjent eller utløpt scan_id", "content": {"application/json": {"schema": error_schema}}},
+                    },
+                }
+            },
+            "/api/deep-scan": {
+                "post": {
+                    "summary": "Start lokal AI-dybdeskann for et scan-resultat",
+                    "security": [{"ApiKeyAuth": []}, {"BearerAuth": []}],
+                    "requestBody": {
+                        "required": True,
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": ["scan_id", "model"],
+                                    "properties": {
+                                        "scan_id": {"type": "string"},
+                                        "model": {"type": "string", "example": "llama3.2:3b"},
+                                        "categories": {"type": "array", "items": {"type": "string"}},
+                                        "min_confidence": {"type": "string", "enum": ["high", "medium", "low"], "default": "medium"},
+                                    },
+                                }
+                            }
+                        },
+                    },
+                    "responses": {
+                        "200": {"description": "Dybdeskann startet", "content": {"application/json": {"schema": {"type": "object"}}}},
+                        "400": {"description": "Ugyldig forespørsel", "content": {"application/json": {"schema": error_schema}}},
+                        "404": {"description": "Ukjent scan_id", "content": {"application/json": {"schema": error_schema}}},
+                    },
+                }
+            },
+            "/api/deep-scan/{job_id}": {
+                "get": {
+                    "summary": "Hent status/resultat for AI-dybdeskann",
+                    "security": [{"ApiKeyAuth": []}, {"BearerAuth": []}],
+                    "parameters": [{"name": "job_id", "in": "path", "required": True, "schema": {"type": "string"}}],
+                    "responses": {
+                        "200": {"description": "Jobbstatus", "content": {"application/json": {"schema": {"type": "object"}}}},
+                        "404": {"description": "Ukjent job_id", "content": {"application/json": {"schema": error_schema}}},
+                    },
+                }
+            },
+            "/api/deep-scan/{job_id}/cancel": {
+                "post": {
+                    "summary": "Avbryt AI-dybdeskann",
+                    "security": [{"ApiKeyAuth": []}, {"BearerAuth": []}],
+                    "parameters": [{"name": "job_id", "in": "path", "required": True, "schema": {"type": "string"}}],
+                    "responses": {
+                        "200": {"description": "Kansellert", "content": {"application/json": {"schema": {"type": "object"}}}},
+                        "404": {"description": "Ukjent job_id", "content": {"application/json": {"schema": error_schema}}},
+                    },
+                }
+            },
+        },
+    }
+
+
+@flask_app.route("/api/openapi.json", methods=["GET"])
+def api_openapi_json():
+    return jsonify(_api_openapi_spec())
+
+
+@flask_app.route("/api/docs", methods=["GET"])
+def api_docs():
+    return """<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>XLENT Scanner API Docs</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css">
+  <style>body{margin:0;background:#fafafa}.topbar{display:none}</style>
+</head>
+<body>
+  <div id="swagger-ui"></div>
+  <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+  <script>
+    window.onload = () => SwaggerUIBundle({
+      url: "/api/openapi.json",
+      dom_id: "#swagger-ui",
+      deepLinking: true,
+      persistAuthorization: true
+    });
+  </script>
+</body>
+</html>""", 200, {"Content-Type": "text/html; charset=utf-8", **_NO_CACHE}
 
 
 @flask_app.route("/api/scan-text", methods=["POST"])
@@ -1848,8 +2122,13 @@ def _startup_file_from_argv(argv: list[str]) -> str | None:
     for arg in argv[1:]:
         if not arg or arg.startswith("--") or arg.startswith("-psn_") or arg.startswith("-"):
             continue
-        if Path(arg).exists():
-            return arg
+        path_arg = (
+            urllib.request.url2pathname(urllib.parse.urlparse(arg).path)
+            if arg.startswith("file://")
+            else arg
+        )
+        if Path(path_arg).exists():
+            return path_arg
     return None
 
 

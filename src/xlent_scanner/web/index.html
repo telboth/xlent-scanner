@@ -1100,6 +1100,16 @@
         <div class="settings-note" data-i18n="stripAnnotationsNote">Gjelder støttede originalformater: DOCX-kommentarer, PPTX speaker notes/kommentarer, XLSX-kommentarer og PDF-annotasjoner.</div>
       </div>
 
+      <!-- API docs -->
+      <div class="settings-section" id="section-api-docs">
+        <div class="settings-section-title" data-i18n="settingsApiTitle">API-dokumentasjon</div>
+        <div class="settings-note" data-i18n="settingsApiNote">Det stabile lokale API-et kan nås på samme lokale port som appen. Bruk Swagger for å teste endepunkter, eller hent OpenAPI JSON direkte.</div>
+        <div class="settings-row" style="margin-top:10px; gap:10px;">
+          <a href="/api/docs" target="_blank" class="ctrl-btn" style="text-decoration:none;" data-i18n="apiDocsOpen">Åpne Swagger</a>
+          <a href="/api/openapi.json" target="_blank" class="ctrl-btn" style="text-decoration:none;" data-i18n="apiOpenapiJson">OpenAPI JSON</a>
+        </div>
+      </div>
+
       <!-- Navnemodeller (NER) -->
       <div class="settings-section" id="section-ner-models">
         <div class="settings-section-title" data-i18n="settingsNerTitle">Navnemodeller (NER)</div>
@@ -1121,6 +1131,11 @@
           <button id="btn-refresh-ollama" class="ctrl-btn" data-i18n="ollamaRefresh">↻ Sjekk status</button>
           <button id="btn-pull-ollama-model" class="ctrl-btn ctrl-btn-primary" data-i18n="ollamaPullRecommended">Last ned anbefalt modell</button>
           <button id="btn-stop-ollama-model" class="ctrl-btn" data-i18n="ollamaStopModel" disabled>Stopp aktiv AI-modell</button>
+        </div>
+        <div class="settings-row" style="margin-top:10px; align-items:center; gap:10px;">
+          <label for="ollama-settings-model-select" data-i18n="ollamaSettingsModelLabel">Valgt modell:</label>
+          <select id="ollama-settings-model-select" style="min-width:220px;"></select>
+          <span id="ollama-hardware-info" style="font-size:12px;color:var(--muted);" data-i18n="ollamaHardwareChecking">Sjekker CPU/GPU…</span>
         </div>
         <div class="settings-note" data-i18n="ollamaStopNote">Dette frigjør minne/CPU/GPU brukt av modellen. Modellen lastes inn igjen automatisk ved neste dybdeskann.</div>
         <div class="settings-note" id="ollama-stop-msg"></div>
@@ -1324,6 +1339,13 @@
         ollamaStopped:       "AI-modell stoppet. Den lastes inn igjen automatisk ved neste dybdeskann.",
         ollamaStopFailed:    "Kunne ikke stoppe AI-modell.",
         ollamaNoSelectedModel:"Ingen AI-modell er valgt.",
+        ollamaSettingsModelLabel:"Valgt modell:",
+        ollamaHardwareLabel:   "Kjører på:",
+        ollamaHardwareChecking:"Sjekker CPU/GPU…",
+        ollamaHardwareGpu:     "GPU",
+        ollamaHardwareHybrid:  "GPU/CPU hybrid",
+        ollamaHardwareCpu:     "CPU / ingen aktiv GPU-bruk",
+        ollamaHardwareUnknown: "Ukjent CPU/GPU-status",
         ollamaPullRecommended:"Last ned anbefalt modell",
         ollamaPullStarting:  "Starter modellnedlasting:",
         ollamaPullFailed:    "Kunne ikke laste ned modell:",
@@ -1342,6 +1364,10 @@
         settingsImported:    "Innstillinger importert.",
         settingsExportErr:   "Kunne ikke eksportere innstillinger:",
         settingsImportErr:   "Kunne ikke importere innstillinger:",
+        settingsApiTitle:    "API-dokumentasjon",
+        settingsApiNote:     "Det stabile lokale API-et kan nås på samme lokale port som appen. Bruk Swagger for å teste endepunkter, eller hent OpenAPI JSON direkte.",
+        apiDocsOpen:         "Åpne Swagger",
+        apiOpenapiJson:      "OpenAPI JSON",
         settingsPersistNote: "Innstillinger lagres automatisk i nettleseren.",
         updateAvailable: "Ny versjon tilgjengelig:",
         updateOpenRelease: "⬇ Åpne nedlasting",
@@ -1528,6 +1554,13 @@
         ollamaStopped:       "AI-modell stoppad. Den laddas in igen automatiskt vid nästa djupskanning.",
         ollamaStopFailed:    "Kunde inte stoppa AI-modell.",
         ollamaNoSelectedModel:"Ingen AI-modell är vald.",
+        ollamaSettingsModelLabel:"Vald modell:",
+        ollamaHardwareLabel:   "Kör på:",
+        ollamaHardwareChecking:"Kontrollerar CPU/GPU…",
+        ollamaHardwareGpu:     "GPU",
+        ollamaHardwareHybrid:  "GPU/CPU-hybrid",
+        ollamaHardwareCpu:     "CPU / ingen aktiv GPU-användning",
+        ollamaHardwareUnknown: "Okänd CPU/GPU-status",
         ollamaPullRecommended:"Ladda ned rekommenderad modell",
         ollamaPullStarting:  "Startar modellnedladdning:",
         ollamaPullFailed:    "Kunde inte ladda ned modell:",
@@ -1546,6 +1579,10 @@
         settingsImported:    "Inställningar importerade.",
         settingsExportErr:   "Kunde inte exportera inställningar:",
         settingsImportErr:   "Kunde inte importera inställningar:",
+        settingsApiTitle:    "API-dokumentation",
+        settingsApiNote:     "Det stabila lokala API:t nås på samma lokala port som appen. Använd Swagger för att testa endpoints eller hämta OpenAPI JSON direkt.",
+        apiDocsOpen:         "Öppna Swagger",
+        apiOpenapiJson:      "OpenAPI JSON",
         settingsPersistNote: "Inställningar sparas automatiskt i webbläsaren.",
         updateAvailable: "Ny version tillgänglig:",
         updateOpenRelease: "⬇ Öppna nedladdning",
@@ -1732,6 +1769,13 @@
         ollamaStopped:       "AI model stopped. It loads again automatically on the next deep scan.",
         ollamaStopFailed:    "Could not stop AI model.",
         ollamaNoSelectedModel:"No AI model is selected.",
+        ollamaSettingsModelLabel:"Selected model:",
+        ollamaHardwareLabel:   "Running on:",
+        ollamaHardwareChecking:"Checking CPU/GPU…",
+        ollamaHardwareGpu:     "GPU",
+        ollamaHardwareHybrid:  "GPU/CPU hybrid",
+        ollamaHardwareCpu:     "CPU / no active GPU use",
+        ollamaHardwareUnknown: "Unknown CPU/GPU status",
         ollamaPullRecommended:"Download recommended model",
         ollamaPullStarting:  "Starting model download:",
         ollamaPullFailed:    "Could not download model:",
@@ -1750,6 +1794,10 @@
         settingsImported:    "Settings imported.",
         settingsExportErr:   "Could not export settings:",
         settingsImportErr:   "Could not import settings:",
+        settingsApiTitle:    "API documentation",
+        settingsApiNote:     "The stable local API is available on the same local port as the app. Use Swagger to test endpoints, or fetch the OpenAPI JSON directly.",
+        apiDocsOpen:         "Open Swagger",
+        apiOpenapiJson:      "OpenAPI JSON",
         settingsPersistNote: "Settings are saved automatically in the browser.",
         updateAvailable: "New version available:",
         updateOpenRelease: "⬇ Open download",
@@ -1936,6 +1984,10 @@
         settingsImported:    "Einstellungen importiert.",
         settingsExportErr:   "Einstellungen konnten nicht exportiert werden:",
         settingsImportErr:   "Einstellungen konnten nicht importiert werden:",
+        settingsApiTitle:    "API-Dokumentation",
+        settingsApiNote:     "Die stabile lokale API ist über denselben lokalen Port wie die App erreichbar. Verwenden Sie Swagger zum Testen der Endpunkte oder laden Sie OpenAPI JSON direkt.",
+        apiDocsOpen:         "Swagger öffnen",
+        apiOpenapiJson:      "OpenAPI JSON",
         settingsPersistNote: "Einstellungen werden automatisch im Browser gespeichert.",
         nerTitle:            "KI-Namenerkennung (spaCy)",
         nerInstalled:        "Installiert",
@@ -1956,6 +2008,13 @@
         ollamaStopped:       "KI-Modell gestoppt. Es wird beim nächsten Tiefenscan automatisch erneut geladen.",
         ollamaStopFailed:    "KI-Modell konnte nicht gestoppt werden.",
         ollamaNoSelectedModel:"Kein KI-Modell ausgewählt.",
+        ollamaSettingsModelLabel:"Ausgewähltes Modell:",
+        ollamaHardwareLabel:   "Läuft auf:",
+        ollamaHardwareChecking:"Prüfe CPU/GPU…",
+        ollamaHardwareGpu:     "GPU",
+        ollamaHardwareHybrid:  "GPU/CPU-Hybrid",
+        ollamaHardwareCpu:     "CPU / keine aktive GPU-Nutzung",
+        ollamaHardwareUnknown: "CPU/GPU-Status unbekannt",
         ollamaPullRecommended:"Empfohlenes Modell herunterladen",
         ollamaPullStarting:  "Modelldownload wird gestartet:",
         ollamaPullFailed:    "Modell konnte nicht heruntergeladen werden:",
@@ -2141,6 +2200,10 @@
         settingsImported:    "Paramètres importés.",
         settingsExportErr:   "Impossible d’exporter les paramètres :",
         settingsImportErr:   "Impossible d’importer les paramètres :",
+        settingsApiTitle:    "Documentation API",
+        settingsApiNote:     "L’API locale stable est disponible sur le même port local que l’application. Utilisez Swagger pour tester les endpoints ou récupérez directement le JSON OpenAPI.",
+        apiDocsOpen:         "Ouvrir Swagger",
+        apiOpenapiJson:      "OpenAPI JSON",
         settingsPersistNote: "Les paramètres sont automatiquement sauvegardés dans le navigateur.",
         nerTitle:            "Reconnaissance de noms par IA (spaCy)",
         nerInstalled:        "Installé",
@@ -2161,6 +2224,13 @@
         ollamaStopped:       "Modèle IA arrêté. Il sera rechargé automatiquement lors du prochain scan approfondi.",
         ollamaStopFailed:    "Impossible d’arrêter le modèle IA.",
         ollamaNoSelectedModel:"Aucun modèle IA sélectionné.",
+        ollamaSettingsModelLabel:"Modèle sélectionné :",
+        ollamaHardwareLabel:   "Exécution sur :",
+        ollamaHardwareChecking:"Vérification CPU/GPU…",
+        ollamaHardwareGpu:     "GPU",
+        ollamaHardwareHybrid:  "Hybride GPU/CPU",
+        ollamaHardwareCpu:     "CPU / aucune utilisation GPU active",
+        ollamaHardwareUnknown: "Statut CPU/GPU inconnu",
         ollamaPullRecommended:"Télécharger le modèle recommandé",
         ollamaPullStarting:  "Démarrage du téléchargement du modèle :",
         ollamaPullFailed:    "Impossible de télécharger le modèle :",
@@ -2346,6 +2416,10 @@
         settingsImported:    "Configuración importada.",
         settingsExportErr:   "No se pudo exportar la configuración:",
         settingsImportErr:   "No se pudo importar la configuración:",
+        settingsApiTitle:    "Documentación API",
+        settingsApiNote:     "La API local estable está disponible en el mismo puerto local que la app. Use Swagger para probar endpoints o abra directamente el JSON OpenAPI.",
+        apiDocsOpen:         "Abrir Swagger",
+        apiOpenapiJson:      "OpenAPI JSON",
         settingsPersistNote: "La configuración se guarda automáticamente en el navegador.",
         nerTitle:            "Reconocimiento de nombres con IA (spaCy)",
         nerInstalled:        "Instalado",
@@ -2366,6 +2440,13 @@
         ollamaStopped:       "Modelo de IA detenido. Se cargará de nuevo automáticamente en el siguiente escaneo profundo.",
         ollamaStopFailed:    "No se pudo detener el modelo de IA.",
         ollamaNoSelectedModel:"No hay ningún modelo de IA seleccionado.",
+        ollamaSettingsModelLabel:"Modelo seleccionado:",
+        ollamaHardwareLabel:   "Ejecutándose en:",
+        ollamaHardwareChecking:"Comprobando CPU/GPU…",
+        ollamaHardwareGpu:     "GPU",
+        ollamaHardwareHybrid:  "Híbrido GPU/CPU",
+        ollamaHardwareCpu:     "CPU / sin uso activo de GPU",
+        ollamaHardwareUnknown: "Estado CPU/GPU desconocido",
         ollamaPullRecommended:"Descargar modelo recomendado",
         ollamaPullStarting:  "Iniciando descarga del modelo:",
         ollamaPullFailed:    "No se pudo descargar el modelo:",
@@ -3731,6 +3812,8 @@
 
     function _selectedOllamaModel() {
       const models = _ollamaSettingsModels || [];
+      const settingsSelected = document.getElementById("ollama-settings-model-select")?.value || "";
+      if (settingsSelected && (!models.length || models.includes(settingsSelected))) return settingsSelected;
       const inlineSelected = document.getElementById("ai-model-select")?.value || "";
       if (inlineSelected && (!models.length || models.includes(inlineSelected))) return inlineSelected;
       try {
@@ -3738,6 +3821,62 @@
         if (saved && (!models.length || models.includes(saved))) return saved;
       } catch (_) {}
       return models[0] || "";
+    }
+
+    function _rememberOllamaModel(model) {
+      if (!model) return;
+      try { localStorage.setItem("xlent_model", model); } catch (_) {}
+      const settingsSel = document.getElementById("ollama-settings-model-select");
+      const inlineSel = document.getElementById("ai-model-select");
+      if (settingsSel && [...settingsSel.options].some(o => o.value === model)) settingsSel.value = model;
+      if (inlineSel && [...inlineSel.options].some(o => o.value === model)) inlineSel.value = model;
+    }
+
+    function _ollamaModelOptions(models, selected) {
+      return (models || []).map(m => {
+        const rec = ["llama3.2:3b","llama3.2:1b","gemma2:2b","mistral:7b"].includes(m);
+        const sel = m === selected ? " selected" : "";
+        return `<option value="${escapeHtml(m)}"${sel}>${escapeHtml(m)}${rec ? " ★" : ""}</option>`;
+      }).join("");
+    }
+
+    function _renderOllamaSettingsModelSelect(models) {
+      const sel = document.getElementById("ollama-settings-model-select");
+      if (!sel) return;
+      const selected = _selectedOllamaModel();
+      sel.disabled = !(models && models.length);
+      sel.innerHTML = models && models.length
+        ? _ollamaModelOptions(models, selected)
+        : `<option value="">${escapeHtml(t("ollamaNoModels"))}</option>`;
+      if (selected && models && models.includes(selected)) sel.value = selected;
+    }
+
+    function _ollamaHardwareText(info) {
+      const mode = String(info?.mode || "").toLowerCase();
+      const label = t("ollamaHardwareLabel");
+      let value = t("ollamaHardwareUnknown");
+      if (mode === "gpu") value = t("ollamaHardwareGpu");
+      else if (mode === "hybrid") value = t("ollamaHardwareHybrid");
+      else if (mode === "cpu") value = t("ollamaHardwareCpu");
+      const total = Number(info?.total_mb || 0);
+      const vram = Number(info?.vram_mb || 0);
+      const mem = total > 0 ? ` (${vram}/${total} MB VRAM)` : "";
+      return `${label} ${value}${mem}`;
+    }
+
+    async function loadOllamaHardwareInfo() {
+      const el = document.getElementById("ollama-hardware-info");
+      if (!el) return;
+      el.textContent = t("ollamaHardwareChecking");
+      el.style.color = "var(--muted)";
+      try {
+        const info = await (await fetch(`${API}/ollama/hardware-info`)).json();
+        el.textContent = _ollamaHardwareText(info);
+        el.style.color = info.gpu ? "var(--ok)" : "var(--muted)";
+      } catch (e) {
+        el.textContent = t("ollamaHardwareUnknown");
+        el.style.color = "var(--danger)";
+      }
     }
 
     function setOllamaStopMessage(msg, color = "var(--muted)") {
@@ -3759,11 +3898,13 @@
       const listEl   = document.getElementById("ollama-models-list");
       const instrEl  = document.getElementById("ollama-instructions");
       const stopBtn  = document.getElementById("btn-stop-ollama-model");
+      const settingsModelSelect = document.getElementById("ollama-settings-model-select");
       if (!statusEl) return;
       try {
         const s = await (await fetch(`${API}/ollama/status`)).json();
         _ollamaSettingsModels = s.models || [];
         _ollamaRecommendedModel = s.recommended_model || _ollamaRecommendedModel;
+        _renderOllamaSettingsModelSelect(_ollamaSettingsModels);
         if (s.running) {
           statusEl.innerHTML = `<span style="color:var(--ok)">${t("ollamaRunning")}</span>`;
           if (s.models && s.models.length) {
@@ -3783,14 +3924,19 @@
         } else {
           statusEl.innerHTML = `<span style="color:var(--danger)">${t("ollamaNotRunning")}</span>`;
           listEl.innerHTML = "";
+          _renderOllamaSettingsModelSelect([]);
           instrEl.innerHTML = t("ollamaInstallHint");
           instrEl.style.display = "block";
           if (stopBtn) stopBtn.disabled = true;
         }
+        if (settingsModelSelect) settingsModelSelect.onchange = () => _rememberOllamaModel(settingsModelSelect.value);
+        await loadOllamaHardwareInfo();
       } catch (e) {
         statusEl.innerHTML = `<span style="color:var(--danger)">${t("ollamaNotRunning")}</span>`;
         _ollamaSettingsModels = [];
+        _renderOllamaSettingsModelSelect([]);
         if (stopBtn) stopBtn.disabled = true;
+        await loadOllamaHardwareInfo();
       }
     }
 
@@ -3861,6 +4007,7 @@
     document.getElementById("btn-refresh-ollama").addEventListener("click", loadOllamaSettingsStatus);
     document.getElementById("btn-pull-ollama-model").addEventListener("click", pullRecommendedOllamaModel);
     document.getElementById("btn-stop-ollama-model").addEventListener("click", stopActiveOllamaModel);
+    document.getElementById("ollama-settings-model-select").addEventListener("change", e => _rememberOllamaModel(e.target.value));
 
     document.querySelectorAll(".tab-btn").forEach(btn => {
       if (btn.dataset.tab === "settings") {
@@ -4012,13 +4159,10 @@
         let saved = "";
         try { saved = localStorage.getItem("xlent_model") || ""; } catch(_) {}
         const prev = sel.value || saved;
-        sel.innerHTML = s.models.map(m => {
-          const rec = ["llama3.2:3b","llama3.2:1b","gemma2:2b","mistral:7b"].includes(m);
-          return `<option value="${escapeHtml(m)}">${escapeHtml(m)}${rec ? " ★" : ""}</option>`;
-        }).join("");
+        sel.innerHTML = _ollamaModelOptions(s.models, prev);
         if (prev && s.models.includes(prev)) sel.value = prev;
         // Husk valgt modell mellom økter
-        sel.onchange = () => { try { localStorage.setItem("xlent_model", sel.value); } catch(_) {} };
+        sel.onchange = () => _rememberOllamaModel(sel.value);
         readyEl.style.display = "block";
       } catch (_) {
         statusEl.innerHTML   = `<span style="color:var(--danger)">${t("ollamaNotRunning")}</span>`;

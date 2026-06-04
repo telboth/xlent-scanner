@@ -91,6 +91,8 @@ def test_settings_profile_and_ollama_pull_controls_exist_for_all_languages():
     assert 'id="btn-import-settings"' in html
     assert 'id="settings-import-file"' in html
     assert 'id="btn-pull-ollama-model"' in html
+    assert 'id="ollama-settings-model-select"' in html
+    assert 'id="ollama-hardware-info"' in html
     assert 'id="stripAnnotations"' in html
     assert 'id="blacklist-editor"' in html
     assert 'id="btn-blacklist-save"' in html
@@ -102,6 +104,10 @@ def test_settings_profile_and_ollama_pull_controls_exist_for_all_languages():
     for key in [
         "settingsProfileTitle",
         "settingsProfileNote",
+        "settingsApiTitle",
+        "settingsApiNote",
+        "apiDocsOpen",
+        "apiOpenapiJson",
         "settingsRedactionTitle",
         "stripAnnotationsLabel",
         "stripAnnotationsNote",
@@ -124,8 +130,25 @@ def test_settings_profile_and_ollama_pull_controls_exist_for_all_languages():
         "ollamaPullStarting",
         "ollamaPullFailed",
         "ollamaRecommendedMissing",
+        "ollamaSettingsModelLabel",
+        "ollamaHardwareLabel",
+        "ollamaHardwareChecking",
+        "ollamaHardwareGpu",
+        "ollamaHardwareHybrid",
+        "ollamaHardwareCpu",
+        "ollamaHardwareUnknown",
     ]:
         assert html.count(f"{key}:") == 6
+
+
+def test_ollama_settings_model_select_and_hardware_status_are_wired():
+    html = HTML.read_text(encoding="utf-8")
+
+    assert "function _renderOllamaSettingsModelSelect" in html
+    assert "function loadOllamaHardwareInfo" in html
+    assert 'fetch(`${API}/ollama/hardware-info`)' in html
+    assert "_rememberOllamaModel(settingsModelSelect.value)" in html
+    assert "_rememberOllamaModel(sel.value)" in html
 
 
 def test_scan_category_translations_exist_for_all_languages():

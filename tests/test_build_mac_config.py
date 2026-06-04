@@ -14,6 +14,7 @@ def test_macos_build_enables_finder_open_with() -> None:
     assert "supported_utis" in script
     assert '"public.content"' in script
     assert '"public.data"' in script
+    assert '"public.item"' in script
     assert "org.openxmlformats.wordprocessingml.document" in script
     assert "CFBundleTypeMIMETypes" in script
     assert "CFBundleTypeExtensions" in script
