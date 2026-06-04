@@ -153,9 +153,10 @@ def test_scan_category_translations_exist_for_all_languages():
 def test_medical_ai_category_is_available_but_default_off():
     html = HTML.read_text(encoding="utf-8")
 
-    assert 'class="ai-extra-cat" value="medisinsk"' in html
-    assert 'class="ai-extra-cat" value="medisinsk" checked' not in html
+    assert 'class="scan-cat" value="medisinsk"' in html
+    assert 'class="scan-cat" value="medisinsk" checked' not in html
     assert 'data-i18n="dstCatMedisinsk"' in html
+    assert '"medisinsk":   "medisinsk"' in html
 
 
 def test_ai_rescan_uses_spinner_instead_of_duplicate_analyzing_text():

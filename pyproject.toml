@@ -1,6 +1,6 @@
 [project]
 name = "xlent-scanner"
-version = "1.3.11"
+version = "1.3.12"
 description = "Lokal scanner som sjekker dokumenter for sensitiv kundeinfo før opplasting til online AI-verktøy"
 readme = "README.md"
 authors = [

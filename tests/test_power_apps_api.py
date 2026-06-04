@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 import base64
+from pathlib import Path
+
+from docx import Document
 
 from xlent_scanner import app as app_module
 from xlent_scanner.models import Finding, ScanResult
@@ -176,3 +179,69 @@ def test_gui_deep_scan_status_route_accepts_specific_job_id(monkeypatch):
     assert found.status_code == 200
     assert found.get_json()["job_id"] == "abc123"
     assert missing.status_code == 404
+
+
+def test_patch_docx_expands_financial_ai_table_finding_to_cells(tmp_path: Path, monkeypatch):
+    monkeypatch.setattr(Path, "home", lambda: tmp_path)
+    downloads = tmp_path / "Downloads"
+    downloads.mkdir()
+
+    source = tmp_path / "budget.docx"
+    doc = Document()
+    table = doc.add_table(rows=4, cols=4)
+    rows = [
+        ("Item", "Cost (NOK)", "Amount", "Total Cost (NOK)"),
+        ("Bread", "30", "2", "60"),
+        ("Milk", "20", "1", "20"),
+        ("Eggs", "10", "10", "100"),
+    ]
+    for row, values in zip(table.rows, rows, strict=True):
+        for cell, value in zip(row.cells, values, strict=True):
+            cell.text = value
+    doc.save(source)
+
+    app_module._last_path = source
+    app_module._last_result = ScanResult(
+        file_name="budget.docx",
+        file_size=source.stat().st_size,
+        text_length=0,
+        text_preview="",
+        original_text=(
+            "Item | Cost (NOK) | Amount | Total Cost (NOK)\n"
+            "Bread | 30 | 2 | 60\n"
+            "Milk | 20 | 1 | 20\n"
+            "Eggs | 10 | 10 | 100"
+        ),
+    )
+
+    client = app_module.flask_app.test_client()
+    response = client.post(
+        "/patch",
+        json={
+            "indices": [],
+            "ai_findings": [
+                {
+                    "category": "🤖 Budsjettall",
+                    "text": "Bread | 30 | 2 | 60",
+                    "context": (
+                        "Item | Cost (NOK) | Amount | Total Cost (NOK)\n"
+                        "Bread | 30 | 2 | 60"
+                    ),
+                }
+            ],
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data["ok"] is True
+    patched = Document(data["path"])
+    bread_cells = [cell.text for cell in patched.tables[0].rows[1].cells]
+    milk_cells = [cell.text for cell in patched.tables[0].rows[2].cells]
+    assert bread_cells == [
+        "Bread",
+        "[ANONYMISERT]",
+        "[ANONYMISERT]",
+        "[ANONYMISERT]",
+    ]
+    assert milk_cells == ["Milk", "20", "1", "20"]

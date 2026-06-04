@@ -608,6 +608,7 @@
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="nettadresse" checked> <span data-i18n="dstCatNettadresse">Nettadresser / IP</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="hemmeligheter" checked> <span data-i18n="scanCatHemmeligheter">API-nøkler / secrets</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="finansielt" checked> <span data-i18n="scanCatFinansielt">Finansielle nøkkeltall</span></label>
+          <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="medisinsk"> <span data-i18n="dstCatMedisinsk">Medisinsk</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="lonn" checked> <span data-i18n="scanCatLonn">Lønn / salary</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="konfidensielt" checked> <span data-i18n="scanCatKonfidensielt">Konfidensielle ord</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="klient" checked> <span data-i18n="scanCatKlient">Klientnavn</span></label>
@@ -648,7 +649,6 @@
               <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:6px;">
                 <label class="dst-cat-label"><input type="checkbox" class="ai-extra-cat" value="adresse" checked> <span data-i18n="dstCatAdresse">Adresse</span></label>
                 <label class="dst-cat-label"><input type="checkbox" class="ai-extra-cat" value="selskapsnavn" checked> <span data-i18n="dstCatSelskapsnavn">Selskapsnavn</span></label>
-                <label class="dst-cat-label"><input type="checkbox" class="ai-extra-cat" value="medisinsk"> <span data-i18n="dstCatMedisinsk">Medisinsk</span></label>
               </div>
               <div class="dst-hw-req" data-i18n="dstHwReq">⚠ Dybdeskanning kjøres lokalt og kan ta opptil flere minutter. Anbefalt: minst 16 GB RAM.</div>
             </div>
@@ -3268,10 +3268,24 @@
     ══════════════════════════════════════════════════════════════════ */
     async function postAnon(endpoint, format) {
       const indices = [...document.querySelectorAll(".g-cb:checked")].map(cb => +cb.value);
-      const aiTexts = [...document.querySelectorAll(".g-ai-cb:checked")]
-        .map(cb => (cb.dataset.aiText || "").trim())
-        .filter(Boolean);
+      const aiRows = [...document.querySelectorAll(".g-ai-cb:checked")];
+      const aiTexts = aiRows.map(cb => (cb.dataset.aiText || "").trim()).filter(Boolean);
       const aiTextsUnique = [...new Set(aiTexts)];
+      const aiFindings = [];
+      const aiFindingKeys = new Set();
+      for (const cb of aiRows) {
+        const idx = Number(cb.dataset.aiIndex);
+        const f = Number.isInteger(idx) ? _aiFindingsData[idx] : null;
+        if (!f || !f.text) continue;
+        const key = `${String(f.category || "").toLowerCase()}\u0001${String(f.text || "").toLowerCase()}\u0001${String(f.context || "").toLowerCase()}`;
+        if (aiFindingKeys.has(key)) continue;
+        aiFindingKeys.add(key);
+        aiFindings.push({
+          category: f.category || "🤖 AI-funn",
+          text: f.text || "",
+          context: f.context || "",
+        });
+      }
       const msg = document.getElementById("g-anon-msg");
       const stripAnnotations = document.getElementById("stripAnnotations")?.checked === true;
       if (!indices.length && !aiTextsUnique.length && !(endpoint === "patch" && stripAnnotations)) {
@@ -3279,8 +3293,8 @@
       }
       msg.style.color="var(--muted)"; msg.textContent=t("processing");
       const body = format
-        ? { indices, ai_texts: aiTextsUnique, format, strip_annotations: stripAnnotations }
-        : { indices, ai_texts: aiTextsUnique, strip_annotations: stripAnnotations };
+        ? { indices, ai_texts: aiTextsUnique, ai_findings: aiFindings, format, strip_annotations: stripAnnotations }
+        : { indices, ai_texts: aiTextsUnique, ai_findings: aiFindings, strip_annotations: stripAnnotations };
       try {
         const d = await (await fetch(`${API}/${endpoint}`, {
           method:"POST", headers:{"Content-Type":"application/json"},
@@ -3905,6 +3919,7 @@
       "nettadresse":   c => c.startsWith("nettadresse") || c.startsWith("ip-adresse"),
       "hemmeligheter": c => ["openai","anthropic","github","jwt","bearer","aws","private key","azure storage","passord i konfig","konfigurasjonsord","høy-entropisteng"].some(p => c.startsWith(p)),
       "finansielt":    c => ["timepris","dagspris","prosjektsum","margin","rabatt","budsjett"].some(p => c.startsWith(p)),
+      "medisinsk":     c => c.startsWith("medisinsk") || c.startsWith("medicinsk") || c.startsWith("medical") || c.startsWith("diagnose") || c.startsWith("diagnosis") || c.startsWith("legemiddel") || c.startsWith("läkemedel") || c.startsWith("medication"),
       "lonn":          c => c.startsWith("lønn"),
       "konfidensielt": c => c.startsWith("konfidensielt dokument"),
       "klient":        c => c.startsWith("kundenavn"),
@@ -3923,6 +3938,7 @@
       "navn":        "navn",
       "nettadresse": "nettadresse",
       "finansielt":  "budsjett_tall",
+      "medisinsk":   "medisinsk",
       "lonn":        "lonn",
     };
 
@@ -4209,6 +4225,7 @@
         (ORDER[_aiSev(b)]||0) - (ORDER[_aiSev(a)]||0));
 
       for (const f of sorted) {
+        const originalIndex = _aiFindingsData.indexOf(f);
         const sev   = _aiSev(f);
         const sc    = SEV_COLOR[sev] || "#ffb84d";
         const light = (sev === "gul" || sev === "grønn");
@@ -4236,6 +4253,7 @@
           </div>`;
         const aiCb = li.querySelector(".g-ai-cb");
         if (aiCb) aiCb.dataset.aiText = String(f.text || "");
+        if (aiCb) aiCb.dataset.aiIndex = String(originalIndex);
         list.appendChild(li);
       }
 
@@ -4330,11 +4348,18 @@
       if (!checked.length) { msg.style.color="var(--warn)"; msg.textContent=t("dstSelectOne"); return; }
       msg.style.color="var(--muted)"; msg.textContent=t("processing");
       const texts = checked.map(i => _aiFindingsData[i]?.text).filter(Boolean);
+      const findings = checked.map(i => _aiFindingsData[i]).filter(f => f && f.text)
+        .map(f => ({
+          category: f.category || "🤖 AI-funn",
+          text: f.text || "",
+          context: f.context || "",
+        }));
       try {
         const d = await (await fetch(`${API}/ollama/anonymize-findings`, {
           method:"POST", headers:{"Content-Type":"application/json"},
           body: JSON.stringify({
             texts,
+            ai_findings: findings,
             strip_annotations: document.getElementById("stripAnnotations")?.checked === true,
           }),
         })).json();

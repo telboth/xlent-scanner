@@ -93,6 +93,131 @@ _NO_CACHE = {
     "Expires": "0",
 }
 
+_AI_FINANCIAL_MARKERS = (
+    "budsjett",
+    "finans",
+    "financial",
+    "monetary",
+    "pengebel",
+    "penning",
+    "money",
+    "cost",
+    "amount",
+    "price",
+    "total",
+    "budget",
+    "revenue",
+    "fee",
+    "rate",
+    "invoice",
+)
+
+
+def _ai_category_is_financial(category: str) -> bool:
+    cat = category.replace("🤖", "").strip().casefold()
+    return any(marker in cat for marker in _AI_FINANCIAL_MARKERS)
+
+
+def _append_unique(values: list[str], seen: set[str], value: str) -> None:
+    value = str(value or "").strip()
+    if not value:
+        return
+    key = value.casefold()
+    if key not in seen:
+        seen.add(key)
+        values.append(value)
+
+
+def _financial_values_from_ai_snippet(text: str) -> list[str]:
+    """Utled konkrete tallceller fra AI-funn som beskriver en finansiell tabellrad.
+
+    LLM-er returnerer noen ganger hele Markdown-tabellrader, mens DOCX-kilden har
+    de samme verdiene som separate Word-tabellceller. Da matcher ikke hele raden.
+    """
+    if "|" not in text:
+        return []
+    values: list[str] = []
+    seen: set[str] = set()
+
+    try:
+        from xlent_scanner.deep_scanner import (  # noqa: PLC0415
+            _find_tabular_financial_values,
+            _looks_like_financial_amount_cell,
+        )
+        for finding in _find_tabular_financial_values(text):
+            _append_unique(values, seen, str(finding.get("text") or ""))
+        for line in text.splitlines():
+            if "|" not in line:
+                continue
+            for cell in line.strip().strip("|").split("|"):
+                cell = cell.strip()
+                if _looks_like_financial_amount_cell(cell):
+                    _append_unique(values, seen, cell)
+    except Exception as exc:
+        LOGGER.warning("Klarte ikke å utlede finansielle AI-tabellverdier: %s", exc)
+    return values
+
+
+def _ai_findings_from_payload(data: dict) -> list[dict]:
+    findings: list[dict] = []
+    seen: set[tuple[str, str, str]] = set()
+
+    for raw in data.get("ai_findings") or []:
+        if not isinstance(raw, dict):
+            continue
+        text = str(raw.get("text") or "").strip()
+        if not text:
+            continue
+        category = str(raw.get("category") or "🤖 AI-funn").strip()
+        context = str(raw.get("context") or "").strip()
+        key = (text.casefold(), category.casefold(), context.casefold())
+        if key in seen:
+            continue
+        seen.add(key)
+        findings.append({"text": text, "category": category, "context": context})
+
+    # Bakoverkompatibel fallback for eldre frontend-kall.
+    for text in data.get("ai_texts") or []:
+        text = str(text or "").strip()
+        if not text:
+            continue
+        key = (text.casefold(), "🤖 ai-funn", "")
+        if key in seen:
+            continue
+        seen.add(key)
+        findings.append({"text": text, "category": "🤖 AI-funn", "context": ""})
+
+    return findings
+
+
+def _ai_replacement_texts(ai_findings: list[dict]) -> list[str]:
+    values: list[str] = []
+    seen: set[str] = set()
+    for finding in ai_findings:
+        text = str(finding.get("text") or "").strip()
+        category = str(finding.get("category") or "")
+        context = str(finding.get("context") or "").strip()
+        _append_unique(values, seen, text)
+        if _ai_category_is_financial(category):
+            for source in (text, context, f"{context}\n{text}" if context else text):
+                for value in _financial_values_from_ai_snippet(source):
+                    _append_unique(values, seen, value)
+    return values
+
+
+def _ai_findings_as_model_findings(ai_findings: list[dict]) -> list[Finding]:
+    return [
+        Finding(
+            category=str(f.get("category") or "🤖 AI-funn"),
+            text=str(f.get("text") or ""),
+            context=str(f.get("context") or ""),
+            severity="gul",
+            raw_text=str(f.get("text") or ""),
+        )
+        for f in ai_findings
+        if str(f.get("text") or "").strip()
+    ]
+
 
 def _setup_logging() -> tuple[logging.Logger, Path]:
     log_dir = app_data_dir() / "logs"
@@ -1069,20 +1194,12 @@ def anonymize():
         return jsonify({"error": "Originaltekst ikke tilgjengelig. Re-skann filen."})
     data = request.get_json(force=True)
     indices = data.get("indices", [])
-    ai_texts_raw = data.get("ai_texts", [])
     selected = [
         _last_result.findings[i]
         for i in indices
         if isinstance(i, int) and 0 <= i < len(_last_result.findings)
     ]
-    ai_texts: list[str] = []
-    if isinstance(ai_texts_raw, list):
-        ai_texts = [str(t).strip() for t in ai_texts_raw if isinstance(t, str) and str(t).strip()]
-    if ai_texts:
-        selected.extend(
-            Finding(category="🤖 AI-funn", text=t, context="", severity="gul", raw_text=t)
-            for t in ai_texts
-        )
+    selected.extend(_ai_findings_as_model_findings(_ai_findings_from_payload(data)))
     cleaned = anonymize_text(_last_result.original_text, selected)
     fmt = (data.get("format") or "md").lower()
     if fmt not in ("md", "pdf"):
@@ -1122,22 +1239,17 @@ def patch():
 
     data = request.get_json(force=True)
     indices = data.get("indices", [])
-    ai_texts_raw = data.get("ai_texts", [])
     strip_annotations = bool(data.get("strip_annotations", False))
     selected = [
         _last_result.findings[i]
         for i in indices
         if isinstance(i, int) and 0 <= i < len(_last_result.findings)
     ]
-    ai_texts: list[str] = []
-    if isinstance(ai_texts_raw, list):
-        ai_texts = [str(t).strip() for t in ai_texts_raw if isinstance(t, str) and str(t).strip()]
-    if ai_texts:
-        selected.extend(
-            Finding(category="🤖 AI-funn", text=t, context="", severity="gul", raw_text=t)
-            for t in ai_texts
-        )
+    ai_findings = _ai_findings_from_payload(data)
+    selected.extend(_ai_findings_as_model_findings(ai_findings))
     replacements = build_replacements(selected)
+    for text in _ai_replacement_texts(ai_findings):
+        replacements.setdefault(text, "[ANONYMISERT]")
     if not replacements and not strip_annotations:
         return jsonify({"error": "Ingen av de valgte funnene kan anonymiseres direkte."})
 
@@ -1567,6 +1679,10 @@ def ollama_anonymize_findings():
         return jsonify({"error": "Ingen fil skannet."})
     data = request.get_json(force=True) or {}
     texts_to_remove = [str(t).strip() for t in (data.get("texts") or []) if t and str(t).strip()]
+    ai_findings = _ai_findings_from_payload(data)
+    for text in _ai_replacement_texts(ai_findings):
+        if text not in texts_to_remove:
+            texts_to_remove.append(text)
     strip_annotations = bool(data.get("strip_annotations", False))
     if not texts_to_remove:
         return jsonify({"error": "Ingen tekst valgt for anonymisering."})
@@ -1579,7 +1695,10 @@ def ollama_anonymize_findings():
 
     # Bruk patch_file for støttede filformater når kildefilen er tilgjengelig
     if _last_path and _last_path.exists() and suffix in SUPPORTED_PATCH_SUFFIXES:
-        replacements = {t: "[ANONYMISERT]" for t in texts_to_remove}
+        if not ai_findings:
+            ai_findings = [{"text": t, "category": "🤖 AI-funn", "context": ""} for t in texts_to_remove]
+        replacement_texts = _ai_replacement_texts(ai_findings)
+        replacements = {t: "[ANONYMISERT]" for t in replacement_texts}
         out = downloads / f"{stem}-ai-anonymisert{suffix}"
         counter = 1
         while out.exists():
