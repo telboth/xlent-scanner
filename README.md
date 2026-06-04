@@ -121,7 +121,25 @@ Exit-kode reflekterer risikonivå: `0` grønn · `1` gul · `2` rød · `3` svar
 
 ## Installasjon (Windows — intern MVP)
 
-Last ned `xlent-scanner-setup-<versjon>.exe` fra [Releases](https://github.com/telboth/xlent-scanner/releases) og kjør installasjonsprogrammet (krever **ikke** administrator).
+Anbefalt: last ned og kjør `install_windows.ps1` fra [Releases](https://github.com/telboth/xlent-scanner/releases). Scriptet henter siste `xlent-scanner-setup-<versjon>.exe` og starter installasjonsprogrammet. Det krever **ikke** administrator.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\install_windows.ps1
+```
+
+Direkte fra GitHub uten å laste ned scriptet manuelt:
+
+```powershell
+$p = "$env:TEMP\install_windows.ps1"; Invoke-WebRequest "https://github.com/telboth/xlent-scanner/releases/latest/download/install_windows.ps1" -OutFile $p; powershell -ExecutionPolicy Bypass -File $p
+```
+
+Silent install:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\install_windows.ps1 -Silent
+```
+
+Alternativt kan du laste ned `xlent-scanner-setup-<versjon>.exe` fra Releases og kjøre installasjonsprogrammet manuelt.
 
 Installasjonen legger til **«Skann med XLENT»** i Windows høyreklikk-meny for alle filtyper. Høyreklikk en fil → filen åpnes og skannes automatisk. Kjører appen allerede, sendes filen til det eksisterende vinduet (single-instans IPC).
 
@@ -213,13 +231,12 @@ OLLAMA_BASE_URL=http://192.168.1.10:11434 uv run xlent-scanner
 ### Windows
 Inkludert automatisk ved installasjon (registrert via HKCU\Software\Classes, krever ikke admin).
 
-### macOS — Quick Action
+### macOS — Finder-hurtighandling
 ```bash
-bash install_mac_quick_action.sh
+bash install_macos.sh --quick-action-only
 # Høyreklikk fil i Finder → Hurtighandlinger → Skann med XLENT
 ```
-Kan også installeres direkte fra appen under **Innstillinger**. Krever at `XLENTScanner.app` er i `/Applications`. Scriptet installerer en Automator Quick Action som sender filstien som argument til appen. Hvis scriptet kjøres med `sudo`, installeres den for `SUDO_USER`, ikke for `root`.
-`scripts/install_mac_service.sh` finnes fortsatt som bakoverkompatibel wrapper.
+Kan også installeres direkte fra appen under **Innstillinger**. Krever at `XLENTScanner.app` er i `/Applications`. `install_macos.sh` installerer en Automator Finder-hurtighandling som sender filstien som argument til appen. Hvis scriptet kjøres med `sudo`, installeres den for `SUDO_USER`, ikke for `root`.
 
 ### macOS — Åpne med
 macOS-builden deklarerer støttede dokumenttyper (`pdf/docx/pptx/xlsx/txt/md/html/csv/eml/rtf/odt`) i app-bundlen. Finder kan derfor bruke **Åpne med → XLENTScanner** for disse filene.
@@ -410,7 +427,6 @@ src/xlent_scanner/
 - Fikset PDF-anonymisering på macOS/nyere PyMuPDF (`apply_redactions`).
 - La til regresjonstest for PDF-redaksjon.
 - La til Finder Quick Action-installasjon direkte fra appens Innstillinger på macOS.
-- Laster opp `install_mac_quick_action.sh` som release-asset og beholder `install_mac_service.sh` som wrapper.
 - La til loggvisning og «Åpne loggfil» i Innstillinger.
 - Forbedret PDF-feilmeldinger slik at teknisk detalj havner i loggfil, ikke bare i brukerfeilen.
 - Tydeliggjorde at macOS-DMG i MVP er Apple Silicon-build; Intel Mac må kjøre fra kildekode.

@@ -86,8 +86,6 @@ jobs:
           gh release upload "$TAG" \
             artifacts/macos/installer/*.dmg \
             scripts/install_macos.sh \
-            scripts/install_mac_quick_action.sh \
-            scripts/install_mac_service.sh \
             --clobber
 
   # ── Windows ───────────────────────────────────────────────────────────
@@ -139,7 +137,7 @@ jobs:
           $Installer = Get-ChildItem artifacts\windows\installer\*.exe | Select-Object -First 1
           if (-not $Installer) { throw "Fant ingen .exe i artifacts\windows\installer\" }
           Write-Host "Laster opp: $($Installer.FullName)"
-          gh release upload $Tag $Installer.FullName --clobber
+          gh release upload $Tag $Installer.FullName scripts/install_windows.ps1 --clobber
 
   # ── Linux ─────────────────────────────────────────────────────────────
   build-linux:

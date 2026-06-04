@@ -9,6 +9,10 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+if ([Net.ServicePointManager]::SecurityProtocol -notmatch "Tls12") {
+    [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+}
+
 function Get-ReleaseInfo {
     param(
         [string]$Owner,
@@ -46,6 +50,7 @@ $installerPath = Join-Path $DownloadDir $asset.name
 
 Write-Host "Laster ned $($asset.name) fra $($release.tag_name)..."
 Invoke-WebRequest -Uri $asset.browser_download_url -OutFile $installerPath
+Unblock-File -Path $installerPath -ErrorAction SilentlyContinue
 
 $args = @()
 if ($Silent) {
@@ -53,6 +58,9 @@ if ($Silent) {
 }
 
 Write-Host "Starter installasjon..."
-Start-Process -FilePath $installerPath -ArgumentList $args -Wait
+$process = Start-Process -FilePath $installerPath -ArgumentList $args -Wait -PassThru
+if ($process.ExitCode -ne 0) {
+    throw "Installer feilet med exit-kode $($process.ExitCode). Installer brukt: $installerPath"
+}
 
 Write-Host "Ferdig. Installer brukt: $installerPath"

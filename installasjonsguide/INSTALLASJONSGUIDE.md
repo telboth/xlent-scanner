@@ -7,10 +7,24 @@ Kilde for nedlasting:
 
 ## Windows
 
-1. Gå til releases-siden og last ned siste `xlent-scanner-windows-setup-<versjon>.exe`.
-2. Dobbeltklikk `.exe`-filen.
-3. Følg installasjonsveiviseren og fullfør installasjonen.
-4. Start programmet fra Start-menyen eller skrivebordsikonet.
+Anbefalt installasjon:
+
+1. Gå til releases-siden og last ned `install_windows.ps1`.
+2. Åpne PowerShell i mappen der scriptet ligger.
+3. Kjør:
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File .\install_windows.ps1
+   ```
+4. Følg installasjonsveiviseren og fullfør installasjonen.
+5. Start programmet fra Start-menyen eller skrivebordsikonet.
+
+Direkte installasjon uten å laste ned scriptet manuelt:
+
+```powershell
+$p = "$env:TEMP\install_windows.ps1"; Invoke-WebRequest "https://github.com/telboth/xlent-scanner/releases/latest/download/install_windows.ps1" -OutFile $p; powershell -ExecutionPolicy Bypass -File $p
+```
+
+Alternativt kan du laste ned siste `xlent-scanner-setup-<versjon>.exe` og dobbeltklikke den manuelt.
 
 ### Hvis Windows blokkerer installasjonen (SmartScreen)
 
@@ -34,9 +48,9 @@ Anbefalt MVP-installasjon:
    ```
 3. Start `XLENTScanner.app` fra `Applications`.
 4. Finder-hurtighandlingen `Skann med XLENT` installeres automatisk for brukeren som kjører scriptet.
-5. Alternativt kan `install_mac_quick_action.sh` lastes ned fra samme release og kjøres:
+5. Alternativt kan bare Finder-hurtighandlingen installeres på nytt med:
    ```bash
-   bash ~/Downloads/install_mac_quick_action.sh
+   bash ~/Downloads/install_macos.sh --quick-action-only
    ```
 
 Merk:
@@ -83,7 +97,7 @@ xattr -dr com.apple.quarantine /Applications/XLENTScanner.app
 
 ### macOS
 
-Etter at `install_mac_quick_action.sh` er kjørt:
+Etter at `install_macos.sh` er kjørt:
 
 1. Høyreklikk på en støttet fil i Finder.
 2. Velg `Hurtighandlinger` -> `Skann med XLENT`.

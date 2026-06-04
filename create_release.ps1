@@ -14,9 +14,7 @@ param(
         "artifacts/windows/installer/*",
         "artifacts/macos/installer/*",
         "scripts/install_windows.ps1",
-        "scripts/install_macos.sh",
-        "scripts/install_mac_quick_action.sh",
-        "scripts/install_mac_service.sh"
+        "scripts/install_macos.sh"
     )
 )
 
