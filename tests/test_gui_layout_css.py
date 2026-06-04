@@ -197,11 +197,38 @@ def test_scan_category_translations_exist_for_all_languages():
         "scanCatOrgnummer",
         "scanCatPassnummer",
         "scanCatFodselsdato",
-        "scanCatSwift",
         "scanCatLonn",
         "dstCatMedisinsk",
     ]:
         assert html.count(f"{key}:") == 6
+
+
+def test_bank_details_category_combines_account_iban_and_swift():
+    html = HTML.read_text(encoding="utf-8")
+
+    assert 'class="scan-cat" value="konto" checked' in html
+    assert 'class="scan-cat" value="swift"' not in html
+    assert 'scanCatKonto:        "Bankdetaljer"' in html
+    assert 'scanCatKonto:        "Bankuppgifter"' in html
+    assert 'scanCatKonto:        "Bank details"' in html
+    assert 'scanCatKonto:        "Bankdaten"' in html
+    assert 'scanCatKonto:        "Coordonnées bancaires"' in html
+    assert 'scanCatKonto:        "Datos bancarios"' in html
+    assert '"konto":         c => ["kontonummer","bankgiro","plusgiro","iban","swift/bic"].some(p => c.startsWith(p))' in html
+    assert '"konto":       ["bankkonto", "swift"]' in html
+
+
+def test_client_names_are_presented_as_company_names():
+    html = HTML.read_text(encoding="utf-8")
+
+    assert 'scanCatKlient:       "Firmanavn"' in html
+    assert 'scanCatKlient:       "Företagsnamn"' in html
+    assert 'scanCatKlient:       "Company names"' in html
+    assert 'scanCatKlient:       "Firmenname"' in html
+    assert 'scanCatKlient:       "Nom de société"' in html
+    assert 'scanCatKlient:       "Nombre de empresa"' in html
+    assert "Klientnavn" not in html
+    assert "Client names" not in html
 
 
 def test_empty_document_warning_translations_exist_for_all_languages():

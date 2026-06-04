@@ -602,8 +602,7 @@
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="id" checked> <span data-i18n="scanCatId">Personnummer / ID</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="passnummer" checked> <span data-i18n="scanCatPassnummer">Passnummer</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="fodselsdato" checked> <span data-i18n="scanCatFodselsdato">Fødselsdato</span></label>
-          <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="konto" checked> <span data-i18n="scanCatKonto">Kontonummer / IBAN</span></label>
-          <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="swift" checked> <span data-i18n="scanCatSwift">SWIFT / BIC</span></label>
+          <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="konto" checked> <span data-i18n="scanCatKonto">Bankdetaljer</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="kredittkort" checked> <span data-i18n="scanCatKredittkort">Kredittkort</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="navn" checked> <span data-i18n="scanCatNavn">Navn (person)</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="nettadresse" checked> <span data-i18n="dstCatNettadresse">Nettadresser / IP</span></label>
@@ -612,7 +611,7 @@
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="medisinsk"> <span data-i18n="dstCatMedisinsk">Medisinsk (kun dybdeskann)</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="lonn" checked> <span data-i18n="scanCatLonn">Lønn / salary</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="konfidensielt" checked> <span data-i18n="scanCatKonfidensielt">Konfidensielle ord</span></label>
-          <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="klient" checked> <span data-i18n="scanCatKlient">Klientnavn</span></label>
+          <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="klient" checked> <span data-i18n="scanCatKlient">Firmanavn</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="orgnummer" checked> <span data-i18n="scanCatOrgnummer">Org.nummer</span></label>
         </div>
 
@@ -749,11 +748,11 @@
             <li>Personnumre og fødselsdatoer (norsk mod-11-validering)</li>
             <li>Personnavn — via maskinlæring (spaCy NER, lastes ned via Innstillinger → Navnemodeller)</li>
             <li>E-postadresser og telefonnumre</li>
-            <li>Kontonumre og organisasjonsnumre</li>
+            <li>Bankdetaljer (kontonumre, IBAN og SWIFT/BIC) og organisasjonsnumre</li>
             <li>API-nøkler, tokens og passord</li>
             <li>Kommersielle nøkkeltall (timepris, dagspris, prosjektsum, margin og rabatt)</li>
             <li>Konfidensielle nøkkelord («konfidensielt», «hemmelig» m.fl.)</li>
-            <li>Klientnavn fra intern klientliste</li>
+            <li>Firmanavn fra intern firmaliste</li>
             <li>Høy-entropiske strenger (mulige hemmelige nøkler)</li>
           </ul>
         </div>
@@ -779,7 +778,7 @@
         <div class="about-section">
           <h3>Dybdeskann med AI (Ollama)</h3>
           <p>Dybdeskann-fanen sender dokumentteksten til en lokal AI-modell via <strong>Ollama</strong> og ber den identifisere sensitiv informasjon som regel-baserte detektorer kan misse – for eksempel navn i uvanlige formater, adresser uten postnummer, eller budsjettall i fritekst.</p>
-          <p>Du velger selv hvilke kategorier AI-en skal lete etter: navn, adresser, telefonnumre, personnumre, bankkontonumre, selskapsnavn, budsjetttall og valgfritt medisinske opplysninger. Valgte funn kan anonymiseres direkte fra fanen og lagres som tekstfil i nedlastingsmappen.</p>
+          <p>Du velger selv hvilke kategorier AI-en skal lete etter: navn, adresser, telefonnumre, personnumre, bankdetaljer, firmanavn, budsjetttall og valgfritt medisinske opplysninger. Valgte funn kan anonymiseres direkte fra fanen og lagres som tekstfil i nedlastingsmappen.</p>
           <div class="local-badge" style="margin-top:8px"><span class="icon">⏱️</span><span><strong>Maskinvarekrav:</strong> Dybdeskanning kan ta fra noen sekunder til flere minutter avhengig av dokumentstørrelse. Anbefalt maskin: minst 16 GB RAM og en relativt moderne CPU (fra ca. 2018 eller nyere). <strong>GPU-akselerasjon</strong> (NVIDIA/AMD) benyttes automatisk dersom det er tilgjengelig og gir betydelig kortere analysetid. Programmet viser om det kjører på CPU eller GPU.</span></div>
           <p style="margin-top:8px;">Ollama lastes ned gratis fra <a href="https://ollama.ai" target="_blank" style="color:var(--accent)">ollama.ai</a>. Anbefalt modell: <strong>llama3.2:3b</strong> (~1,9 GB).</p>
         </div>
@@ -803,11 +802,11 @@
             <li>Personnummer och födelsedatum</li>
             <li>Personnamn — via maskininlärning (spaCy NER, laddas ned via Inställningar → Namnmodeller)</li>
             <li>E-postadresser och telefonnummer</li>
-            <li>Kontonummer och organisationsnummer</li>
+            <li>Bankuppgifter (kontonummer, IBAN och SWIFT/BIC) och organisationsnummer</li>
             <li>API-nycklar, tokens och lösenord</li>
             <li>Kommersiella nyckeltal (timpris, dagspris, projektsumma, marginal och rabatt)</li>
             <li>Konfidentiella nyckelord («konfidentiellt», «hemligt» m.fl.)</li>
-            <li>Klientnamn från intern klientlista</li>
+            <li>Företagsnamn från intern företagslista</li>
             <li>Högentropi-strängar (möjliga hemliga nycklar)</li>
           </ul>
         </div>
@@ -833,7 +832,7 @@
         <div class="about-section">
           <h3>Djupskanning med AI (Ollama)</h3>
           <p>Fliken Djupskanning skickar dokumenttexten till en lokal AI-modell via <strong>Ollama</strong> och ber den identifiera känslig information som regelbaserade detektorer kan missa – till exempel namn i ovanliga format, adresser utan postnummer eller budgetsiffror i fritext.</p>
-          <p>Du väljer själv vilka kategorier AI:n ska leta efter: namn, adresser, telefonnummer, personnummer, bankkontonummer, företagsnamn, budgetbelopp och valfritt medicinska uppgifter. Valda fynd kan anonymiseras direkt från fliken och sparas som en textfil i nedladdningsmappen.</p>
+          <p>Du väljer själv vilka kategorier AI:n ska leta efter: namn, adresser, telefonnummer, personnummer, bankuppgifter, företagsnamn, budgetbelopp och valfritt medicinska uppgifter. Valda fynd kan anonymiseras direkt från fliken och sparas som en textfil i nedladdningsmappen.</p>
           <div class="local-badge" style="margin-top:8px"><span class="icon">⏱️</span><span><strong>Maskinvarukrav:</strong> Djupskanning kan ta från några sekunder till flera minuter beroende på dokumentets storlek. Rekommenderat: minst 16 GB RAM och en relativt modern CPU (från ca 2018 eller senare). <strong>GPU-acceleration</strong> (NVIDIA/AMD) används automatiskt om tillgänglig och ger avsevärt kortare analystid. Programmet visar om det körs på CPU eller GPU.</span></div>
           <p style="margin-top:8px;">Ollama laddas ned gratis från <a href="https://ollama.ai" target="_blank" style="color:var(--accent)">ollama.ai</a>. Rekommenderad modell: <strong>llama3.2:3b</strong> (~1,9 GB).</p>
         </div>
@@ -857,11 +856,11 @@
             <li>National ID numbers and birth dates (Norwegian mod-11 validation)</li>
             <li>Personal names — via machine learning (spaCy NER, download via Settings → Name models)</li>
             <li>Email addresses and phone numbers</li>
-            <li>Bank account numbers and organisation numbers</li>
+            <li>Bank details (account numbers, IBAN, and SWIFT/BIC) and organisation numbers</li>
             <li>API keys, tokens, and passwords</li>
             <li>Commercial metrics (hourly rate, daily rate, project total, margin, and discount)</li>
             <li>Confidential keywords ("confidential", "secret", etc.)</li>
-            <li>Client names from the internal client list</li>
+            <li>Company names from the internal company list</li>
             <li>High-entropy strings (possible secret keys)</li>
           </ul>
         </div>
@@ -887,7 +886,7 @@
         <div class="about-section">
           <h3>AI Deep Scan (Ollama)</h3>
           <p>The Deep Scan tab sends document text to a local AI model via <strong>Ollama</strong> and asks it to identify sensitive information that rule-based detectors may miss — for example names in unusual formats, addresses without postal codes, or budget figures embedded in free text.</p>
-          <p>You choose which categories the AI should look for: names, addresses, phone numbers, national ID numbers, bank account numbers, company names, budget amounts, and optional medical information. Selected findings can be redacted directly from the tab and saved as a text file in the Downloads folder.</p>
+          <p>You choose which categories the AI should look for: names, addresses, phone numbers, national ID numbers, bank details, company names, budget amounts, and optional medical information. Selected findings can be redacted directly from the tab and saved as a text file in the Downloads folder.</p>
           <div class="local-badge" style="margin-top:8px"><span class="icon">⏱️</span><span><strong>Hardware requirements:</strong> Deep scanning can take anywhere from a few seconds to several minutes depending on document size. Recommended: at least 16 GB RAM and a relatively modern CPU (circa 2018 or newer). <strong>GPU acceleration</strong> (NVIDIA/AMD) is used automatically when available and provides significantly faster analysis. The app shows whether it is running on CPU or GPU.</span></div>
           <p style="margin-top:8px;">Ollama is available free at <a href="https://ollama.ai" target="_blank" style="color:var(--accent)">ollama.ai</a>. Recommended model: <strong>llama3.2:3b</strong> (~1.9 GB).</p>
         </div>
@@ -911,11 +910,11 @@
             <li>Personenkennzahlen und Geburtsdaten (norwegische Mod-11-Validierung)</li>
             <li>Personennamen — per Machine Learning (spaCy NER, Download über Einstellungen → Namensmodelle)</li>
             <li>E-Mail-Adressen und Telefonnummern</li>
-            <li>Kontonummern und Organisationsnummern</li>
+            <li>Bankdaten (Kontonummern, IBAN und SWIFT/BIC) und Registernummern</li>
             <li>API-Schlüssel, Tokens und Passwörter</li>
             <li>Geschäftskennzahlen (Stundensatz, Tagessatz, Projektsumme, Marge und Rabatt)</li>
             <li>Vertrauliche Schlüsselwörter ("vertraulich", "geheim" usw.)</li>
-            <li>Kundennamen aus interner Kundenliste</li>
+            <li>Firmennamen aus interner Firmenliste</li>
             <li>Hochentropie-Strings (mögliche geheime Schlüssel)</li>
           </ul>
         </div>
@@ -941,7 +940,7 @@
         <div class="about-section">
           <h3>KI-Tiefenscan (Ollama)</h3>
           <p>Der Tab Tiefenscan sendet den Dokumenttext an ein lokales KI-Modell über <strong>Ollama</strong> und identifiziert sensible Informationen, die regelbasierte Detektoren übersehen können — z. B. Namen in ungewöhnlichen Formaten, Adressen ohne Postleitzahl oder Budgetwerte in Freitext.</p>
-          <p>Sie wählen selbst die Kategorien: Namen, Adressen, Telefonnummern, Personenkennzahlen, Kontonummern, Firmennamen, Budgetbeträge und optional medizinische Informationen. Ausgewählte Treffer können direkt im Tab anonymisiert und als Textdatei im Download-Ordner gespeichert werden.</p>
+          <p>Sie wählen selbst die Kategorien: Namen, Adressen, Telefonnummern, Personenkennzahlen, Bankdaten, Firmennamen, Budgetbeträge und optional medizinische Informationen. Ausgewählte Treffer können direkt im Tab anonymisiert und als Textdatei im Download-Ordner gespeichert werden.</p>
           <div class="local-badge" style="margin-top:8px"><span class="icon">⏱️</span><span><strong>Hardware:</strong> Tiefenscan kann je nach Dokumentgröße wenige Sekunden bis mehrere Minuten dauern. Empfohlen: mindestens 16 GB RAM und eine relativ moderne CPU (ca. 2018 oder neuer). <strong>GPU-Beschleunigung</strong> (NVIDIA/AMD) wird automatisch genutzt, falls verfügbar, und verkürzt die Analysezeit deutlich. Die App zeigt an, ob CPU oder GPU verwendet wird.</span></div>
           <p style="margin-top:8px;">Ollama ist kostenlos verfügbar unter <a href="https://ollama.ai" target="_blank" style="color:var(--accent)">ollama.ai</a>. Empfohlenes Modell: <strong>llama3.2:3b</strong> (~1,9 GB).</p>
         </div>
@@ -965,11 +964,11 @@
             <li>Identifiants personnels et dates de naissance (validation Mod-11 norvégienne)</li>
             <li>Noms de personnes — via apprentissage automatique (spaCy NER, téléchargement via Paramètres → Modèles de noms)</li>
             <li>Adresses e-mail et numéros de téléphone</li>
-            <li>Numéros de compte et numéros d’organisation</li>
+            <li>Coordonnées bancaires (numéros de compte, IBAN et SWIFT/BIC) et numéros d’organisation</li>
             <li>Clés API, tokens et mots de passe</li>
             <li>Indicateurs commerciaux (taux horaire, taux journalier, total projet, marge et remise)</li>
             <li>Mots-clés confidentiels ("confidentiel", "secret", etc.)</li>
-            <li>Noms de clients depuis la liste interne</li>
+            <li>Noms de sociétés depuis la liste interne</li>
             <li>Chaînes à forte entropie (clés secrètes possibles)</li>
           </ul>
         </div>
@@ -995,7 +994,7 @@
         <div class="about-section">
           <h3>Analyse IA approfondie (Ollama)</h3>
           <p>L’onglet d’analyse approfondie envoie le texte du document à un modèle IA local via <strong>Ollama</strong> pour identifier des informations sensibles que les détecteurs à règles peuvent manquer — par exemple des noms dans des formats inhabituels, des adresses sans code postal ou des montants de budget en texte libre.</p>
-          <p>Vous choisissez les catégories à rechercher : noms, adresses, numéros de téléphone, identifiants personnels, numéros de compte, noms d’entreprise, montants budgétaires et, en option, informations médicales. Les résultats sélectionnés peuvent être anonymisés directement depuis l’onglet et enregistrés en fichier texte dans le dossier Téléchargements.</p>
+          <p>Vous choisissez les catégories à rechercher : noms, adresses, numéros de téléphone, identifiants personnels, coordonnées bancaires, noms d’entreprise, montants budgétaires et, en option, informations médicales. Les résultats sélectionnés peuvent être anonymisés directement depuis l’onglet et enregistrés en fichier texte dans le dossier Téléchargements.</p>
           <div class="local-badge" style="margin-top:8px"><span class="icon">⏱️</span><span><strong>Configuration matérielle :</strong> l’analyse approfondie peut prendre de quelques secondes à plusieurs minutes selon la taille du document. Recommandé : au moins 16 Go de RAM et un CPU relativement moderne (vers 2018 ou plus récent). L’<strong>accélération GPU</strong> (NVIDIA/AMD) est utilisée automatiquement si disponible et réduit nettement le temps d’analyse. L’application indique si elle tourne sur CPU ou GPU.</span></div>
           <p style="margin-top:8px;">Ollama est disponible gratuitement sur <a href="https://ollama.ai" target="_blank" style="color:var(--accent)">ollama.ai</a>. Modèle recommandé : <strong>llama3.2:3b</strong> (~1,9 Go).</p>
         </div>
@@ -1019,11 +1018,11 @@
             <li>Números de identificación y fechas de nacimiento (validación noruega Mod-11)</li>
             <li>Nombres de personas — mediante aprendizaje automático (spaCy NER, descarga en Configuración → Modelos de nombres)</li>
             <li>Direcciones de correo y números de teléfono</li>
-            <li>Números de cuenta y números de organización</li>
+            <li>Datos bancarios (números de cuenta, IBAN y SWIFT/BIC) y números de organización</li>
             <li>Claves API, tokens y contraseñas</li>
             <li>Métricas comerciales (tarifa por hora, tarifa diaria, total del proyecto, margen y descuento)</li>
             <li>Palabras clave confidenciales ("confidencial", "secreto", etc.)</li>
-            <li>Nombres de clientes de la lista interna</li>
+            <li>Nombres de empresas de la lista interna</li>
             <li>Cadenas de alta entropía (posibles claves secretas)</li>
           </ul>
         </div>
@@ -1049,7 +1048,7 @@
         <div class="about-section">
           <h3>Escaneo profundo con IA (Ollama)</h3>
           <p>La pestaña de escaneo profundo envía el texto del documento a un modelo de IA local vía <strong>Ollama</strong> para identificar información sensible que los detectores basados en reglas pueden pasar por alto — por ejemplo nombres en formatos inusuales, direcciones sin código postal o cifras de presupuesto en texto libre.</p>
-          <p>Usted elige las categorías que la IA debe buscar: nombres, direcciones, teléfonos, identificaciones personales, números de cuenta, nombres de empresa, montos de presupuesto e información médica opcional. Los hallazgos seleccionados pueden anonimizarse directamente desde la pestaña y guardarse como archivo de texto en Descargas.</p>
+          <p>Usted elige las categorías que la IA debe buscar: nombres, direcciones, teléfonos, identificaciones personales, datos bancarios, nombres de empresa, montos de presupuesto e información médica opcional. Los hallazgos seleccionados pueden anonimizarse directamente desde la pestaña y guardarse como archivo de texto en Descargas.</p>
           <div class="local-badge" style="margin-top:8px"><span class="icon">⏱️</span><span><strong>Requisitos de hardware:</strong> el escaneo profundo puede tardar desde segundos hasta varios minutos según el tamaño del documento. Recomendado: al menos 16 GB de RAM y una CPU relativamente moderna (aprox. 2018 o posterior). La <strong>aceleración por GPU</strong> (NVIDIA/AMD) se usa automáticamente cuando está disponible y reduce significativamente el tiempo de análisis. La app muestra si se ejecuta en CPU o GPU.</span></div>
           <p style="margin-top:8px;">Ollama se descarga gratis en <a href="https://ollama.ai" target="_blank" style="color:var(--accent)">ollama.ai</a>. Modelo recomendado: <strong>llama3.2:3b</strong> (~1,9 GB).</p>
         </div>
@@ -1434,17 +1433,16 @@
         folderFile:         "Fil",
         scanOptsTitle:       "Hva vil du finne?",
         scanCatId:           "Personnummer / ID",
-        scanCatKonto:        "Kontonummer / IBAN",
+        scanCatKonto:        "Bankdetaljer",
         scanCatKredittkort:  "Kredittkort",
         scanCatNavn:         "Navn (person)",
         scanCatHemmeligheter:"API-nøkler / secrets",
         scanCatFinansielt:   "Finansielle nøkkeltall",
         scanCatKonfidensielt:"Konfidensielle ord",
-        scanCatKlient:       "Klientnavn",
+        scanCatKlient:       "Firmanavn",
         scanCatOrgnummer:    "Org.nummer",
         scanCatPassnummer:   "Passnummer",
         scanCatFodselsdato:  "Fødselsdato",
-        scanCatSwift:        "SWIFT / BIC-kode",
         scanCatLonn:         "Lønn / salary",
         aiToggleLabel:       "Kjør AI-dybdeskann (Ollama)",
         aiExtraCats:         "Ekstra AI-kategorier:",
@@ -1657,17 +1655,16 @@
         folderFile:         "Fil",
         scanOptsTitle:       "Vad vill du hitta?",
         scanCatId:           "Personnummer / ID",
-        scanCatKonto:        "Kontonummer / IBAN",
+        scanCatKonto:        "Bankuppgifter",
         scanCatKredittkort:  "Kredittkort",
         scanCatNavn:         "Namn (person)",
         scanCatHemmeligheter:"API-nycklar / secrets",
         scanCatFinansielt:   "Finansiella nyckeltal",
         scanCatKonfidensielt:"Konfidentiella ord",
-        scanCatKlient:       "Kundnamn",
+        scanCatKlient:       "Företagsnamn",
         scanCatOrgnummer:    "Org.nummer",
         scanCatPassnummer:   "Passnummer",
         scanCatFodselsdato:  "Födelsedatum",
-        scanCatSwift:        "SWIFT / BIC-kod",
         scanCatLonn:         "Lön / salary",
         aiToggleLabel:       "Kör AI-djupskanning (Ollama)",
         aiExtraCats:         "Extra AI-kategorier:",
@@ -1880,17 +1877,16 @@
         folderFile:         "File",
         scanOptsTitle:       "What do you want to find?",
         scanCatId:           "National / personal ID numbers",
-        scanCatKonto:        "Account number / IBAN",
+        scanCatKonto:        "Bank details",
         scanCatKredittkort:  "Credit cards",
         scanCatNavn:         "Person names",
         scanCatHemmeligheter:"API keys / secrets",
         scanCatFinansielt:   "Financial figures",
         scanCatKonfidensielt:"Confidential keywords",
-        scanCatKlient:       "Client names",
+        scanCatKlient:       "Company names",
         scanCatOrgnummer:    "Organisation numbers",
         scanCatPassnummer:   "Passport numbers",
         scanCatFodselsdato:  "Dates of birth",
-        scanCatSwift:        "SWIFT / BIC codes",
         scanCatLonn:         "Salary / compensation",
         aiToggleLabel:       "Run AI deep scan (Ollama)",
         aiExtraCats:         "Extra AI categories:",
@@ -2093,17 +2089,16 @@
         dstHwReq:            "⚠ Tiefenscan läuft lokal und kann mehrere Minuten dauern. Empfohlen: mind. 16 GB RAM. GPU-Beschleunigung wird automatisch genutzt.",
         scanOptsTitle:       "Was soll gesucht werden?",
         scanCatId:           "Personennummer / ID",
-        scanCatKonto:        "Kontonummer / IBAN",
+        scanCatKonto:        "Bankdaten",
         scanCatKredittkort:  "Kreditkarte",
         scanCatNavn:         "Name (Person)",
         scanCatHemmeligheter:"API-Schlüssel / Secrets",
         scanCatFinansielt:   "Finanzkennzahlen",
         scanCatKonfidensielt:"Vertrauliche Wörter",
-        scanCatKlient:       "Kundenname",
+        scanCatKlient:       "Firmenname",
         scanCatOrgnummer:    "Registernummer",
         scanCatPassnummer:   "Reisepassnummer",
         scanCatFodselsdato:  "Geburtsdatum",
-        scanCatSwift:        "SWIFT / BIC-Code",
         scanCatLonn:         "Gehalt / Lohn",
         logHint:             "Protokolldatei:",
         historyTitle:        "Letzte Scans",
@@ -2317,17 +2312,16 @@
         dstHwReq:            "⚠ L'analyse approfondie s'exécute localement et peut prendre plusieurs minutes. Recommandé : au moins 16 Go de RAM. L'accélération GPU est utilisée automatiquement.",
         scanOptsTitle:       "Que rechercher ?",
         scanCatId:           "Numéro d'identité / ID",
-        scanCatKonto:        "Numéro de compte / IBAN",
+        scanCatKonto:        "Coordonnées bancaires",
         scanCatKredittkort:  "Carte de crédit",
         scanCatNavn:         "Nom (personne)",
         scanCatHemmeligheter:"Clés API / secrets",
         scanCatFinansielt:   "Données financières",
         scanCatKonfidensielt:"Mots confidentiels",
-        scanCatKlient:       "Nom de client",
+        scanCatKlient:       "Nom de société",
         scanCatOrgnummer:    "Numéro d'entreprise",
         scanCatPassnummer:   "Numéro de passeport",
         scanCatFodselsdato:  "Date de naissance",
-        scanCatSwift:        "Code SWIFT / BIC",
         scanCatLonn:         "Salaire",
         logHint:             "Fichier journal :",
         historyTitle:        "Analyses récentes",
@@ -2541,17 +2535,16 @@
         dstHwReq:            "⚠ El escaneo profundo se ejecuta localmente y puede tardar varios minutos. Recomendado: al menos 16 GB de RAM. La aceleración GPU se usa automáticamente.",
         scanOptsTitle:       "¿Qué buscar?",
         scanCatId:           "Número de identidad / ID",
-        scanCatKonto:        "Número de cuenta / IBAN",
+        scanCatKonto:        "Datos bancarios",
         scanCatKredittkort:  "Tarjeta de crédito",
         scanCatNavn:         "Nombre (persona)",
         scanCatHemmeligheter:"Claves API / secretos",
         scanCatFinansielt:   "Datos financieros",
         scanCatKonfidensielt:"Palabras confidenciales",
-        scanCatKlient:       "Nombre de cliente",
+        scanCatKlient:       "Nombre de empresa",
         scanCatOrgnummer:    "Número de registro",
         scanCatPassnummer:   "Número de pasaporte",
         scanCatFodselsdato:  "Fecha de nacimiento",
-        scanCatSwift:        "Código SWIFT / BIC",
         scanCatLonn:         "Salario",
         logHint:             "Archivo de registro:",
         historyTitle:        "Escaneos recientes",
@@ -4154,8 +4147,7 @@
       "id":            c => ["fødselsnummer","d-nummer","personnummer","samordningsnummer","cpr-nummer","uk national insurance","us social security","mulig personnummer"].some(p => c.startsWith(p)),
       "passnummer":    c => c.startsWith("passnummer"),
       "fodselsdato":   c => c.startsWith("fødselsdato"),
-      "konto":         c => ["kontonummer","bankgiro","plusgiro","iban"].some(p => c.startsWith(p)),
-      "swift":         c => c.startsWith("swift/bic"),
+      "konto":         c => ["kontonummer","bankgiro","plusgiro","iban","swift/bic"].some(p => c.startsWith(p)),
       "kredittkort":   c => c.startsWith("kredittkort"),
       "navn":          c => c.startsWith("navn (person)"),
       "nettadresse":   c => c.startsWith("nettadresse") || c.startsWith("ip-adresse"),
@@ -4175,8 +4167,7 @@
       "id":          "personnummer",
       "passnummer":  "passnummer",
       "fodselsdato": "fodselsdato",
-      "konto":       "bankkonto",
-      "swift":       "swift",
+      "konto":       ["bankkonto", "swift"],
       "navn":        "navn",
       "nettadresse": "nettadresse",
       "finansielt":  "budsjett_tall",
@@ -4198,7 +4189,11 @@
       const selected = [...document.querySelectorAll(".scan-cat:checked")].map(cb => cb.value);
       const cats = [];
       for (const key of selected) {
-        if (AI_CAT_MAP[key] && !cats.includes(AI_CAT_MAP[key])) cats.push(AI_CAT_MAP[key]);
+        const mapped = AI_CAT_MAP[key];
+        const values = Array.isArray(mapped) ? mapped : (mapped ? [mapped] : []);
+        values.forEach(value => {
+          if (!cats.includes(value)) cats.push(value);
+        });
       }
       document.querySelectorAll(".ai-extra-cat:checked").forEach(cb => {
         if (!cats.includes(cb.value)) cats.push(cb.value);
