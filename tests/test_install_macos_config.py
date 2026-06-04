@@ -34,8 +34,16 @@ def test_macos_quick_action_accepts_finder_file_inputs() -> None:
     assert "chmod -R u+rwX,go+rX" in script
     assert "plutil -lint" in script
     assert "Privacy & Security" in script
-    assert '"${app_binary_xml}" "\\$f"' in script
-    assert '"{app_binary_xml}" "$f"' in app
+    assert "run_xlent_scanner.sh" in script
+    assert "run_xlent_scanner.sh" in app
+    assert "XLENTScannerQuickAction.log" in script
+    assert "XLENTScannerQuickAction.log" in app
+    assert 'XLENT_SCANNER_APP_BINARY="${app_binary_xml}" "${runner_script_xml}" "\\$@"' in script
+    assert 'XLENT_SCANNER_APP_BINARY="{app_binary_xml}" "{runner_script_xml}" "$@"' in app
+    assert "&gt;/dev/null" not in script
+    assert "2&gt;&amp;1" not in script
+    assert "&gt;/dev/null" not in app
+    assert "2&gt;&amp;1" not in app
     assert "killall Finder" in script
 
 

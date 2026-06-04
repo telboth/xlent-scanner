@@ -384,6 +384,8 @@ def _install_mac_quick_action() -> Path:
     contents_dir.mkdir(parents=True, exist_ok=True)
 
     app_binary_xml = html.escape(str(binary), quote=True)
+    runner_script = contents_dir / "run_xlent_scanner.sh"
+    runner_script_xml = html.escape(str(runner_script), quote=True)
     (contents_dir / "Info.plist").write_text(
         """<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
@@ -419,6 +421,48 @@ def _install_mac_quick_action() -> Path:
 """,
         encoding="utf-8",
     )
+
+    runner_script.write_text(
+        """#!/bin/bash
+set -u
+
+LOG_DIR="${HOME}/Library/Logs"
+LOG_FILE="${LOG_DIR}/XLENTScannerQuickAction.log"
+APP_BINARY="${XLENT_SCANNER_APP_BINARY:-/Applications/XLENTScanner.app/Contents/MacOS/XLENTScanner}"
+
+mkdir -p "${LOG_DIR}"
+
+{
+  echo "---- $(date '+%Y-%m-%d %H:%M:%S') ----"
+  echo "user=$(id -un 2>/dev/null || echo unknown)"
+  echo "pwd=$(pwd)"
+  echo "app_binary=${APP_BINARY}"
+  echo "arg_count=$#"
+
+  if [[ ! -x "${APP_BINARY}" ]]; then
+    echo "error=app_binary_not_executable"
+    exit 1
+  fi
+
+  if [[ "$#" -eq 0 ]]; then
+    echo "error=no_input_files"
+    exit 0
+  fi
+
+  for f in "$@"; do
+    echo "input=${f}"
+    if [[ ! -e "${f}" ]]; then
+      echo "warning=input_missing path=${f}"
+      continue
+    fi
+    "${APP_BINARY}" "${f}" >>"${LOG_FILE}" 2>&1 &
+    echo "started pid=$! path=${f}"
+  done
+} >>"${LOG_FILE}" 2>&1
+""",
+        encoding="utf-8",
+    )
+    runner_script.chmod(0o755)
 
     (contents_dir / "document.wflow").write_text(
         f"""<?xml version="1.0" encoding="UTF-8"?>
@@ -474,9 +518,7 @@ def _install_mac_quick_action() -> Path:
         <key>ActionParameters</key>
         <dict>
           <key>COMMAND_STRING</key>
-          <string>for f in "$@"; do
-  "{app_binary_xml}" "$f" &gt;/dev/null 2&gt;&amp;1 &amp;
-done</string>
+          <string>XLENT_SCANNER_APP_BINARY="{app_binary_xml}" "{runner_script_xml}" "$@"</string>
           <key>CheckedForUserDefaultShell</key><true/>
           <key>inputMethod</key><integer>1</integer>
           <key>shell</key><string>/bin/bash</string>

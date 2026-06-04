@@ -131,6 +131,8 @@ install_finder_quick_action() {
   local service_name
   local service_path
   local app_binary_xml
+  local runner_script
+  local runner_script_xml
 
   user="$(target_user)"
   home_dir="$(target_home "${user}")"
@@ -143,6 +145,8 @@ install_finder_quick_action() {
   service_name="Skann med XLENT.workflow"
   service_path="$service_dir/$service_name"
   app_binary_xml="$(xml_escape "$binary")"
+  runner_script="$service_path/Contents/run_xlent_scanner.sh"
+  runner_script_xml="$(xml_escape "$runner_script")"
 
   mkdir -p "$service_dir"
   rm -rf "$service_path"
@@ -181,6 +185,46 @@ install_finder_quick_action() {
 </dict>
 </plist>
 PLIST
+
+  cat > "$runner_script" <<'RUNNER'
+#!/bin/bash
+set -u
+
+LOG_DIR="${HOME}/Library/Logs"
+LOG_FILE="${LOG_DIR}/XLENTScannerQuickAction.log"
+APP_BINARY="${XLENT_SCANNER_APP_BINARY:-/Applications/XLENTScanner.app/Contents/MacOS/XLENTScanner}"
+
+mkdir -p "${LOG_DIR}"
+
+{
+  echo "---- $(date '+%Y-%m-%d %H:%M:%S') ----"
+  echo "user=$(id -un 2>/dev/null || echo unknown)"
+  echo "pwd=$(pwd)"
+  echo "app_binary=${APP_BINARY}"
+  echo "arg_count=$#"
+
+  if [[ ! -x "${APP_BINARY}" ]]; then
+    echo "error=app_binary_not_executable"
+    exit 1
+  fi
+
+  if [[ "$#" -eq 0 ]]; then
+    echo "error=no_input_files"
+    exit 0
+  fi
+
+  for f in "$@"; do
+    echo "input=${f}"
+    if [[ ! -e "${f}" ]]; then
+      echo "warning=input_missing path=${f}"
+      continue
+    fi
+    "${APP_BINARY}" "${f}" >>"${LOG_FILE}" 2>&1 &
+    echo "started pid=$! path=${f}"
+  done
+} >>"${LOG_FILE}" 2>&1
+RUNNER
+  chmod 755 "$runner_script"
 
   cat > "$service_path/Contents/document.wflow" <<WFLOW
 <?xml version="1.0" encoding="UTF-8"?>
@@ -251,9 +295,7 @@ PLIST
         <key>ActionParameters</key>
         <dict>
           <key>COMMAND_STRING</key>
-          <string>for f in "\$@"; do
-  "${app_binary_xml}" "\$f" &gt;/dev/null 2&gt;&amp;1 &amp;
-done</string>
+          <string>XLENT_SCANNER_APP_BINARY="${app_binary_xml}" "${runner_script_xml}" "\$@"</string>
           <key>CheckedForUserDefaultShell</key>
           <true/>
           <key>inputMethod</key>
