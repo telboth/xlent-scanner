@@ -71,6 +71,13 @@ def test_light_theme_has_non_white_header_for_white_logo():
     assert "color: var(--header-text);" in html
 
 
+def test_header_uses_redaction_scanner_title():
+    html = HTML.read_text(encoding="utf-8")
+
+    assert "<h1>Compliance redaction scanner</h1>" in html
+    assert "<h1>Compliance-scanner</h1>" not in html
+
+
 def test_theme_translations_exist_for_all_ui_languages():
     html = HTML.read_text(encoding="utf-8")
 
@@ -170,6 +177,16 @@ def test_scan_category_translations_exist_for_all_languages():
         "scanCatLonn",
         "dstCatMedisinsk",
     ]:
+        assert html.count(f"{key}:") == 6
+
+
+def test_empty_document_warning_translations_exist_for_all_languages():
+    html = HTML.read_text(encoding="utf-8")
+
+    assert "function warningText" in html
+    assert 'r.warning_code === "no_text_extracted"' in html
+    assert 'r.warning_code === "little_text_extracted"' in html
+    for key in ["warnNoText", "warnLittleText"]:
         assert html.count(f"{key}:") == 6
 
 

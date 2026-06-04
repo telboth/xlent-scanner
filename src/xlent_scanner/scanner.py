@@ -467,7 +467,17 @@ def scan_file(path: str | Path, ignore_xlent: bool = False, language: str = "aut
 
     _TEXT_MIN = 50
     warning: str | None = None
-    if len(text.strip()) < _TEXT_MIN:
+    warning_code: str | None = None
+    if not text.strip():
+        warning_code = "no_text_extracted"
+        warning = (
+            "Ingen tekst ble funnet i dokumentet. "
+            "Filen kan være en bildebasert eller innskannet PDF/dokument. "
+            "Innhold i bilder kan ikke sjekkes sikkert uten OCR. "
+            "Bruk en tekstbasert versjon av filen, eller kjør OCR før scanning."
+        )
+    elif len(text.strip()) < _TEXT_MIN:
+        warning_code = "little_text_extracted"
         warning = (
             "Lite eller ingen tekst ble funnet i dokumentet. "
             "Filen kan bestå av innscannede bilder (bilde-PDF) "
@@ -541,5 +551,6 @@ def scan_file(path: str | Path, ignore_xlent: bool = False, language: str = "aut
         original_text=text,
         language=lang,
         warning=warning,
+        warning_code=warning_code,
     )
     return assess(result)

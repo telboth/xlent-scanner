@@ -31,6 +31,13 @@ def test_macos_quick_action_accepts_finder_file_inputs() -> None:
     assert 'user="$(target_user)"' in script
     assert 'home_dir="$(target_home "${user}")"' in script
     assert "chown -R" in script
+    assert "chmod -R u+rwX,go+rX" in script
+    assert "plutil -lint" in script
+    assert "Privacy & Security" in script
+    assert "/usr/bin/open -n" in script
+    assert "/usr/bin/open -n" in app
+    assert "--args" in script
+    assert "--args" in app
     assert "killall Finder" in script
 
 

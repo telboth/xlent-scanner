@@ -85,6 +85,7 @@ uv pip install --python "$PYTHON_EXE" "pyinstaller>=6.0.0" "pyinstaller-hooks-co
   --collect-data pptx \
   --collect-all docling \
   --collect-all docling_core \
+  --collect-all docling_parse \
   --collect-data docling_ibm_models \
   \
   --hidden-import "webview.platforms.cocoa" \

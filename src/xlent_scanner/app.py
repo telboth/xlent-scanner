@@ -314,11 +314,19 @@ def _mac_app_binary_path() -> Path:
     return Path("/Applications/XLENTScanner.app/Contents/MacOS/XLENTScanner")
 
 
+def _mac_app_bundle_path() -> Path:
+    binary = _mac_app_binary_path()
+    if binary.name == "XLENTScanner" and binary.parent.name == "MacOS":
+        return binary.parents[2]
+    return Path("/Applications/XLENTScanner.app")
+
+
 def _install_mac_quick_action() -> Path:
     if sys.platform != "darwin":
         raise RuntimeError("Finder Quick Action kan bare installeres på macOS.")
 
-    binary = _mac_app_binary_path()
+    app_path = _mac_app_bundle_path()
+    binary = app_path / "Contents" / "MacOS" / "XLENTScanner"
     if not binary.exists():
         raise RuntimeError(f"Fant ikke XLENTScanner-binær på: {binary}")
 
@@ -327,7 +335,7 @@ def _install_mac_quick_action() -> Path:
     contents_dir = service_path / "Contents"
     contents_dir.mkdir(parents=True, exist_ok=True)
 
-    app_binary_xml = html.escape(str(binary), quote=True)
+    app_path_xml = html.escape(str(app_path), quote=True)
     (contents_dir / "Info.plist").write_text(
         """<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
@@ -419,7 +427,7 @@ def _install_mac_quick_action() -> Path:
         <dict>
           <key>COMMAND_STRING</key>
           <string>for f in "$@"; do
-  "{app_binary_xml}" "$f" &amp;
+  /usr/bin/open -n "{app_path_xml}" --args "$f" &gt;/dev/null 2&gt;&amp;1 &amp;
 done</string>
           <key>CheckedForUserDefaultShell</key><true/>
           <key>inputMethod</key><integer>1</integer>
@@ -508,6 +516,7 @@ def scan():
             "recommended_action": "",
             "language": "auto",
             "warning": None,
+            "warning_code": None,
             "original_text": "",
             "error": f"Klarte ikke å lese fil: {exc}",
         })
@@ -571,6 +580,7 @@ def scan_upload():
             "recommended_action": "",
             "language": "auto",
             "warning": None,
+            "warning_code": None,
             "original_text": "",
             "error": f"Klarte ikke å lese fil: {exc}",
         })
@@ -776,6 +786,7 @@ def _api_result_payload(result, scan_id: str, include_preview: bool = False) -> 
         "recommended_action": result.recommended_action,
         "language": result.language,
         "warning": result.warning,
+        "warning_code": getattr(result, "warning_code", None),
         "error": result.error,
         "findings": [
             {

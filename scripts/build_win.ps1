@@ -85,6 +85,7 @@ $pyiArgs = @(
     # Docling (PDF-parsing med layout-analyse og tabellgjenkjenning)
     "--collect-all", "docling",
     "--collect-all", "docling_core",
+    "--collect-all", "docling_parse",
     "--collect-data", "docling_ibm_models",
 
     # PyWebView Windows-backend (dynamisk importert – usynlig for PyInstaller)

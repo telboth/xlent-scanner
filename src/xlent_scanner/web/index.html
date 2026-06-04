@@ -548,7 +548,7 @@
   <header>
     <img src="/logo.svg" class="logo" alt="XLENT" />
     <div class="title-block">
-      <h1>Compliance-scanner</h1>
+      <h1>Compliance redaction scanner</h1>
       <div class="sub" data-i18n="subtitle">Sjekker dokumenter for sensitiv informasjon før opplasting til online AI-verktøy</div>
     </div>
     <span class="app-version">v__APP_VERSION__<span class="app-updated"> · Oppdatert __APP_STARTED__</span></span>
@@ -1279,6 +1279,8 @@
         exportCsv:    "Eksporter CSV",
         historyTitle: "Siste skanninger",
         pdfCaveat:    "PDF-redaktering erstatter tekst i innholdsstrømmen. Merk at tekst i metadata eller bilder ikke anonymiseres — kontroller resultatet.",
+        warnNoText:   "Ingen tekst ble funnet i dokumentet. Filen kan være en bildebasert eller innskannet PDF/dokument. Innhold i bilder kan ikke sjekkes sikkert uten OCR.",
+        warnLittleText:"Lite tekst ble funnet i dokumentet. Hvis filen består av skannede bilder, kan sensitiv informasjon være usynlig for scanneren.",
         scanErr:      "Feil under scanning:",
         dragErr:      "Feil under drag-drop:",
         dlgErr:       "Klarte ikke å åpne filvelger:",
@@ -1494,6 +1496,8 @@
         exportCsv:    "Exportera CSV",
         historyTitle: "Senaste skanningar",
         pdfCaveat:    "PDF-redigering ersätter text i innehållsströmmen. Observera att text i metadata eller bilder inte anonymiseras — kontrollera resultatet.",
+        warnNoText:   "Ingen text hittades i dokumentet. Filen kan vara en bildbaserad eller inskannad PDF/dokument. Innehåll i bilder kan inte kontrolleras säkert utan OCR.",
+        warnLittleText:"Lite text hittades i dokumentet. Om filen består av skannade bilder kan känslig information vara osynlig för scannern.",
         scanErr:      "Fel vid skanning:",
         dragErr:      "Fel vid drag och släpp:",
         dlgErr:       "Kunde inte öppna filväljaren:",
@@ -1709,6 +1713,8 @@
         exportCsv:    "Export CSV",
         historyTitle: "Recent scans",
         pdfCaveat:    "PDF redaction replaces text in the content stream. Note that text in metadata or images is not redacted — verify the result.",
+        warnNoText:   "No text was found in the document. The file may be image-based or scanned. Content inside images cannot be checked reliably without OCR.",
+        warnLittleText:"Very little text was found in the document. If the file consists of scanned images, sensitive information may be invisible to the scanner.",
         scanErr:      "Error during scan:",
         dragErr:      "Error during drag-drop:",
         dlgErr:       "Could not open file picker:",
@@ -1924,6 +1930,8 @@
         wlAdded:             "✓ Hinzugefügt",
         wlErr:               "Fehler!",
         pdfCaveat:           "PDF-Direktbearbeitung: Text wird in Suchschichten ersetzt.",
+        warnNoText:          "Im Dokument wurde kein Text gefunden. Die Datei kann bildbasiert oder gescannt sein. Inhalte in Bildern können ohne OCR nicht zuverlässig geprüft werden.",
+        warnLittleText:      "Im Dokument wurde nur sehr wenig Text gefunden. Wenn die Datei aus gescannten Bildern besteht, können sensible Informationen für den Scanner unsichtbar sein.",
         docLangAuto:         "Automatisch erkennen",
         settingsDocLangTitle:"Dokumentsprache",
         settingsDocLangNote: "Automatische Erkennung bestimmt die Dokumentsprache und wählt die passenden Muster.",
@@ -2140,6 +2148,8 @@
         wlAdded:             "✓ Ajouté",
         wlErr:               "Erreur !",
         pdfCaveat:           "Édition PDF directe : le texte est remplacé dans les calques de recherche.",
+        warnNoText:          "Aucun texte n’a été trouvé dans le document. Le fichier peut être basé sur des images ou scanné. Le contenu des images ne peut pas être vérifié de manière fiable sans OCR.",
+        warnLittleText:      "Très peu de texte a été trouvé dans le document. Si le fichier est composé d’images scannées, des informations sensibles peuvent être invisibles pour le scanner.",
         docLangAuto:         "Détection automatique",
         settingsDocLangTitle:"Langue du document",
         settingsDocLangNote: "La détection automatique détermine la langue du document et choisit les bons modèles.",
@@ -2356,6 +2366,8 @@
         wlAdded:             "✓ Añadido",
         wlErr:               "¡Error!",
         pdfCaveat:           "Edición directa de PDF: el texto se reemplaza en capas de búsqueda.",
+        warnNoText:          "No se encontró texto en el documento. El archivo puede estar basado en imágenes o escaneado. El contenido de las imágenes no puede comprobarse de forma fiable sin OCR.",
+        warnLittleText:      "Se encontró muy poco texto en el documento. Si el archivo consta de imágenes escaneadas, la información sensible puede ser invisible para el escáner.",
         docLangAuto:         "Detección automática",
         settingsDocLangTitle:"Idioma del documento",
         settingsDocLangNote: "La detección automática determina el idioma del documento y elige los patrones correctos.",
@@ -2577,6 +2589,13 @@
     function escapeHtml(s) {
       return String(s).replace(/[&<>"']/g, c =>
         ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+    }
+
+    function warningText(r) {
+      if (!r) return "";
+      if (r.warning_code === "no_text_extracted") return t("warnNoText");
+      if (r.warning_code === "little_text_extracted") return t("warnLittleText");
+      return r.warning || "";
     }
     function withLogHint(msg) {
       if (!LOG_PATH || LOG_PATH === "__LOG_PATH__") return msg;
@@ -3157,8 +3176,9 @@
         .map((f, i) => ({ f, i }))
         .sort((a, b) => (SEV_ORDER[b.f.severity]||0) - (SEV_ORDER[a.f.severity]||0));
 
-      const warningBanner = r.warning
-        ? `<div class="warning-banner">⚠️ ${escapeHtml(r.warning)}</div>` : "";
+      const warning = warningText(r);
+      const warningBanner = warning
+        ? `<div class="warning-banner">⚠️ ${escapeHtml(warning)}</div>` : "";
 
       resultEl.innerHTML = `
         <div class="result-header">

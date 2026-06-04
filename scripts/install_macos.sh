@@ -130,7 +130,7 @@ install_finder_quick_action() {
   local service_dir
   local service_name
   local service_path
-  local app_binary_xml
+  local app_path_xml
 
   user="$(target_user)"
   home_dir="$(target_home "${user}")"
@@ -142,7 +142,7 @@ install_finder_quick_action() {
   service_dir="$home_dir/Library/Services"
   service_name="Skann med XLENT.workflow"
   service_path="$service_dir/$service_name"
-  app_binary_xml="$(xml_escape "$binary")"
+  app_path_xml="$(xml_escape "$app_path")"
 
   mkdir -p "$service_dir"
   rm -rf "$service_path"
@@ -252,7 +252,7 @@ PLIST
         <dict>
           <key>COMMAND_STRING</key>
           <string>for f in "\$@"; do
-  "${app_binary_xml}" "\$f" &amp;
+  /usr/bin/open -n "${app_path_xml}" --args "\$f" &gt;/dev/null 2&gt;&amp;1 &amp;
 done</string>
           <key>CheckedForUserDefaultShell</key>
           <true/>
@@ -332,6 +332,12 @@ WFLOW
   if [[ "$(id -u)" == "0" && "${user}" != "root" ]]; then
     chown -R "${user}:staff" "$service_path" 2>/dev/null || chown -R "${user}" "$service_path" 2>/dev/null || true
   fi
+  chmod -R u+rwX,go+rX "$service_path" 2>/dev/null || true
+
+  if command -v plutil >/dev/null 2>&1; then
+    plutil -lint "$service_path/Contents/Info.plist" >/dev/null
+    plutil -lint "$service_path/Contents/document.wflow" >/dev/null
+  fi
 
   /System/Library/CoreServices/pbs -flush 2>/dev/null || true
   touch "$service_path" 2>/dev/null || true
@@ -343,6 +349,8 @@ WFLOW
   echo ""
   echo "Aktivering:"
   echo "  Hoyreklikk en fil i Finder -> Hurtighandlinger -> Skann med XLENT"
+  echo "  Hvis valget ikke vises: System Settings -> Privacy & Security -> Extensions -> Finder, aktiver Skann med XLENT."
+  echo "  Sjekk ogsa Tjenester/Services nederst i Finder-hoyreklikkmenyen."
 }
 
 if [[ "${MODE}" == "quick-action-only" ]]; then

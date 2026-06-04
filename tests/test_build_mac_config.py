@@ -7,6 +7,7 @@ def test_macos_build_enables_finder_open_with() -> None:
     assert "--argv-emulation" in script
     assert "--collect-data docx" in script
     assert "--collect-data pptx" in script
+    assert "--collect-all docling_parse" in script
     assert "CFBundleDocumentTypes" in script
     assert "Documents supported by XLENT Scanner" not in script
     assert "XLENT Scanner supported documents" in script

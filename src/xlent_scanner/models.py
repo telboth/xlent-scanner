@@ -28,3 +28,4 @@ class ScanResult:
     original_text: str = ""           # full ekstrahert tekst – brukes til anonymisering
     language: str = ""                # detektert/valgt språk: nb / sv / en
     warning: str | None = None        # advarsel om tom/bilde-basert fil
+    warning_code: str | None = None   # stabil kode som GUI/API kan oversette
