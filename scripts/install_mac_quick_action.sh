@@ -204,7 +204,7 @@ done</string>
     <key>serviceOutputTypeIdentifier</key>
     <string>com.apple.Automator.nothing</string>
     <key>serviceProcessesInput</key>
-    <integer>0</integer>
+    <integer>1</integer>
     <key>workflowTypeIdentifier</key>
     <string>com.apple.Automator.workflow</string>
   </dict>
@@ -213,10 +213,10 @@ done</string>
 WFLOW
 
 /System/Library/CoreServices/pbs -flush 2>/dev/null || true
+killall Finder 2>/dev/null || true
 
 echo ""
 echo "Quick Action installert: $SERVICE_PATH"
 echo ""
 echo "Aktivering:"
-echo "  1. Kjor: killall Finder"
-echo "  2. Hoyreklikk en fil i Finder -> Hurtighandlinger -> Skann med XLENT"
+echo "  Hoyreklikk en fil i Finder -> Hurtighandlinger -> Skann med XLENT"

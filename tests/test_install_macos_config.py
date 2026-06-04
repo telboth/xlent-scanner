@@ -13,6 +13,7 @@ def test_macos_installer_removes_quarantine() -> None:
     assert "lsregister" in script
     assert "Launch Services" in script
     assert "pbs -flush" in script
+    assert 'bash "${QUICK_ACTION_PATH}" "${DEST_APP}"' in script
 
 
 def test_macos_quick_action_accepts_finder_file_inputs() -> None:
@@ -22,3 +23,8 @@ def test_macos_quick_action_accepts_finder_file_inputs() -> None:
     for text in ("public.item", "public.content", "public.data", "public.file-url", "com.apple.cocoa.path"):
         assert text in script
         assert text in app
+
+    assert "<key>serviceProcessesInput</key>" in script
+    assert "<integer>1</integer>" in script
+    assert "<key>serviceProcessesInput</key><integer>1</integer>" in app
+    assert "killall Finder" in script

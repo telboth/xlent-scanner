@@ -179,6 +179,8 @@ def test_medical_ai_category_is_available_but_default_off():
     assert 'class="scan-cat" value="medisinsk"' in html
     assert 'class="scan-cat" value="medisinsk" checked' not in html
     assert 'data-i18n="dstCatMedisinsk"' in html
+    assert "Medisinsk (kun dybdeskann)" in html
+    assert "Medical (deep scan only)" in html
     assert '"medisinsk":   "medisinsk"' in html
 
 

@@ -99,8 +99,14 @@ echo "Installerte ${DEST_APP}"
 
 if [[ -n "${QUICK_ACTION_URL}" ]]; then
   echo ""
-  echo "Installer Finder Quick Action med:"
-  echo "  bash \"${QUICK_ACTION_PATH}\""
+  echo "Installerer Finder Quick Action for denne brukeren..."
+  if bash "${QUICK_ACTION_PATH}" "${DEST_APP}"; then
+    echo "Finder Quick Action installert."
+  else
+    echo "Advarsel: Finder Quick Action kunne ikke installeres automatisk."
+    echo "Proev manuelt:"
+    echo "  bash \"${QUICK_ACTION_PATH}\" \"${DEST_APP}\""
+  fi
 fi
 
 echo ""

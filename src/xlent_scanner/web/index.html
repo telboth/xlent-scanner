@@ -608,7 +608,7 @@
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="nettadresse" checked> <span data-i18n="dstCatNettadresse">Nettadresser / IP</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="hemmeligheter" checked> <span data-i18n="scanCatHemmeligheter">API-nøkler / secrets</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="finansielt" checked> <span data-i18n="scanCatFinansielt">Finansielle nøkkeltall</span></label>
-          <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="medisinsk"> <span data-i18n="dstCatMedisinsk">Medisinsk</span></label>
+          <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="medisinsk"> <span data-i18n="dstCatMedisinsk">Medisinsk (kun dybdeskann)</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="lonn" checked> <span data-i18n="scanCatLonn">Lønn / salary</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="konfidensielt" checked> <span data-i18n="scanCatKonfidensielt">Konfidensielle ord</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="klient" checked> <span data-i18n="scanCatKlient">Klientnavn</span></label>
@@ -1206,10 +1206,10 @@
       </div>
 
       <div class="settings-section" id="section-mac-quick-action" style="display:none;">
-        <div class="settings-section-title" data-i18n="settingsMacTitle">macOS Finder Quick Action</div>
+        <div class="settings-section-title" data-i18n="settingsMacTitle">macOS Finder-hurtighandling</div>
         <div class="settings-note" data-i18n="settingsMacNote">Installerer høyreklikk-valget «Skann med XLENT» i Finder for denne brukeren.</div>
         <div class="settings-row" style="margin-top:8px;">
-          <button id="btn-install-mac-quick-action" class="ctrl-btn ctrl-btn-primary" data-i18n="installMacQuickAction">Installer Finder Quick Action</button>
+          <button id="btn-install-mac-quick-action" class="ctrl-btn ctrl-btn-primary" data-i18n="installMacQuickAction">Installer Finder-hurtighandling</button>
         </div>
         <div class="settings-note" id="mac-quick-action-msg"></div>
       </div>
@@ -1378,12 +1378,12 @@
         openWebModeStarting:"Starter web-modus…",
         openWebModeStarted: "Web-modus startet i nettleser.",
         openWebModeFailed:  "Kunne ikke starte web-modus.",
-        settingsMacTitle:   "macOS Finder Quick Action",
+        settingsMacTitle:   "macOS Finder-hurtighandling",
         settingsMacNote:    "Installerer høyreklikk-valget «Skann med XLENT» i Finder for denne brukeren.",
-        installMacQuickAction:"Installer Finder Quick Action",
-        macQuickActionInstalling:"Installerer Finder Quick Action…",
-        macQuickActionInstalled:"Finder Quick Action installert. Høyreklikk en fil i Finder og velg Hurtighandlinger → Skann med XLENT.",
-        macQuickActionFailed:"Kunne ikke installere Finder Quick Action.",
+        installMacQuickAction:"Installer Finder-hurtighandling",
+        macQuickActionInstalling:"Installerer Finder-hurtighandling…",
+        macQuickActionInstalled:"Finder-hurtighandling installert. Høyreklikk en fil i Finder og velg Hurtighandlinger → Skann med XLENT.",
+        macQuickActionFailed:"Kunne ikke installere Finder-hurtighandling.",
         settingsLogsTitle:  "Feilsøking",
         loadLog:            "Vis logg",
         openLog:            "Åpne loggfil",
@@ -1399,7 +1399,7 @@
         dstCatEpost:        "E-post",
         dstCatTelefon:      "Telefon",
         dstCatSelskapsnavn:  "Selskapsnavn",
-        dstCatMedisinsk:     "Medisinsk",
+        dstCatMedisinsk:     "Medisinsk (kun dybdeskann)",
         dstCatNettadresse:   "Nettadresser",
         dstSelectOne:       "Velg minst ett funn å anonymisere.",
         dstHwReq:           "⚠ Dybdeskanning kjøres lokalt og kan ta opptil flere minutter, avhengig av dokumentstørrelse og maskinvare. Anbefalt: minst 16 GB RAM og en relativt moderne CPU. GPU-akselerasjon (NVIDIA/AMD) brukes automatisk og gir vesentlig kortere analysetid.",
@@ -1614,7 +1614,7 @@
         dstCatEpost:        "E-post",
         dstCatTelefon:      "Telefon",
         dstCatSelskapsnavn:  "Företagsnamn",
-        dstCatMedisinsk:     "Medicinskt",
+        dstCatMedisinsk:     "Medicinskt (endast djupskanning)",
         dstCatNettadresse:   "Webbadresser",
         dstSelectOne:       "Välj minst ett fynd att anonymisera.",
         dstHwReq:           "⚠ Djupskanning körs lokalt och kan ta upp till flera minuter beroende på dokumentstorlek och hårdvara. Rekommenderat: minst 16 GB RAM och en relativt modern CPU. GPU-acceleration (NVIDIA/AMD) används automatiskt och ger avsevärt kortare analystid.",
@@ -1829,7 +1829,7 @@
         dstCatEpost:        "Email addresses",
         dstCatTelefon:      "Phone numbers",
         dstCatSelskapsnavn:  "Company names",
-        dstCatMedisinsk:     "Medical",
+        dstCatMedisinsk:     "Medical (deep scan only)",
         dstCatNettadresse:   "Web addresses",
         dstSelectOne:       "Select at least one finding to redact.",
         dstHwReq:           "⚠ Deep scanning runs locally and may take several minutes depending on document size and hardware. Recommended: at least 16 GB RAM and a relatively modern CPU. GPU acceleration (NVIDIA/AMD) is used automatically and significantly reduces analysis time.",
@@ -2050,7 +2050,7 @@
         dstCatAdresse:       "Adresse",
         dstCatNettadresse:   "Webadressen / IP",
         dstCatSelskapsnavn:  "Firmenname",
-        dstCatMedisinsk:     "Medizinisch",
+        dstCatMedisinsk:     "Medizinisch (nur Tiefenscan)",
         dstCatBudsjett:      "Budget / Betrag",
         dstCatNavn:          "Name",
         dstCatPersonnummer:  "Personennummer",
@@ -2266,7 +2266,7 @@
         dstCatAdresse:       "Adresse",
         dstCatNettadresse:   "Adresses web / IP",
         dstCatSelskapsnavn:  "Nom de société",
-        dstCatMedisinsk:     "Médical",
+        dstCatMedisinsk:     "Médical (analyse approfondie uniquement)",
         dstCatBudsjett:      "Budget / montant",
         dstCatNavn:          "Nom",
         dstCatPersonnummer:  "Numéro de sécurité sociale",
@@ -2482,7 +2482,7 @@
         dstCatAdresse:       "Dirección",
         dstCatNettadresse:   "Direcciones web / IP",
         dstCatSelskapsnavn:  "Nombre de empresa",
-        dstCatMedisinsk:     "Médico",
+        dstCatMedisinsk:     "Médico (solo escaneo profundo)",
         dstCatBudsjett:      "Presupuesto / importe",
         dstCatNavn:          "Nombre",
         dstCatPersonnummer:  "Número de identidad",
