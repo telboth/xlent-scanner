@@ -28,6 +28,7 @@ import urllib.request
 import uuid
 import warnings
 import webbrowser
+import zipfile
 from dataclasses import asdict
 from pathlib import Path
 
@@ -304,6 +305,128 @@ def _open_path(path: Path) -> None:
         subprocess.Popen(["open", str(path)])
     else:
         subprocess.Popen(["xdg-open", str(path)])
+
+
+def _downloads_dir() -> Path:
+    downloads = Path.home() / "Downloads"
+    if not downloads.exists():
+        downloads = Path.home() / "Desktop"
+    return downloads
+
+
+def _quick_action_log_path() -> Path:
+    return Path.home() / "Library" / "Logs" / "XLENTScannerQuickAction.log"
+
+
+def _quick_action_path() -> Path:
+    return Path.home() / "Library" / "Services" / "Skann med XLENT.workflow"
+
+
+def _health_check() -> dict:
+    checks: list[dict] = []
+
+    def add(name: str, ok: bool, detail: str = "") -> None:
+        checks.append({"name": name, "ok": bool(ok), "detail": detail})
+
+    data_dir = app_data_dir()
+    downloads = _downloads_dir()
+    add("app_data_writable", os.access(str(data_dir), os.W_OK), str(data_dir))
+    add("downloads_writable", downloads.exists() and os.access(str(downloads), os.W_OK), str(downloads))
+    add("log_file", LOG_PATH.exists(), str(LOG_PATH))
+
+    try:
+        import fitz  # noqa: F401, PLC0415
+        add("pymupdf", True, "fitz import ok")
+    except Exception as exc:
+        add("pymupdf", False, str(exc))
+
+    try:
+        import docx  # noqa: F401, PLC0415
+        add("python_docx", True, "docx import ok")
+    except Exception as exc:
+        add("python_docx", False, str(exc))
+
+    try:
+        from xlent_scanner.model_manager import models_status  # noqa: PLC0415
+        status = models_status()
+        installed = sum(1 for m in status.get("models", []) if m.get("installed"))
+        total = len(status.get("models", []))
+        add("spacy_models", installed == total and total > 0, f"{installed}/{total} installed")
+    except Exception as exc:
+        add("spacy_models", False, str(exc))
+
+    try:
+        from xlent_scanner.deep_scanner import ollama_status  # noqa: PLC0415
+        status = ollama_status()
+        models = status.get("models") or []
+        add("ollama", bool(status.get("running")) and bool(models), f"running={status.get('running')} models={len(models)}")
+    except Exception as exc:
+        add("ollama", False, str(exc))
+
+    if sys.platform == "darwin":
+        binary = _mac_app_binary_path()
+        qa_path = _quick_action_path()
+        runner = qa_path / "Contents" / "run_xlent_scanner.sh"
+        add("mac_app_binary", binary.exists() and os.access(str(binary), os.X_OK), str(binary))
+        add("mac_quick_action", qa_path.exists(), str(qa_path))
+        add("mac_quick_action_runner", runner.exists() and os.access(str(runner), os.X_OK), str(runner))
+    elif sys.platform.startswith("win"):
+        add("windows_context_menu", True, "not validated by health check")
+
+    failed = [c for c in checks if not c["ok"]]
+    return {
+        "ok": not failed,
+        "version": __version__,
+        "platform": sys.platform,
+        "system": platform.platform(),
+        "python": sys.version.split()[0],
+        "frozen": bool(getattr(sys, "frozen", False)),
+        "executable": sys.executable,
+        "app_data_dir": str(data_dir),
+        "log_path": str(LOG_PATH),
+        "quick_action_log_path": str(_quick_action_log_path()),
+        "checks": checks,
+    }
+
+
+def _write_debug_package() -> Path:
+    from datetime import datetime  # noqa: PLC0415
+    import json as _json  # noqa: PLC0415
+
+    out_dir = _downloads_dir()
+    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    out = out_dir / f"xlent-scanner-debug-{stamp}.zip"
+    counter = 1
+    while out.exists():
+        out = out_dir / f"xlent-scanner-debug-{stamp}-{counter}.zip"
+        counter += 1
+
+    health = _health_check()
+    with zipfile.ZipFile(out, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("health.json", _json.dumps(health, ensure_ascii=False, indent=2))
+        zf.writestr("version.txt", f"XLENT Scanner {__version__}\n{platform.platform()}\n{sys.executable}\n")
+
+        for label, path in [
+            ("logs/app.log", LOG_PATH),
+            ("logs/faulthandler.log", LOG_PATH.parent / "faulthandler.log"),
+            ("logs/quick-action.log", _quick_action_log_path()),
+        ]:
+            try:
+                if path.exists():
+                    zf.write(path, label)
+            except Exception as exc:
+                zf.writestr(f"{label}.error.txt", str(exc))
+
+        for label, text_getter in [
+            ("config/whitelist.txt", lambda: "\n".join(get_whitelist_entries())),
+            ("config/blacklist.txt", lambda: "\n".join(get_blacklist_entries())),
+            ("config/ignore.toml", get_ignore_toml_text),
+        ]:
+            try:
+                zf.writestr(label, text_getter())
+            except Exception as exc:
+                zf.writestr(f"{label}.error.txt", str(exc))
+    return out
 
 
 def _download_update_script(url: str, name: str) -> Path:
@@ -1604,6 +1727,47 @@ def anonymize():
     return jsonify({"ok": True, "path": str(out)})
 
 
+@flask_app.route("/redaction/preview", methods=["POST"])
+def redaction_preview():
+    if _last_result is None:
+        return jsonify({"ok": False, "error": "Ingen rapport tilgjengelig."})
+    data = request.get_json(force=True)
+    indices = data.get("indices", [])
+    selected = [
+        _last_result.findings[i]
+        for i in indices
+        if isinstance(i, int) and 0 <= i < len(_last_result.findings)
+    ]
+    ai_findings = _ai_findings_from_payload(data)
+    selected.extend(_ai_findings_as_model_findings(ai_findings))
+
+    replacements = build_replacements(selected)
+    for text in _ai_replacement_texts(ai_findings):
+        replacements.setdefault(text, "[ANONYMISERT]")
+
+    preview = [
+        {"original": old, "replacement": new}
+        for old, new in sorted(replacements.items(), key=lambda item: item[0].casefold())
+    ]
+    skipped = [
+        {
+            "category": f.category,
+            "text": f.text,
+            "reason": "Kan ikke anonymiseres sikkert direkte.",
+        }
+        for f in selected
+        if (f.raw_text or f.text) not in replacements and not f.category.startswith("🤖")
+    ]
+    return jsonify({
+        "ok": True,
+        "selected_count": len(selected),
+        "replacement_count": len(preview),
+        "preview": preview,
+        "skipped": skipped,
+        "pdf_caveat": bool(_last_path and _last_path.suffix.lower() == ".pdf"),
+    })
+
+
 @flask_app.route("/patch", methods=["POST"])
 def patch():
     if _last_result is None or _last_path is None:
@@ -1841,6 +2005,26 @@ def logs_open():
         return jsonify({"ok": True, "path": str(LOG_PATH)})
     except Exception as exc:
         LOGGER.error("logs/open failed: %s", traceback.format_exc())
+        return jsonify({"ok": False, "error": str(exc)})
+
+
+@flask_app.route("/diagnostics/health", methods=["GET"])
+def diagnostics_health():
+    try:
+        return jsonify(_health_check())
+    except Exception as exc:
+        LOGGER.error("diagnostics/health failed: %s", traceback.format_exc())
+        return jsonify({"ok": False, "error": str(exc), "checks": []})
+
+
+@flask_app.route("/diagnostics/export", methods=["POST"])
+def diagnostics_export():
+    try:
+        out = _write_debug_package()
+        LOGGER.info("diagnostics package exported path=%s", out)
+        return jsonify({"ok": True, "path": str(out)})
+    except Exception as exc:
+        LOGGER.error("diagnostics/export failed: %s", traceback.format_exc())
         return jsonify({"ok": False, "error": str(exc)})
 
 

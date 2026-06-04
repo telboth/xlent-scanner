@@ -385,6 +385,18 @@
       border: 1px solid var(--border); border-left: 3px solid var(--warn);
       border-radius: 4px; padding: 6px 10px; margin-bottom: 8px; line-height: 1.4;
     }
+    .redaction-report, .redaction-preview {
+      font-size: 12px; color: var(--muted); background: var(--panel2);
+      border: 1px solid var(--border); border-radius: 6px;
+      padding: 8px 11px; margin-bottom: 8px; line-height: 1.5;
+    }
+    .redaction-report strong { color: var(--text); }
+    .redaction-preview { display: none; max-height: 260px; overflow-y: auto; }
+    .redaction-preview table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .redaction-preview th, .redaction-preview td {
+      border-bottom: 1px solid var(--border); padding: 5px 6px; text-align: left; vertical-align: top;
+    }
+    .redaction-preview code { color: var(--text); word-break: break-word; }
 
     /* Findings */
     .section-heading {
@@ -1222,9 +1234,12 @@
         <div class="settings-row" style="margin-top:8px;">
           <button id="btn-load-log" class="ctrl-btn" data-i18n="loadLog">Vis logg</button>
           <button id="btn-open-log" class="ctrl-btn" data-i18n="openLog">Åpne loggfil</button>
+          <button id="btn-run-health" class="ctrl-btn" data-i18n="runHealthCheck">Kjør selvtest</button>
+          <button id="btn-export-debug" class="ctrl-btn ctrl-btn-primary" data-i18n="exportDebugPackage">Eksporter feilsøkingspakke</button>
         </div>
         <textarea id="log-viewer" class="settings-textarea" spellcheck="false" readonly style="display:none;min-height:180px;margin-top:8px;"></textarea>
         <div class="settings-note" id="log-msg"></div>
+        <div class="settings-note" id="health-msg"></div>
       </div>
 
       <div class="settings-note" data-i18n="settingsPersistNote">Innstillinger lagres automatisk i nettleseren.</div>
@@ -1399,6 +1414,18 @@
         openLog:            "Åpne loggfil",
         logLoadFailed:      "Kunne ikke hente logg.",
         logOpenFailed:      "Kunne ikke åpne loggfil.",
+        runHealthCheck:     "Kjør selvtest",
+        healthCheckOk:      "Selvtest OK",
+        healthCheckFailed:  "Selvtest fant problemer",
+        exportDebugPackage: "Eksporter feilsøkingspakke",
+        debugExported:      "Feilsøkingspakke lagret:",
+        debugExportFailed:  "Kunne ikke eksportere feilsøkingspakke.",
+        previewRedaction:   "Forhåndsvis redaction",
+        redactionReport:    "Redaction-rapport",
+        redactionSelected:  "Valgt",
+        redactionNotSelected:"Ikke valgt",
+        redactionUnsafe:    "Krever kontroll",
+        redactionPreviewEmpty:"Ingen direkte erstatninger å forhåndsvise.",
         pdfPatchFailed:     "PDF-anonymisering feilet. Prøv PDF-rapport eller kontakt support med loggfil.",
         pdfGenerateFailed:  "PDF-generering feilet. Se loggfil for tekniske detaljer.",
         updateCheckNow: "Se etter oppdateringer nå",
@@ -1621,6 +1648,18 @@
         openLog:            "Öppna loggfil",
         logLoadFailed:      "Kunde inte hämta logg.",
         logOpenFailed:      "Kunde inte öppna loggfil.",
+        runHealthCheck:     "Kör självtest",
+        healthCheckOk:      "Självtest OK",
+        healthCheckFailed:  "Självtest hittade problem",
+        exportDebugPackage: "Exportera felsökningspaket",
+        debugExported:      "Felsökningspaket sparat:",
+        debugExportFailed:  "Kunde inte exportera felsökningspaket.",
+        previewRedaction:   "Förhandsvisa redigering",
+        redactionReport:    "Redigeringsrapport",
+        redactionSelected:  "Valda",
+        redactionNotSelected:"Ej valda",
+        redactionUnsafe:    "Kräver kontroll",
+        redactionPreviewEmpty:"Inga direkta ersättningar att förhandsvisa.",
         pdfPatchFailed:     "PDF-anonymisering misslyckades. Prova PDF-rapport eller kontakta support med loggfilen.",
         pdfGenerateFailed:  "PDF-generering misslyckades. Se loggfilen för tekniska detaljer.",
         updateCheckNow: "Sök efter uppdateringar nu",
@@ -1843,6 +1882,18 @@
         openLog:            "Open log file",
         logLoadFailed:      "Could not load log.",
         logOpenFailed:      "Could not open log file.",
+        runHealthCheck:     "Run self-test",
+        healthCheckOk:      "Self-test OK",
+        healthCheckFailed:  "Self-test found issues",
+        exportDebugPackage: "Export diagnostics package",
+        debugExported:      "Diagnostics package saved:",
+        debugExportFailed:  "Could not export diagnostics package.",
+        previewRedaction:   "Preview redaction",
+        redactionReport:    "Redaction report",
+        redactionSelected:  "Selected",
+        redactionNotSelected:"Not selected",
+        redactionUnsafe:    "Needs review",
+        redactionPreviewEmpty:"No direct replacements to preview.",
         pdfPatchFailed:     "PDF redaction failed. Try the PDF report or contact support with the log file.",
         pdfGenerateFailed:  "PDF generation failed. See the log file for technical details.",
         updateCheckNow: "Check for updates now",
@@ -2001,6 +2052,18 @@
         openLog:             "Logdatei öffnen",
         logLoadFailed:       "Log konnte nicht geladen werden.",
         logOpenFailed:       "Logdatei konnte nicht geöffnet werden.",
+        runHealthCheck:      "Selbsttest ausführen",
+        healthCheckOk:       "Selbsttest OK",
+        healthCheckFailed:   "Selbsttest hat Probleme gefunden",
+        exportDebugPackage:  "Diagnosepaket exportieren",
+        debugExported:       "Diagnosepaket gespeichert:",
+        debugExportFailed:   "Diagnosepaket konnte nicht exportiert werden.",
+        previewRedaction:    "Redaction-Vorschau",
+        redactionReport:     "Redaction-Bericht",
+        redactionSelected:   "Ausgewählt",
+        redactionNotSelected:"Nicht ausgewählt",
+        redactionUnsafe:     "Prüfung erforderlich",
+        redactionPreviewEmpty:"Keine direkten Ersetzungen für die Vorschau.",
         pdfPatchFailed:      "PDF-Anonymisierung fehlgeschlagen. Versuchen Sie den PDF-Bericht oder kontaktieren Sie den Support mit der Logdatei.",
         pdfGenerateFailed:   "PDF-Erstellung fehlgeschlagen. Technische Details stehen in der Logdatei.",
         updateNoUpdate:      "Sie haben die neueste Version.",
@@ -2224,6 +2287,18 @@
         openLog:             "Ouvrir le fichier journal",
         logLoadFailed:       "Impossible de charger le journal.",
         logOpenFailed:       "Impossible d’ouvrir le fichier journal.",
+        runHealthCheck:      "Lancer l’auto-test",
+        healthCheckOk:       "Auto-test OK",
+        healthCheckFailed:   "L’auto-test a trouvé des problèmes",
+        exportDebugPackage:  "Exporter le paquet de diagnostic",
+        debugExported:       "Paquet de diagnostic enregistré :",
+        debugExportFailed:   "Impossible d’exporter le paquet de diagnostic.",
+        previewRedaction:    "Prévisualiser la redaction",
+        redactionReport:     "Rapport de redaction",
+        redactionSelected:   "Sélectionné",
+        redactionNotSelected:"Non sélectionné",
+        redactionUnsafe:     "À vérifier",
+        redactionPreviewEmpty:"Aucun remplacement direct à prévisualiser.",
         pdfPatchFailed:      "L’anonymisation PDF a échoué. Essayez le rapport PDF ou contactez le support avec le fichier journal.",
         pdfGenerateFailed:   "La génération PDF a échoué. Consultez le fichier journal pour les détails techniques.",
         updateNoUpdate:      "Vous avez la dernière version.",
@@ -2447,6 +2522,18 @@
         openLog:             "Abrir archivo de registro",
         logLoadFailed:       "No se pudo cargar el registro.",
         logOpenFailed:       "No se pudo abrir el archivo de registro.",
+        runHealthCheck:      "Ejecutar autoprueba",
+        healthCheckOk:       "Autoprueba OK",
+        healthCheckFailed:   "La autoprueba encontró problemas",
+        exportDebugPackage:  "Exportar paquete de diagnóstico",
+        debugExported:       "Paquete de diagnóstico guardado:",
+        debugExportFailed:   "No se pudo exportar el paquete de diagnóstico.",
+        previewRedaction:    "Previsualizar redaction",
+        redactionReport:     "Informe de redaction",
+        redactionSelected:   "Seleccionado",
+        redactionNotSelected:"No seleccionado",
+        redactionUnsafe:     "Requiere revisión",
+        redactionPreviewEmpty:"No hay reemplazos directos para previsualizar.",
         pdfPatchFailed:      "La anonimización de PDF falló. Pruebe el informe PDF o contacte con soporte con el archivo de registro.",
         pdfGenerateFailed:   "La generación de PDF falló. Consulte el archivo de registro para detalles técnicos.",
         updateNoUpdate:      "Tiene la versión más reciente.",
@@ -2602,6 +2689,7 @@
     const logPathDisplayEl = document.getElementById("log-path-display");
     const logViewerEl = document.getElementById("log-viewer");
     const logMsgEl = document.getElementById("log-msg");
+    const healthMsgEl = document.getElementById("health-msg");
     const ignorePathEl = document.getElementById("ignore-path");
     const ignoreEditorEl = document.getElementById("ignore-editor");
     const ignoreMsgEl = document.getElementById("ignore-msg");
@@ -2870,6 +2958,41 @@
       } catch (e) {
         logMsgEl.style.color = "#f44336";
         logMsgEl.textContent = `${t("logOpenFailed")} ${String(e)}`;
+      }
+    }
+
+    function setHealthMessage(html, color = "var(--muted)") {
+      if (!healthMsgEl) return;
+      healthMsgEl.innerHTML = html;
+      healthMsgEl.style.color = color;
+    }
+
+    async function runHealthCheck() {
+      setHealthMessage(t("processing"), "var(--muted)");
+      try {
+        const d = await (await fetch(`${API}/diagnostics/health`)).json();
+        const failed = (d.checks || []).filter(c => !c.ok);
+        const lines = (d.checks || []).map(c =>
+          `${c.ok ? "✓" : "✗"} ${escapeHtml(c.name)}${c.detail ? ": " + escapeHtml(c.detail) : ""}`
+        );
+        const title = failed.length ? t("healthCheckFailed") : t("healthCheckOk");
+        setHealthMessage(`<strong>${escapeHtml(title)}</strong><br>${lines.join("<br>")}`, failed.length ? "var(--warn)" : "var(--ok)");
+      } catch (e) {
+        setHealthMessage(`${t("healthCheckFailed")} ${escapeHtml(String(e))}`, "#f44336");
+      }
+    }
+
+    async function exportDebugPackage() {
+      setHealthMessage(t("processing"), "var(--muted)");
+      try {
+        const d = await (await fetch(`${API}/diagnostics/export`, { method: "POST" })).json();
+        if (d.ok) {
+          setHealthMessage(`${t("debugExported")} ${escapeHtml(d.path || "")}`, "var(--ok)");
+        } else {
+          setHealthMessage(`${t("debugExportFailed")} ${escapeHtml(d.error || "")}`, "#f44336");
+        }
+      } catch (e) {
+        setHealthMessage(`${t("debugExportFailed")} ${escapeHtml(String(e))}`, "#f44336");
       }
     }
 
@@ -3340,6 +3463,7 @@
           ${canPatch
             ? `<button class="ctrl-btn ctrl-btn-accent" id="g-patch">${t("saveAnon")} .${ext}</button>`
             : ""}
+          <button class="ctrl-btn" id="g-preview">${t("previewRedaction")}</button>
           <button class="ctrl-btn ctrl-btn-primary" id="g-anon">${t("genMd")}</button>
           <button class="ctrl-btn ctrl-btn-primary" id="g-anon-pdf">${t("genPdf")}</button>
           <span class="anon-msg" id="g-anon-msg"></span>
@@ -3380,7 +3504,90 @@
       return `
         <h3 class="section-heading">${t("sectionFind")} (${sorted_use.length})${hiddenNote}</h3>
         ${anonBar}
+        <div class="redaction-report" id="redaction-report"></div>
+        <div class="redaction-preview" id="redaction-preview"></div>
         <ul class="findings-list">${rows}</ul>`;
+    }
+
+    function _redactionPayload(format) {
+      const indices = [...document.querySelectorAll(".g-cb:checked")].map(cb => +cb.value);
+      const aiRows = [...document.querySelectorAll(".g-ai-cb:checked")];
+      const aiTexts = aiRows.map(cb => (cb.dataset.aiText || "").trim()).filter(Boolean);
+      const aiTextsUnique = [...new Set(aiTexts)];
+      const aiFindings = [];
+      const aiFindingKeys = new Set();
+      for (const cb of aiRows) {
+        const idx = Number(cb.dataset.aiIndex);
+        const f = Number.isInteger(idx) ? _aiFindingsData[idx] : null;
+        if (!f || !f.text) continue;
+        const key = `${String(f.category || "").toLowerCase()}\u0001${String(f.text || "").toLowerCase()}\u0001${String(f.context || "").toLowerCase()}`;
+        if (aiFindingKeys.has(key)) continue;
+        aiFindingKeys.add(key);
+        aiFindings.push({
+          category: f.category || "🤖 AI-funn",
+          text: f.text || "",
+          context: f.context || "",
+        });
+      }
+      const stripAnnotations = document.getElementById("stripAnnotations")?.checked === true;
+      const body = { indices, ai_texts: aiTextsUnique, ai_findings: aiFindings, strip_annotations: stripAnnotations };
+      if (format) body.format = format;
+      return body;
+    }
+
+    function updateRedactionReport(ext) {
+      const el = document.getElementById("redaction-report");
+      if (!el) return;
+      const selected = document.querySelectorAll(".g-cb:checked, .g-ai-cb:checked").length;
+      const total = document.querySelectorAll(".g-cb, .g-ai-cb").length;
+      const unsafe = [];
+      if (ext === "pdf") unsafe.push("PDF");
+      if (lastResult?.warning_code) unsafe.push(lastResult.warning_code);
+      const unsafeText = unsafe.length ? unsafe.join(", ") : "0";
+      el.innerHTML =
+        `<strong>${escapeHtml(t("redactionReport"))}</strong>: ` +
+        `${escapeHtml(t("redactionSelected"))}: ${selected} · ` +
+        `${escapeHtml(t("redactionNotSelected"))}: ${Math.max(0, total - selected)} · ` +
+        `${escapeHtml(t("redactionUnsafe"))}: ${escapeHtml(unsafeText)}`;
+    }
+
+    async function previewRedaction() {
+      const msg = document.getElementById("g-anon-msg");
+      const box = document.getElementById("redaction-preview");
+      if (!box) return;
+      const body = _redactionPayload();
+      if (!body.indices.length && !body.ai_texts.length) {
+        box.style.display = "block";
+        box.textContent = t("redactionPreviewEmpty");
+        return;
+      }
+      if (msg) { msg.style.color = "var(--muted)"; msg.textContent = t("processing"); }
+      try {
+        const d = await (await fetch(`${API}/redaction/preview`, {
+          method:"POST", headers:{"Content-Type":"application/json"},
+          body: JSON.stringify(body),
+        })).json();
+        if (!d.ok) {
+          box.style.display = "block";
+          box.textContent = d.error || t("redactionPreviewEmpty");
+          if (msg) msg.textContent = "";
+          return;
+        }
+        const rows = (d.preview || []).map(r =>
+          `<tr><td><code>${escapeHtml(r.original)}</code></td><td><code>${escapeHtml(r.replacement)}</code></td></tr>`
+        ).join("");
+        const skipped = (d.skipped || []).map(r =>
+          `<tr><td><code>${escapeHtml(r.text || "")}</code></td><td>${escapeHtml(r.reason || "")}</td></tr>`
+        ).join("");
+        box.style.display = "block";
+        box.innerHTML = rows || skipped
+          ? `<table><thead><tr><th>Original</th><th>Redaction</th></tr></thead><tbody>${rows}${skipped}</tbody></table>`
+          : t("redactionPreviewEmpty");
+        if (msg) msg.textContent = "";
+      } catch (e) {
+        box.style.display = "block";
+        box.textContent = `${t("netErr")} ${String(e)}`;
+      }
     }
 
     function wireEvents(sorted, canPatch, ext) {
@@ -3405,14 +3612,17 @@
       if (!sorted.length) return;
 
       document.getElementById("g-sel-all")?.addEventListener("click", () =>
-        document.querySelectorAll(".g-cb, .g-ai-cb").forEach(cb => cb.checked = true));
+        { document.querySelectorAll(".g-cb, .g-ai-cb").forEach(cb => cb.checked = true); updateRedactionReport(ext); });
       document.getElementById("g-sel-none")?.addEventListener("click", () =>
-        document.querySelectorAll(".g-cb, .g-ai-cb").forEach(cb => cb.checked = false));
+        { document.querySelectorAll(".g-cb, .g-ai-cb").forEach(cb => cb.checked = false); updateRedactionReport(ext); });
+      document.querySelectorAll(".g-cb").forEach(cb => cb.addEventListener("change", () => updateRedactionReport(ext)));
 
       // Null-sjekk: knappene finnes bare når det er funn (ellers TypeError ved høyreklikk/startup)
       if (canPatch) document.getElementById("g-patch")?.addEventListener("click", () => postAnon("patch"));
+      document.getElementById("g-preview")?.addEventListener("click", previewRedaction);
       document.getElementById("g-anon")?.addEventListener("click", () => postAnon("anonymize", "md"));
       document.getElementById("g-anon-pdf")?.addEventListener("click", () => postAnon("anonymize", "pdf"));
+      updateRedactionReport(ext);
 
       document.querySelectorAll(".wl-btn").forEach(btn =>
         btn.addEventListener("click", async () => {
@@ -3435,34 +3645,12 @@
        ASYNC ACTIONS
     ══════════════════════════════════════════════════════════════════ */
     async function postAnon(endpoint, format) {
-      const indices = [...document.querySelectorAll(".g-cb:checked")].map(cb => +cb.value);
-      const aiRows = [...document.querySelectorAll(".g-ai-cb:checked")];
-      const aiTexts = aiRows.map(cb => (cb.dataset.aiText || "").trim()).filter(Boolean);
-      const aiTextsUnique = [...new Set(aiTexts)];
-      const aiFindings = [];
-      const aiFindingKeys = new Set();
-      for (const cb of aiRows) {
-        const idx = Number(cb.dataset.aiIndex);
-        const f = Number.isInteger(idx) ? _aiFindingsData[idx] : null;
-        if (!f || !f.text) continue;
-        const key = `${String(f.category || "").toLowerCase()}\u0001${String(f.text || "").toLowerCase()}\u0001${String(f.context || "").toLowerCase()}`;
-        if (aiFindingKeys.has(key)) continue;
-        aiFindingKeys.add(key);
-        aiFindings.push({
-          category: f.category || "🤖 AI-funn",
-          text: f.text || "",
-          context: f.context || "",
-        });
-      }
       const msg = document.getElementById("g-anon-msg");
-      const stripAnnotations = document.getElementById("stripAnnotations")?.checked === true;
-      if (!indices.length && !aiTextsUnique.length && !(endpoint === "patch" && stripAnnotations)) {
+      const body = _redactionPayload(format);
+      if (!body.indices.length && !body.ai_texts.length && !(endpoint === "patch" && body.strip_annotations)) {
         msg.style.color="#ffb84d"; msg.textContent=t("selectOne"); return;
       }
       msg.style.color="var(--muted)"; msg.textContent=t("processing");
-      const body = format
-        ? { indices, ai_texts: aiTextsUnique, ai_findings: aiFindings, format, strip_annotations: stripAnnotations }
-        : { indices, ai_texts: aiTextsUnique, ai_findings: aiFindings, strip_annotations: stripAnnotations };
       try {
         const d = await (await fetch(`${API}/${endpoint}`, {
           method:"POST", headers:{"Content-Type":"application/json"},
@@ -3729,6 +3917,8 @@
     document.getElementById("btn-install-mac-quick-action").addEventListener("click", installMacQuickAction);
     document.getElementById("btn-load-log").addEventListener("click", loadLog);
     document.getElementById("btn-open-log").addEventListener("click", openLog);
+    document.getElementById("btn-run-health").addEventListener("click", runHealthCheck);
+    document.getElementById("btn-export-debug").addEventListener("click", exportDebugPackage);
     document.getElementById("btn-ignore-reload").addEventListener("click", loadIgnoreEditor);
     document.getElementById("btn-ignore-save").addEventListener("click", saveIgnoreEditor);
     document.getElementById("btn-whitelist-reload").addEventListener("click", loadWhitelistEditor);
@@ -4488,6 +4678,7 @@
         const aiCb = li.querySelector(".g-ai-cb");
         if (aiCb) aiCb.dataset.aiText = String(f.text || "");
         if (aiCb) aiCb.dataset.aiIndex = String(originalIndex);
+        if (aiCb) aiCb.addEventListener("change", () => updateRedactionReport((lastResult?.file_name || "").split(".").pop().toLowerCase()));
         list.appendChild(li);
       }
 
@@ -4516,6 +4707,7 @@
         heading.innerHTML = heading.innerHTML.replace(/\(\d+\)/, `(${total})`);
       }
       renderSeveritySummary();
+      updateRedactionReport((lastResult?.file_name || "").split(".").pop().toLowerCase());
     }
 
     /* Severity for et AI-funn-dict: bruker f.severity hvis allerede satt (grønn = hvitelistet),

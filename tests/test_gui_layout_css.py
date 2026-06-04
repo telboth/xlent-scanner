@@ -115,6 +115,49 @@ def test_update_install_script_controls_exist_for_supported_desktop_platforms():
         assert html.count(f"{key}:") == 6
 
 
+def test_diagnostics_controls_exist_for_all_languages():
+    html = HTML.read_text(encoding="utf-8")
+
+    assert 'id="btn-run-health"' in html
+    assert 'id="btn-export-debug"' in html
+    assert 'id="health-msg"' in html
+    assert 'fetch(`${API}/diagnostics/health`)' in html
+    assert 'fetch(`${API}/diagnostics/export`, { method: "POST" })' in html
+    assert 'document.getElementById("btn-run-health").addEventListener("click", runHealthCheck);' in html
+    assert 'document.getElementById("btn-export-debug").addEventListener("click", exportDebugPackage);' in html
+    for key in [
+        "runHealthCheck",
+        "healthCheckOk",
+        "healthCheckFailed",
+        "exportDebugPackage",
+        "debugExported",
+        "debugExportFailed",
+    ]:
+        assert html.count(f"{key}:") == 6
+
+
+def test_redaction_preview_and_report_are_available():
+    html = HTML.read_text(encoding="utf-8")
+
+    assert 'id="g-preview"' in html
+    assert 'id="redaction-report"' in html
+    assert 'id="redaction-preview"' in html
+    assert "function _redactionPayload" in html
+    assert "function updateRedactionReport" in html
+    assert "function previewRedaction" in html
+    assert 'fetch(`${API}/redaction/preview`' in html
+    assert 'document.getElementById("g-preview")?.addEventListener("click", previewRedaction);' in html
+    for key in [
+        "previewRedaction",
+        "redactionReport",
+        "redactionSelected",
+        "redactionNotSelected",
+        "redactionUnsafe",
+        "redactionPreviewEmpty",
+    ]:
+        assert html.count(f"{key}:") == 6
+
+
 def test_settings_profile_and_ollama_pull_controls_exist_for_all_languages():
     html = HTML.read_text(encoding="utf-8")
 
