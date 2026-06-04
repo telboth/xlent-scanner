@@ -61,7 +61,7 @@ from xlent_scanner.patch import SUPPORTED_PATCH_SUFFIXES, patch_file
 from xlent_scanner.report import generate_html
 from xlent_scanner.history import add_history_entry, load_history, clear_history
 from xlent_scanner.scanner import reset_ignore_cache, scan_file, scan_text, scan_folder
-from xlent_scanner.update_check import check_for_update
+from xlent_scanner.update_check import check_for_update, fetch_platform_install_script
 from xlent_scanner.whitelist import (
     add_to_whitelist,
     get_whitelist_entries,
@@ -304,6 +304,54 @@ def _open_path(path: Path) -> None:
         subprocess.Popen(["open", str(path)])
     else:
         subprocess.Popen(["xdg-open", str(path)])
+
+
+def _download_update_script(url: str, name: str) -> Path:
+    parsed = urllib.parse.urlparse(url)
+    if parsed.scheme != "https" or not parsed.netloc.endswith("github.com"):
+        raise RuntimeError("Ugyldig GitHub asset-URL for installasjonsscript.")
+    if name not in {"install_windows.ps1", "install_macos.sh"}:
+        raise RuntimeError(f"Uventet installasjonsscript: {name}")
+
+    updates_dir = app_data_dir() / "updates"
+    updates_dir.mkdir(parents=True, exist_ok=True)
+    out = updates_dir / name
+
+    req = urllib.request.Request(
+        url,
+        headers={"User-Agent": "xlent-scanner-install-script"},
+    )
+    with urllib.request.urlopen(req, timeout=30) as resp:
+        data = resp.read()
+    if not data:
+        raise RuntimeError("Nedlastet installasjonsscript var tomt.")
+    out.write_bytes(data)
+    return out
+
+
+def _launch_update_script(script_path: Path) -> subprocess.Popen:
+    if sys.platform.startswith("win"):
+        cmd = [
+            "powershell.exe",
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            str(script_path),
+        ]
+        return subprocess.Popen(cmd, cwd=str(script_path.parent))
+
+    if sys.platform == "darwin":
+        script_path.chmod(script_path.stat().st_mode | 0o755)
+        quoted = str(script_path).replace("\\", "\\\\").replace('"', '\\"')
+        # Terminal gjør installasjonen synlig, inkludert eventuelle macOS-prompter.
+        return subprocess.Popen([
+            "osascript",
+            "-e",
+            f'tell application "Terminal" to do script "/bin/bash \\"{quoted}\\""',
+        ])
+
+    raise RuntimeError("Automatisk installasjonsscript støttes bare på Windows og macOS.")
 
 
 def _mac_app_binary_path() -> Path:
@@ -1675,6 +1723,36 @@ def update_check():
     data = request.get_json(silent=True) or {}
     force = bool(data.get("force", False))
     return jsonify(check_for_update(current_version=__version__, force=force))
+
+
+@flask_app.route("/updates/install-script/run", methods=["POST"])
+def update_install_script_run():
+    """Last ned og start plattformens installasjonsscript fra latest GitHub release."""
+    try:
+        script_info = fetch_platform_install_script()
+        script_path = _download_update_script(
+            script_info["script_url"],
+            script_info["script_name"],
+        )
+        proc = _launch_update_script(script_path)
+        LOGGER.info(
+            "update install script started name=%s version=%s path=%s pid=%s",
+            script_info["script_name"],
+            script_info["latest_version"],
+            script_path,
+            proc.pid,
+        )
+        return jsonify({
+            "ok": True,
+            "latest_version": script_info["latest_version"],
+            "release_url": script_info["release_url"],
+            "script_name": script_info["script_name"],
+            "script_path": str(script_path),
+            "pid": proc.pid,
+        })
+    except Exception as exc:
+        LOGGER.error("updates/install-script/run failed: %s", traceback.format_exc())
+        return jsonify({"ok": False, "error": str(exc)})
 
 
 @flask_app.route("/web-mode/start", methods=["POST"])

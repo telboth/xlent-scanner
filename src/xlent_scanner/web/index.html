@@ -572,6 +572,7 @@
   <div id="update-banner" class="update-banner">
     <span class="msg" id="update-banner-msg"></span>
     <button class="btn" id="update-banner-download-btn"></button>
+    <button class="btn" id="update-banner-script-btn"></button>
     <button class="btn" id="update-banner-btn"></button>
   </div>
 
@@ -1199,9 +1200,11 @@
         <div class="settings-section-title" data-i18n="settingsUpdateTitle">Oppdateringer</div>
         <div class="settings-row">
           <button id="btn-check-updates" class="ctrl-btn" data-i18n="updateCheckNow">Se etter oppdateringer nå</button>
+          <button id="btn-run-install-script" class="ctrl-btn ctrl-btn-primary" data-i18n="updateRunScript">Last ned og kjør installasjonsscript</button>
           <button id="btn-open-web-mode" class="ctrl-btn" data-i18n="openWebModeBtn">Start web-modus i nettleser</button>
         </div>
         <div class="settings-note" id="update-check-msg"></div>
+        <div class="settings-note" id="update-install-script-msg"></div>
         <div class="settings-note" id="web-mode-msg"></div>
       </div>
 
@@ -1376,6 +1379,12 @@
         updateDownload:     "Last ned siste versjon",
         updateDownloadNow:  "⬇ Last ned oppdatering",
         updateDirectInstall:"Direkte installasjon",
+        updateRunScript:    "Last ned og kjør installasjonsscript",
+        updateRunScriptShort:"Kjør installasjonsscript",
+        updateInstallScriptRunning:"Laster ned og starter installasjonsscript…",
+        updateInstallScriptStarted:"Installasjonsscript startet:",
+        updateInstallScriptFailed:"Kunne ikke starte installasjonsscript.",
+        updateInstallScriptUnsupported:"Automatisk installasjonsscript støttes bare på Windows og macOS.",
         openWebModeBtn:     "🌐 Start web-modus",
         openWebModeStarting:"Starter web-modus…",
         openWebModeStarted: "Web-modus startet i nettleser.",
@@ -1593,6 +1602,12 @@
         updateDownload:     "Ladda ned senaste version",
         updateDownloadNow:  "⬇ Ladda ned uppdatering",
         updateDirectInstall:"Direkt installation",
+        updateRunScript:    "Ladda ned och kör installationsskript",
+        updateRunScriptShort:"Kör installationsskript",
+        updateInstallScriptRunning:"Laddar ned och startar installationsskript…",
+        updateInstallScriptStarted:"Installationsskript startat:",
+        updateInstallScriptFailed:"Kunde inte starta installationsskript.",
+        updateInstallScriptUnsupported:"Automatiskt installationsskript stöds bara på Windows och macOS.",
         openWebModeBtn:     "🌐 Starta webbläge",
         openWebModeStarting:"Startar webbläge…",
         openWebModeStarted: "Webbläge startat i webbläsaren.",
@@ -1810,6 +1825,12 @@
         updateDownload:     "Download latest version",
         updateDownloadNow:  "⬇ Download update",
         updateDirectInstall:"Direct install",
+        updateRunScript:    "Download and run install script",
+        updateRunScriptShort:"Run install script",
+        updateInstallScriptRunning:"Downloading and starting install script…",
+        updateInstallScriptStarted:"Install script started:",
+        updateInstallScriptFailed:"Could not start install script.",
+        updateInstallScriptUnsupported:"Automatic install script is only supported on Windows and macOS.",
         openWebModeBtn:     "🌐 Start web mode",
         openWebModeStarting:"Starting web mode…",
         openWebModeStarted: "Web mode started in browser.",
@@ -1963,6 +1984,12 @@
         updateDownload:      "Neueste Version herunterladen",
         updateDownloadNow:   "⬇ Update herunterladen",
         updateDirectInstall: "Direkte Installation",
+        updateRunScript:     "Installationsskript herunterladen und ausführen",
+        updateRunScriptShort:"Installationsskript ausführen",
+        updateInstallScriptRunning:"Installationsskript wird heruntergeladen und gestartet…",
+        updateInstallScriptStarted:"Installationsskript gestartet:",
+        updateInstallScriptFailed:"Installationsskript konnte nicht gestartet werden.",
+        updateInstallScriptUnsupported:"Automatisches Installationsskript wird nur unter Windows und macOS unterstützt.",
         openWebModeBtn:      "🌐 Webmodus starten",
         openWebModeStarting: "Webmodus wird gestartet…",
         openWebModeStarted:  "Webmodus im Browser gestartet.",
@@ -2181,6 +2208,12 @@
         updateDownload:      "Télécharger la dernière version",
         updateDownloadNow:   "⬇ Télécharger la mise à jour",
         updateDirectInstall: "Installation directe",
+        updateRunScript:     "Télécharger et exécuter le script d’installation",
+        updateRunScriptShort:"Exécuter le script d’installation",
+        updateInstallScriptRunning:"Téléchargement et lancement du script d’installation…",
+        updateInstallScriptStarted:"Script d’installation lancé :",
+        updateInstallScriptFailed:"Impossible de lancer le script d’installation.",
+        updateInstallScriptUnsupported:"Le script d’installation automatique n’est pris en charge que sous Windows et macOS.",
         openWebModeBtn:      "🌐 Démarrer le mode web",
         openWebModeStarting: "Démarrage du mode web…",
         openWebModeStarted:  "Mode web démarré dans le navigateur.",
@@ -2399,6 +2432,12 @@
         updateDownload:      "Descargar última versión",
         updateDownloadNow:   "⬇ Descargar actualización",
         updateDirectInstall: "Instalación directa",
+        updateRunScript:     "Descargar y ejecutar script de instalación",
+        updateRunScriptShort:"Ejecutar script de instalación",
+        updateInstallScriptRunning:"Descargando e iniciando script de instalación…",
+        updateInstallScriptStarted:"Script de instalación iniciado:",
+        updateInstallScriptFailed:"No se pudo iniciar el script de instalación.",
+        updateInstallScriptUnsupported:"El script de instalación automático solo es compatible con Windows y macOS.",
         openWebModeBtn:      "🌐 Iniciar modo web",
         openWebModeStarting: "Iniciando modo web…",
         openWebModeStarted:  "Modo web iniciado en el navegador.",
@@ -2561,8 +2600,10 @@
     const updateBannerEl = document.getElementById("update-banner");
     const updateBannerMsgEl = document.getElementById("update-banner-msg");
     const updateBannerDownloadBtnEl = document.getElementById("update-banner-download-btn");
+    const updateBannerScriptBtnEl = document.getElementById("update-banner-script-btn");
     const updateBannerBtnEl = document.getElementById("update-banner-btn");
     const updateCheckMsgEl = document.getElementById("update-check-msg");
+    const updateInstallScriptMsgEl = document.getElementById("update-install-script-msg");
     const webModeMsgEl = document.getElementById("web-mode-msg");
     const macQuickActionMsgEl = document.getElementById("mac-quick-action-msg");
     const logPathDisplayEl = document.getElementById("log-path-display");
@@ -2716,6 +2757,10 @@
       updateBannerDownloadBtnEl.textContent = t("updateDownloadNow");
       updateBannerDownloadBtnEl.title = t("updateDirectInstall");
       updateBannerDownloadBtnEl.onclick = () => window.open(installerUrl, "_blank");
+      updateBannerScriptBtnEl.textContent = t("updateRunScriptShort");
+      updateBannerScriptBtnEl.title = t("updateRunScript");
+      updateBannerScriptBtnEl.style.display = canRunInstallScript() ? "" : "none";
+      updateBannerScriptBtnEl.onclick = runInstallScript;
       updateBannerBtnEl.textContent = t("updateOpenRelease");
       updateBannerBtnEl.onclick = () => window.open(releaseUrl, "_blank");
       updateBannerEl.style.display = "flex";
@@ -2724,6 +2769,35 @@
     function setUpdateCheckMessage(msg, color = "var(--muted)") {
       updateCheckMsgEl.textContent = msg;
       updateCheckMsgEl.style.color = color;
+    }
+
+    function setUpdateInstallScriptMessage(msg, color = "var(--muted)") {
+      if (!updateInstallScriptMsgEl) return;
+      updateInstallScriptMsgEl.textContent = msg;
+      updateInstallScriptMsgEl.style.color = color;
+    }
+
+    function canRunInstallScript() {
+      return String(APP_PLATFORM || "").startsWith("win") || APP_PLATFORM === "darwin";
+    }
+
+    async function runInstallScript() {
+      if (!canRunInstallScript()) {
+        setUpdateInstallScriptMessage(t("updateInstallScriptUnsupported"), "#f44336");
+        return;
+      }
+      setUpdateInstallScriptMessage(t("updateInstallScriptRunning"), "var(--muted)");
+      try {
+        const d = await (await fetch(`${API}/updates/install-script/run`, { method: "POST" })).json();
+        if (d.ok) {
+          const script = d.script_name ? ` (${d.script_name})` : "";
+          setUpdateInstallScriptMessage(`${t("updateInstallScriptStarted")} ${d.latest_version || ""}${script}`, "var(--ok)");
+        } else {
+          setUpdateInstallScriptMessage(`${t("updateInstallScriptFailed")} ${d.error ? "(" + d.error + ")" : ""}`, "#f44336");
+        }
+      } catch (e) {
+        setUpdateInstallScriptMessage(`${t("updateInstallScriptFailed")} ${String(e)}`, "#f44336");
+      }
     }
 
     function setWebModeMessage(msg, color = "var(--muted)") {
@@ -3657,6 +3731,7 @@
     document.getElementById("langSelect").addEventListener("change", saveSettings);
     document.getElementById("stripAnnotations").addEventListener("change", saveSettings);
     document.getElementById("btn-check-updates").addEventListener("click", () => runUpdateCheck(true));
+    document.getElementById("btn-run-install-script").addEventListener("click", runInstallScript);
     document.getElementById("btn-open-web-mode").addEventListener("click", startWebMode);
     document.getElementById("btn-install-mac-quick-action").addEventListener("click", installMacQuickAction);
     document.getElementById("btn-load-log").addEventListener("click", loadLog);
@@ -4729,6 +4804,10 @@
     const macQuickActionSection = document.getElementById("section-mac-quick-action");
     if (macQuickActionSection && APP_PLATFORM === "darwin") {
       macQuickActionSection.style.display = "";
+    }
+    const runInstallScriptBtn = document.getElementById("btn-run-install-script");
+    if (runInstallScriptBtn && !canRunInstallScript()) {
+      runInstallScriptBtn.style.display = "none";
     }
     loadWhitelistEditor();
     loadBlacklistEditor();

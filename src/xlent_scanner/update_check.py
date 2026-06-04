@@ -113,7 +113,29 @@ def _pick_installer_asset(assets: list[dict[str, Any]]) -> tuple[str, str]:
     return candidates[0]
 
 
-def _fetch_latest_release() -> dict[str, str]:
+def _platform_install_script_name() -> str:
+    plat = sys.platform
+    if plat.startswith("win"):
+        return "install_windows.ps1"
+    if plat == "darwin":
+        return "install_macos.sh"
+    return ""
+
+
+def _pick_install_script_asset(assets: list[dict[str, Any]]) -> tuple[str, str]:
+    expected_name = _platform_install_script_name()
+    if not expected_name:
+        return "", ""
+
+    for asset in assets:
+        name = str(asset.get("name") or "")
+        url = str(asset.get("browser_download_url") or "")
+        if name == expected_name and url:
+            return name, url
+    return "", ""
+
+
+def _fetch_latest_release_payload(timeout: int = 3) -> dict[str, Any]:
     url = f"https://api.github.com/repos/{GITHUB_OWNER}/{GITHUB_REPO}/releases/latest"
     req = urllib.request.Request(
         url,
@@ -122,8 +144,12 @@ def _fetch_latest_release() -> dict[str, str]:
             "User-Agent": "xlent-scanner-update-check",
         },
     )
-    with urllib.request.urlopen(req, timeout=3) as resp:
-        payload = json.loads(resp.read().decode("utf-8"))
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        return json.loads(resp.read().decode("utf-8"))
+
+
+def _fetch_latest_release() -> dict[str, str]:
+    payload = _fetch_latest_release_payload()
 
     latest = payload.get("tag_name") or payload.get("name") or ""
     release_url = payload.get("html_url") or RELEASES_URL
@@ -135,6 +161,28 @@ def _fetch_latest_release() -> dict[str, str]:
         "release_url": str(release_url),
         "installer_url": str(installer_url or release_url),
         "installer_name": str(installer_name),
+    }
+
+
+def fetch_platform_install_script() -> dict[str, str]:
+    """Finn installasjonsscriptet som passer denne plattformen i latest release."""
+    expected_name = _platform_install_script_name()
+    if not expected_name:
+        raise RuntimeError("Automatisk installasjonsscript støttes bare på Windows og macOS.")
+
+    payload = _fetch_latest_release_payload(timeout=10)
+    latest = payload.get("tag_name") or payload.get("name") or ""
+    release_url = payload.get("html_url") or RELEASES_URL
+    script_name, script_url = _pick_install_script_asset(payload.get("assets") or [])
+    if not latest:
+        raise RuntimeError("Fant ikke gyldig versjon i GitHub release.")
+    if not script_url:
+        raise RuntimeError(f"Fant ikke {expected_name} i latest release.")
+    return {
+        "latest_version": str(latest),
+        "release_url": str(release_url),
+        "script_name": script_name,
+        "script_url": script_url,
     }
 
 

@@ -91,6 +91,30 @@ def test_theme_translations_exist_for_all_ui_languages():
         assert html.count(f"{key}:") == 6
 
 
+def test_update_install_script_controls_exist_for_supported_desktop_platforms():
+    html = HTML.read_text(encoding="utf-8")
+
+    assert 'id="update-banner-script-btn"' in html
+    assert 'id="btn-run-install-script"' in html
+    assert 'id="update-install-script-msg"' in html
+    assert 'fetch(`${API}/updates/install-script/run`, { method: "POST" })' in html
+    assert 'function canRunInstallScript()' in html
+    assert 'APP_PLATFORM === "darwin"' in html
+    assert '.startsWith("win")' in html
+    assert 'updateBannerScriptBtnEl.onclick = runInstallScript;' in html
+    assert 'document.getElementById("btn-run-install-script").addEventListener("click", runInstallScript);' in html
+
+    for key in [
+        "updateRunScript",
+        "updateRunScriptShort",
+        "updateInstallScriptRunning",
+        "updateInstallScriptStarted",
+        "updateInstallScriptFailed",
+        "updateInstallScriptUnsupported",
+    ]:
+        assert html.count(f"{key}:") == 6
+
+
 def test_settings_profile_and_ollama_pull_controls_exist_for_all_languages():
     html = HTML.read_text(encoding="utf-8")
 
