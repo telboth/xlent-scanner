@@ -66,6 +66,42 @@ def test_diagnostics_health_returns_checks(monkeypatch, tmp_path):
     assert data["app_data_dir"] == str(tmp_path)
 
 
+def test_diagnostics_health_reports_macos_quick_action_details(monkeypatch, tmp_path):
+    app_binary = tmp_path / "XLENTScanner"
+    app_binary.write_text("#!/bin/sh\n", encoding="utf-8")
+    app_binary.chmod(0o755)
+    qa_path = tmp_path / "Skann med XLENT.workflow"
+    contents = qa_path / "Contents"
+    contents.mkdir(parents=True)
+    runner = contents / "run_xlent_scanner.sh"
+    runner.write_text("#!/bin/sh\n", encoding="utf-8")
+    runner.chmod(0o755)
+    (contents / "document.wflow").write_text(
+        'XLENT_SCANNER_APP_BINARY="/Applications/XLENTScanner.app/Contents/MacOS/XLENTScanner" '
+        '"run_xlent_scanner.sh" "$@"',
+        encoding="utf-8",
+    )
+    qa_log = tmp_path / "XLENTScannerQuickAction.log"
+    qa_log.write_text("arg_count=1\ninput=/tmp/test.pdf\n", encoding="utf-8")
+
+    monkeypatch.setattr(app_module.sys, "platform", "darwin")
+    monkeypatch.setattr(app_module, "app_data_dir", lambda: tmp_path)
+    monkeypatch.setattr(app_module, "_downloads_dir", lambda: tmp_path)
+    monkeypatch.setattr(app_module, "_mac_app_binary_path", lambda: app_binary)
+    monkeypatch.setattr(app_module, "_quick_action_path", lambda: qa_path)
+    monkeypatch.setattr(app_module, "_quick_action_log_path", lambda: qa_log)
+
+    data = app_module._health_check()
+    checks = {check["name"]: check for check in data["checks"]}
+
+    assert checks["mac_app_binary"]["ok"] is True
+    assert checks["mac_quick_action"]["ok"] is True
+    assert checks["mac_quick_action_runner"]["ok"] is True
+    assert checks["mac_quick_action_workflow"]["ok"] is True
+    assert checks["mac_quick_action_command"]["ok"] is True
+    assert checks["mac_quick_action_log"]["ok"] is True
+
+
 def test_diagnostics_export_writes_package_without_document_text(monkeypatch, tmp_path):
     app_module._last_result = _scan_result()
     monkeypatch.setattr(app_module, "app_data_dir", lambda: tmp_path)

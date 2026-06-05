@@ -217,7 +217,6 @@ mkdir -p "${LOG_DIR}"
     echo "input=${f}"
     if [[ ! -e "${f}" ]]; then
       echo "warning=input_missing path=${f}"
-      continue
     fi
     "${APP_BINARY}" "${f}" >>"${LOG_FILE}" 2>&1 &
     echo "started pid=$! path=${f}"

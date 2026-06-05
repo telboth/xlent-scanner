@@ -258,6 +258,15 @@
     .scan-cat-grid {
       display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px 14px; margin-bottom: 8px;
     }
+    .folder-options {
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      font-size: 12px; color: var(--muted);
+    }
+    .folder-options label { display: inline-flex; align-items: center; gap: 6px; }
+    .folder-options input[type="number"] {
+      width: 72px; padding: 4px 6px; border: 1px solid var(--border);
+      border-radius: 6px; background: var(--panel); color: var(--text);
+    }
     .ai-toggle-row {
       border-top: 1px solid var(--border); padding-top: 10px; margin-top: 4px;
     }
@@ -612,7 +621,6 @@
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="epost" checked> <span data-i18n="dstCatEpost">E-post</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="telefon" checked> <span data-i18n="dstCatTelefon">Telefon</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="id" checked> <span data-i18n="scanCatId">Personnummer / ID</span></label>
-          <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="passnummer" checked> <span data-i18n="scanCatPassnummer">Passnummer</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="fodselsdato" checked> <span data-i18n="scanCatFodselsdato">Fødselsdato</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="konto" checked> <span data-i18n="scanCatKonto">Bankdetaljer</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="kredittkort" checked> <span data-i18n="scanCatKredittkort">Kredittkort</span></label>
@@ -621,7 +629,6 @@
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="hemmeligheter" checked> <span data-i18n="scanCatHemmeligheter">API-nøkler / secrets</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="finansielt" checked> <span data-i18n="scanCatFinansielt">Finansielle nøkkeltall</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="medisinsk"> <span data-i18n="dstCatMedisinsk">Medisinsk (kun dybdeskann)</span></label>
-          <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="lonn" checked> <span data-i18n="scanCatLonn">Lønn / salary</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="konfidensielt" checked> <span data-i18n="scanCatKonfidensielt">Konfidensielle ord</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="klient" checked> <span data-i18n="scanCatKlient">Firmanavn</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="orgnummer" checked> <span data-i18n="scanCatOrgnummer">Org.nummer</span></label>
@@ -689,6 +696,11 @@
         <div style="display:flex; align-items:center; gap:10px;">
           <button id="btn-scan-folder" class="ctrl-btn ctrl-btn-primary" data-i18n="folderBtn">📂 Velg og skann mappe</button>
           <span id="folder-status" style="font-size:12px; color:var(--muted);"></span>
+        </div>
+        <div class="folder-options">
+          <label><input type="checkbox" id="folder-recursive"> <span data-i18n="folderRecursive">Skann også undermapper</span></label>
+          <label><span data-i18n="folderMaxFiles">Maks filer</span> <input type="number" id="folder-max-files" min="1" max="10000" value="500"></label>
+          <label><span data-i18n="folderMaxDepth">Maks dybde</span> <input type="number" id="folder-max-depth" min="0" max="50" value="5"></label>
         </div>
         <div id="folder-results" style="display:none;"></div>
       </div>
@@ -1450,6 +1462,12 @@
         folderDone:         "{n} filer skannet",
         folderError:        "Feil under mappeskanning:",
         folderNoFiles:      "Ingen støttede filer funnet i mappen.",
+        folderRecursive:    "Skann også undermapper",
+        folderMaxFiles:     "Maks filer",
+        folderMaxDepth:     "Maks dybde",
+        folderPreview:      "Fant {files} støttede filer i {folders} mapper. Starte skanning?",
+        folderPreviewTruncated:"Fant minst {files} støttede filer i {folders} mapper. Listen er avkortet ved maksgrensen. Starte skanning?",
+        folderTruncated:    "Avkortet ved maksgrensen ({n} filer).",
         historyClear:       "Tøm historikk",
         downloadPdf:        "📥 Last ned PDF-rapport",
         confidenceLabel:    "Min konfidensfilter:",
@@ -1684,6 +1702,12 @@
         folderDone:         "{n} filer skannade",
         folderError:        "Fel vid mappskanning:",
         folderNoFiles:      "Inga filer som stöds hittades i mappen.",
+        folderRecursive:    "Skanna även undermappar",
+        folderMaxFiles:     "Max filer",
+        folderMaxDepth:     "Max djup",
+        folderPreview:      "Hittade {files} filer som stöds i {folders} mappar. Starta skanning?",
+        folderPreviewTruncated:"Hittade minst {files} filer som stöds i {folders} mappar. Listan är avkortad vid maxgränsen. Starta skanning?",
+        folderTruncated:    "Avkortad vid maxgränsen ({n} filer).",
         historyClear:       "Rensa historik",
         downloadPdf:        "📥 Ladda ned PDF-rapport",
         confidenceLabel:    "Min konfidensfilter:",
@@ -1918,6 +1942,12 @@
         folderDone:         "{n} files scanned",
         folderError:        "Error during folder scan:",
         folderNoFiles:      "No supported files found in the folder.",
+        folderRecursive:    "Scan subfolders too",
+        folderMaxFiles:     "Max files",
+        folderMaxDepth:     "Max depth",
+        folderPreview:      "Found {files} supported files in {folders} folders. Start scan?",
+        folderPreviewTruncated:"Found at least {files} supported files in {folders} folders. The list is capped at the limit. Start scan?",
+        folderTruncated:    "Capped at the max limit ({n} files).",
         historyClear:       "Clear history",
         downloadPdf:        "📥 Download PDF report",
         confidenceLabel:    "Min confidence filter:",
@@ -2173,6 +2203,12 @@
         folderLevel:         "Risikostufe",
         folderError:         "Fehler beim Ordner-Scan:",
         folderNoFiles:       "Keine unterstützten Dateien gefunden.",
+        folderRecursive:     "Auch Unterordner scannen",
+        folderMaxFiles:      "Max. Dateien",
+        folderMaxDepth:      "Max. Tiefe",
+        folderPreview:       "{files} unterstützte Dateien in {folders} Ordnern gefunden. Scan starten?",
+        folderPreviewTruncated:"Mindestens {files} unterstützte Dateien in {folders} Ordnern gefunden. Die Liste wurde am Limit gekürzt. Scan starten?",
+        folderTruncated:     "Am Maximalwert gekürzt ({n} Dateien).",
         folderDone:          "{n} Dateien gescannt.",
         folderBrowse:        "Ordner auswählen",
         pastePlaceholder:    "Text hier einfügen…",
@@ -2408,6 +2444,12 @@
         folderLevel:         "Niveau de risque",
         folderError:         "Erreur lors de l'analyse du dossier :",
         folderNoFiles:       "Aucun fichier pris en charge trouvé.",
+        folderRecursive:     "Analyser aussi les sous-dossiers",
+        folderMaxFiles:      "Fichiers max.",
+        folderMaxDepth:      "Profondeur max.",
+        folderPreview:       "{files} fichiers pris en charge trouvés dans {folders} dossiers. Lancer l'analyse ?",
+        folderPreviewTruncated:"Au moins {files} fichiers pris en charge trouvés dans {folders} dossiers. La liste est limitée au maximum. Lancer l'analyse ?",
+        folderTruncated:     "Limité au maximum ({n} fichiers).",
         folderDone:          "{n} fichiers analysés.",
         folderBrowse:        "Choisir un dossier",
         pastePlaceholder:    "Collez le texte ici…",
@@ -2643,6 +2685,12 @@
         folderLevel:         "Nivel de riesgo",
         folderError:         "Error al escanear la carpeta:",
         folderNoFiles:       "No se encontraron archivos compatibles.",
+        folderRecursive:     "Escanear también subcarpetas",
+        folderMaxFiles:      "Máx. archivos",
+        folderMaxDepth:      "Profundidad máx.",
+        folderPreview:       "Se encontraron {files} archivos compatibles en {folders} carpetas. ¿Iniciar escaneo?",
+        folderPreviewTruncated:"Se encontraron al menos {files} archivos compatibles en {folders} carpetas. La lista se limita al máximo. ¿Iniciar escaneo?",
+        folderTruncated:     "Limitado al máximo ({n} archivos).",
         folderDone:          "{n} archivos escaneados.",
         folderBrowse:        "Seleccionar carpeta",
         pastePlaceholder:    "Pegue el texto aquí…",
@@ -4334,17 +4382,15 @@
     const FILTER_MAP = {
       "epost":         c => c.startsWith("e-post"),
       "telefon":       c => c.startsWith("telefonnummer"),
-      "id":            c => ["fødselsnummer","d-nummer","personnummer","samordningsnummer","cpr-nummer","uk national insurance","us social security","mulig personnummer"].some(p => c.startsWith(p)),
-      "passnummer":    c => c.startsWith("passnummer"),
+      "id":            c => ["fødselsnummer","d-nummer","personnummer","samordningsnummer","cpr-nummer","uk national insurance","us social security","mulig personnummer","passnummer"].some(p => c.startsWith(p)),
       "fodselsdato":   c => c.startsWith("fødselsdato"),
       "konto":         c => ["kontonummer","bankgiro","plusgiro","iban","swift/bic"].some(p => c.startsWith(p)),
       "kredittkort":   c => c.startsWith("kredittkort"),
       "navn":          c => c.startsWith("navn (person)"),
       "nettadresse":   c => c.startsWith("nettadresse") || c.startsWith("ip-adresse"),
       "hemmeligheter": c => ["openai","anthropic","github","jwt","bearer","aws","private key","azure storage","passord i konfig","konfigurasjonsord","høy-entropisteng"].some(p => c.startsWith(p)),
-      "finansielt":    c => ["timepris","dagspris","prosjektsum","margin","rabatt","budsjett"].some(p => c.startsWith(p)),
+      "finansielt":    c => ["timepris","dagspris","prosjektsum","margin","rabatt","budsjett","lønn"].some(p => c.startsWith(p)),
       "medisinsk":     c => c.startsWith("medisinsk") || c.startsWith("medicinsk") || c.startsWith("medical") || c.startsWith("diagnose") || c.startsWith("diagnosis") || c.startsWith("legemiddel") || c.startsWith("läkemedel") || c.startsWith("medication"),
-      "lonn":          c => c.startsWith("lønn"),
       "konfidensielt": c => c.startsWith("konfidensielt dokument"),
       "klient":        c => c.startsWith("kundenavn"),
       "orgnummer":     c => c.startsWith("organisasjonsnummer"),
@@ -4354,15 +4400,13 @@
     const AI_CAT_MAP = {
       "epost":       "epost",
       "telefon":     "telefon",
-      "id":          "personnummer",
-      "passnummer":  "passnummer",
+      "id":          ["personnummer", "passnummer"],
       "fodselsdato": "fodselsdato",
       "konto":       ["bankkonto", "swift"],
       "navn":        "navn",
       "nettadresse": "nettadresse",
-      "finansielt":  "budsjett_tall",
+      "finansielt":  ["budsjett_tall", "lonn"],
       "medisinsk":   "medisinsk",
-      "lonn":        "lonn",
     };
 
     function _findingMatchesCat(f, selectedCats) {
@@ -4852,6 +4896,23 @@
     /* ══════════════════════════════════════════════════════════════════
        FOLDER SCAN
     ══════════════════════════════════════════════════════════════════ */
+    function getFolderOpts() {
+      const maxFiles = Number(document.getElementById("folder-max-files")?.value || 500);
+      const maxDepth = Number(document.getElementById("folder-max-depth")?.value || 5);
+      return {
+        recursive: document.getElementById("folder-recursive")?.checked === true,
+        max_files: Number.isFinite(maxFiles) ? Math.max(1, Math.min(maxFiles, 10000)) : 500,
+        max_depth: Number.isFinite(maxDepth) ? Math.max(0, Math.min(maxDepth, 50)) : 5,
+      };
+    }
+
+    function _folderPreviewText(preview) {
+      const key = preview.truncated ? "folderPreviewTruncated" : "folderPreview";
+      return t(key)
+        .replace("{files}", preview.file_count)
+        .replace("{folders}", preview.folder_count);
+    }
+
     document.getElementById("btn-scan-folder").addEventListener("click", async () => {
       const fs = document.getElementById("folder-status");
       const fr = document.getElementById("folder-results");
@@ -4861,14 +4922,32 @@
         // Step 1: open folder dialog
         const dlg = await (await fetch(`${API}/open-folder-dialog`, { method: "POST" })).json();
         if (!dlg.path) { fs.textContent = ""; return; }
+        const folderOpts = getFolderOpts();
 
-        // Step 2: scan folder
+        // Step 2: count files before scanning potentially large folders
+        const preview = await (await fetch(`${API}/scan-folder/preview`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ folder_path: dlg.path, ...folderOpts }),
+        })).json();
+        if (preview.error || preview.ok === false) {
+          fs.style.color = "#f44336"; fs.textContent = `${t("folderError")} ${preview.error || ""}`; return;
+        }
+        if (!preview.file_count) {
+          fs.style.color = "var(--muted)"; fs.textContent = t("folderNoFiles"); return;
+        }
+        if (!window.confirm(_folderPreviewText(preview))) {
+          fs.textContent = "";
+          return;
+        }
+
+        // Step 3: scan folder
         fs.textContent = t("folderScanning");
         const opts = getOpts();
         const d = await (await fetch(`${API}/scan-folder`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ folder_path: dlg.path, ignore_xlent: opts.ignore_xlent, language: opts.language }),
+          body: JSON.stringify({ folder_path: dlg.path, ignore_xlent: opts.ignore_xlent, language: opts.language, ...folderOpts }),
         })).json();
 
         if (d.error) {
@@ -4878,7 +4957,8 @@
           fs.style.color = "var(--muted)"; fs.textContent = t("folderNoFiles"); return;
         }
 
-        fs.style.color = "var(--ok)"; fs.textContent = t("folderDone").replace("{n}", d.total);
+        const truncatedNote = d.truncated ? ` ${t("folderTruncated").replace("{n}", d.max_files)}` : "";
+        fs.style.color = "var(--ok)"; fs.textContent = t("folderDone").replace("{n}", d.total) + truncatedNote;
         renderFolderResults(d.files);
         loadHistoryFromApi();
       } catch (e) {
@@ -4892,14 +4972,15 @@
       const rows = sorted.map(f => {
         const rc = LEVEL_COLOR[f.risk_level] || "#8a96a8";
         const ic = LEVEL_ICON[f.risk_level] || "•";
+        const displayPath = f.relative_path || f.file_name;
         if (f.error) {
           return `<tr>
-            <td style="color:var(--danger)">${escapeHtml(f.file_name)}</td>
+            <td style="color:var(--danger)">${escapeHtml(displayPath)}</td>
             <td colspan="2" style="color:var(--muted);font-size:11px;">${escapeHtml(f.error)}</td>
           </tr>`;
         }
         return `<tr>
-          <td><span style="margin-right:5px">${ic}</span>${escapeHtml(f.file_name)}</td>
+          <td><span style="margin-right:5px">${ic}</span>${escapeHtml(displayPath)}</td>
           <td style="color:${rc};font-weight:600;white-space:nowrap">${f.risk_level.toUpperCase()}</td>
           <td style="color:var(--muted);text-align:right">${f.finding_count} ${t("metaFindings")}</td>
         </tr>`;

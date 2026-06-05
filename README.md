@@ -1,6 +1,6 @@
 # XLENT Compliance-scanner
 
-> **v1.3.10** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
+> **v1.4.0** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
 
 Alt kjøres 100 % lokalt — ingen dokumenter, tekst eller funn sendes over internett.
 
@@ -13,8 +13,8 @@ Alt kjøres 100 % lokalt — ingen dokumenter, tekst eller funn sendes over inte
 - **Drag-and-drop** — slipp én eller **flere filer** rett på vinduet (flere filer → batch-oversikt)
 - **Bla-til-fil** — velg fil fra disk
 - **Lim inn tekst** — skann tekst direkte (uten å lagre en fil)
-- **Mappeskann** — velg en mappe og skann alle støttede filer i én operasjon
-- **Kategorifilter** — velg hvilke typer funn du vil se (personnummer, konto, navn, secrets, …)
+- **Mappeskann** — velg en mappe og skann støttede filer i én operasjon, valgfritt også i undermapper
+- **Kategorifilter** — velg hvilke typer funn du vil se (personnummer/ID inkl. passnummer, bankdetaljer, finansielle nøkkeltall inkl. lønn, navn, secrets, …)
 
 ### AI-dybdeskann (Ollama) — innebygd i scanner-fanen
 
@@ -197,12 +197,25 @@ Finder-hurtighandlingen installeres automatisk av `install_macos.sh`. Hvis den m
 2. Velg modus øverst i scanner-fanen:
    - **Fil** — dra og slipp (én eller flere filer), eller klikk «Velg fil»
    - **Lim inn** — lim inn tekst direkte i tekstfeltet
-   - **Mappe** — velg en mappe for å skanne alle filer
+   - **Mappe** — velg en mappe for å skanne støttede filer
 3. (Valgfritt) Huk av **🔬 Kjør AI-dybdeskann** for også å analysere med lokal AI (krever Ollama)
 4. Se gjennom funnene — sammendragsraden øverst viser antall per alvorlighetsgrad
 5. Klikk **+ Hviteliste** på falske positive for å filtrere dem ut i fremtiden
 6. Bruk **Generer .md-fil** / **Generer PDF** / **Lagre anonymisert .<format>** for å lage en renset versjon
 7. Åpne **HTML-rapport** eller last ned **PDF-rapport** for full dokumentasjon (inkl. AI-funn)
+
+### Mappeskann
+
+Mappe-modus skanner som standard bare filer direkte i valgt mappe. Huk av **Skann også undermapper** for rekursiv skanning.
+
+Sikkerhetsgrenser:
+- **Maks filer**: default `500`, hard grense `10000`
+- **Maks dybde**: default `5`, hard grense `50`
+- Før scanning teller appen støttede filer og ber bruker bekrefte
+- Resultatlisten viser relativ sti, slik at like filnavn i ulike undermapper kan skilles
+- Skjulte/tunge mapper hoppes over, bl.a. `.git`, `.venv`, `node_modules`, `build`, `dist`, `__pycache__`
+
+Støttede filtyper: `pdf`, `docx`, `pptx`, `xlsx`, `txt`, `md`, `html`, `csv`, `eml`, `rtf`, `odt`.
 
 ---
 
@@ -237,6 +250,8 @@ bash install_macos.sh --quick-action-only
 # Høyreklikk fil i Finder → Hurtighandlinger → Skann med XLENT
 ```
 Kan også installeres direkte fra appen under **Innstillinger**. Krever at `XLENTScanner.app` er i `/Applications`. `install_macos.sh` installerer en Automator Finder-hurtighandling som sender filstien som argument til appen. Hvis scriptet kjøres med `sudo`, installeres den for `SUDO_USER`, ikke for `root`.
+
+Ved feilsøking: åpne **Innstillinger → Feilsøking** og kjør health check eller eksporter feilsøkingspakke. Pakken inkluderer app-logg og `~/Library/Logs/XLENTScannerQuickAction.log`, men ikke dokumentinnhold.
 
 ### macOS — Åpne med
 macOS-builden deklarerer støttede dokumenttyper (`pdf/docx/pptx/xlsx/txt/md/html/csv/eml/rtf/odt`) i app-bundlen. Finder kan derfor bruke **Åpne med → XLENTScanner** for disse filene.
@@ -351,10 +366,17 @@ src/xlent_scanner/
 - AI-dybdeskann: [Ollama](https://ollama.ai) REST API (`/api/generate`)
 - PDF-anonymisering og -rapport: [PyMuPDF](https://pymupdf.readthedocs.io/) (fitz)
 - Risikomotor: fire nivåer — grønn / gul / rød / svart
+- Mappeskann: `scan_folder()` bruker en delt planlegger for preview og scanning, med rekursiv modus, maksgrenser og ekskluderte mapper
 
 ---
 
 ## Endringslogg
+
+### v1.4.0
+- La til rekursiv mappeskann som eksplisitt valg, med preview/telling før scan, maks filer, maks dybde og ekskluderte tunge/skjulte mapper.
+- Mappeskann-resultater viser relativ sti for filer i undermapper.
+- Forenklet kategorimenyen: `Personnummer / ID` dekker også passnummer, og `Finansielle nøkkeltall` dekker også lønn/salary.
+- Forbedret macOS Finder Quick Action-diagnostikk og runner-logikk for Finder/Automator-input.
 
 ### v1.3.10
 - Fikset macOS Finder/Open With-oppstart ved å ignorere Finder sitt `-psn_...` argument og bruke første faktiske filsti.

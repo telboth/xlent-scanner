@@ -261,6 +261,40 @@ def test_bank_details_category_combines_account_iban_and_swift():
     assert '"konto":       ["bankkonto", "swift"]' in html
 
 
+def test_scan_menu_combines_passport_and_salary_categories():
+    html = HTML.read_text(encoding="utf-8")
+
+    assert 'class="scan-cat" value="passnummer"' not in html
+    assert 'class="scan-cat" value="lonn"' not in html
+    assert 'class="scan-cat" value="id" checked' in html
+    assert 'class="scan-cat" value="finansielt" checked' in html
+    assert '"id":            c => ["fødselsnummer","d-nummer","personnummer","samordningsnummer","cpr-nummer","uk national insurance","us social security","mulig personnummer","passnummer"].some(p => c.startsWith(p))' in html
+    assert '"finansielt":    c => ["timepris","dagspris","prosjektsum","margin","rabatt","budsjett","lønn"].some(p => c.startsWith(p))' in html
+    assert '"id":          ["personnummer", "passnummer"]' in html
+    assert '"finansielt":  ["budsjett_tall", "lonn"]' in html
+
+
+def test_recursive_folder_scan_controls_are_wired():
+    html = HTML.read_text(encoding="utf-8")
+
+    for key in [
+        "folderRecursive",
+        "folderMaxFiles",
+        "folderMaxDepth",
+        "folderPreview",
+        "folderPreviewTruncated",
+        "folderTruncated",
+    ]:
+        assert html.count(f"{key}:") == 6
+    assert 'id="folder-recursive"' in html
+    assert 'id="folder-max-files"' in html
+    assert 'id="folder-max-depth"' in html
+    assert 'fetch(`${API}/scan-folder/preview`' in html
+    assert "function getFolderOpts()" in html
+    assert "recursive: document.getElementById(\"folder-recursive\")?.checked === true" in html
+    assert "relative_path || f.file_name" in html
+
+
 def test_client_names_are_presented_as_company_names():
     html = HTML.read_text(encoding="utf-8")
 

@@ -43,6 +43,17 @@ SUPPORTED_SUFFIXES = {
     ".csv", ".eml", ".rtf", ".odt",
 }
 
+DEFAULT_FOLDER_MAX_FILES = 500
+DEFAULT_FOLDER_MAX_DEPTH = 5
+DEFAULT_EXCLUDED_DIRS = {
+    ".git", ".hg", ".svn",
+    ".mypy_cache", ".pytest_cache", ".ruff_cache",
+    ".venv", "venv", "__pycache__",
+    "node_modules",
+    "build", "dist",
+    "Library", "AppData",
+}
+
 _ignore_list: dict | None = None
 
 
@@ -411,23 +422,116 @@ def scan_text(text: str, language: str = "auto", source_name: str = "Innlimt tek
     return assess(result)
 
 
+def _normalise_scan_limit(value: int | str | None, default: int, minimum: int, maximum: int) -> int:
+    try:
+        parsed = int(value) if value is not None else default
+    except (TypeError, ValueError):
+        parsed = default
+    return max(minimum, min(parsed, maximum))
+
+
+def _is_excluded_scan_dir(path: Path, excluded_dirs: set[str]) -> bool:
+    name = path.name
+    excluded_lower = {item.lower() for item in excluded_dirs}
+    return path.is_symlink() or name.startswith(".") or name in excluded_dirs or name.lower() in excluded_lower
+
+
+def build_folder_scan_plan(
+    folder: str | Path,
+    recursive: bool = False,
+    max_files: int = DEFAULT_FOLDER_MAX_FILES,
+    max_depth: int = DEFAULT_FOLDER_MAX_DEPTH,
+    excluded_dirs: set[str] | None = None,
+) -> dict:
+    """Finn støttede filer i en mappe uten å lese filinnhold."""
+    root = Path(folder)
+    if not root.is_dir():
+        raise ValueError(f"Ikke en mappe: {folder}")
+
+    max_files = _normalise_scan_limit(max_files, DEFAULT_FOLDER_MAX_FILES, 1, 10_000)
+    max_depth = _normalise_scan_limit(max_depth, DEFAULT_FOLDER_MAX_DEPTH, 0, 50)
+    excluded = set(DEFAULT_EXCLUDED_DIRS if excluded_dirs is None else excluded_dirs)
+
+    files: list[Path] = []
+    folder_count = 0
+    truncated = False
+
+    def add_file(path: Path) -> bool:
+        nonlocal truncated
+        if path.suffix.lower() not in SUPPORTED_SUFFIXES:
+            return True
+        if len(files) >= max_files:
+            truncated = True
+            return False
+        files.append(path)
+        return True
+
+    if not recursive:
+        folder_count = 1
+        for child in sorted(root.iterdir(), key=lambda p: p.name.lower()):
+            if child.is_file() and not add_file(child):
+                break
+        files.sort(key=lambda p: p.name.lower())
+    else:
+        stack: list[tuple[Path, int]] = [(root, 0)]
+        stop = False
+        while stack and not stop:
+            current, depth = stack.pop()
+            folder_count += 1
+            try:
+                entries = sorted(current.iterdir(), key=lambda p: (not p.is_dir(), p.name.lower()))
+            except OSError:
+                continue
+            child_dirs: list[tuple[Path, int]] = []
+            for entry in entries:
+                if entry.is_dir():
+                    if depth < max_depth and not _is_excluded_scan_dir(entry, excluded):
+                        child_dirs.append((entry, depth + 1))
+                    continue
+                if entry.is_file() and not add_file(entry):
+                    stop = True
+                    break
+            stack.extend(reversed(child_dirs))
+        files.sort(key=lambda p: str(p.relative_to(root)).lower())
+
+    samples = [str(path.relative_to(root)) for path in files[:10]]
+    return {
+        "folder": str(root),
+        "recursive": bool(recursive),
+        "max_files": max_files,
+        "max_depth": max_depth,
+        "folder_count": folder_count,
+        "file_count": len(files),
+        "truncated": truncated,
+        "files": files,
+        "samples": samples,
+        "excluded_dirs": sorted(excluded),
+    }
+
+
 def scan_folder(
     folder: str | Path,
     ignore_xlent: bool = False,
     language: str = "auto",
-    max_files: int = 100,
+    max_files: int = DEFAULT_FOLDER_MAX_FILES,
+    recursive: bool = False,
+    max_depth: int = DEFAULT_FOLDER_MAX_DEPTH,
 ) -> list[ScanResult]:
     """Skann alle støttede filer i en mappe. Returnerer resultater sortert etter risikonivå."""
-    p = Path(folder)
-    if not p.is_dir():
-        raise ValueError(f"Ikke en mappe: {folder}")
-    files = sorted(
-        [f for f in p.iterdir() if f.is_file() and f.suffix.lower() in SUPPORTED_SUFFIXES],
-        key=lambda f: f.name.lower(),
-    )[:max_files]
-    results = [scan_file(f, ignore_xlent=ignore_xlent, language=language) for f in files]
+    plan = build_folder_scan_plan(
+        folder,
+        recursive=recursive,
+        max_files=max_files,
+        max_depth=max_depth,
+    )
+    root = Path(folder)
+    results = []
+    for f in plan["files"]:
+        result = scan_file(f, ignore_xlent=ignore_xlent, language=language)
+        result.relative_path = str(Path(f).relative_to(root))
+        results.append(result)
     level_order = {"svart": 3, "rød": 2, "gul": 1, "grønn": 0}
-    results.sort(key=lambda r: level_order.get(r.risk_level, 0), reverse=True)
+    results.sort(key=lambda r: (-level_order.get(r.risk_level, 0), r.relative_path.lower()))
     return results
 
 

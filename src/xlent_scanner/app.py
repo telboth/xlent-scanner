@@ -61,7 +61,15 @@ from xlent_scanner.models import Finding
 from xlent_scanner.patch import SUPPORTED_PATCH_SUFFIXES, patch_file
 from xlent_scanner.report import generate_html
 from xlent_scanner.history import add_history_entry, load_history, clear_history
-from xlent_scanner.scanner import reset_ignore_cache, scan_file, scan_text, scan_folder
+from xlent_scanner.scanner import (
+    DEFAULT_FOLDER_MAX_DEPTH,
+    DEFAULT_FOLDER_MAX_FILES,
+    build_folder_scan_plan,
+    reset_ignore_cache,
+    scan_file,
+    scan_folder,
+    scan_text,
+)
 from xlent_scanner.update_check import check_for_update, fetch_platform_install_script
 from xlent_scanner.whitelist import (
     add_to_whitelist,
@@ -366,10 +374,21 @@ def _health_check() -> dict:
     if sys.platform == "darwin":
         binary = _mac_app_binary_path()
         qa_path = _quick_action_path()
+        workflow = qa_path / "Contents" / "document.wflow"
         runner = qa_path / "Contents" / "run_xlent_scanner.sh"
         add("mac_app_binary", binary.exists() and os.access(str(binary), os.X_OK), str(binary))
         add("mac_quick_action", qa_path.exists(), str(qa_path))
         add("mac_quick_action_runner", runner.exists() and os.access(str(runner), os.X_OK), str(runner))
+        add("mac_quick_action_workflow", workflow.exists(), str(workflow))
+        if workflow.exists():
+            try:
+                workflow_text = workflow.read_text(encoding="utf-8", errors="replace")
+                has_runner = "run_xlent_scanner.sh" in workflow_text and '"$@"' in workflow_text
+                add("mac_quick_action_command", has_runner, "passes Finder input as shell arguments")
+            except Exception as exc:
+                add("mac_quick_action_command", False, str(exc))
+        qa_log = _quick_action_log_path()
+        add("mac_quick_action_log", qa_log.exists(), str(qa_log))
     elif sys.platform.startswith("win"):
         add("windows_context_menu", True, "not validated by health check")
 
@@ -576,7 +595,6 @@ mkdir -p "${LOG_DIR}"
     echo "input=${f}"
     if [[ ! -e "${f}" ]]; then
       echo "warning=input_missing path=${f}"
-      continue
     fi
     "${APP_BINARY}" "${f}" >>"${LOG_FILE}" 2>&1 &
     echo "started pid=$! path=${f}"
@@ -825,6 +843,53 @@ def scan_text_endpoint():
         return jsonify({"error": f"Klarte ikke å skanne tekst: {exc}"})
 
 
+def _folder_scan_options(data: dict) -> dict:
+    def _int(name: str, default: int, minimum: int, maximum: int) -> int:
+        try:
+            value = int(data.get(name, default))
+        except (TypeError, ValueError):
+            value = default
+        return max(minimum, min(value, maximum))
+
+    def _bool(name: str, default: bool = False) -> bool:
+        value = data.get(name, default)
+        if isinstance(value, str):
+            return value.strip().lower() in {"1", "true", "yes", "on"}
+        return bool(value)
+
+    return {
+        "recursive": _bool("recursive", False),
+        "max_files": _int("max_files", DEFAULT_FOLDER_MAX_FILES, 1, 10_000),
+        "max_depth": _int("max_depth", DEFAULT_FOLDER_MAX_DEPTH, 0, 50),
+    }
+
+
+@flask_app.route("/scan-folder/preview", methods=["POST"])
+def scan_folder_preview_endpoint():
+    """Tell støttede filer i en mappe før scanning."""
+    try:
+        data = request.get_json(force=True)
+        folder_path = data.get("folder_path", "")
+        opts = _folder_scan_options(data)
+        LOGGER.info("scan-folder preview path=%s recursive=%s", folder_path, opts["recursive"])
+        plan = build_folder_scan_plan(folder_path, **opts)
+        return jsonify({
+            "ok": True,
+            "folder": plan["folder"],
+            "recursive": plan["recursive"],
+            "file_count": plan["file_count"],
+            "folder_count": plan["folder_count"],
+            "truncated": plan["truncated"],
+            "max_files": plan["max_files"],
+            "max_depth": plan["max_depth"],
+            "samples": plan["samples"],
+            "excluded_dirs": plan["excluded_dirs"],
+        })
+    except Exception as exc:
+        LOGGER.error("scan-folder preview failed: %s", traceback.format_exc())
+        return jsonify({"ok": False, "error": str(exc)})
+
+
 @flask_app.route("/scan-folder", methods=["POST"])
 def scan_folder_endpoint():
     """Skann alle støttede filer i en mappe (batch)."""
@@ -833,8 +898,10 @@ def scan_folder_endpoint():
         folder_path = data.get("folder_path", "")
         ignore_xlent = bool(data.get("ignore_xlent", False))
         language = data.get("language", "auto")
-        LOGGER.info("scan-folder request path=%s", folder_path)
-        results = scan_folder(folder_path, ignore_xlent=ignore_xlent, language=language)
+        opts = _folder_scan_options(data)
+        LOGGER.info("scan-folder request path=%s recursive=%s", folder_path, opts["recursive"])
+        plan = build_folder_scan_plan(folder_path, **opts)
+        results = scan_folder(folder_path, ignore_xlent=ignore_xlent, language=language, **opts)
         summary = []
         for r in results:
             add_history_entry(
@@ -846,13 +913,22 @@ def scan_folder_endpoint():
             )
             summary.append({
                 "file_name": r.file_name,
+                "relative_path": r.relative_path or r.file_name,
                 "risk_level": r.risk_level,
                 "finding_count": len(r.findings),
                 "error": r.error,
                 "file_size": r.file_size,
             })
         LOGGER.info("scan-folder result files=%d", len(summary))
-        return jsonify({"files": summary, "total": len(summary)})
+        return jsonify({
+            "files": summary,
+            "total": len(summary),
+            "folder_count": plan["folder_count"],
+            "truncated": plan["truncated"],
+            "max_files": plan["max_files"],
+            "max_depth": plan["max_depth"],
+            "recursive": plan["recursive"],
+        })
     except Exception as exc:
         LOGGER.error("scan-folder endpoint failed: %s", traceback.format_exc())
         return jsonify({"error": str(exc)})
@@ -1464,7 +1540,7 @@ def api_deep_scan_cancel(job_id: str):
 
 @flask_app.route("/startup-file", methods=["GET"])
 def startup_file():
-    """Returnerer filen som ble sendt via Windows høyreklikk-kontekstmeny (sys.argv[1])."""
+    """Returnerer filen som ble sendt via OS-kontekstmeny/Finder (sys.argv)."""
     return jsonify({"path": _initial_file})
 
 
@@ -2447,6 +2523,10 @@ def _startup_file_from_argv(argv: list[str]) -> str | None:
     return None
 
 
+def _format_startup_file_args(paths: list[str]) -> str:
+    return "\n".join(p for p in paths if p)
+
+
 def _run_api_mode() -> None:
     """Kjør bare lokal API-server for eksterne frontender, uten GUI."""
     global _port
@@ -2530,7 +2610,7 @@ def _ipc_send_and_exit(file_path: str) -> None:
     """Send filsti til en eksisterende instans og avslutt."""
     try:
         with socket.create_connection(("127.0.0.1", _IPC_PORT), timeout=1.0) as s:
-            s.sendall((file_path + "\n").encode("utf-8"))
+            s.sendall((_format_startup_file_args([file_path]) + "\n").encode("utf-8"))
         LOGGER.info("IPC: filsti sendt til eksisterende instans: %s", file_path)
         sys.exit(0)
     except OSError:
