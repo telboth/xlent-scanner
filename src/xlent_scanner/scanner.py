@@ -529,6 +529,7 @@ def scan_folder(
     for f in plan["files"]:
         result = scan_file(f, ignore_xlent=ignore_xlent, language=language)
         result.relative_path = str(Path(f).relative_to(root))
+        result.source_path = str(f)
         results.append(result)
     level_order = {"svart": 3, "rød": 2, "gul": 1, "grønn": 0}
     results.sort(key=lambda r: (-level_order.get(r.risk_level, 0), r.relative_path.lower()))

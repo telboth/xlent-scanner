@@ -57,7 +57,7 @@ from xlent_scanner.ignore import (
     ignore_path_str,
     save_ignore_toml_text,
 )
-from xlent_scanner.models import Finding
+from xlent_scanner.models import Finding, ScanResult
 from xlent_scanner.patch import SUPPORTED_PATCH_SUFFIXES, patch_file
 from xlent_scanner.report import generate_html
 from xlent_scanner.history import add_history_entry, load_history, clear_history
@@ -85,6 +85,12 @@ _last_ai_findings: list[dict] = []   # AI-dybdeskann-funn for sist skannede fil 
 _last_ai_findings_file: dict = {"name": ""}   # filnavnet AI-funnene tilhører
 _api_scan_results: dict[str, dict] = {}  # Separat state for eksternt API; påvirker ikke GUI-state.
 _api_scan_lock = threading.Lock()
+_folder_scan_results: dict[str, ScanResult] = {}
+_folder_scan_lock = threading.Lock()
+_FOLDER_SCAN_MAX_RESULTS = 10000
+_folder_jobs: dict[str, dict] = {}
+_folder_jobs_lock = threading.Lock()
+_last_folder_job_id: str = ""
 
 _window: webview.Window | None = None
 _initial_file: str | None = None     # fil sendt via Windows kontekstmeny (sys.argv[1])
@@ -380,6 +386,17 @@ def _health_check() -> dict:
         add("mac_quick_action", qa_path.exists(), str(qa_path))
         add("mac_quick_action_runner", runner.exists() and os.access(str(runner), os.X_OK), str(runner))
         add("mac_quick_action_workflow", workflow.exists(), str(workflow))
+        if runner.exists():
+            try:
+                runner_text = runner.read_text(encoding="utf-8", errors="replace")
+                robust_runner = (
+                    "/usr/bin/open -n" in runner_text
+                    and "note=no_arguments_trying_stdin" in runner_text
+                    and "nohup" in runner_text
+                )
+                add("mac_quick_action_runner_mode", robust_runner, "open --args with stdin/nohup fallback")
+            except Exception as exc:
+                add("mac_quick_action_runner_mode", False, str(exc))
         if workflow.exists():
             try:
                 workflow_text = workflow.read_text(encoding="utf-8", errors="replace")
@@ -571,6 +588,7 @@ set -u
 LOG_DIR="${HOME}/Library/Logs"
 LOG_FILE="${LOG_DIR}/XLENTScannerQuickAction.log"
 APP_BINARY="${XLENT_SCANNER_APP_BINARY:-/Applications/XLENTScanner.app/Contents/MacOS/XLENTScanner}"
+APP_BUNDLE="${APP_BINARY%/Contents/MacOS/XLENTScanner}"
 
 mkdir -p "${LOG_DIR}"
 
@@ -579,6 +597,7 @@ mkdir -p "${LOG_DIR}"
   echo "user=$(id -un 2>/dev/null || echo unknown)"
   echo "pwd=$(pwd)"
   echo "app_binary=${APP_BINARY}"
+  echo "app_bundle=${APP_BUNDLE}"
   echo "arg_count=$#"
 
   if [[ ! -x "${APP_BINARY}" ]]; then
@@ -586,18 +605,34 @@ mkdir -p "${LOG_DIR}"
     exit 1
   fi
 
-  if [[ "$#" -eq 0 ]]; then
+  inputs=("$@")
+  if [[ "${#inputs[@]}" -eq 0 ]]; then
+    echo "note=no_arguments_trying_stdin"
+    while IFS= read -r line; do
+      [[ -n "${line}" ]] && inputs+=("${line}")
+    done
+  fi
+
+  if [[ "${#inputs[@]}" -eq 0 ]]; then
     echo "error=no_input_files"
     exit 0
   fi
 
-  for f in "$@"; do
+  for f in "${inputs[@]}"; do
     echo "input=${f}"
-    if [[ ! -e "${f}" ]]; then
+    if [[ "${f}" != file://* && ! -e "${f}" ]]; then
       echo "warning=input_missing path=${f}"
     fi
-    "${APP_BINARY}" "${f}" >>"${LOG_FILE}" 2>&1 &
-    echo "started pid=$! path=${f}"
+    if [[ -d "${APP_BUNDLE}" ]]; then
+      /usr/bin/open -n "${APP_BUNDLE}" --args "${f}" >>"${LOG_FILE}" 2>&1
+      open_status=$?
+      echo "open_status=${open_status} path=${f}"
+      if [[ "${open_status}" -eq 0 ]]; then
+        continue
+      fi
+    fi
+    nohup "${APP_BINARY}" "${f}" </dev/null >>"${LOG_FILE}" 2>&1 &
+    echo "started_direct pid=$! path=${f}"
   done
 } >>"${LOG_FILE}" 2>&1
 """,
@@ -864,6 +899,222 @@ def _folder_scan_options(data: dict) -> dict:
     }
 
 
+def _folder_finding_summary(result: ScanResult, limit: int = 8) -> list[dict]:
+    rows = []
+    for finding in result.findings:
+        if finding.category.startswith("⚠"):
+            continue
+        rows.append({
+            "category": finding.category,
+            "text": finding.text,
+            "severity": finding.severity,
+            "context": finding.context,
+        })
+        if len(rows) >= limit:
+            break
+    return rows
+
+
+def _remember_folder_result(result: ScanResult) -> str:
+    report_id = uuid.uuid4().hex
+    with _folder_scan_lock:
+        _folder_scan_results[report_id] = result
+        while len(_folder_scan_results) > _FOLDER_SCAN_MAX_RESULTS:
+            oldest = next(iter(_folder_scan_results))
+            _folder_scan_results.pop(oldest, None)
+    return report_id
+
+
+def _folder_result_row(result: ScanResult, report_id: str | None = None) -> dict:
+    report_id = report_id or _remember_folder_result(result)
+    return {
+        "file_name": result.file_name,
+        "relative_path": result.relative_path or result.file_name,
+        "report_id": report_id,
+        "risk_level": result.risk_level,
+        "finding_count": len(result.findings),
+        "findings_summary": _folder_finding_summary(result),
+        "error": result.error,
+        "file_size": result.file_size,
+        "text_length": result.text_length,
+        "warning": result.warning,
+        "warning_code": result.warning_code,
+    }
+
+
+def _folder_job_snapshot(job_id: str) -> dict | None:
+    with _folder_jobs_lock:
+        job = _folder_jobs.get(job_id)
+        if not job:
+            return None
+        return {
+            "ok": True,
+            "job_id": job_id,
+            "status": job["status"],
+            "folder": job.get("folder", ""),
+            "recursive": job.get("recursive", False),
+            "total": job.get("total", 0),
+            "completed": job.get("completed", 0),
+            "folder_count": job.get("folder_count", 0),
+            "truncated": job.get("truncated", False),
+            "max_files": job.get("max_files", DEFAULT_FOLDER_MAX_FILES),
+            "max_depth": job.get("max_depth", DEFAULT_FOLDER_MAX_DEPTH),
+            "cancel_requested": job.get("cancel_requested", False),
+            "error": job.get("error", ""),
+            "files": list(job.get("files", [])),
+        }
+
+
+def _folder_job_from_request(data: dict | None = None) -> tuple[str, dict]:
+    job_id = str((data or {}).get("job_id") or _last_folder_job_id or "")
+    if not job_id:
+        raise ValueError("Ingen mappeskann tilgjengelig.")
+    with _folder_jobs_lock:
+        job = _folder_jobs.get(job_id)
+        if not job:
+            raise ValueError("Ukjent mappeskann-jobb.")
+        return job_id, {
+            **job,
+            "files": list(job.get("files", [])),
+        }
+
+
+def _folder_result_for_report_id(report_id: str) -> ScanResult:
+    with _folder_scan_lock:
+        result = _folder_scan_results.get(report_id)
+    if result is None:
+        raise ValueError("Ukjent filrapport.")
+    return result
+
+
+def _folder_export_rows(job: dict) -> list[dict]:
+    rows = []
+    for row in job.get("files", []):
+        rows.append({
+            "relative_path": row.get("relative_path", ""),
+            "file_name": row.get("file_name", ""),
+            "risk_level": row.get("risk_level", ""),
+            "finding_count": row.get("finding_count", 0),
+            "file_size": row.get("file_size", 0),
+            "text_length": row.get("text_length", 0),
+            "error": row.get("error") or "",
+            "warning": row.get("warning") or "",
+            "top_findings": "; ".join(
+                f"{f.get('category', '')}: {f.get('text', '')}"
+                for f in (row.get("findings_summary") or [])
+            ),
+        })
+    return rows
+
+
+def _safe_csv_cell(value) -> str:
+    text = "" if value is None else str(value)
+    if text.startswith(("=", "+", "-", "@")):
+        return "'" + text
+    return text
+
+
+def _folder_audit_html(job_id: str, job: dict) -> str:
+    from datetime import datetime  # noqa: PLC0415
+
+    rows = _folder_export_rows(job)
+    tr = []
+    for row in rows:
+        tr.append(
+            "<tr>"
+            f"<td>{html.escape(str(row['relative_path']))}</td>"
+            f"<td>{html.escape(str(row['risk_level']))}</td>"
+            f"<td>{html.escape(str(row['finding_count']))}</td>"
+            f"<td>{html.escape(str(row['top_findings']))}</td>"
+            f"<td>{html.escape(str(row['error']))}</td>"
+            "</tr>"
+        )
+    return f"""<!doctype html>
+<html lang="nb">
+<head>
+  <meta charset="utf-8">
+  <title>XLENT mappeskann-rapport</title>
+  <style>
+    body {{ font-family: Arial, sans-serif; margin: 28px; color: #172033; }}
+    table {{ border-collapse: collapse; width: 100%; font-size: 13px; }}
+    th, td {{ border-bottom: 1px solid #d9dee8; padding: 7px 8px; text-align: left; vertical-align: top; }}
+    th {{ background: #eef3f8; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }}
+    .meta {{ color: #5d6980; line-height: 1.6; margin-bottom: 18px; }}
+  </style>
+</head>
+<body>
+  <h1>XLENT mappeskann-rapport</h1>
+  <div class="meta">
+    <div>Jobb: {html.escape(job_id)}</div>
+    <div>Mappe: {html.escape(str(job.get("folder", "")))}</div>
+    <div>Tidspunkt: {datetime.now().isoformat(timespec="seconds")}</div>
+    <div>Rekursiv: {html.escape(str(job.get("recursive", False)))}</div>
+    <div>Filer: {html.escape(str(job.get("completed", 0)))} / {html.escape(str(job.get("total", 0)))}</div>
+    <div>Status: {html.escape(str(job.get("status", "")))}</div>
+  </div>
+  <table>
+    <thead><tr><th>Fil</th><th>Risiko</th><th>Funn</th><th>Toppfunn</th><th>Feil</th></tr></thead>
+    <tbody>{''.join(tr)}</tbody>
+  </table>
+</body>
+</html>"""
+
+
+def _run_folder_scan_job(
+    job_id: str,
+    folder_path: str,
+    ignore_xlent: bool,
+    language: str,
+    opts: dict,
+) -> None:
+    try:
+        plan = build_folder_scan_plan(folder_path, **opts)
+        with _folder_jobs_lock:
+            job = _folder_jobs[job_id]
+            job.update({
+                "status": "running",
+                "folder": plan["folder"],
+                "recursive": plan["recursive"],
+                "total": plan["file_count"],
+                "folder_count": plan["folder_count"],
+                "truncated": plan["truncated"],
+                "max_files": plan["max_files"],
+                "max_depth": plan["max_depth"],
+            })
+        root = Path(folder_path)
+        for file_path in plan["files"]:
+            with _folder_jobs_lock:
+                if _folder_jobs[job_id].get("cancel_requested"):
+                    _folder_jobs[job_id]["status"] = "cancelled"
+                    return
+            result = scan_file(file_path, ignore_xlent=ignore_xlent, language=language)
+            result.relative_path = str(Path(file_path).relative_to(root))
+            result.source_path = str(file_path)
+            row = _folder_result_row(result)
+            add_history_entry(
+                file_name=result.file_name,
+                risk_level=result.risk_level,
+                finding_count=len(result.findings),
+                file_size=result.file_size,
+                source="batch",
+            )
+            with _folder_jobs_lock:
+                job = _folder_jobs[job_id]
+                job["files"].append(row)
+                job["completed"] = len(job["files"])
+        with _folder_jobs_lock:
+            if not _folder_jobs[job_id].get("cancel_requested"):
+                _folder_jobs[job_id]["status"] = "completed"
+            else:
+                _folder_jobs[job_id]["status"] = "cancelled"
+    except Exception as exc:
+        LOGGER.error("folder scan job failed: %s", traceback.format_exc())
+        with _folder_jobs_lock:
+            if job_id in _folder_jobs:
+                _folder_jobs[job_id]["status"] = "error"
+                _folder_jobs[job_id]["error"] = str(exc)
+
+
 @flask_app.route("/scan-folder/preview", methods=["POST"])
 def scan_folder_preview_endpoint():
     """Tell støttede filer i en mappe før scanning."""
@@ -911,14 +1162,7 @@ def scan_folder_endpoint():
                 file_size=r.file_size,
                 source="batch",
             )
-            summary.append({
-                "file_name": r.file_name,
-                "relative_path": r.relative_path or r.file_name,
-                "risk_level": r.risk_level,
-                "finding_count": len(r.findings),
-                "error": r.error,
-                "file_size": r.file_size,
-            })
+            summary.append(_folder_result_row(r))
         LOGGER.info("scan-folder result files=%d", len(summary))
         return jsonify({
             "files": summary,
@@ -932,6 +1176,259 @@ def scan_folder_endpoint():
     except Exception as exc:
         LOGGER.error("scan-folder endpoint failed: %s", traceback.format_exc())
         return jsonify({"error": str(exc)})
+
+
+@flask_app.route("/scan-folder/start", methods=["POST"])
+def scan_folder_start_endpoint():
+    """Start mappeskann som bakgrunnsjobb med progress."""
+    global _last_folder_job_id
+    try:
+        data = request.get_json(force=True)
+        folder_path = data.get("folder_path", "")
+        ignore_xlent = bool(data.get("ignore_xlent", False))
+        language = data.get("language", "auto")
+        opts = _folder_scan_options(data)
+        job_id = uuid.uuid4().hex
+        with _folder_jobs_lock:
+            _folder_jobs[job_id] = {
+                "status": "queued",
+                "folder": folder_path,
+                "recursive": opts["recursive"],
+                "total": 0,
+                "completed": 0,
+                "folder_count": 0,
+                "truncated": False,
+                "max_files": opts["max_files"],
+                "max_depth": opts["max_depth"],
+                "cancel_requested": False,
+                "error": "",
+                "files": [],
+            }
+            _last_folder_job_id = job_id
+        thread = threading.Thread(
+            target=_run_folder_scan_job,
+            args=(job_id, folder_path, ignore_xlent, language, opts),
+            daemon=True,
+            name=f"folder-scan-{job_id[:8]}",
+        )
+        thread.start()
+        return jsonify({"ok": True, "job_id": job_id})
+    except Exception as exc:
+        LOGGER.error("scan-folder/start failed: %s", traceback.format_exc())
+        return jsonify({"ok": False, "error": str(exc)})
+
+
+@flask_app.route("/scan-folder/status/<job_id>", methods=["GET"])
+def scan_folder_status_endpoint(job_id: str):
+    snapshot = _folder_job_snapshot(job_id)
+    if snapshot is None:
+        return jsonify({"ok": False, "error": "Ukjent mappeskann-jobb."}), 404
+    return jsonify(snapshot)
+
+
+@flask_app.route("/scan-folder/cancel/<job_id>", methods=["POST"])
+def scan_folder_cancel_endpoint(job_id: str):
+    with _folder_jobs_lock:
+        job = _folder_jobs.get(job_id)
+        if not job:
+            return jsonify({"ok": False, "error": "Ukjent mappeskann-jobb."}), 404
+        job["cancel_requested"] = True
+        if job["status"] in {"queued"}:
+            job["status"] = "cancelled"
+    return jsonify({"ok": True, "job_id": job_id})
+
+
+@flask_app.route("/folder-export/json", methods=["POST"])
+def folder_export_json_endpoint():
+    try:
+        data = request.get_json(force=True) or {}
+        job_id, job = _folder_job_from_request(data)
+        payload = {
+            "job_id": job_id,
+            "folder": job.get("folder", ""),
+            "status": job.get("status", ""),
+            "recursive": job.get("recursive", False),
+            "total": job.get("total", 0),
+            "completed": job.get("completed", 0),
+            "truncated": job.get("truncated", False),
+            "files": _folder_export_rows(job),
+        }
+        out = _downloads_dir() / f"xlent-folder-scan-{job_id[:8]}.json"
+        counter = 1
+        while out.exists():
+            out = _downloads_dir() / f"xlent-folder-scan-{job_id[:8]}-{counter}.json"
+            counter += 1
+        out.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+        return jsonify({"ok": True, "path": str(out)})
+    except Exception as exc:
+        return jsonify({"ok": False, "error": str(exc)})
+
+
+@flask_app.route("/folder-export/csv", methods=["POST"])
+def folder_export_csv_endpoint():
+    try:
+        import csv as _csv  # noqa: PLC0415
+        import io as _io  # noqa: PLC0415
+
+        data = request.get_json(force=True) or {}
+        job_id, job = _folder_job_from_request(data)
+        rows = _folder_export_rows(job)
+        buf = _io.StringIO()
+        fieldnames = ["relative_path", "risk_level", "finding_count", "file_size", "text_length", "error", "warning", "top_findings"]
+        writer = _csv.DictWriter(buf, fieldnames=fieldnames, extrasaction="ignore")
+        writer.writeheader()
+        for row in rows:
+            writer.writerow({key: _safe_csv_cell(row.get(key, "")) for key in fieldnames})
+        out = _downloads_dir() / f"xlent-folder-scan-{job_id[:8]}.csv"
+        counter = 1
+        while out.exists():
+            out = _downloads_dir() / f"xlent-folder-scan-{job_id[:8]}-{counter}.csv"
+            counter += 1
+        out.write_text(buf.getvalue(), encoding="utf-8-sig")
+        return jsonify({"ok": True, "path": str(out)})
+    except Exception as exc:
+        return jsonify({"ok": False, "error": str(exc)})
+
+
+@flask_app.route("/folder-audit/html", methods=["POST"])
+def folder_audit_html_endpoint():
+    try:
+        data = request.get_json(force=True) or {}
+        job_id, job = _folder_job_from_request(data)
+        out = _downloads_dir() / f"xlent-folder-audit-{job_id[:8]}.html"
+        counter = 1
+        while out.exists():
+            out = _downloads_dir() / f"xlent-folder-audit-{job_id[:8]}-{counter}.html"
+            counter += 1
+        out.write_text(_folder_audit_html(job_id, job), encoding="utf-8")
+        return jsonify({"ok": True, "path": str(out)})
+    except Exception as exc:
+        return jsonify({"ok": False, "error": str(exc)})
+
+
+@flask_app.route("/folder-audit/pdf", methods=["POST"])
+def folder_audit_pdf_endpoint():
+    try:
+        data = request.get_json(force=True) or {}
+        job_id, job = _folder_job_from_request(data)
+        rows = _folder_export_rows(job)
+        lines = [
+            "XLENT mappeskann-rapport",
+            f"Jobb: {job_id}",
+            f"Mappe: {job.get('folder', '')}",
+            f"Status: {job.get('status', '')}",
+            f"Filer: {job.get('completed', 0)} / {job.get('total', 0)}",
+            "",
+        ]
+        for row in rows:
+            lines.append(f"{row['risk_level'].upper()} | {row['relative_path']} | {row['finding_count']} funn | {row['top_findings']}")
+            if row["error"]:
+                lines.append(f"  Feil: {row['error']}")
+        out = _downloads_dir() / f"xlent-folder-audit-{job_id[:8]}.pdf"
+        counter = 1
+        while out.exists():
+            out = _downloads_dir() / f"xlent-folder-audit-{job_id[:8]}-{counter}.pdf"
+            counter += 1
+        _write_text_pdf("\n".join(lines), out, title="XLENT mappeskann-rapport")
+        return jsonify({"ok": True, "path": str(out)})
+    except Exception as exc:
+        LOGGER.error("folder-audit/pdf failed: %s", traceback.format_exc())
+        return jsonify({"ok": False, "error": str(exc)})
+
+
+@flask_app.route("/folder-file/open", methods=["POST"])
+def folder_file_open_endpoint():
+    try:
+        data = request.get_json(force=True) or {}
+        result = _folder_result_for_report_id(str(data.get("report_id") or ""))
+        path = Path(result.source_path)
+        if not path.exists():
+            return jsonify({"ok": False, "error": "Filen finnes ikke lenger."})
+        _open_path(path)
+        return jsonify({"ok": True})
+    except Exception as exc:
+        return jsonify({"ok": False, "error": str(exc)})
+
+
+@flask_app.route("/folder-file/reveal", methods=["POST"])
+def folder_file_reveal_endpoint():
+    try:
+        data = request.get_json(force=True) or {}
+        result = _folder_result_for_report_id(str(data.get("report_id") or ""))
+        path = Path(result.source_path)
+        if not path.exists():
+            return jsonify({"ok": False, "error": "Filen finnes ikke lenger."})
+        if sys.platform.startswith("win"):
+            subprocess.Popen(["explorer", f"/select,{path}"])
+        elif sys.platform == "darwin":
+            subprocess.Popen(["open", "-R", str(path)])
+        else:
+            subprocess.Popen(["xdg-open", str(path.parent)])
+        return jsonify({"ok": True})
+    except Exception as exc:
+        return jsonify({"ok": False, "error": str(exc)})
+
+
+@flask_app.route("/folder-redact", methods=["POST"])
+def folder_redact_endpoint():
+    try:
+        import shutil  # noqa: PLC0415
+        from datetime import datetime  # noqa: PLC0415
+
+        data = request.get_json(force=True) or {}
+        report_ids = [str(v) for v in data.get("report_ids") or [] if str(v)]
+        strip_annotations = bool(data.get("strip_annotations", False))
+        if not report_ids:
+            return jsonify({"ok": False, "error": "Ingen filer valgt."})
+        out_root = _downloads_dir() / f"XLENT-redacted-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+        out_root.mkdir(parents=True, exist_ok=True)
+        outputs = []
+        errors = []
+        for report_id in report_ids:
+            try:
+                result = _folder_result_for_report_id(report_id)
+                source = Path(result.source_path)
+                if not source.exists():
+                    errors.append({"file": result.relative_path or result.file_name, "error": "Originalfilen finnes ikke lenger."})
+                    continue
+                if source.suffix.lower() not in SUPPORTED_PATCH_SUFFIXES:
+                    errors.append({"file": result.relative_path or result.file_name, "error": "Formatet støttes ikke for redaction."})
+                    continue
+                findings = [
+                    f for f in result.findings
+                    if not f.category.startswith("⚠") and f.severity != "grønn"
+                ]
+                replacements = build_replacements(findings)
+                if not replacements:
+                    errors.append({"file": result.relative_path or result.file_name, "error": "Ingen direkte redigerbare funn."})
+                    continue
+                rel = Path(result.relative_path or result.file_name)
+                out = out_root / rel.parent / f"{rel.stem}-redacted{source.suffix}"
+                out.parent.mkdir(parents=True, exist_ok=True)
+                patch_file(source, replacements, out, strip_annotations=strip_annotations)
+                outputs.append({"file": result.relative_path or result.file_name, "path": str(out)})
+            except Exception as exc:
+                errors.append({"file": report_id, "error": str(exc)})
+        if not outputs and errors:
+            shutil.rmtree(out_root, ignore_errors=True)
+        return jsonify({"ok": bool(outputs), "folder": str(out_root), "outputs": outputs, "errors": errors})
+    except Exception as exc:
+        LOGGER.error("folder-redact failed: %s", traceback.format_exc())
+        return jsonify({"ok": False, "error": str(exc)})
+
+
+@flask_app.route("/folder-report/<report_id>", methods=["GET"])
+def folder_report(report_id: str):
+    with _folder_scan_lock:
+        result = _folder_scan_results.get(report_id)
+    if result is None:
+        return "Ingen rapport tilgjengelig for denne filen.", 404
+    html = generate_html(
+        result,
+        api_base=f"http://127.0.0.1:{_port}",
+        ai_findings=[],
+    )
+    return html, 200, {"Content-Type": "text/html; charset=utf-8"}
 
 
 @flask_app.route("/diagnostics", methods=["GET"])

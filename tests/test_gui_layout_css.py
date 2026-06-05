@@ -284,15 +284,63 @@ def test_recursive_folder_scan_controls_are_wired():
         "folderPreview",
         "folderPreviewTruncated",
         "folderTruncated",
+        "folderTooltipTitle",
+        "folderTooltipNone",
+        "folderTooltipMore",
+        "folderCancel",
+        "folderProgress",
+        "folderFilterSearch",
+        "folderFilterRisk",
+        "folderFilterAll",
+        "folderOnlyFindings",
+        "folderOnlyErrors",
+        "folderExportJson",
+        "folderExportCsv",
+        "folderAuditHtml",
+        "folderAuditPdf",
+        "folderRedactSelected",
+        "folderNoSelection",
+        "folderOpenFile",
+        "folderRevealFile",
+        "folderSelect",
+        "folderActions",
+        "folderActionDone",
+        "folderActionFailed",
+        "folderRedactDone",
     ]:
         assert html.count(f"{key}:") == 6
     assert 'id="folder-recursive"' in html
     assert 'id="folder-max-files"' in html
     assert 'id="folder-max-depth"' in html
+    assert 'id="btn-cancel-folder"' in html
+    assert 'id="folder-progress"' in html
     assert 'fetch(`${API}/scan-folder/preview`' in html
+    assert '_folderPost("/scan-folder/start"' in html
+    assert 'fetch(`${API}/scan-folder/status/${encodeURIComponent(jobId)}`)' in html
+    assert '_folderPost(`/scan-folder/cancel/${encodeURIComponent(_folderJobId)}`)' in html
     assert "function getFolderOpts()" in html
     assert "recursive: document.getElementById(\"folder-recursive\")?.checked === true" in html
-    assert "relative_path || f.file_name" in html
+    assert "relative_path || file.file_name" in html
+    assert "function _folderTooltipHtml(file)" in html
+    assert "findings_summary" in html
+    assert 'class="batch-file-link"' in html
+    assert "window.open(`${API}/folder-report/${encodeURIComponent(id)}`, \"_blank\")" in html
+    assert "function _folderVisibleRows(files)" in html
+    assert "function _sortButton(key, label)" in html
+    assert 'id="folder-filter-search"' in html
+    assert 'id="folder-filter-risk"' in html
+    assert 'id="folder-export-json"' in html
+    assert 'id="folder-export-csv"' in html
+    assert 'id="folder-audit-html"' in html
+    assert 'id="folder-audit-pdf"' in html
+    assert 'id="folder-redact-selected"' in html
+    assert 'class="folder-row-cb"' in html
+    assert '_folderRunOutputAction("/folder-export/json", "folderActionDone")' in html
+    assert '_folderRunOutputAction("/folder-export/csv", "folderActionDone")' in html
+    assert '_folderRunOutputAction("/folder-audit/html", "folderActionDone")' in html
+    assert '_folderRunOutputAction("/folder-audit/pdf", "folderActionDone")' in html
+    assert '_folderPost("/folder-redact"' in html
+    assert '_folderPost(url, { report_id: id })' in html
 
 
 def test_client_names_are_presented_as_company_names():

@@ -74,7 +74,10 @@ def test_diagnostics_health_reports_macos_quick_action_details(monkeypatch, tmp_
     contents = qa_path / "Contents"
     contents.mkdir(parents=True)
     runner = contents / "run_xlent_scanner.sh"
-    runner.write_text("#!/bin/sh\n", encoding="utf-8")
+    runner.write_text(
+        '#!/bin/bash\nnote=no_arguments_trying_stdin\n/usr/bin/open -n "${APP_BUNDLE}" --args "${f}"\nnohup "${APP_BINARY}" "${f}"\n',
+        encoding="utf-8",
+    )
     runner.chmod(0o755)
     (contents / "document.wflow").write_text(
         'XLENT_SCANNER_APP_BINARY="/Applications/XLENTScanner.app/Contents/MacOS/XLENTScanner" '
@@ -97,6 +100,7 @@ def test_diagnostics_health_reports_macos_quick_action_details(monkeypatch, tmp_
     assert checks["mac_app_binary"]["ok"] is True
     assert checks["mac_quick_action"]["ok"] is True
     assert checks["mac_quick_action_runner"]["ok"] is True
+    assert checks["mac_quick_action_runner_mode"]["ok"] is True
     assert checks["mac_quick_action_workflow"]["ok"] is True
     assert checks["mac_quick_action_command"]["ok"] is True
     assert checks["mac_quick_action_log"]["ok"] is True

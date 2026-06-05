@@ -21,6 +21,7 @@ class ScanResult:
     text_length: int
     text_preview: str
     relative_path: str = ""
+    source_path: str = ""
     findings: list[Finding] = field(default_factory=list)
     error: str | None = None
     risk_level: str = "grønn"         # grønn / gul / rød / svart

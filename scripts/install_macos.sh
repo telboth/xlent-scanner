@@ -193,6 +193,7 @@ set -u
 LOG_DIR="${HOME}/Library/Logs"
 LOG_FILE="${LOG_DIR}/XLENTScannerQuickAction.log"
 APP_BINARY="${XLENT_SCANNER_APP_BINARY:-/Applications/XLENTScanner.app/Contents/MacOS/XLENTScanner}"
+APP_BUNDLE="${APP_BINARY%/Contents/MacOS/XLENTScanner}"
 
 mkdir -p "${LOG_DIR}"
 
@@ -201,6 +202,7 @@ mkdir -p "${LOG_DIR}"
   echo "user=$(id -un 2>/dev/null || echo unknown)"
   echo "pwd=$(pwd)"
   echo "app_binary=${APP_BINARY}"
+  echo "app_bundle=${APP_BUNDLE}"
   echo "arg_count=$#"
 
   if [[ ! -x "${APP_BINARY}" ]]; then
@@ -208,18 +210,34 @@ mkdir -p "${LOG_DIR}"
     exit 1
   fi
 
-  if [[ "$#" -eq 0 ]]; then
+  inputs=("$@")
+  if [[ "${#inputs[@]}" -eq 0 ]]; then
+    echo "note=no_arguments_trying_stdin"
+    while IFS= read -r line; do
+      [[ -n "${line}" ]] && inputs+=("${line}")
+    done
+  fi
+
+  if [[ "${#inputs[@]}" -eq 0 ]]; then
     echo "error=no_input_files"
     exit 0
   fi
 
-  for f in "$@"; do
+  for f in "${inputs[@]}"; do
     echo "input=${f}"
-    if [[ ! -e "${f}" ]]; then
+    if [[ "${f}" != file://* && ! -e "${f}" ]]; then
       echo "warning=input_missing path=${f}"
     fi
-    "${APP_BINARY}" "${f}" >>"${LOG_FILE}" 2>&1 &
-    echo "started pid=$! path=${f}"
+    if [[ -d "${APP_BUNDLE}" ]]; then
+      /usr/bin/open -n "${APP_BUNDLE}" --args "${f}" >>"${LOG_FILE}" 2>&1
+      open_status=$?
+      echo "open_status=${open_status} path=${f}"
+      if [[ "${open_status}" -eq 0 ]]; then
+        continue
+      fi
+    fi
+    nohup "${APP_BINARY}" "${f}" </dev/null >>"${LOG_FILE}" 2>&1 &
+    echo "started_direct pid=$! path=${f}"
   done
 } >>"${LOG_FILE}" 2>&1
 RUNNER

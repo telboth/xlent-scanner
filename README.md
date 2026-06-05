@@ -1,6 +1,6 @@
 # XLENT Compliance-scanner
 
-> **v1.4.0** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
+> **v1.4.1** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
 
 Alt kjøres 100 % lokalt — ingen dokumenter, tekst eller funn sendes over internett.
 
@@ -371,6 +371,11 @@ src/xlent_scanner/
 ---
 
 ## Endringslogg
+
+### v1.4.1
+- Forbedret mappeskann-tabellen med tooltip per fil, full rapport ved klikk, filter, sortering, eksport, audit-rapport og batch-redaction av valgte filer.
+- Mappeskann kjører nå som bakgrunnsjobb med progress og avbryt-knapp for bedre håndtering av store mapper.
+- Gjorde macOS Finder Quick Action mer robust: runneren leser både argumenter og stdin, starter appen via `open --args`, har direkte `nohup`-fallback og skriver mer nyttig diagnostikk til logg.
 
 ### v1.4.0
 - La til rekursiv mappeskann som eksplisitt valg, med preview/telling før scan, maks filer, maks dybde og ekskluderte tunge/skjulte mapper.

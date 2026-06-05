@@ -38,10 +38,24 @@ def test_macos_quick_action_accepts_finder_file_inputs() -> None:
     assert "run_xlent_scanner.sh" in app
     assert "XLENTScannerQuickAction.log" in script
     assert "XLENTScannerQuickAction.log" in app
+    assert 'APP_BUNDLE="${APP_BINARY%/Contents/MacOS/XLENTScanner}"' in script
+    assert 'APP_BUNDLE="${APP_BINARY%/Contents/MacOS/XLENTScanner}"' in app
+    assert 'inputs=("$@")' in script
+    assert 'inputs=("$@")' in app
+    assert "note=no_arguments_trying_stdin" in script
+    assert "note=no_arguments_trying_stdin" in app
+    assert 'while IFS= read -r line; do' in script
+    assert 'while IFS= read -r line; do' in app
+    assert '/usr/bin/open -n "${APP_BUNDLE}" --args "${f}"' in script
+    assert '/usr/bin/open -n "${APP_BUNDLE}" --args "${f}"' in app
+    assert 'nohup "${APP_BINARY}" "${f}" </dev/null' in script
+    assert 'nohup "${APP_BINARY}" "${f}" </dev/null' in app
+    assert 'started_direct pid=$! path=${f}' in script
+    assert 'started_direct pid=$! path=${f}' in app
     assert 'XLENT_SCANNER_APP_BINARY="${app_binary_xml}" "${runner_script_xml}" "\\$@"' in script
     assert 'XLENT_SCANNER_APP_BINARY="{app_binary_xml}" "{runner_script_xml}" "$@"' in app
-    assert 'echo "warning=input_missing path=${f}"\n    fi\n    "${APP_BINARY}" "${f}"' in script
-    assert 'echo "warning=input_missing path=${f}"\n    fi\n    "${APP_BINARY}" "${f}"' in app
+    assert 'if [[ "${f}" != file://* && ! -e "${f}" ]]; then' in script
+    assert 'if [[ "${f}" != file://* && ! -e "${f}" ]]; then' in app
     assert "&gt;/dev/null" not in script
     assert "2&gt;&amp;1" not in script
     assert "&gt;/dev/null" not in app

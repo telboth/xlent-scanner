@@ -267,6 +267,26 @@
       width: 72px; padding: 4px 6px; border: 1px solid var(--border);
       border-radius: 6px; background: var(--panel); color: var(--text);
     }
+    .folder-progress {
+      display: none; align-items: center; gap: 8px; flex-wrap: wrap;
+      font-size: 12px; color: var(--muted);
+    }
+    .folder-toolbar {
+      display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
+      background: var(--panel2); border: 1px solid var(--border);
+      border-radius: 8px; padding: 8px; margin-bottom: 8px;
+    }
+    .folder-toolbar input[type="search"], .folder-toolbar select {
+      padding: 5px 8px; border: 1px solid var(--border); border-radius: 6px;
+      background: var(--panel); color: var(--text); font-size: 12px;
+    }
+    .folder-sort-btn {
+      border: 0; background: transparent; color: inherit; font: inherit;
+      font-weight: 700; cursor: pointer; padding: 0;
+    }
+    .folder-action-msg { flex: 1; min-width: 160px; font-size: 12px; color: var(--muted); }
+    .folder-row-actions { display: flex; align-items: center; gap: 4px; justify-content: flex-end; }
+    .folder-row-actions .ctrl-btn { padding: 2px 7px; font-size: 11px; }
     .ai-toggle-row {
       border-top: 1px solid var(--border); padding-top: 10px; margin-top: 4px;
     }
@@ -498,6 +518,26 @@
     .batch-table th { text-align: left; padding: 5px 8px; color: var(--muted); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
     .batch-table td { padding: 6px 8px; border-top: 1px solid var(--border); }
     .batch-table tr:hover td { background: rgba(138,150,168,.05); }
+    .batch-file-wrap { position: relative; display: inline-flex; align-items: center; gap: 5px; max-width: min(620px, 68vw); }
+    .batch-file-link {
+      border: 0; background: transparent; color: var(--text); padding: 0;
+      font: inherit; cursor: pointer; text-align: left; text-decoration: underline;
+      text-decoration-color: transparent; text-underline-offset: 3px;
+      overflow-wrap: anywhere;
+    }
+    .batch-file-link:hover, .batch-file-link:focus { color: var(--accent); text-decoration-color: var(--accent); outline: none; }
+    .batch-tooltip {
+      display: none; position: absolute; left: 22px; top: calc(100% + 8px); z-index: 30;
+      min-width: 280px; max-width: min(520px, 80vw); padding: 10px 12px;
+      background: var(--panel2); color: var(--text); border: 1px solid var(--border);
+      border-radius: 8px; box-shadow: 0 14px 36px rgba(0,0,0,.28);
+      line-height: 1.45; white-space: normal;
+    }
+    .batch-file-wrap:hover .batch-tooltip, .batch-file-wrap:focus-within .batch-tooltip { display: block; }
+    .batch-tooltip-title { font-weight: 700; font-size: 12px; margin-bottom: 5px; }
+    .batch-tooltip-list { margin: 0; padding-left: 16px; }
+    .batch-tooltip-list li { margin: 3px 0; }
+    .batch-tooltip-muted { color: var(--muted); font-size: 11.5px; }
 
     /* ── Settings panel ─────────────────────────────────────────────── */
     #panel-settings { padding: 24px 28px; gap: 0; width: 100%; }
@@ -695,7 +735,12 @@
       <div id="folder-area" style="display:none; flex-direction:column; gap:8px;">
         <div style="display:flex; align-items:center; gap:10px;">
           <button id="btn-scan-folder" class="ctrl-btn ctrl-btn-primary" data-i18n="folderBtn">📂 Velg og skann mappe</button>
+          <button id="btn-cancel-folder" class="ctrl-btn" style="display:none;" data-i18n="folderCancel">Avbryt</button>
           <span id="folder-status" style="font-size:12px; color:var(--muted);"></span>
+        </div>
+        <div id="folder-progress" class="folder-progress">
+          <span class="btn-spinner" aria-label="Loading"></span>
+          <span id="folder-progress-text"></span>
         </div>
         <div class="folder-options">
           <label><input type="checkbox" id="folder-recursive"> <span data-i18n="folderRecursive">Skann også undermapper</span></label>
@@ -1468,6 +1513,29 @@
         folderPreview:      "Fant {files} støttede filer i {folders} mapper. Starte skanning?",
         folderPreviewTruncated:"Fant minst {files} støttede filer i {folders} mapper. Listen er avkortet ved maksgrensen. Starte skanning?",
         folderTruncated:    "Avkortet ved maksgrensen ({n} filer).",
+        folderTooltipTitle: "Funn i filen",
+        folderTooltipNone:  "Ingen funn i denne filen.",
+        folderTooltipMore:  "+ {n} flere funn",
+        folderCancel:       "Avbryt",
+        folderProgress:     "Skannet {done} av {total} filer",
+        folderFilterSearch: "Filtrer filer…",
+        folderFilterRisk:   "Risiko",
+        folderFilterAll:    "Alle",
+        folderOnlyFindings: "Kun funn",
+        folderOnlyErrors:   "Kun feil",
+        folderExportJson:   "Eksporter JSON",
+        folderExportCsv:    "Eksporter CSV",
+        folderAuditHtml:    "Audit HTML",
+        folderAuditPdf:     "Audit PDF",
+        folderRedactSelected:"Redact valgte",
+        folderNoSelection:  "Velg minst én fil.",
+        folderOpenFile:     "Åpne",
+        folderRevealFile:   "Vis",
+        folderSelect:       "Velg",
+        folderActions:      "Handlinger",
+        folderActionDone:   "Utført:",
+        folderActionFailed: "Feil:",
+        folderRedactDone:   "Redigert mappe:",
         historyClear:       "Tøm historikk",
         downloadPdf:        "📥 Last ned PDF-rapport",
         confidenceLabel:    "Min konfidensfilter:",
@@ -1708,6 +1776,29 @@
         folderPreview:      "Hittade {files} filer som stöds i {folders} mappar. Starta skanning?",
         folderPreviewTruncated:"Hittade minst {files} filer som stöds i {folders} mappar. Listan är avkortad vid maxgränsen. Starta skanning?",
         folderTruncated:    "Avkortad vid maxgränsen ({n} filer).",
+        folderTooltipTitle: "Fynd i filen",
+        folderTooltipNone:  "Inga fynd i den här filen.",
+        folderTooltipMore:  "+ {n} fler fynd",
+        folderCancel:       "Avbryt",
+        folderProgress:     "Skannat {done} av {total} filer",
+        folderFilterSearch: "Filtrera filer…",
+        folderFilterRisk:   "Risk",
+        folderFilterAll:    "Alla",
+        folderOnlyFindings: "Endast fynd",
+        folderOnlyErrors:   "Endast fel",
+        folderExportJson:   "Exportera JSON",
+        folderExportCsv:    "Exportera CSV",
+        folderAuditHtml:    "Audit HTML",
+        folderAuditPdf:     "Audit PDF",
+        folderRedactSelected:"Redact valda",
+        folderNoSelection:  "Välj minst en fil.",
+        folderOpenFile:     "Öppna",
+        folderRevealFile:   "Visa",
+        folderSelect:       "Välj",
+        folderActions:      "Åtgärder",
+        folderActionDone:   "Klart:",
+        folderActionFailed: "Fel:",
+        folderRedactDone:   "Redigerad mapp:",
         historyClear:       "Rensa historik",
         downloadPdf:        "📥 Ladda ned PDF-rapport",
         confidenceLabel:    "Min konfidensfilter:",
@@ -1948,6 +2039,29 @@
         folderPreview:      "Found {files} supported files in {folders} folders. Start scan?",
         folderPreviewTruncated:"Found at least {files} supported files in {folders} folders. The list is capped at the limit. Start scan?",
         folderTruncated:    "Capped at the max limit ({n} files).",
+        folderTooltipTitle: "Findings in this file",
+        folderTooltipNone:  "No findings in this file.",
+        folderTooltipMore:  "+ {n} more findings",
+        folderCancel:       "Cancel",
+        folderProgress:     "Scanned {done} of {total} files",
+        folderFilterSearch: "Filter files…",
+        folderFilterRisk:   "Risk",
+        folderFilterAll:    "All",
+        folderOnlyFindings: "Only findings",
+        folderOnlyErrors:   "Only errors",
+        folderExportJson:   "Export JSON",
+        folderExportCsv:    "Export CSV",
+        folderAuditHtml:    "Audit HTML",
+        folderAuditPdf:     "Audit PDF",
+        folderRedactSelected:"Redact selected",
+        folderNoSelection:  "Select at least one file.",
+        folderOpenFile:     "Open",
+        folderRevealFile:   "Show",
+        folderSelect:       "Select",
+        folderActions:      "Actions",
+        folderActionDone:   "Done:",
+        folderActionFailed: "Error:",
+        folderRedactDone:   "Redacted folder:",
         historyClear:       "Clear history",
         downloadPdf:        "📥 Download PDF report",
         confidenceLabel:    "Min confidence filter:",
@@ -2209,6 +2323,29 @@
         folderPreview:       "{files} unterstützte Dateien in {folders} Ordnern gefunden. Scan starten?",
         folderPreviewTruncated:"Mindestens {files} unterstützte Dateien in {folders} Ordnern gefunden. Die Liste wurde am Limit gekürzt. Scan starten?",
         folderTruncated:     "Am Maximalwert gekürzt ({n} Dateien).",
+        folderTooltipTitle:  "Funde in dieser Datei",
+        folderTooltipNone:   "Keine Funde in dieser Datei.",
+        folderTooltipMore:   "+ {n} weitere Funde",
+        folderCancel:        "Abbrechen",
+        folderProgress:      "{done} von {total} Dateien gescannt",
+        folderFilterSearch:  "Dateien filtern…",
+        folderFilterRisk:    "Risiko",
+        folderFilterAll:     "Alle",
+        folderOnlyFindings:  "Nur Treffer",
+        folderOnlyErrors:    "Nur Fehler",
+        folderExportJson:    "JSON exportieren",
+        folderExportCsv:     "CSV exportieren",
+        folderAuditHtml:     "Audit HTML",
+        folderAuditPdf:      "Audit PDF",
+        folderRedactSelected:"Ausgewählte redigieren",
+        folderNoSelection:   "Wählen Sie mindestens eine Datei.",
+        folderOpenFile:      "Öffnen",
+        folderRevealFile:    "Anzeigen",
+        folderSelect:        "Auswählen",
+        folderActions:       "Aktionen",
+        folderActionDone:    "Fertig:",
+        folderActionFailed:  "Fehler:",
+        folderRedactDone:    "Redigierter Ordner:",
         folderDone:          "{n} Dateien gescannt.",
         folderBrowse:        "Ordner auswählen",
         pastePlaceholder:    "Text hier einfügen…",
@@ -2450,6 +2587,29 @@
         folderPreview:       "{files} fichiers pris en charge trouvés dans {folders} dossiers. Lancer l'analyse ?",
         folderPreviewTruncated:"Au moins {files} fichiers pris en charge trouvés dans {folders} dossiers. La liste est limitée au maximum. Lancer l'analyse ?",
         folderTruncated:     "Limité au maximum ({n} fichiers).",
+        folderTooltipTitle:  "Résultats dans ce fichier",
+        folderTooltipNone:   "Aucun résultat dans ce fichier.",
+        folderTooltipMore:   "+ {n} résultats supplémentaires",
+        folderCancel:        "Annuler",
+        folderProgress:      "{done} fichiers sur {total} analysés",
+        folderFilterSearch:  "Filtrer les fichiers…",
+        folderFilterRisk:    "Risque",
+        folderFilterAll:     "Tous",
+        folderOnlyFindings:  "Résultats uniquement",
+        folderOnlyErrors:    "Erreurs uniquement",
+        folderExportJson:    "Exporter JSON",
+        folderExportCsv:     "Exporter CSV",
+        folderAuditHtml:     "Audit HTML",
+        folderAuditPdf:      "Audit PDF",
+        folderRedactSelected:"Redacter la sélection",
+        folderNoSelection:   "Sélectionnez au moins un fichier.",
+        folderOpenFile:      "Ouvrir",
+        folderRevealFile:    "Afficher",
+        folderSelect:        "Sélectionner",
+        folderActions:       "Actions",
+        folderActionDone:    "Terminé :",
+        folderActionFailed:  "Erreur :",
+        folderRedactDone:    "Dossier redacted :",
         folderDone:          "{n} fichiers analysés.",
         folderBrowse:        "Choisir un dossier",
         pastePlaceholder:    "Collez le texte ici…",
@@ -2691,6 +2851,29 @@
         folderPreview:       "Se encontraron {files} archivos compatibles en {folders} carpetas. ¿Iniciar escaneo?",
         folderPreviewTruncated:"Se encontraron al menos {files} archivos compatibles en {folders} carpetas. La lista se limita al máximo. ¿Iniciar escaneo?",
         folderTruncated:     "Limitado al máximo ({n} archivos).",
+        folderTooltipTitle:  "Hallazgos en este archivo",
+        folderTooltipNone:   "No hay hallazgos en este archivo.",
+        folderTooltipMore:   "+ {n} hallazgos más",
+        folderCancel:        "Cancelar",
+        folderProgress:      "{done} de {total} archivos escaneados",
+        folderFilterSearch:  "Filtrar archivos…",
+        folderFilterRisk:    "Riesgo",
+        folderFilterAll:     "Todos",
+        folderOnlyFindings:  "Solo hallazgos",
+        folderOnlyErrors:    "Solo errores",
+        folderExportJson:    "Exportar JSON",
+        folderExportCsv:     "Exportar CSV",
+        folderAuditHtml:     "Audit HTML",
+        folderAuditPdf:      "Audit PDF",
+        folderRedactSelected:"Redactar seleccionados",
+        folderNoSelection:   "Seleccione al menos un archivo.",
+        folderOpenFile:      "Abrir",
+        folderRevealFile:    "Mostrar",
+        folderSelect:        "Seleccionar",
+        folderActions:       "Acciones",
+        folderActionDone:    "Hecho:",
+        folderActionFailed:  "Error:",
+        folderRedactDone:    "Carpeta redactada:",
         folderDone:          "{n} archivos escaneados.",
         folderBrowse:        "Seleccionar carpeta",
         pastePlaceholder:    "Pegue el texto aquí…",
@@ -4913,18 +5096,80 @@
         .replace("{folders}", preview.folder_count);
     }
 
+    let _folderJobId = "";
+    let _folderPollTimer = null;
+    let _folderRows = [];
+    let _folderSortKey = "risk";
+    let _folderSortDir = "desc";
+    let _folderFilterText = "";
+    let _folderFilterRisk = "";
+    let _folderOnlyFindings = false;
+    let _folderOnlyErrors = false;
+
+    function _stopFolderPolling() {
+      if (_folderPollTimer) clearInterval(_folderPollTimer);
+      _folderPollTimer = null;
+    }
+
+    function _setFolderProgress(show, text = "") {
+      const box = document.getElementById("folder-progress");
+      const label = document.getElementById("folder-progress-text");
+      if (box) box.style.display = show ? "flex" : "none";
+      if (label) label.textContent = text;
+    }
+
+    function _setFolderAction(text, ok = true) {
+      const msg = document.getElementById("folder-action-msg");
+      if (!msg) return;
+      msg.style.color = ok ? "var(--muted)" : "var(--danger)";
+      msg.textContent = text || "";
+    }
+
+    async function _folderPost(url, payload = {}) {
+      const r = await fetch(`${API}${url}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      return await r.json();
+    }
+
+    async function _folderRunOutputAction(url, labelKey) {
+      if (!_folderJobId) { _setFolderAction(t("folderNoSelection"), false); return; }
+      try {
+        const d = await _folderPost(url, { job_id: _folderJobId });
+        if (d.ok) _setFolderAction(`${t(labelKey)} ${d.path || d.folder || ""}`);
+        else _setFolderAction(`${t("folderActionFailed")} ${d.error || ""}`, false);
+      } catch (e) {
+        _setFolderAction(`${t("folderActionFailed")} ${e}`, false);
+      }
+    }
+
+    function _selectedFolderReportIds() {
+      return [...document.querySelectorAll(".folder-row-cb:checked")].map(cb => cb.value).filter(Boolean);
+    }
+
+    document.getElementById("btn-cancel-folder")?.addEventListener("click", async () => {
+      if (!_folderJobId) return;
+      try { await _folderPost(`/scan-folder/cancel/${encodeURIComponent(_folderJobId)}`); }
+      catch (_) { /* polling will surface any actual state */ }
+    });
+
     document.getElementById("btn-scan-folder").addEventListener("click", async () => {
       const fs = document.getElementById("folder-status");
       const fr = document.getElementById("folder-results");
+      const cancelBtn = document.getElementById("btn-cancel-folder");
+      _stopFolderPolling();
+      _folderRows = [];
+      _folderJobId = "";
       fs.style.color = "var(--muted)"; fs.textContent = t("processing");
       fr.style.display = "none";
+      _setFolderProgress(false);
+      if (cancelBtn) cancelBtn.style.display = "none";
       try {
-        // Step 1: open folder dialog
         const dlg = await (await fetch(`${API}/open-folder-dialog`, { method: "POST" })).json();
         if (!dlg.path) { fs.textContent = ""; return; }
         const folderOpts = getFolderOpts();
-
-        // Step 2: count files before scanning potentially large folders
         const preview = await (await fetch(`${API}/scan-folder/preview`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -4941,57 +5186,230 @@
           return;
         }
 
-        // Step 3: scan folder
-        fs.textContent = t("folderScanning");
         const opts = getOpts();
-        const d = await (await fetch(`${API}/scan-folder`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ folder_path: dlg.path, ignore_xlent: opts.ignore_xlent, language: opts.language, ...folderOpts }),
-        })).json();
-
-        if (d.error) {
-          fs.style.color = "#f44336"; fs.textContent = `${t("folderError")} ${d.error}`; return;
+        const started = await _folderPost("/scan-folder/start", {
+          folder_path: dlg.path,
+          ignore_xlent: opts.ignore_xlent,
+          language: opts.language,
+          ...folderOpts,
+        });
+        if (!started.ok) {
+          fs.style.color = "#f44336"; fs.textContent = `${t("folderError")} ${started.error || ""}`; return;
         }
-        if (!d.files || !d.files.length) {
-          fs.style.color = "var(--muted)"; fs.textContent = t("folderNoFiles"); return;
-        }
-
-        const truncatedNote = d.truncated ? ` ${t("folderTruncated").replace("{n}", d.max_files)}` : "";
-        fs.style.color = "var(--ok)"; fs.textContent = t("folderDone").replace("{n}", d.total) + truncatedNote;
-        renderFolderResults(d.files);
-        loadHistoryFromApi();
+        _folderJobId = String(started.job_id || "");
+        fs.style.color = "var(--muted)";
+        fs.textContent = t("folderScanning");
+        if (cancelBtn) cancelBtn.style.display = "";
+        _setFolderProgress(true, t("folderProgress").replace("{done}", 0).replace("{total}", preview.file_count));
+        renderFolderResults([]);
+        _folderPollTimer = setInterval(() => _pollFolderScan(_folderJobId), 750);
+        await _pollFolderScan(_folderJobId);
       } catch (e) {
         fs.style.color = "#f44336"; fs.textContent = `${t("folderError")} ${e}`;
+        _setFolderProgress(false);
+        if (cancelBtn) cancelBtn.style.display = "none";
       }
     });
 
-    function _batchTableHtml(files) {
+    async function _pollFolderScan(jobId) {
+      if (!jobId) return;
+      const fs = document.getElementById("folder-status");
+      const cancelBtn = document.getElementById("btn-cancel-folder");
+      try {
+        const d = await (await fetch(`${API}/scan-folder/status/${encodeURIComponent(jobId)}`)).json();
+        if (!d.ok) throw new Error(d.error || "unknown");
+        _folderRows = Array.isArray(d.files) ? d.files : [];
+        renderFolderResults(_folderRows);
+        const total = d.total || _folderRows.length || 0;
+        _setFolderProgress(["queued", "running"].includes(d.status), t("folderProgress").replace("{done}", d.completed || 0).replace("{total}", total));
+        if (["completed", "cancelled", "error"].includes(d.status)) {
+          _stopFolderPolling();
+          if (cancelBtn) cancelBtn.style.display = "none";
+          _setFolderProgress(false);
+          if (d.status === "error") {
+            fs.style.color = "#f44336"; fs.textContent = `${t("folderError")} ${d.error || ""}`;
+          } else if (d.status === "cancelled") {
+            fs.style.color = "var(--warn)"; fs.textContent = t("deepScanCancelled");
+          } else {
+            const truncatedNote = d.truncated ? ` ${t("folderTruncated").replace("{n}", d.max_files)}` : "";
+            fs.style.color = "var(--ok)"; fs.textContent = t("folderDone").replace("{n}", d.completed || _folderRows.length) + truncatedNote;
+            loadHistoryFromApi();
+          }
+        }
+      } catch (e) {
+        _stopFolderPolling();
+        if (cancelBtn) cancelBtn.style.display = "none";
+        _setFolderProgress(false);
+        fs.style.color = "#f44336"; fs.textContent = `${t("folderError")} ${e}`;
+      }
+    }
+
+    function _folderTooltipHtml(file) {
+      const findings = Array.isArray(file.findings_summary) ? file.findings_summary : [];
+      const rows = findings.map(f =>
+        `<li><strong>${escapeHtml(f.category || "")}</strong>: ${escapeHtml(f.text || "")}` +
+        `${f.context ? `<div class="batch-tooltip-muted">${escapeHtml(f.context)}</div>` : ""}</li>`
+      ).join("");
+      const more = Math.max(0, (file.finding_count || 0) - findings.length);
+      const moreHtml = more ? `<div class="batch-tooltip-muted">${escapeHtml(t("folderTooltipMore").replace("{n}", more))}</div>` : "";
+      const warning = file.warning ? `<div class="batch-tooltip-muted">${escapeHtml(file.warning)}</div>` : "";
+      return `<div class="batch-tooltip" role="tooltip">
+        <div class="batch-tooltip-title">${escapeHtml(t("folderTooltipTitle"))}</div>
+        ${rows ? `<ul class="batch-tooltip-list">${rows}</ul>${moreHtml}` : `<div class="batch-tooltip-muted">${escapeHtml(t("folderTooltipNone"))}</div>`}
+        ${warning}
+      </div>`;
+    }
+
+    function _batchFileNameHtml(file, icon) {
+      const displayPath = file.relative_path || file.file_name;
+      const tooltip = _folderTooltipHtml(file);
+      const name = `${icon ? `<span style="margin-right:5px">${icon}</span>` : ""}${escapeHtml(displayPath)}`;
+      if (file.report_id) {
+        return `<span class="batch-file-wrap">
+          <button type="button" class="batch-file-link" data-report-id="${escapeHtml(file.report_id)}" title="${escapeHtml(t("openReport"))}">${name}</button>
+          ${tooltip}
+        </span>`;
+      }
+      return `<span class="batch-file-wrap"><span>${name}</span>${tooltip}</span>`;
+    }
+
+    function _folderControlsHtml() {
+      const riskOptions = ["", "svart", "rød", "gul", "grønn"].map(v =>
+        `<option value="${escapeHtml(v)}" ${_folderFilterRisk === v ? "selected" : ""}>${escapeHtml(v ? v.toUpperCase() : t("folderFilterAll"))}</option>`
+      ).join("");
+      return `<div class="folder-toolbar">
+        <input type="search" id="folder-filter-search" value="${escapeHtml(_folderFilterText)}" placeholder="${escapeHtml(t("folderFilterSearch"))}">
+        <label>${escapeHtml(t("folderFilterRisk"))} <select id="folder-filter-risk">${riskOptions}</select></label>
+        <label><input type="checkbox" id="folder-only-findings" ${_folderOnlyFindings ? "checked" : ""}> ${escapeHtml(t("folderOnlyFindings"))}</label>
+        <label><input type="checkbox" id="folder-only-errors" ${_folderOnlyErrors ? "checked" : ""}> ${escapeHtml(t("folderOnlyErrors"))}</label>
+        <span class="ctrl-sep"></span>
+        <button type="button" class="ctrl-btn" id="folder-export-json">${escapeHtml(t("folderExportJson"))}</button>
+        <button type="button" class="ctrl-btn" id="folder-export-csv">${escapeHtml(t("folderExportCsv"))}</button>
+        <button type="button" class="ctrl-btn" id="folder-audit-html">${escapeHtml(t("folderAuditHtml"))}</button>
+        <button type="button" class="ctrl-btn" id="folder-audit-pdf">${escapeHtml(t("folderAuditPdf"))}</button>
+        <button type="button" class="ctrl-btn ctrl-btn-primary" id="folder-redact-selected">${escapeHtml(t("folderRedactSelected"))}</button>
+        <span id="folder-action-msg" class="folder-action-msg"></span>
+      </div>`;
+    }
+
+    function _folderVisibleRows(files) {
       const ord = { svart:3, rød:2, gul:1, grønn:0 };
-      const sorted = [...files].sort((a,b) => (ord[b.risk_level]||0) - (ord[a.risk_level]||0));
-      const rows = sorted.map(f => {
+      const query = _folderFilterText.trim().toLowerCase();
+      const filtered = files.filter(f => {
+        const path = String(f.relative_path || f.file_name || "").toLowerCase();
+        if (query && !path.includes(query)) return false;
+        if (_folderFilterRisk && f.risk_level !== _folderFilterRisk) return false;
+        if (_folderOnlyFindings && !(Number(f.finding_count || 0) > 0)) return false;
+        if (_folderOnlyErrors && !f.error) return false;
+        return true;
+      });
+      const dir = _folderSortDir === "asc" ? 1 : -1;
+      return filtered.sort((a, b) => {
+        if (_folderSortKey === "file") return dir * String(a.relative_path || a.file_name || "").localeCompare(String(b.relative_path || b.file_name || ""));
+        if (_folderSortKey === "findings") return dir * ((Number(a.finding_count || 0)) - (Number(b.finding_count || 0)));
+        if (_folderSortKey === "size") return dir * ((Number(a.file_size || 0)) - (Number(b.file_size || 0)));
+        return dir * ((ord[a.risk_level] || 0) - (ord[b.risk_level] || 0));
+      });
+    }
+
+    function _sortButton(key, label) {
+      const arrow = _folderSortKey === key ? (_folderSortDir === "asc" ? " ↑" : " ↓") : "";
+      return `<button type="button" class="folder-sort-btn" data-sort="${key}">${escapeHtml(label)}${arrow}</button>`;
+    }
+
+    function wireBatchTableEvents(container) {
+      container.querySelectorAll(".batch-file-link").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const id = btn.dataset.reportId;
+          if (id) window.open(`${API}/folder-report/${encodeURIComponent(id)}`, "_blank");
+        });
+      });
+      container.querySelectorAll(".folder-sort-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const key = btn.dataset.sort || "risk";
+          if (_folderSortKey === key) _folderSortDir = _folderSortDir === "asc" ? "desc" : "asc";
+          else { _folderSortKey = key; _folderSortDir = key === "file" ? "asc" : "desc"; }
+          renderFolderResults(_folderRows);
+        });
+      });
+      const search = container.querySelector("#folder-filter-search");
+      if (search) search.addEventListener("input", () => { _folderFilterText = search.value || ""; renderFolderResults(_folderRows); });
+      const risk = container.querySelector("#folder-filter-risk");
+      if (risk) risk.addEventListener("change", () => { _folderFilterRisk = risk.value || ""; renderFolderResults(_folderRows); });
+      const onlyFindings = container.querySelector("#folder-only-findings");
+      if (onlyFindings) onlyFindings.addEventListener("change", () => { _folderOnlyFindings = onlyFindings.checked; renderFolderResults(_folderRows); });
+      const onlyErrors = container.querySelector("#folder-only-errors");
+      if (onlyErrors) onlyErrors.addEventListener("change", () => { _folderOnlyErrors = onlyErrors.checked; renderFolderResults(_folderRows); });
+      const selectAll = container.querySelector("#folder-select-all");
+      if (selectAll) selectAll.addEventListener("change", () => container.querySelectorAll(".folder-row-cb").forEach(cb => { cb.checked = selectAll.checked; }));
+      container.querySelector("#folder-export-json")?.addEventListener("click", () => _folderRunOutputAction("/folder-export/json", "folderActionDone"));
+      container.querySelector("#folder-export-csv")?.addEventListener("click", () => _folderRunOutputAction("/folder-export/csv", "folderActionDone"));
+      container.querySelector("#folder-audit-html")?.addEventListener("click", () => _folderRunOutputAction("/folder-audit/html", "folderActionDone"));
+      container.querySelector("#folder-audit-pdf")?.addEventListener("click", () => _folderRunOutputAction("/folder-audit/pdf", "folderActionDone"));
+      container.querySelector("#folder-redact-selected")?.addEventListener("click", async () => {
+        const ids = _selectedFolderReportIds();
+        if (!ids.length) { _setFolderAction(t("folderNoSelection"), false); return; }
+        try {
+          const d = await _folderPost("/folder-redact", {
+            report_ids: ids,
+            strip_annotations: document.getElementById("stripAnnotations")?.checked === true,
+          });
+          if (d.ok) _setFolderAction(`${t("folderRedactDone")} ${d.folder || ""}${d.errors?.length ? ` (${d.errors.length} ${t("folderActionFailed")})` : ""}`);
+          else _setFolderAction(`${t("folderActionFailed")} ${d.error || ""}`, false);
+        } catch (e) {
+          _setFolderAction(`${t("folderActionFailed")} ${e}`, false);
+        }
+      });
+      container.querySelectorAll(".folder-open-file,.folder-reveal-file").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const id = btn.dataset.reportId || "";
+          const url = btn.classList.contains("folder-open-file") ? "/folder-file/open" : "/folder-file/reveal";
+          try {
+            const d = await _folderPost(url, { report_id: id });
+            if (d.ok) _setFolderAction(t("folderActionDone"));
+            else _setFolderAction(`${t("folderActionFailed")} ${d.error || ""}`, false);
+          } catch (e) {
+            _setFolderAction(`${t("folderActionFailed")} ${e}`, false);
+          }
+        });
+      });
+    }
+
+    function _batchTableHtml(files) {
+      const visible = _folderVisibleRows(files);
+      const rows = visible.map(f => {
         const rc = LEVEL_COLOR[f.risk_level] || "#8a96a8";
         const ic = LEVEL_ICON[f.risk_level] || "•";
-        const displayPath = f.relative_path || f.file_name;
+        const cb = f.report_id ? `<input type="checkbox" class="folder-row-cb" value="${escapeHtml(f.report_id)}" title="${escapeHtml(t("folderSelect"))}">` : "";
+        const actions = f.report_id ? `<div class="folder-row-actions">
+          <button type="button" class="ctrl-btn folder-open-file" data-report-id="${escapeHtml(f.report_id)}">${escapeHtml(t("folderOpenFile"))}</button>
+          <button type="button" class="ctrl-btn folder-reveal-file" data-report-id="${escapeHtml(f.report_id)}">${escapeHtml(t("folderRevealFile"))}</button>
+        </div>` : "";
         if (f.error) {
           return `<tr>
-            <td style="color:var(--danger)">${escapeHtml(displayPath)}</td>
+            <td>${cb}</td>
+            <td style="color:var(--danger)">${_batchFileNameHtml(f, "")}</td>
             <td colspan="2" style="color:var(--muted);font-size:11px;">${escapeHtml(f.error)}</td>
+            <td>${actions}</td>
           </tr>`;
         }
         return `<tr>
-          <td><span style="margin-right:5px">${ic}</span>${escapeHtml(displayPath)}</td>
-          <td style="color:${rc};font-weight:600;white-space:nowrap">${f.risk_level.toUpperCase()}</td>
-          <td style="color:var(--muted);text-align:right">${f.finding_count} ${t("metaFindings")}</td>
+          <td>${cb}</td>
+          <td>${_batchFileNameHtml(f, ic)}</td>
+          <td style="color:${rc};font-weight:600;white-space:nowrap">${String(f.risk_level || "").toUpperCase()}</td>
+          <td style="color:var(--muted);text-align:right">${f.finding_count || 0} ${t("metaFindings")}</td>
+          <td>${actions}</td>
         </tr>`;
       }).join("");
-      return `
+      return `${_folderControlsHtml()}
         <div style="background:var(--panel);border:1px solid var(--border);border-radius:8px;overflow:hidden;">
           <table class="batch-table">
             <thead><tr>
-              <th>${t("folderFile")}</th>
-              <th>${t("folderLevel")}</th>
-              <th style="text-align:right">${t("metaFindings")}</th>
+              <th style="width:34px"><input type="checkbox" id="folder-select-all" title="${escapeHtml(t("folderSelect"))}"></th>
+              <th>${_sortButton("file", t("folderFile"))}</th>
+              <th>${_sortButton("risk", t("folderLevel"))}</th>
+              <th style="text-align:right">${_sortButton("findings", t("metaFindings"))}</th>
+              <th style="text-align:right">${escapeHtml(t("folderActions"))}</th>
             </tr></thead>
             <tbody>${rows}</tbody>
           </table>
@@ -5001,9 +5419,10 @@
     function renderFolderResults(files) {
       const fr = document.getElementById("folder-results");
       fr.style.display = "";
-      fr.innerHTML = _batchTableHtml(files);
+      _folderRows = Array.isArray(files) ? files : [];
+      fr.innerHTML = _batchTableHtml(_folderRows);
+      wireBatchTableEvents(fr);
     }
-
     /* Skann flere filer sluppet samtidig i scanner-fanen → batch-tabell */
     async function scanMultiple(fileList) {
       const files = [...fileList];
@@ -5048,6 +5467,7 @@
       document.getElementById("severity-summary").innerHTML =
         `<span style="font-size:12px;color:var(--muted);font-weight:600;">${t("batchTitle").replace("{n}", files.length)}</span>`;
       resultEl.innerHTML = _batchTableHtml(results);
+      wireBatchTableEvents(resultEl);
       loadHistoryFromApi();
     }
 
