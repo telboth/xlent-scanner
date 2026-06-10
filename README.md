@@ -1,6 +1,6 @@
 # XLENT Compliance-scanner
 
-> **v1.4.1** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
+> **v1.4.2** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
 
 Alt kjøres 100 % lokalt — ingen dokumenter, tekst eller funn sendes over internett.
 
@@ -371,6 +371,11 @@ src/xlent_scanner/
 ---
 
 ## Endringslogg
+
+### v1.4.2
+- Fikset AI-dybdeskann slik at LLM-funn forkastes hvis teksten modellen rapporterer ikke faktisk finnes i dokumentteksten.
+- Hindrer dermed hallucinerte personnummer eller andre verdier fra tidligere/testkontekst.
+- Nullstiller server-side AI-funn ved ny scan, slik at gamle AI-funn ikke kan følge med inn i ny rapport.
 
 ### v1.4.1
 - Forbedret mappeskann-tabellen med tooltip per fil, full rapport ved klikk, filter, sortering, eksport, audit-rapport og batch-redaction av valgte filer.

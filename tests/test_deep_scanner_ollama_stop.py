@@ -286,6 +286,79 @@ def test_deep_scan_drops_us_phone_misclassified_as_url_when_phone_not_selected(m
     assert deep_scanner.get_deep_scan_status(job_id)["findings"] == []
 
 
+def test_deep_scan_drops_llm_personnummer_not_present_in_source(monkeypatch):
+    monkeypatch.setattr(
+        deep_scanner,
+        "_call_ollama",
+        lambda model, prompt: [
+            {
+                "category": "Fødselsnummer",
+                "text": "01019750023",
+                "context": "hallucinated from another document",
+                "confidence": "high",
+            },
+            {
+                "category": "Personnavn",
+                "text": "Anne Hansen",
+                "context": "Kontakt Anne Hansen",
+                "confidence": "high",
+            },
+        ],
+    )
+    deep_scanner._jobs.clear()
+    job_id = "src01"
+    deep_scanner._jobs[job_id] = {
+        "job_id": job_id,
+        "status": "running",
+        "progress": "",
+        "findings": [],
+        "cancelled": False,
+        "started_at": time.time(),
+    }
+
+    deep_scanner._run_deep_scan(
+        "Kontakt Anne Hansen om avtalen.",
+        "llama3.2:3b",
+        "nb",
+        job_id,
+        ["personnummer", "navn"],
+    )
+
+    texts = {f["text"] for f in deep_scanner.get_deep_scan_status(job_id)["findings"]}
+    assert "01019750023" not in texts
+    assert "Anne Hansen" in texts
+
+
+def test_deep_scan_accepts_llm_finding_with_different_spacing_in_source(monkeypatch):
+    monkeypatch.setattr(
+        deep_scanner,
+        "_call_ollama",
+        lambda model, prompt: [
+            {
+                "category": "Fødselsnummer",
+                "text": "01019750023",
+                "context": "Fnr: 010197 50023",
+                "confidence": "high",
+            }
+        ],
+    )
+    deep_scanner._jobs.clear()
+    job_id = "src02"
+    deep_scanner._jobs[job_id] = {
+        "job_id": job_id,
+        "status": "running",
+        "progress": "",
+        "findings": [],
+        "cancelled": False,
+        "started_at": time.time(),
+    }
+
+    deep_scanner._run_deep_scan("Fnr: 010197 50023", "llama3.2:3b", "nb", job_id, ["personnummer"])
+
+    texts = {f["text"] for f in deep_scanner.get_deep_scan_status(job_id)["findings"]}
+    assert "01019750023" in texts
+
+
 def test_medical_category_is_opt_in_for_prompt():
     prompt_without = deep_scanner._build_prompt(["navn"], "Anne bruker Metformin.", "nb")
     default_prompt = deep_scanner._build_prompt([], "Anne bruker Metformin.", "nb")

@@ -528,6 +528,17 @@ def _mac_app_bundle_path() -> Path:
     return Path("/Applications/XLENTScanner.app")
 
 
+def _clear_ai_findings() -> None:
+    """Fjern AI-funn fra forrige GUI-scan.
+
+    AI-funn er avledet state og må ikke overleve inn i neste dokument eller
+    rapport, selv om filnavnet tilfeldigvis er likt.
+    """
+    global _last_ai_findings
+    _last_ai_findings = []
+    _last_ai_findings_file["name"] = ""
+
+
 def _install_mac_quick_action() -> Path:
     if sys.platform != "darwin":
         raise RuntimeError("Finder Quick Action kan bare installeres på macOS.")
@@ -760,6 +771,7 @@ def scan():
         result = scan_file(file_path, ignore_xlent=ignore_xlent, language=language)
         _last_result = result
         _last_path = Path(file_path) if file_path else None
+        _clear_ai_findings()
         add_history_entry(
             file_name=result.file_name,
             risk_level=result.risk_level,
@@ -820,6 +832,7 @@ def scan_upload():
         _last_result = result
         _last_path = tmp_path              # brukes av /patch hvis aktuelt
         _last_tmp_path = tmp_path          # huskes for opprydding ved neste upload
+        _clear_ai_findings()
         add_history_entry(
             file_name=result.file_name,
             risk_level=result.risk_level,
@@ -864,6 +877,7 @@ def scan_text_endpoint():
         result = scan_text(text, language=language)
         _last_result = result
         _last_path = None
+        _clear_ai_findings()
         add_history_entry(
             file_name=result.file_name,
             risk_level=result.risk_level,

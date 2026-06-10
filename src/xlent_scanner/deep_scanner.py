@@ -521,6 +521,44 @@ def _deduplicate(raw: list[dict]) -> list[dict]:
     return out
 
 
+def _norm_for_source_match(value: str) -> str:
+    return re.sub(r"\s+", " ", value).strip().casefold()
+
+
+def _reported_text_exists_in_source(source: str, reported: str) -> bool:
+    """LLM-funn må være en faktisk substring i teksten som ble analysert.
+
+    Dette stopper hallucinerte verdier, f.eks. personnummer som modellen har
+    sett i en tidligere test eller treningskontekst, men som ikke står i
+    dokumentet. Regex-/blacklist-supplementer genereres separat fra kildeteksten.
+    """
+    value = _norm_for_source_match(reported)
+    if not value:
+        return False
+    haystack = _norm_for_source_match(source)
+    if value in haystack:
+        return True
+
+    # Tillat forskjeller i whitespace/separatorer for tall og korte tokens.
+    compact_value = re.sub(r"[\s.\-_/()]+", "", value)
+    compact_source = re.sub(r"[\s.\-_/()]+", "", haystack)
+    return len(compact_value) >= 4 and compact_value in compact_source
+
+
+def _filter_llm_findings_to_source(findings: list[dict], source: str) -> list[dict]:
+    result: list[dict] = []
+    removed = 0
+    for finding in findings:
+        text = str(finding.get("text") or "")
+        if _reported_text_exists_in_source(source, text):
+            result.append(finding)
+        else:
+            removed += 1
+    if removed:
+        LOGGER.info("AI-source-filter: fjernet %d hallucinerte funn som ikke finnes i teksten", removed)
+    return result
+
+
 def _category_key(category: str) -> str:
     return category.replace("🤖", "").strip().casefold()
 
@@ -702,6 +740,7 @@ def _run_deep_scan(
 
         prompt = _build_prompt(categories, chunk, lang)
         findings = _call_ollama(model, prompt)
+        findings = _filter_llm_findings_to_source(findings, chunk)
         all_raw.extend(findings)
 
     # ── Regex-supplementer: kategorier der regelbaserte detektorer er mer

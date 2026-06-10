@@ -134,3 +134,31 @@ def test_diagnostics_export_writes_package_without_document_text(monkeypatch, tm
         )
     assert "Kontakt person@example.com" not in combined
     assert "safe@example.com" in combined
+
+
+def test_scan_text_clears_previous_ai_findings(monkeypatch):
+    app_module._last_ai_findings = [{"category": "🤖 Fødselsnummer", "text": "01019750023", "context": ""}]
+    app_module._last_ai_findings_file["name"] = "old.docx"
+    monkeypatch.setattr(
+        app_module,
+        "scan_text",
+        lambda text, language="auto": ScanResult(
+            file_name="Power Apps tekst",
+            file_size=len(text),
+            text_length=len(text),
+            text_preview=text,
+            findings=[],
+            risk_level="grønn",
+            risk_summary="Ingen funn",
+            recommended_action="OK",
+            original_text=text,
+            language=language,
+        ),
+    )
+    client = app_module.flask_app.test_client()
+
+    response = client.post("/scan-text", json={"text": "Kun ufarlig tekst", "language": "nb"})
+
+    assert response.status_code == 200
+    assert app_module._last_ai_findings == []
+    assert app_module._last_ai_findings_file["name"] == ""
