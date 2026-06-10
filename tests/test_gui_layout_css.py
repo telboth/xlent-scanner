@@ -225,6 +225,69 @@ def test_ollama_settings_model_select_and_hardware_status_are_wired():
     assert "_rememberOllamaModel(sel.value)" in html
 
 
+def test_microsoft_365_graph_controls_exist_for_all_languages():
+    html = HTML.read_text(encoding="utf-8")
+
+    for marker in [
+        'id="section-m365"',
+        'id="m365-drive-id"',
+        'id="m365-item-id"',
+        'id="m365-sync-root"',
+        'id="m365-sensitivity-label-id"',
+        'id="m365-retention-label-name"',
+        'id="btn-m365-status"',
+        'id="btn-m365-read-tags"',
+        'id="btn-m365-read-local-tags"',
+        'id="btn-m365-assign-sensitivity"',
+        'id="btn-m365-set-retention"',
+        'id="btn-m365-write-metadata"',
+        'id="m365-msg"',
+        "function m365ReadTags",
+        "function m365ReadLocalTags",
+        "function buildM365TagsHtml",
+        'fetch(`${API}/microsoft/graph/status`)',
+        'fetch(`${API}/microsoft/graph/tags`',
+        'fetch(`${API}/microsoft/graph/tags-for-local-file`',
+        'fetch(`${API}/microsoft/graph/assign-sensitivity`',
+        'fetch(`${API}/microsoft/graph/set-retention`',
+        'fetch(`${API}/microsoft/graph/write-scan-metadata`',
+        '_folderPost("/microsoft/graph/write-folder-metadata"',
+        'id="folder-m365-metadata"',
+        "policy-warning-banner",
+        "policy_warning_level",
+    ]:
+        assert marker in html
+
+    for key in [
+        "settingsM365Title",
+        "settingsM365Note",
+        "m365DriveId",
+        "m365ItemId",
+        "m365SyncRoot",
+        "m365SensitivityLabelId",
+        "m365RetentionLabelName",
+        "m365CheckStatus",
+        "m365ReadTags",
+        "m365ReadLocalTags",
+        "m365AssignSensitivity",
+        "m365SetRetention",
+        "m365WriteMetadata",
+        "m365TokenConfigured",
+        "m365TokenMissing",
+        "m365Done",
+        "m365Failed",
+        "m365PolicyWarning",
+        "m365SensitivityLabels",
+        "m365RetentionLabel",
+        "m365SuggestedLabel",
+        "m365FolderMetadataRunning",
+        "m365FolderMetadataWritten",
+        "m365FolderMetadataErrors",
+        "folderM365Metadata",
+    ]:
+        assert html.count(f"{key}:") == 6
+
+
 def test_scan_category_translations_exist_for_all_languages():
     html = HTML.read_text(encoding="utf-8")
 
@@ -299,6 +362,7 @@ def test_recursive_folder_scan_controls_are_wired():
         "folderAuditHtml",
         "folderAuditPdf",
         "folderRedactSelected",
+        "folderM365Metadata",
         "folderNoSelection",
         "folderOpenFile",
         "folderRevealFile",
@@ -333,12 +397,14 @@ def test_recursive_folder_scan_controls_are_wired():
     assert 'id="folder-export-csv"' in html
     assert 'id="folder-audit-html"' in html
     assert 'id="folder-audit-pdf"' in html
+    assert 'id="folder-m365-metadata"' in html
     assert 'id="folder-redact-selected"' in html
     assert 'class="folder-row-cb"' in html
     assert '_folderRunOutputAction("/folder-export/json", "folderActionDone")' in html
     assert '_folderRunOutputAction("/folder-export/csv", "folderActionDone")' in html
     assert '_folderRunOutputAction("/folder-audit/html", "folderActionDone")' in html
     assert '_folderRunOutputAction("/folder-audit/pdf", "folderActionDone")' in html
+    assert "function writeFolderM365Metadata()" in html
     assert '_folderPost("/folder-redact"' in html
     assert '_folderPost(url, { report_id: id })' in html
 

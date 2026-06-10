@@ -177,6 +177,16 @@
       border-left: 4px solid var(--warn); border-radius: 6px;
       padding: 9px 13px; font-size: 13px; color: var(--warn); line-height: 1.5;
     }
+    .policy-warning-banner {
+      background: rgba(244,67,54,.11); border: 1px solid rgba(244,67,54,.46);
+      border-left: 4px solid var(--danger); border-radius: 6px;
+      padding: 9px 13px; font-size: 13px; color: var(--danger); line-height: 1.5;
+      font-weight: 600;
+    }
+    .m365-tags {
+      background: var(--panel); border: 1px solid var(--border); border-radius: 7px;
+      padding: 8px 12px; font-size: 12px; color: var(--muted); line-height: 1.5;
+    }
 
     /* ── Dybdeskann (Ollama) ──────────────────────────────────────── */
     #deep-scan-section {
@@ -1179,6 +1189,41 @@
         </div>
       </div>
 
+      <!-- Microsoft 365 / Graph -->
+      <div class="settings-section" id="section-m365">
+        <div class="settings-section-title" data-i18n="settingsM365Title">Microsoft 365 dokumentmerking</div>
+        <div class="settings-note" data-i18n="settingsM365Note">Valgfritt tillegg for SharePoint/OneDrive. Token lagres ikke i appen; sett XLENT_GRAPH_TOKEN eller MICROSOFT_GRAPH_TOKEN i miljøet før oppstart.</div>
+        <div class="settings-row" style="margin-top:10px;">
+          <label for="m365-drive-id" data-i18n="m365DriveId">Drive ID:</label>
+          <input id="m365-drive-id" type="text" placeholder="driveId" style="min-width:260px;">
+        </div>
+        <div class="settings-row">
+          <label for="m365-item-id" data-i18n="m365ItemId">Item ID:</label>
+          <input id="m365-item-id" type="text" placeholder="itemId" style="min-width:260px;">
+        </div>
+        <div class="settings-row">
+          <label for="m365-sync-root" data-i18n="m365SyncRoot">Lokal sync-root:</label>
+          <input id="m365-sync-root" type="text" placeholder="C:\Users\...\OneDrive - XLENT\..." style="min-width:360px;">
+        </div>
+        <div class="settings-row">
+          <label for="m365-sensitivity-label-id" data-i18n="m365SensitivityLabelId">Sensitivity label ID:</label>
+          <input id="m365-sensitivity-label-id" type="text" placeholder="labelId" style="min-width:260px;">
+        </div>
+        <div class="settings-row">
+          <label for="m365-retention-label-name" data-i18n="m365RetentionLabelName">Retention label:</label>
+          <input id="m365-retention-label-name" type="text" placeholder="Label name" style="min-width:260px;">
+        </div>
+        <div class="settings-row" style="margin-top:10px; gap:8px;">
+          <button id="btn-m365-status" class="ctrl-btn" data-i18n="m365CheckStatus">Sjekk Graph-status</button>
+          <button id="btn-m365-read-tags" class="ctrl-btn" data-i18n="m365ReadTags">Les dokumentmerking</button>
+          <button id="btn-m365-read-local-tags" class="ctrl-btn" data-i18n="m365ReadLocalTags">Les fra sist skannet fil</button>
+          <button id="btn-m365-assign-sensitivity" class="ctrl-btn" data-i18n="m365AssignSensitivity">Sett sensitivity label</button>
+          <button id="btn-m365-set-retention" class="ctrl-btn" data-i18n="m365SetRetention">Sett retention label</button>
+          <button id="btn-m365-write-metadata" class="ctrl-btn ctrl-btn-primary" data-i18n="m365WriteMetadata">Skriv scan-metadata</button>
+        </div>
+        <div class="settings-note" id="m365-msg" style="margin-top:6px;"></div>
+      </div>
+
       <!-- Navnemodeller (NER) -->
       <div class="settings-section" id="section-ner-models">
         <div class="settings-section-title" data-i18n="settingsNerTitle">Navnemodeller (NER)</div>
@@ -1444,6 +1489,30 @@
         settingsApiNote:     "Det stabile lokale API-et kan nås på samme lokale port som appen. Bruk Swagger for å teste endepunkter, eller hent OpenAPI JSON direkte.",
         apiDocsOpen:         "Åpne Swagger",
         apiOpenapiJson:      "OpenAPI JSON",
+        settingsM365Title:   "Microsoft 365 dokumentmerking",
+        settingsM365Note:    "Valgfritt tillegg for SharePoint/OneDrive. Token lagres ikke i appen; sett XLENT_GRAPH_TOKEN eller MICROSOFT_GRAPH_TOKEN i miljøet før oppstart.",
+        m365DriveId:         "Drive ID:",
+        m365ItemId:          "Item ID:",
+        m365SyncRoot:        "Lokal sync-root:",
+        m365SensitivityLabelId:"Sensitivity label ID:",
+        m365RetentionLabelName:"Retention label:",
+        m365CheckStatus:     "Sjekk Graph-status",
+        m365ReadTags:        "Les dokumentmerking",
+        m365ReadLocalTags:   "Les fra sist skannet fil",
+        m365AssignSensitivity:"Sett sensitivity label",
+        m365SetRetention:    "Sett retention label",
+        m365WriteMetadata:   "Skriv scan-metadata",
+        m365TokenConfigured: "Graph-token er konfigurert",
+        m365TokenMissing:    "Graph-token mangler. Sett XLENT_GRAPH_TOKEN eller MICROSOFT_GRAPH_TOKEN før appen startes.",
+        m365Done:            "Ferdig.",
+        m365Failed:          "Microsoft 365-feil:",
+        m365PolicyWarning:   "Microsoft 365-policyvarsel",
+        m365SensitivityLabels:"Sensitivity labels",
+        m365RetentionLabel:  "Retention label",
+        m365SuggestedLabel:  "Foreslått label",
+        m365FolderMetadataRunning:"Skriver Microsoft 365-metadata…",
+        m365FolderMetadataWritten:"skrevet",
+        m365FolderMetadataErrors:"feil",
         settingsPersistNote: "Innstillinger lagres automatisk i nettleseren.",
         updateAvailable: "Ny versjon tilgjengelig:",
         updateOpenRelease: "⬇ Åpne nedlasting",
@@ -1528,6 +1597,7 @@
         folderAuditHtml:    "Audit HTML",
         folderAuditPdf:     "Audit PDF",
         folderRedactSelected:"Redact valgte",
+        folderM365Metadata: "Skriv M365-metadata",
         folderNoSelection:  "Velg minst én fil.",
         folderOpenFile:     "Åpne",
         folderRevealFile:   "Vis",
@@ -1707,6 +1777,30 @@
         settingsApiNote:     "Det stabila lokala API:t nås på samma lokala port som appen. Använd Swagger för att testa endpoints eller hämta OpenAPI JSON direkt.",
         apiDocsOpen:         "Öppna Swagger",
         apiOpenapiJson:      "OpenAPI JSON",
+        settingsM365Title:   "Microsoft 365-dokumentmärkning",
+        settingsM365Note:    "Valfritt tillägg för SharePoint/OneDrive. Token lagras inte i appen; sätt XLENT_GRAPH_TOKEN eller MICROSOFT_GRAPH_TOKEN i miljön före start.",
+        m365DriveId:         "Drive ID:",
+        m365ItemId:          "Item ID:",
+        m365SyncRoot:        "Lokal sync-rot:",
+        m365SensitivityLabelId:"Sensitivity label ID:",
+        m365RetentionLabelName:"Retention label:",
+        m365CheckStatus:     "Kontrollera Graph-status",
+        m365ReadTags:        "Läs dokumentmärkning",
+        m365ReadLocalTags:   "Läs från senast skannade fil",
+        m365AssignSensitivity:"Sätt sensitivity label",
+        m365SetRetention:    "Sätt retention label",
+        m365WriteMetadata:   "Skriv scan-metadata",
+        m365TokenConfigured: "Graph-token är konfigurerad",
+        m365TokenMissing:    "Graph-token saknas. Sätt XLENT_GRAPH_TOKEN eller MICROSOFT_GRAPH_TOKEN innan appen startas.",
+        m365Done:            "Klart.",
+        m365Failed:          "Microsoft 365-fel:",
+        m365PolicyWarning:   "Microsoft 365-policyvarning",
+        m365SensitivityLabels:"Sensitivity labels",
+        m365RetentionLabel:  "Retention label",
+        m365SuggestedLabel:  "Föreslagen label",
+        m365FolderMetadataRunning:"Skriver Microsoft 365-metadata…",
+        m365FolderMetadataWritten:"skrivna",
+        m365FolderMetadataErrors:"fel",
         settingsPersistNote: "Inställningar sparas automatiskt i webbläsaren.",
         updateAvailable: "Ny version tillgänglig:",
         updateOpenRelease: "⬇ Öppna nedladdning",
@@ -1791,6 +1885,7 @@
         folderAuditHtml:    "Audit HTML",
         folderAuditPdf:     "Audit PDF",
         folderRedactSelected:"Redact valda",
+        folderM365Metadata: "Skriv M365-metadata",
         folderNoSelection:  "Välj minst en fil.",
         folderOpenFile:     "Öppna",
         folderRevealFile:   "Visa",
@@ -1970,6 +2065,30 @@
         settingsApiNote:     "The stable local API is available on the same local port as the app. Use Swagger to test endpoints, or fetch the OpenAPI JSON directly.",
         apiDocsOpen:         "Open Swagger",
         apiOpenapiJson:      "OpenAPI JSON",
+        settingsM365Title:   "Microsoft 365 document labels",
+        settingsM365Note:    "Optional SharePoint/OneDrive integration. The token is not stored in the app; set XLENT_GRAPH_TOKEN or MICROSOFT_GRAPH_TOKEN in the environment before startup.",
+        m365DriveId:         "Drive ID:",
+        m365ItemId:          "Item ID:",
+        m365SyncRoot:        "Local sync root:",
+        m365SensitivityLabelId:"Sensitivity label ID:",
+        m365RetentionLabelName:"Retention label:",
+        m365CheckStatus:     "Check Graph status",
+        m365ReadTags:        "Read document labels",
+        m365ReadLocalTags:   "Read from last scanned file",
+        m365AssignSensitivity:"Set sensitivity label",
+        m365SetRetention:    "Set retention label",
+        m365WriteMetadata:   "Write scan metadata",
+        m365TokenConfigured: "Graph token is configured",
+        m365TokenMissing:    "Graph token is missing. Set XLENT_GRAPH_TOKEN or MICROSOFT_GRAPH_TOKEN before starting the app.",
+        m365Done:            "Done.",
+        m365Failed:          "Microsoft 365 error:",
+        m365PolicyWarning:   "Microsoft 365 policy warning",
+        m365SensitivityLabels:"Sensitivity labels",
+        m365RetentionLabel:  "Retention label",
+        m365SuggestedLabel:  "Suggested label",
+        m365FolderMetadataRunning:"Writing Microsoft 365 metadata…",
+        m365FolderMetadataWritten:"written",
+        m365FolderMetadataErrors:"errors",
         settingsPersistNote: "Settings are saved automatically in the browser.",
         updateAvailable: "New version available:",
         updateOpenRelease: "⬇ Open download",
@@ -2054,6 +2173,7 @@
         folderAuditHtml:    "Audit HTML",
         folderAuditPdf:     "Audit PDF",
         folderRedactSelected:"Redact selected",
+        folderM365Metadata: "Write M365 metadata",
         folderNoSelection:  "Select at least one file.",
         folderOpenFile:     "Open",
         folderRevealFile:   "Show",
@@ -2226,6 +2346,30 @@
         settingsApiNote:     "Die stabile lokale API ist über denselben lokalen Port wie die App erreichbar. Verwenden Sie Swagger zum Testen der Endpunkte oder laden Sie OpenAPI JSON direkt.",
         apiDocsOpen:         "Swagger öffnen",
         apiOpenapiJson:      "OpenAPI JSON",
+        settingsM365Title:   "Microsoft 365-Dokumentkennzeichnung",
+        settingsM365Note:    "Optionale SharePoint/OneDrive-Integration. Das Token wird nicht in der App gespeichert; setzen Sie XLENT_GRAPH_TOKEN oder MICROSOFT_GRAPH_TOKEN vor dem Start in der Umgebung.",
+        m365DriveId:         "Drive ID:",
+        m365ItemId:          "Item ID:",
+        m365SyncRoot:        "Lokale Sync-Root:",
+        m365SensitivityLabelId:"Sensitivity label ID:",
+        m365RetentionLabelName:"Retention label:",
+        m365CheckStatus:     "Graph-Status prüfen",
+        m365ReadTags:        "Dokumentkennzeichnung lesen",
+        m365ReadLocalTags:   "Aus zuletzt gescannter Datei lesen",
+        m365AssignSensitivity:"Sensitivity label setzen",
+        m365SetRetention:    "Retention label setzen",
+        m365WriteMetadata:   "Scan-Metadaten schreiben",
+        m365TokenConfigured: "Graph-Token ist konfiguriert",
+        m365TokenMissing:    "Graph-Token fehlt. Setzen Sie XLENT_GRAPH_TOKEN oder MICROSOFT_GRAPH_TOKEN vor dem Start der App.",
+        m365Done:            "Fertig.",
+        m365Failed:          "Microsoft 365-Fehler:",
+        m365PolicyWarning:   "Microsoft 365-Policy-Warnung",
+        m365SensitivityLabels:"Sensitivity labels",
+        m365RetentionLabel:  "Retention label",
+        m365SuggestedLabel:  "Vorgeschlagenes Label",
+        m365FolderMetadataRunning:"Microsoft 365-Metadaten werden geschrieben…",
+        m365FolderMetadataWritten:"geschrieben",
+        m365FolderMetadataErrors:"Fehler",
         settingsPersistNote: "Einstellungen werden automatisch im Browser gespeichert.",
         nerTitle:            "KI-Namenerkennung (spaCy)",
         nerInstalled:        "Installiert",
@@ -2338,6 +2482,7 @@
         folderAuditHtml:     "Audit HTML",
         folderAuditPdf:      "Audit PDF",
         folderRedactSelected:"Ausgewählte redigieren",
+        folderM365Metadata:  "M365-Metadaten schreiben",
         folderNoSelection:   "Wählen Sie mindestens eine Datei.",
         folderOpenFile:      "Öffnen",
         folderRevealFile:    "Anzeigen",
@@ -2490,6 +2635,30 @@
         settingsApiNote:     "L’API locale stable est disponible sur le même port local que l’application. Utilisez Swagger pour tester les endpoints ou récupérez directement le JSON OpenAPI.",
         apiDocsOpen:         "Ouvrir Swagger",
         apiOpenapiJson:      "OpenAPI JSON",
+        settingsM365Title:   "Étiquetage Microsoft 365 des documents",
+        settingsM365Note:    "Intégration SharePoint/OneDrive optionnelle. Le jeton n’est pas stocké dans l’app ; définissez XLENT_GRAPH_TOKEN ou MICROSOFT_GRAPH_TOKEN dans l’environnement avant le démarrage.",
+        m365DriveId:         "Drive ID :",
+        m365ItemId:          "Item ID :",
+        m365SyncRoot:        "Racine de synchronisation locale :",
+        m365SensitivityLabelId:"Sensitivity label ID :",
+        m365RetentionLabelName:"Retention label :",
+        m365CheckStatus:     "Vérifier l’état Graph",
+        m365ReadTags:        "Lire les étiquettes du document",
+        m365ReadLocalTags:   "Lire depuis le dernier fichier scanné",
+        m365AssignSensitivity:"Définir le sensitivity label",
+        m365SetRetention:    "Définir le retention label",
+        m365WriteMetadata:   "Écrire les métadonnées du scan",
+        m365TokenConfigured: "Le jeton Graph est configuré",
+        m365TokenMissing:    "Le jeton Graph manque. Définissez XLENT_GRAPH_TOKEN ou MICROSOFT_GRAPH_TOKEN avant de lancer l’app.",
+        m365Done:            "Terminé.",
+        m365Failed:          "Erreur Microsoft 365 :",
+        m365PolicyWarning:   "Avertissement de politique Microsoft 365",
+        m365SensitivityLabels:"Sensitivity labels",
+        m365RetentionLabel:  "Retention label",
+        m365SuggestedLabel:  "Étiquette suggérée",
+        m365FolderMetadataRunning:"Écriture des métadonnées Microsoft 365…",
+        m365FolderMetadataWritten:"écrits",
+        m365FolderMetadataErrors:"erreurs",
         settingsPersistNote: "Les paramètres sont automatiquement sauvegardés dans le navigateur.",
         nerTitle:            "Reconnaissance de noms par IA (spaCy)",
         nerInstalled:        "Installé",
@@ -2602,6 +2771,7 @@
         folderAuditHtml:     "Audit HTML",
         folderAuditPdf:      "Audit PDF",
         folderRedactSelected:"Redacter la sélection",
+        folderM365Metadata:  "Écrire les métadonnées M365",
         folderNoSelection:   "Sélectionnez au moins un fichier.",
         folderOpenFile:      "Ouvrir",
         folderRevealFile:    "Afficher",
@@ -2754,6 +2924,30 @@
         settingsApiNote:     "La API local estable está disponible en el mismo puerto local que la app. Use Swagger para probar endpoints o abra directamente el JSON OpenAPI.",
         apiDocsOpen:         "Abrir Swagger",
         apiOpenapiJson:      "OpenAPI JSON",
+        settingsM365Title:   "Etiquetado de documentos Microsoft 365",
+        settingsM365Note:    "Integración opcional con SharePoint/OneDrive. El token no se guarda en la app; defina XLENT_GRAPH_TOKEN o MICROSOFT_GRAPH_TOKEN en el entorno antes de iniciar.",
+        m365DriveId:         "Drive ID:",
+        m365ItemId:          "Item ID:",
+        m365SyncRoot:        "Raíz local de sincronización:",
+        m365SensitivityLabelId:"Sensitivity label ID:",
+        m365RetentionLabelName:"Retention label:",
+        m365CheckStatus:     "Comprobar estado de Graph",
+        m365ReadTags:        "Leer etiquetas del documento",
+        m365ReadLocalTags:   "Leer desde el último archivo escaneado",
+        m365AssignSensitivity:"Definir sensitivity label",
+        m365SetRetention:    "Definir retention label",
+        m365WriteMetadata:   "Escribir metadatos del escaneo",
+        m365TokenConfigured: "El token de Graph está configurado",
+        m365TokenMissing:    "Falta el token de Graph. Defina XLENT_GRAPH_TOKEN o MICROSOFT_GRAPH_TOKEN antes de iniciar la app.",
+        m365Done:            "Listo.",
+        m365Failed:          "Error de Microsoft 365:",
+        m365PolicyWarning:   "Advertencia de política de Microsoft 365",
+        m365SensitivityLabels:"Sensitivity labels",
+        m365RetentionLabel:  "Retention label",
+        m365SuggestedLabel:  "Etiqueta sugerida",
+        m365FolderMetadataRunning:"Escribiendo metadatos de Microsoft 365…",
+        m365FolderMetadataWritten:"escritos",
+        m365FolderMetadataErrors:"errores",
         settingsPersistNote: "La configuración se guarda automáticamente en el navegador.",
         nerTitle:            "Reconocimiento de nombres con IA (spaCy)",
         nerInstalled:        "Instalado",
@@ -2866,6 +3060,7 @@
         folderAuditHtml:     "Audit HTML",
         folderAuditPdf:      "Audit PDF",
         folderRedactSelected:"Redactar seleccionados",
+        folderM365Metadata:  "Escribir metadatos M365",
         folderNoSelection:   "Seleccione al menos un archivo.",
         folderOpenFile:      "Abrir",
         folderRevealFile:    "Mostrar",
@@ -3575,6 +3770,28 @@
       }
     }
 
+    function _m365LabelNames(tags) {
+      const labels = tags?.sensitivity?.labels || [];
+      return labels.map(l => l.name || l.displayName || l.labelName || l.sensitivityLabelName || l.id || l.sensitivityLabelId)
+        .filter(Boolean);
+    }
+
+    function _m365RetentionName(tags) {
+      const r = tags?.retention || {};
+      return r.name || r.displayName || r.labelName || "";
+    }
+
+    function buildM365TagsHtml(r) {
+      if (!r?.microsoft_tags) return "";
+      const labels = _m365LabelNames(r.microsoft_tags);
+      const retention = _m365RetentionName(r.microsoft_tags);
+      if (!labels.length && !retention) return "";
+      const parts = [];
+      if (labels.length) parts.push(`${escapeHtml(t("m365SensitivityLabels"))}: ${escapeHtml(labels.join(", "))}`);
+      if (retention) parts.push(`${escapeHtml(t("m365RetentionLabel"))}: ${escapeHtml(retention)}`);
+      return `<div class="m365-tags">${parts.join(" &middot; ")}</div>`;
+    }
+
     function renderResult(r) {
       lastResult = r;
       resultEl.classList.add("show");
@@ -3600,6 +3817,9 @@
       const warning = warningText(r);
       const warningBanner = warning
         ? `<div class="warning-banner">⚠️ ${escapeHtml(warning)}</div>` : "";
+      const policyWarningBanner = r.policy_warning
+        ? `<div class="policy-warning-banner">⛔ ${escapeHtml(t("m365PolicyWarning"))}: ${escapeHtml(r.policy_warning)}</div>` : "";
+      const m365TagsHtml = buildM365TagsHtml(r);
 
       resultEl.innerHTML = `
         <div class="result-header">
@@ -3619,6 +3839,8 @@
         </div>
 
         ${warningBanner}
+        ${policyWarningBanner}
+        ${m365TagsHtml}
 
         <div class="action-box" style="color:${color};border-left-color:${color};">
           ${escapeHtml(r.recommended_action)}
@@ -4119,6 +4341,17 @@
         if (ls && s.language) ls.value = s.language;
         const sa = document.getElementById("stripAnnotations");
         if (sa) sa.checked = s.stripAnnotations === true;
+        const m365Fields = {
+          "m365-drive-id": "m365_drive_id",
+          "m365-item-id": "m365_item_id",
+          "m365-sync-root": "m365_sync_root",
+          "m365-sensitivity-label-id": "m365_sensitivity_label_id",
+          "m365-retention-label-name": "m365_retention_label_name",
+        };
+        for (const [id, key] of Object.entries(m365Fields)) {
+          const el = document.getElementById(id);
+          if (el && s[key]) el.value = s[key];
+        }
         applyTheme(s.theme);
       } catch (_) {}
     }
@@ -4130,6 +4363,11 @@
           language:    document.getElementById("langSelect").value,
           stripAnnotations: document.getElementById("stripAnnotations").checked,
           theme:       normalizeTheme(document.getElementById("themeSelect").value),
+          m365_drive_id: document.getElementById("m365-drive-id")?.value || "",
+          m365_item_id: document.getElementById("m365-item-id")?.value || "",
+          m365_sync_root: document.getElementById("m365-sync-root")?.value || "",
+          m365_sensitivity_label_id: document.getElementById("m365-sensitivity-label-id")?.value || "",
+          m365_retention_label_name: document.getElementById("m365-retention-label-name")?.value || "",
         }));
       } catch (_) {}
     }
@@ -4142,6 +4380,9 @@
     document.getElementById("ignoreXlent").addEventListener("change", saveSettings);
     document.getElementById("langSelect").addEventListener("change", saveSettings);
     document.getElementById("stripAnnotations").addEventListener("change", saveSettings);
+    ["m365-drive-id", "m365-item-id", "m365-sync-root", "m365-sensitivity-label-id", "m365-retention-label-name"].forEach(id => {
+      document.getElementById(id)?.addEventListener("input", saveSettings);
+    });
     document.getElementById("btn-check-updates").addEventListener("click", () => runUpdateCheck(true));
     document.getElementById("btn-run-install-script").addEventListener("click", runInstallScript);
     document.getElementById("btn-open-web-mode").addEventListener("click", startWebMode);
@@ -4159,6 +4400,135 @@
     document.getElementById("btn-export-settings").addEventListener("click", exportSettingsProfile);
     document.getElementById("btn-import-settings").addEventListener("click", () => document.getElementById("settings-import-file").click());
     document.getElementById("settings-import-file").addEventListener("change", importSettingsProfile);
+    document.getElementById("btn-m365-status").addEventListener("click", m365RefreshStatus);
+    document.getElementById("btn-m365-read-tags").addEventListener("click", m365ReadTags);
+    document.getElementById("btn-m365-read-local-tags").addEventListener("click", m365ReadLocalTags);
+    document.getElementById("btn-m365-assign-sensitivity").addEventListener("click", m365AssignSensitivity);
+    document.getElementById("btn-m365-set-retention").addEventListener("click", m365SetRetention);
+    document.getElementById("btn-m365-write-metadata").addEventListener("click", m365WriteMetadata);
+
+    function _m365Msg(text, color = "var(--muted)") {
+      const el = document.getElementById("m365-msg");
+      if (!el) return;
+      el.textContent = text || "";
+      el.style.color = color;
+    }
+
+    function _m365Payload(extra = {}) {
+      return {
+        drive_id: document.getElementById("m365-drive-id")?.value.trim() || "",
+        item_id: document.getElementById("m365-item-id")?.value.trim() || "",
+        sync_root: document.getElementById("m365-sync-root")?.value.trim() || "",
+        ...extra,
+      };
+    }
+
+    async function m365RefreshStatus() {
+      try {
+        const r = await (await fetch(`${API}/microsoft/graph/status`)).json();
+        const msg = r.configured
+          ? `${t("m365TokenConfigured")} (${r.token_env})`
+          : t("m365TokenMissing");
+        _m365Msg(msg, r.configured ? "var(--ok)" : "var(--danger)");
+      } catch (e) {
+        _m365Msg(`${t("m365Failed")} ${String(e)}`, "var(--danger)");
+      }
+    }
+
+    async function m365ReadTags() {
+      try {
+        _m365Msg(t("processing"));
+        const r = await (await fetch(`${API}/microsoft/graph/tags`, {
+          method: "POST", headers: {"Content-Type": "application/json"},
+          body: JSON.stringify(_m365Payload()),
+        })).json();
+        if (!r.ok) throw new Error(r.error || "Graph error");
+        if (lastResult) {
+          lastResult.microsoft_tags = r.tags;
+          lastResult.policy_warning = r.policy_warning || "";
+          lastResult.policy_warning_level = r.policy_warning ? "rød" : "";
+          renderResult(lastResult);
+        }
+        const labels = _m365LabelNames(r.tags).join(", ") || "-";
+        const warning = r.policy_warning ? ` ${t("m365PolicyWarning")}: ${r.policy_warning}` : "";
+        _m365Msg(`${t("m365Done")} ${t("m365SensitivityLabels")}: ${labels}.${warning}`, r.policy_warning ? "var(--danger)" : "var(--ok)");
+      } catch (e) {
+        _m365Msg(`${t("m365Failed")} ${String(e.message || e)}`, "var(--danger)");
+      }
+    }
+
+    async function m365ReadLocalTags() {
+      try {
+        _m365Msg(t("processing"));
+        const r = await (await fetch(`${API}/microsoft/graph/tags-for-local-file`, {
+          method: "POST", headers: {"Content-Type": "application/json"},
+          body: JSON.stringify(_m365Payload()),
+        })).json();
+        if (!r.ok) throw new Error(r.error || "Graph error");
+        if (r.resolved?.item_id) {
+          document.getElementById("m365-drive-id").value = r.resolved.drive_id || document.getElementById("m365-drive-id").value;
+          document.getElementById("m365-item-id").value = r.resolved.item_id;
+          if (r.resolved.sync_root) document.getElementById("m365-sync-root").value = r.resolved.sync_root;
+          saveSettings();
+        }
+        if (lastResult) {
+          lastResult.microsoft_tags = r.tags;
+          lastResult.policy_warning = r.policy_warning || "";
+          lastResult.policy_warning_level = r.policy_warning ? "rød" : "";
+          renderResult(lastResult);
+        }
+        const labels = _m365LabelNames(r.tags).join(", ") || "-";
+        const warning = r.policy_warning ? ` ${t("m365PolicyWarning")}: ${r.policy_warning}` : "";
+        _m365Msg(`${t("m365Done")} ${t("m365SensitivityLabels")}: ${labels}.${warning}`, r.policy_warning ? "var(--danger)" : "var(--ok)");
+      } catch (e) {
+        _m365Msg(`${t("m365Failed")} ${String(e.message || e)}`, "var(--danger)");
+      }
+    }
+
+    async function m365AssignSensitivity() {
+      try {
+        _m365Msg(t("processing"));
+        const sensitivityLabelId = document.getElementById("m365-sensitivity-label-id")?.value.trim() || "";
+        const r = await (await fetch(`${API}/microsoft/graph/assign-sensitivity`, {
+          method: "POST", headers: {"Content-Type": "application/json"},
+          body: JSON.stringify(_m365Payload({ sensitivity_label_id: sensitivityLabelId })),
+        })).json();
+        if (!r.ok) throw new Error(r.error || "Graph error");
+        _m365Msg(t("m365Done"), "var(--ok)");
+      } catch (e) {
+        _m365Msg(`${t("m365Failed")} ${String(e.message || e)}`, "var(--danger)");
+      }
+    }
+
+    async function m365SetRetention() {
+      try {
+        _m365Msg(t("processing"));
+        const retentionLabelName = document.getElementById("m365-retention-label-name")?.value.trim() || "";
+        const r = await (await fetch(`${API}/microsoft/graph/set-retention`, {
+          method: "POST", headers: {"Content-Type": "application/json"},
+          body: JSON.stringify(_m365Payload({ retention_label_name: retentionLabelName })),
+        })).json();
+        if (!r.ok) throw new Error(r.error || "Graph error");
+        _m365Msg(t("m365Done"), "var(--ok)");
+      } catch (e) {
+        _m365Msg(`${t("m365Failed")} ${String(e.message || e)}`, "var(--danger)");
+      }
+    }
+
+    async function m365WriteMetadata() {
+      try {
+        _m365Msg(t("processing"));
+        const r = await (await fetch(`${API}/microsoft/graph/write-scan-metadata`, {
+          method: "POST", headers: {"Content-Type": "application/json"},
+          body: JSON.stringify(_m365Payload()),
+        })).json();
+        if (!r.ok) throw new Error(r.error || "Graph error");
+        const label = r.suggested_label?.name || "";
+        _m365Msg(`${t("m365Done")} ${label ? `${t("m365SuggestedLabel")}: ${label}` : ""}`, "var(--ok)");
+      } catch (e) {
+        _m365Msg(`${t("m365Failed")} ${String(e.message || e)}`, "var(--danger)");
+      }
+    }
 
     /* ══════════════════════════════════════════════════════════════════
        NER MODELS
@@ -5287,6 +5657,7 @@
         <button type="button" class="ctrl-btn" id="folder-export-csv">${escapeHtml(t("folderExportCsv"))}</button>
         <button type="button" class="ctrl-btn" id="folder-audit-html">${escapeHtml(t("folderAuditHtml"))}</button>
         <button type="button" class="ctrl-btn" id="folder-audit-pdf">${escapeHtml(t("folderAuditPdf"))}</button>
+        <button type="button" class="ctrl-btn" id="folder-m365-metadata">${escapeHtml(t("folderM365Metadata"))}</button>
         <button type="button" class="ctrl-btn ctrl-btn-primary" id="folder-redact-selected">${escapeHtml(t("folderRedactSelected"))}</button>
         <span id="folder-action-msg" class="folder-action-msg"></span>
       </div>`;
@@ -5346,6 +5717,7 @@
       container.querySelector("#folder-export-csv")?.addEventListener("click", () => _folderRunOutputAction("/folder-export/csv", "folderActionDone"));
       container.querySelector("#folder-audit-html")?.addEventListener("click", () => _folderRunOutputAction("/folder-audit/html", "folderActionDone"));
       container.querySelector("#folder-audit-pdf")?.addEventListener("click", () => _folderRunOutputAction("/folder-audit/pdf", "folderActionDone"));
+      container.querySelector("#folder-m365-metadata")?.addEventListener("click", writeFolderM365Metadata);
       container.querySelector("#folder-redact-selected")?.addEventListener("click", async () => {
         const ids = _selectedFolderReportIds();
         if (!ids.length) { _setFolderAction(t("folderNoSelection"), false); return; }
@@ -5373,6 +5745,29 @@
           }
         });
       });
+    }
+
+    async function writeFolderM365Metadata() {
+      if (!_folderJobId) { _setFolderAction(t("folderNoSelection"), false); return; }
+      const ids = _selectedFolderReportIds();
+      try {
+        _setFolderAction(t("m365FolderMetadataRunning"));
+        const d = await _folderPost("/microsoft/graph/write-folder-metadata", {
+          job_id: _folderJobId,
+          report_ids: ids,
+          drive_id: document.getElementById("m365-drive-id")?.value.trim() || "",
+          sync_root: document.getElementById("m365-sync-root")?.value.trim() || "",
+        });
+        if (d.ok || Number(d.written_count || 0) > 0) {
+          const details = `${d.written_count || 0} ${t("m365FolderMetadataWritten")}, ${d.error_count || 0} ${t("m365FolderMetadataErrors")}`;
+          _setFolderAction(details, !Number(d.error_count || 0));
+        } else {
+          const err = (d.errors || []).map(e => e.error).filter(Boolean).slice(0, 2).join("; ");
+          _setFolderAction(`${t("folderActionFailed")} ${d.error || err || ""}`, false);
+        }
+      } catch (e) {
+        _setFolderAction(`${t("folderActionFailed")} ${e}`, false);
+      }
     }
 
     function _batchTableHtml(files) {
@@ -5500,6 +5895,7 @@
     loadWhitelistEditor();
     loadBlacklistEditor();
     runUpdateCheck(false);
+    m365RefreshStatus();
     loadNerStatus();
     loadOllamaSettingsStatus();
     loadHistoryFromApi();

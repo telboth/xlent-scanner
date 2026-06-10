@@ -61,6 +61,20 @@ from xlent_scanner.models import Finding, ScanResult
 from xlent_scanner.patch import SUPPORTED_PATCH_SUFFIXES, patch_file
 from xlent_scanner.report import generate_html
 from xlent_scanner.history import add_history_entry, load_history, clear_history
+from xlent_scanner.microsoft_graph import (
+    GraphConfigError,
+    GraphRequestError,
+    assign_sensitivity_label,
+    graph_status,
+    policy_warning_for_tags,
+    read_document_tags,
+    read_document_tags_for_local_path,
+    resolve_local_drive_item,
+    scan_metadata_fields,
+    set_retention_label,
+    suggested_label_for_risk,
+    update_sharepoint_fields,
+)
 from xlent_scanner.scanner import (
     DEFAULT_FOLDER_MAX_DEPTH,
     DEFAULT_FOLDER_MAX_FILES,
@@ -537,6 +551,65 @@ def _clear_ai_findings() -> None:
     global _last_ai_findings
     _last_ai_findings = []
     _last_ai_findings_file["name"] = ""
+
+
+def _microsoft_error_response(exc: Exception, status: int = 400):
+    code = "graph_error"
+    if isinstance(exc, GraphConfigError):
+        code = "graph_not_configured"
+    elif isinstance(exc, GraphRequestError):
+        status = 502
+    return jsonify({"ok": False, "error": str(exc), "error_code": code}), status
+
+
+def _microsoft_graph_access_error():
+    expected = os.environ.get("XLENT_SCANNER_API_KEY", "").strip()
+    if expected:
+        provided = request.headers.get("X-API-Key", "").strip()
+        auth = request.headers.get("Authorization", "").strip()
+        if auth.lower().startswith("bearer "):
+            provided = auth[7:].strip()
+        if not secrets.compare_digest(provided, expected):
+            return jsonify({
+                "ok": False,
+                "error": "Ugyldig eller manglende API-nøkkel.",
+                "error_code": "unauthorized",
+            }), 401
+        return None
+
+    remote = (request.remote_addr or "").strip().lower()
+    host = (request.host or "").split(":", 1)[0].strip().lower()
+    if remote not in {"127.0.0.1", "::1", "localhost"} and host not in {"127.0.0.1", "::1", "localhost"}:
+        return jsonify({
+            "ok": False,
+            "error": "Microsoft 365-endepunkter krever XLENT_SCANNER_API_KEY ved nettverkstilgang.",
+            "error_code": "api_key_required",
+        }), 403
+    return None
+
+
+def _attach_microsoft_tags_to_last_result(tags: dict) -> None:
+    if _last_result is None:
+        return
+    _last_result.microsoft_tags = tags
+    warning = policy_warning_for_tags(tags)
+    if warning:
+        _last_result.policy_warning = warning
+        _last_result.policy_warning_level = "rød"
+    else:
+        _last_result.policy_warning = None
+        _last_result.policy_warning_level = None
+
+
+def _scan_metadata_for_result(result: ScanResult, suggested_label: str | None = None, status: str = "Scanned") -> tuple[dict, dict]:
+    suggestion = suggested_label_for_risk(result.risk_level)
+    fields = scan_metadata_fields(
+        result.risk_level,
+        len([f for f in result.findings if not f.category.startswith("⚠")]),
+        suggested_label or suggestion["name"],
+        status,
+    )
+    return fields, suggestion
 
 
 def _install_mac_quick_action() -> Path:
@@ -1454,6 +1527,233 @@ def diagnostics():
     })
 
 
+@flask_app.route("/microsoft/graph/status", methods=["GET"])
+def microsoft_graph_status_endpoint():
+    access_error = _microsoft_graph_access_error()
+    if access_error:
+        return access_error
+    return jsonify({"ok": True, **graph_status()})
+
+
+@flask_app.route("/microsoft/graph/tags", methods=["POST"])
+def microsoft_graph_tags_endpoint():
+    access_error = _microsoft_graph_access_error()
+    if access_error:
+        return access_error
+    try:
+        data = request.get_json(force=True) or {}
+        drive_id = str(data.get("drive_id") or "").strip()
+        item_id = str(data.get("item_id") or "").strip()
+        tags = read_document_tags(drive_id, item_id)
+        _attach_microsoft_tags_to_last_result(tags)
+        suggestion = suggested_label_for_risk(_last_result.risk_level if _last_result else "grønn")
+        return jsonify({
+            "ok": True,
+            "tags": tags,
+            "policy_warning": tags.get("policy_warning") or "",
+            "suggested_label": suggestion,
+        })
+    except (GraphConfigError, GraphRequestError, ValueError) as exc:
+        return _microsoft_error_response(exc)
+    except Exception as exc:
+        LOGGER.error("microsoft/graph/tags failed: %s", traceback.format_exc())
+        return _microsoft_error_response(exc, 500)
+
+
+@flask_app.route("/microsoft/graph/resolve-local-file", methods=["POST"])
+def microsoft_graph_resolve_local_file_endpoint():
+    access_error = _microsoft_graph_access_error()
+    if access_error:
+        return access_error
+    try:
+        data = request.get_json(force=True) or {}
+        local_path = str(data.get("local_path") or "").strip()
+        if not local_path and _last_path is not None:
+            local_path = str(_last_path)
+        if not local_path:
+            return jsonify({"ok": False, "error": "Ingen lokal filsti oppgitt.", "error_code": "missing_local_path"}), 400
+        resolved = resolve_local_drive_item(
+            local_path,
+            drive_id=str(data.get("drive_id") or "").strip() or None,
+            sync_root=str(data.get("sync_root") or "").strip() or None,
+        )
+        return jsonify({"ok": True, "resolved": resolved})
+    except (GraphConfigError, GraphRequestError, ValueError) as exc:
+        return _microsoft_error_response(exc)
+    except Exception as exc:
+        LOGGER.error("microsoft/graph/resolve-local-file failed: %s", traceback.format_exc())
+        return _microsoft_error_response(exc, 500)
+
+
+@flask_app.route("/microsoft/graph/tags-for-local-file", methods=["POST"])
+def microsoft_graph_tags_for_local_file_endpoint():
+    access_error = _microsoft_graph_access_error()
+    if access_error:
+        return access_error
+    try:
+        data = request.get_json(force=True) or {}
+        local_path = str(data.get("local_path") or "").strip()
+        if not local_path and _last_path is not None:
+            local_path = str(_last_path)
+        if not local_path:
+            return jsonify({"ok": False, "error": "Ingen lokal filsti oppgitt.", "error_code": "missing_local_path"}), 400
+        tags = read_document_tags_for_local_path(
+            local_path,
+            drive_id=str(data.get("drive_id") or "").strip() or None,
+            sync_root=str(data.get("sync_root") or "").strip() or None,
+        )
+        _attach_microsoft_tags_to_last_result(tags)
+        suggestion = suggested_label_for_risk(_last_result.risk_level if _last_result else "grønn")
+        return jsonify({
+            "ok": True,
+            "tags": tags,
+            "resolved": tags.get("resolved", {}),
+            "policy_warning": tags.get("policy_warning") or "",
+            "suggested_label": suggestion,
+        })
+    except (GraphConfigError, GraphRequestError, ValueError) as exc:
+        return _microsoft_error_response(exc)
+    except Exception as exc:
+        LOGGER.error("microsoft/graph/tags-for-local-file failed: %s", traceback.format_exc())
+        return _microsoft_error_response(exc, 500)
+
+
+@flask_app.route("/microsoft/graph/assign-sensitivity", methods=["POST"])
+def microsoft_graph_assign_sensitivity_endpoint():
+    access_error = _microsoft_graph_access_error()
+    if access_error:
+        return access_error
+    try:
+        data = request.get_json(force=True) or {}
+        result = assign_sensitivity_label(
+            str(data.get("drive_id") or "").strip(),
+            str(data.get("item_id") or "").strip(),
+            str(data.get("sensitivity_label_id") or "").strip(),
+            str(data.get("assignment_method") or "standard").strip(),
+            str(data.get("justification_text") or "Set by XLENT Scanner").strip(),
+        )
+        return jsonify({"ok": True, "result": result})
+    except (GraphConfigError, GraphRequestError, ValueError) as exc:
+        return _microsoft_error_response(exc)
+    except Exception as exc:
+        LOGGER.error("microsoft/graph/assign-sensitivity failed: %s", traceback.format_exc())
+        return _microsoft_error_response(exc, 500)
+
+
+@flask_app.route("/microsoft/graph/set-retention", methods=["POST"])
+def microsoft_graph_set_retention_endpoint():
+    access_error = _microsoft_graph_access_error()
+    if access_error:
+        return access_error
+    try:
+        data = request.get_json(force=True) or {}
+        result = set_retention_label(
+            str(data.get("drive_id") or "").strip(),
+            str(data.get("item_id") or "").strip(),
+            str(data.get("retention_label_name") or "").strip(),
+        )
+        return jsonify({"ok": True, "result": result})
+    except (GraphConfigError, GraphRequestError, ValueError) as exc:
+        return _microsoft_error_response(exc)
+    except Exception as exc:
+        LOGGER.error("microsoft/graph/set-retention failed: %s", traceback.format_exc())
+        return _microsoft_error_response(exc, 500)
+
+
+@flask_app.route("/microsoft/graph/write-scan-metadata", methods=["POST"])
+def microsoft_graph_write_scan_metadata_endpoint():
+    access_error = _microsoft_graph_access_error()
+    if access_error:
+        return access_error
+    try:
+        if _last_result is None:
+            return jsonify({"ok": False, "error": "Ingen scan tilgjengelig.", "error_code": "missing_scan"}), 400
+        data = request.get_json(force=True) or {}
+        fields, suggestion = _scan_metadata_for_result(
+            _last_result,
+            suggested_label=str(data.get("suggested_label") or "").strip() or None,
+            status=str(data.get("status") or "Scanned"),
+        )
+        extra_fields = data.get("fields")
+        if isinstance(extra_fields, dict):
+            fields.update(extra_fields)
+        result = update_sharepoint_fields(
+            str(data.get("drive_id") or "").strip(),
+            str(data.get("item_id") or "").strip(),
+            fields,
+        )
+        return jsonify({"ok": True, "fields": fields, "result": result})
+    except (GraphConfigError, GraphRequestError, ValueError) as exc:
+        return _microsoft_error_response(exc)
+    except Exception as exc:
+        LOGGER.error("microsoft/graph/write-scan-metadata failed: %s", traceback.format_exc())
+        return _microsoft_error_response(exc, 500)
+
+
+@flask_app.route("/microsoft/graph/write-folder-metadata", methods=["POST"])
+def microsoft_graph_write_folder_metadata_endpoint():
+    access_error = _microsoft_graph_access_error()
+    if access_error:
+        return access_error
+    try:
+        data = request.get_json(force=True) or {}
+        job_id, job = _folder_job_from_request(data)
+        report_ids = {str(v) for v in data.get("report_ids") or [] if str(v)}
+        drive_id = str(data.get("drive_id") or "").strip() or None
+        sync_root = str(data.get("sync_root") or "").strip() or None
+        status_value = str(data.get("status") or "Scanned")
+        extra_fields = data.get("fields") if isinstance(data.get("fields"), dict) else {}
+
+        written: list[dict] = []
+        skipped: list[dict] = []
+        errors: list[dict] = []
+
+        for row in job.get("files", []):
+            report_id = str(row.get("report_id") or "")
+            if report_ids and report_id not in report_ids:
+                continue
+            try:
+                result = _folder_result_for_report_id(report_id)
+                if result.error:
+                    skipped.append({"report_id": report_id, "file": result.relative_path or result.file_name, "reason": result.error})
+                    continue
+                source_path = str(result.source_path or "").strip()
+                if not source_path:
+                    skipped.append({"report_id": report_id, "file": result.relative_path or result.file_name, "reason": "Mangler lokal filsti."})
+                    continue
+                resolved = resolve_local_drive_item(source_path, drive_id=drive_id, sync_root=sync_root)
+                fields, suggestion = _scan_metadata_for_result(result, status=status_value)
+                fields.update(extra_fields)
+                update_result = update_sharepoint_fields(resolved["drive_id"], resolved["item_id"], fields)
+                written.append({
+                    "report_id": report_id,
+                    "file": result.relative_path or result.file_name,
+                    "drive_id": resolved["drive_id"],
+                    "item_id": resolved["item_id"],
+                    "suggested_label": suggestion["name"],
+                    "fields": fields,
+                    "result": update_result,
+                })
+            except Exception as exc:
+                errors.append({"report_id": report_id, "file": row.get("relative_path") or row.get("file_name") or "", "error": str(exc)})
+
+        return jsonify({
+            "ok": bool(written) and not errors,
+            "job_id": job_id,
+            "written": written,
+            "skipped": skipped,
+            "errors": errors,
+            "written_count": len(written),
+            "error_count": len(errors),
+            "skipped_count": len(skipped),
+        })
+    except (GraphConfigError, GraphRequestError, ValueError) as exc:
+        return _microsoft_error_response(exc)
+    except Exception as exc:
+        LOGGER.error("microsoft/graph/write-folder-metadata failed: %s", traceback.format_exc())
+        return _microsoft_error_response(exc, 500)
+
+
 # ── Stabilt API-lag for eksterne frontender / Power Apps ─────────────────────
 # Disse endepunktene er additive og bruker separat scan-state. De skal ikke sette
 # _last_result/_last_path, siden det ville påvirket eksisterende desktop/web-GUI.
@@ -1587,6 +1887,9 @@ def _api_result_payload(result, scan_id: str, include_preview: bool = False) -> 
         "language": result.language,
         "warning": result.warning,
         "warning_code": getattr(result, "warning_code", None),
+        "microsoft_tags": getattr(result, "microsoft_tags", {}) or {},
+        "policy_warning": getattr(result, "policy_warning", None),
+        "policy_warning_level": getattr(result, "policy_warning_level", None),
         "error": result.error,
         "findings": [
             {
@@ -1652,11 +1955,22 @@ def _api_openapi_spec() -> dict:
             "recommended_action": {"type": "string"},
             "language": {"type": "string"},
             "warning": {"type": "string", "nullable": True},
+            "microsoft_tags": {"type": "object"},
+            "policy_warning": {"type": "string", "nullable": True},
+            "policy_warning_level": {"type": "string", "nullable": True},
             "error": {"type": "string", "nullable": True},
             "findings": {"type": "array", "items": finding_schema},
             "text_preview": {"type": "string"},
         },
         "required": ["ok", "scan_id", "file_name", "findings"],
+    }
+    graph_item_request_schema = {
+        "type": "object",
+        "required": ["drive_id", "item_id"],
+        "properties": {
+            "drive_id": {"type": "string"},
+            "item_id": {"type": "string"},
+        },
     }
     return {
         "openapi": "3.0.3",
@@ -1709,6 +2023,160 @@ def _api_openapi_spec() -> dict:
                             "description": "Versjonsinformasjon",
                             "content": {"application/json": {"schema": {"type": "object"}}},
                         }
+                    },
+                }
+            },
+            "/microsoft/graph/status": {
+                "get": {
+                    "summary": "Sjekk Microsoft Graph-konfigurasjon",
+                    "responses": {
+                        "200": {"description": "Graph-konfigurasjon", "content": {"application/json": {"schema": {"type": "object"}}}},
+                    },
+                }
+            },
+            "/microsoft/graph/tags": {
+                "post": {
+                    "summary": "Les Microsoft 365-labels og SharePoint-felt for et driveItem",
+                    "requestBody": {"required": True, "content": {"application/json": {"schema": graph_item_request_schema}}},
+                    "responses": {
+                        "200": {"description": "Dokumentmerking og policyvarsel", "content": {"application/json": {"schema": {"type": "object"}}}},
+                        "400": {"description": "Ugyldig forespørsel eller manglende Graph-token", "content": {"application/json": {"schema": error_schema}}},
+                        "502": {"description": "Graph-feil", "content": {"application/json": {"schema": error_schema}}},
+                    },
+                }
+            },
+            "/microsoft/graph/resolve-local-file": {
+                "post": {
+                    "summary": "Map lokal OneDrive/SharePoint-fil til Graph driveItem",
+                    "requestBody": {
+                        "required": False,
+                        "content": {"application/json": {"schema": {
+                            "type": "object",
+                            "properties": {
+                                "local_path": {"type": "string"},
+                                "drive_id": {"type": "string"},
+                                "sync_root": {"type": "string"},
+                            },
+                        }}},
+                    },
+                    "responses": {
+                        "200": {"description": "Graph driveItem funnet", "content": {"application/json": {"schema": {"type": "object"}}}},
+                        "400": {"description": "Ugyldig forespørsel eller manglende Graph-konfigurasjon", "content": {"application/json": {"schema": error_schema}}},
+                        "502": {"description": "Graph-feil", "content": {"application/json": {"schema": error_schema}}},
+                    },
+                }
+            },
+            "/microsoft/graph/tags-for-local-file": {
+                "post": {
+                    "summary": "Les Microsoft 365-labels for sist skannet eller oppgitt lokal fil",
+                    "requestBody": {
+                        "required": False,
+                        "content": {"application/json": {"schema": {
+                            "type": "object",
+                            "properties": {
+                                "local_path": {"type": "string"},
+                                "drive_id": {"type": "string"},
+                                "sync_root": {"type": "string"},
+                            },
+                        }}},
+                    },
+                    "responses": {
+                        "200": {"description": "Dokumentmerking og policyvarsel", "content": {"application/json": {"schema": {"type": "object"}}}},
+                        "400": {"description": "Ugyldig forespørsel eller manglende Graph-konfigurasjon", "content": {"application/json": {"schema": error_schema}}},
+                        "502": {"description": "Graph-feil", "content": {"application/json": {"schema": error_schema}}},
+                    },
+                }
+            },
+            "/microsoft/graph/assign-sensitivity": {
+                "post": {
+                    "summary": "Sett Microsoft sensitivity label på et driveItem",
+                    "requestBody": {
+                        "required": True,
+                        "content": {"application/json": {"schema": {
+                            "allOf": [
+                                graph_item_request_schema,
+                                {"type": "object", "required": ["sensitivity_label_id"], "properties": {
+                                    "sensitivity_label_id": {"type": "string"},
+                                    "assignment_method": {"type": "string", "default": "standard"},
+                                    "justification_text": {"type": "string"},
+                                }},
+                            ]
+                        }}},
+                    },
+                    "responses": {
+                        "200": {"description": "Label-operasjon sendt", "content": {"application/json": {"schema": {"type": "object"}}}},
+                        "400": {"description": "Ugyldig forespørsel eller manglende Graph-token", "content": {"application/json": {"schema": error_schema}}},
+                        "502": {"description": "Graph-feil", "content": {"application/json": {"schema": error_schema}}},
+                    },
+                }
+            },
+            "/microsoft/graph/set-retention": {
+                "post": {
+                    "summary": "Sett retention label på et driveItem",
+                    "requestBody": {
+                        "required": True,
+                        "content": {"application/json": {"schema": {
+                            "allOf": [
+                                graph_item_request_schema,
+                                {"type": "object", "required": ["retention_label_name"], "properties": {
+                                    "retention_label_name": {"type": "string"},
+                                }},
+                            ]
+                        }}},
+                    },
+                    "responses": {
+                        "200": {"description": "Retention label satt", "content": {"application/json": {"schema": {"type": "object"}}}},
+                        "400": {"description": "Ugyldig forespørsel eller manglende Graph-token", "content": {"application/json": {"schema": error_schema}}},
+                        "502": {"description": "Graph-feil", "content": {"application/json": {"schema": error_schema}}},
+                    },
+                }
+            },
+            "/microsoft/graph/write-scan-metadata": {
+                "post": {
+                    "summary": "Skriv XLENT scan-metadata til SharePoint-felt",
+                    "description": "Krever at feltene finnes i dokumentbiblioteket: XLENTScanStatus, XLENTRiskLevel, XLENTFindingCount, XLENTSuggestedLabel og XLENTLastScanned.",
+                    "requestBody": {
+                        "required": True,
+                        "content": {"application/json": {"schema": {
+                            "allOf": [
+                                graph_item_request_schema,
+                                {"type": "object", "properties": {
+                                    "suggested_label": {"type": "string"},
+                                    "status": {"type": "string", "default": "Scanned"},
+                                    "fields": {"type": "object"},
+                                }},
+                            ]
+                        }}},
+                    },
+                    "responses": {
+                        "200": {"description": "Metadata skrevet", "content": {"application/json": {"schema": {"type": "object"}}}},
+                        "400": {"description": "Ugyldig forespørsel, manglende scan eller manglende Graph-token", "content": {"application/json": {"schema": error_schema}}},
+                        "502": {"description": "Graph-feil", "content": {"application/json": {"schema": error_schema}}},
+                    },
+                }
+            },
+            "/microsoft/graph/write-folder-metadata": {
+                "post": {
+                    "summary": "Skriv scan-metadata til SharePoint-felt for filer i en mappeskann",
+                    "description": "Mapper lokale filer via driveId + sync_root og skriver XLENTScanStatus, XLENTRiskLevel, XLENTFindingCount, XLENTSuggestedLabel og XLENTLastScanned per fil.",
+                    "requestBody": {
+                        "required": True,
+                        "content": {"application/json": {"schema": {
+                            "type": "object",
+                            "properties": {
+                                "job_id": {"type": "string"},
+                                "report_ids": {"type": "array", "items": {"type": "string"}},
+                                "drive_id": {"type": "string"},
+                                "sync_root": {"type": "string"},
+                                "status": {"type": "string", "default": "Scanned"},
+                                "fields": {"type": "object"},
+                            },
+                        }}},
+                    },
+                    "responses": {
+                        "200": {"description": "Batch-resultat per fil", "content": {"application/json": {"schema": {"type": "object"}}}},
+                        "400": {"description": "Ugyldig forespørsel eller manglende Graph-konfigurasjon", "content": {"application/json": {"schema": error_schema}}},
+                        "502": {"description": "Graph-feil", "content": {"application/json": {"schema": error_schema}}},
                     },
                 }
             },

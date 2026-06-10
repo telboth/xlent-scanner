@@ -106,6 +106,13 @@ _TEMPLATE = _JINJA_ENV.from_string("""<!DOCTYPE html>
                     border-left: 4px solid #ffb84d; border-radius: 6px;
                     padding: 10px 14px; font-size: 13px; color: #ffb84d;
                     line-height: 1.5; margin-bottom: 16px; }
+  .policy-warning { background: rgba(244,67,54,.12); border: 1px solid rgba(244,67,54,.45);
+                    border-left: 4px solid #f44336; border-radius: 6px;
+                    padding: 10px 14px; font-size: 13px; color: #ff8a80;
+                    line-height: 1.5; margin-bottom: 16px; }
+  .m365-tags { background: var(--panel); border: 1px solid var(--border);
+               border-radius: 6px; padding: 9px 12px; margin-bottom: 16px;
+               font-size: 12px; color: var(--muted); line-height: 1.5; }
   footer { margin-top: 32px; color: var(--muted); font-size: 12px;
            border-top: 1px solid var(--border); padding-top: 16px; }
 </style>
@@ -129,6 +136,25 @@ _TEMPLATE = _JINJA_ENV.from_string("""<!DOCTYPE html>
 
 {% if result.warning %}
 <div class="warning-banner">⚠️ {{ result.warning }}</div>
+{% endif %}
+
+{% if result.policy_warning %}
+<div class="policy-warning">⛔ {{ result.policy_warning }}</div>
+{% endif %}
+
+{% if result.microsoft_tags %}
+<div class="m365-tags">
+  <strong>Microsoft 365:</strong>
+  {% set labels = result.microsoft_tags.get("sensitivity", {}).get("labels", []) %}
+  Sensitivity:
+  {% if labels %}
+    {% for label in labels -%}
+      {{ label.get("name") or label.get("displayName") or label.get("labelName") or label.get("sensitivityLabelName") or label.get("id") }}{% if not loop.last %}, {% endif %}
+    {%- endfor %}
+  {% else %}ikke funnet{% endif %}
+  {% set retention = result.microsoft_tags.get("retention", {}) %}
+  {% if retention.get("name") or retention.get("displayName") %} · Retention: {{ retention.get("name") or retention.get("displayName") }}{% endif %}
+</div>
 {% endif %}
 
 {# Stats over alle funn (regular + AI, ekskl. grønne) #}

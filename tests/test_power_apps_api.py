@@ -194,6 +194,12 @@ def test_openapi_json_and_swagger_docs_are_available():
     assert "/api/scan-text" in spec["paths"]
     assert "/api/scan-file" in spec["paths"]
     assert "/api/deep-scan" in spec["paths"]
+    assert "/microsoft/graph/status" in spec["paths"]
+    assert "/microsoft/graph/tags" in spec["paths"]
+    assert "/microsoft/graph/resolve-local-file" in spec["paths"]
+    assert "/microsoft/graph/tags-for-local-file" in spec["paths"]
+    assert "/microsoft/graph/write-scan-metadata" in spec["paths"]
+    assert "/microsoft/graph/write-folder-metadata" in spec["paths"]
     assert "ApiKeyAuth" in spec["components"]["securitySchemes"]
     assert docs_response.status_code == 200
     assert "SwaggerUIBundle" in docs_response.get_data(as_text=True)

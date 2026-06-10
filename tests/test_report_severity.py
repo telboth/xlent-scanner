@@ -120,3 +120,19 @@ class TestReport:
             ai_findings=[{"category": "🤖 Selskapsnavn", "text": "Shearwater", "context": "x"}],
         )
         assert "wl-btn" in html
+
+    def test_microsoft_365_tags_and_policy_warning_render(self):
+        result = _result_with_findings()
+        result.policy_warning = "Microsoft 365-label tilsier konfidensielt dokument."
+        result.policy_warning_level = "rød"
+        result.microsoft_tags = {
+            "sensitivity": {"labels": [{"displayName": "Highly Confidential"}]},
+            "retention": {"displayName": "Retain 7 years"},
+        }
+
+        html = generate_html(result)
+
+        assert "policy-warning" in html
+        assert "Microsoft 365-label tilsier konfidensielt dokument." in html
+        assert "Highly Confidential" in html
+        assert "Retain 7 years" in html

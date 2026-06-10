@@ -1,6 +1,6 @@
 # XLENT Compliance-scanner
 
-> **v1.4.2** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
+> **v1.4.3** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
 
 Alt kjøres 100 % lokalt — ingen dokumenter, tekst eller funn sendes over internett.
 
@@ -40,6 +40,7 @@ Alt kjøres 100 % lokalt — ingen dokumenter, tekst eller funn sendes over inte
 - **HTML-rapport** og **PDF-rapport** — begge inkluderer både regelbaserte funn **og** AI-dybdeskann-funn
 - **Persistent historikk** mellom øktene
 - Valgt **språk og AI-modell huskes** mellom øktene (localStorage)
+- Valgfri **Microsoft 365 / Graph-integrasjon** for å lese sensitivity/retention labels, vise rødt policyvarsel og skrive scan-metadata til SharePoint-felt
 
 ---
 
@@ -239,6 +240,48 @@ OLLAMA_BASE_URL=http://192.168.1.10:11434 uv run xlent-scanner
 
 ---
 
+## Microsoft 365 dokumentmerking (MVP)
+
+Appen kan kobles til Microsoft Graph for dokumenter som ligger i SharePoint/OneDrive. Dette er et valgfritt tillegg og påvirker ikke lokal scanning når det ikke er konfigurert.
+
+Funksjoner:
+- Leser sensitivity labels via Graph `extractSensitivityLabels`
+- Leser retention label og SharePoint-felt for dokumentet
+- Viser Microsoft 365-labels i GUI og HTML/PDF-rapport
+- Gir rødt policyvarsel hvis label-navn matcher konfidensielle nøkkelord, f.eks. `confidential`, `restricted`, `hemmelig`
+- Kan sette sensitivity label og retention label når tenant/app-token har nødvendige rettigheter
+- Kan skrive scan-metadata til SharePoint-felt: `XLENTScanStatus`, `XLENTRiskLevel`, `XLENTFindingCount`, `XLENTSuggestedLabel`, `XLENTLastScanned`
+- Kan mappe en lokal OneDrive/SharePoint-synket fil til Graph `driveItem` når `driveId` og lokal sync-root er konfigurert
+- Kan skrive scan-metadata for en hel mappeskann-jobb, eller bare valgte filer i mappeskann-tabellen
+
+Konfigurasjon:
+```powershell
+$env:XLENT_GRAPH_TOKEN = "<bearer-token>"
+$env:XLENT_GRAPH_DRIVE_ID = "<drive-id>"
+$env:XLENT_GRAPH_SYNC_ROOT = "C:\Users\<bruker>\OneDrive - XLENT\<bibliotek>"
+uv run xlent-scanner
+```
+
+Alternativt kan `MICROSOFT_GRAPH_TOKEN`, `MICROSOFT_GRAPH_DRIVE_ID` og `MICROSOFT_GRAPH_SYNC_ROOT` brukes. Hvis `XLENT_GRAPH_SYNC_ROOT` ikke er satt, forsøker appen også `OneDriveCommercial` og `OneDrive` som lokal sync-root. Token lagres ikke i nettleser/localStorage.
+
+Bruk:
+1. Åpne **Innstillinger → Microsoft 365 dokumentmerking**
+2. Fyll inn `Drive ID` og `Lokal sync-root`, eller sett miljøvariablene over
+3. Etter lokal filskann: trykk **Les fra sist skannet fil** for å mappe lokal fil til Graph og lese labels
+4. Alternativt lim inn `Drive ID` og `Item ID` manuelt og trykk **Les dokumentmerking**
+5. Etter mappeskann: bruk **Skriv M365-metadata** i mappeskann-tabellen for å skrive metadata til SharePoint for valgte filer, eller hele jobben hvis ingen er valgt
+
+Begrensninger i MVP:
+- Appen gjør ikke OAuth-login selv; token må leveres via miljøvariabel
+- Automatisk mapping krever at lokal sync-root og `driveId` peker til samme SharePoint/OneDrive-bibliotek
+- SharePoint-kolonnene må opprettes i dokumentbiblioteket før metadata kan skrives
+- Label-skriving avhenger av Microsoft Graph-rettigheter, tenant policy og admin consent
+- Ved nettverkstilgang krever Microsoft 365-endepunktene `XLENT_SCANNER_API_KEY`; lokalt `127.0.0.1` kan brukes uten API-nøkkel
+
+Swagger/OpenAPI viser Graph-endepunktene på `/api/docs`.
+
+---
+
 ## Høyreklikk-integrasjon
 
 ### Windows
@@ -340,6 +383,7 @@ src/xlent_scanner/
 ├── ignore.py           # ignore.toml (XLENT-interne navn etc.)
 ├── update_check.py     # Sjekker GitHub Releases for ny versjon
 ├── model_manager.py    # Nedlasting av spaCy-modeller
+├── microsoft_graph.py  # Valgfri Microsoft Graph-integrasjon for labels og SharePoint metadata
 ├── utils.py            # Felles ctx()-hjelpefunksjon
 ├── models.py           # Finding + ScanResult dataklasser
 ├── detectors/
@@ -371,6 +415,13 @@ src/xlent_scanner/
 ---
 
 ## Endringslogg
+
+### v1.4.3
+- La til valgfri Microsoft 365 / Graph-integrasjon for sensitivity labels, retention labels og SharePoint scan-metadata.
+- Microsoft 365-labels vises i GUI/rapport, og konfidensielle labels gir rødt policyvarsel uten å blokkere lokal scan-flyt.
+- OpenAPI/Swagger dokumenterer de nye Graph-endepunktene.
+- La til automatisk mapping fra lokal OneDrive/SharePoint-synket fil til Graph `driveItem` via `driveId` + sync-root.
+- La til batch-skriving av scan-metadata til SharePoint-felt for mappeskann-resultater.
 
 ### v1.4.2
 - Fikset AI-dybdeskann slik at LLM-funn forkastes hvis teksten modellen rapporterer ikke faktisk finnes i dokumentteksten.
