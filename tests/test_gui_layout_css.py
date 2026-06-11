@@ -451,6 +451,12 @@ def test_guard_watch_custom_patterns_and_ocr_ui_are_wired():
         'fetch(`${API}/clipboard-guard/${enabled ? "start" : "stop"}`',
         'fetch(`${API}/folder-watch/start`,',
         'fetch(`${API}/folder-watch/stop`,',
+        'fetch(`${API}/folder-watch/status`)',
+        "startWatchStatusPolling",
+        "stopWatchStatusPolling",
+        "setInterval(pollWatchStatus, 4000)",
+        "loadHistoryFromApi();",
+        'item.source === "watch"',
         "loadCustomPatternsEditor();",
         "restoreClipGuard();",
         "restoreWatch();",
@@ -479,6 +485,8 @@ def test_guard_watch_custom_patterns_and_ocr_ui_are_wired():
         "watchNoFolder",
         "watchActive",
         "watchInactive",
+        "watchScanned",
+        "historySourceWatch",
         "ocrRescanBtn",
         "ocrRunning",
     ]:
@@ -530,3 +538,20 @@ def test_about_hardware_requirement_is_16gb_in_all_languages():
     assert "mindestens 16 GB RAM" in html
     assert "au moins 16 Go de RAM" in html
     assert "al menos 16 GB de RAM" in html
+
+
+def test_about_text_documents_recent_features_in_all_languages():
+    html = HTML.read_text(encoding="utf-8")
+
+    for lang in ["nb", "sv", "en", "de", "fr", "es"]:
+        marker = f'id="about-{lang}"'
+        start = html.index(marker)
+        next_start = html.find('class="about-content"', start + 1)
+        section = html[start: next_start if next_start != -1 else len(html)]
+
+        assert "Ollama" in section
+        assert "OCR" in section
+        assert "Microsoft 365" in section
+        assert "Swagger/OpenAPI" in section
+        assert "Power Apps" in section
+        assert "regex" in section.lower()

@@ -489,6 +489,7 @@
     .h-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text); }
     .h-time { color: var(--muted); flex-shrink: 0; }
     .h-badge { font-size: 10px; font-weight: 700; flex-shrink: 0; }
+    .h-source { color: var(--muted); font-size: 10px; text-transform: uppercase; letter-spacing: .04em; flex-shrink: 0; }
     .h-rescan {
       flex-shrink: 0; padding: 1px 6px; border-radius: 3px; border: 1px solid var(--border);
       background: transparent; color: var(--muted); cursor: pointer; font-size: 11px;
@@ -855,6 +856,25 @@
           <p style="color:var(--muted);font-size:12px;">⚠ PDF-redaktering erstatter tekst i innholdsstrømmen, men tekst i metadata eller bilder anonymiseres ikke. Kontroller resultatet.</p>
         </div>
         <div class="about-section">
+          <h3>Arbeidsflyter og overvåking</h3>
+          <ul>
+            <li><strong>Fil, lim inn og mappe:</strong> Skann enkeltfiler, tekst fra utklippstavlen eller hele mapper. Mappeskann kan kjøres rekursivt med maks antall filer og maks dybde.</li>
+            <li><strong>Mappevakt:</strong> En valgt mappe, for eksempel Downloads, overvåkes lokalt. Nye og endrede filer skannes når de er ferdig skrevet, og resultatene vises i historikken.</li>
+            <li><strong>Utklippstavle-vakt:</strong> Varsler lokalt hvis du kopierer rødt eller svart innhold før det limes inn i et annet verktøy. Innholdet lagres ikke.</li>
+            <li><strong>OCR for bilde-PDF:</strong> Hvis et dokument ser ut til å inneholde lite eller ingen tekst, kan du kjøre en OCR-skann for å hente tekst fra innskannede sider.</li>
+          </ul>
+        </div>
+        <div class="about-section">
+          <h3>Tilpasning og integrasjoner</h3>
+          <ul>
+            <li>Personlig hviteliste, blacklist og ignore.toml kan redigeres i Innstillinger.</li>
+            <li>Egendefinerte regex-mønstre kan legges inn via UI for interne saksnumre, prosjektkoder eller andre organisasjonsspesifikke formater.</li>
+            <li>Kommentarer, speaker notes og støttede annotasjoner kan fjernes ved redigering.</li>
+            <li>Microsoft 365-tags og sensitivity/retention-labels kan leses, foreslås og skrives der Graph-tilgang er konfigurert.</li>
+            <li>Et lokalt API med Swagger/OpenAPI-side gjør det mulig å bygge andre frontender, for eksempel Power Apps, uten å endre desktop-appen.</li>
+          </ul>
+        </div>
+        <div class="about-section">
           <h3>Dybdeskann med AI (Ollama)</h3>
           <p>Dybdeskann-fanen sender dokumentteksten til en lokal AI-modell via <strong>Ollama</strong> og ber den identifisere sensitiv informasjon som regel-baserte detektorer kan misse – for eksempel navn i uvanlige formater, adresser uten postnummer, eller budsjettall i fritekst.</p>
           <p>Du velger selv hvilke kategorier AI-en skal lete etter: navn, adresser, telefonnumre, personnumre, bankdetaljer, firmanavn, budsjetttall og valgfritt medisinske opplysninger. Valgte funn kan anonymiseres direkte fra fanen og lagres som tekstfil i nedlastingsmappen.</p>
@@ -907,6 +927,25 @@
           <h3>Anonymisering och export</h3>
           <p>Efter skanning kan du välja fynd och generera en anonymiserad version. För DOCX, PPTX, XLSX och PDF ersätts texten direkt i filen. Fynd kan också exporteras som JSON eller CSV.</p>
           <p style="color:var(--muted);font-size:12px;">⚠ PDF-redigering ersätter text i innehållsströmmen, men text i metadata eller bilder anonymiseras inte. Kontrollera resultatet.</p>
+        </div>
+        <div class="about-section">
+          <h3>Arbetsflöden och övervakning</h3>
+          <ul>
+            <li><strong>Fil, klistra in och mapp:</strong> Skanna enskilda filer, text från urklipp eller hela mappar. Mappskanning kan köras rekursivt med max antal filer och max djup.</li>
+            <li><strong>Mappvakt:</strong> En vald mapp, till exempel Downloads, övervakas lokalt. Nya och ändrade filer skannas när de är färdigskrivna, och resultaten visas i historiken.</li>
+            <li><strong>Urklippsvakt:</strong> Varnar lokalt om du kopierar rött eller svart innehåll innan det klistras in i ett annat verktyg. Innehållet sparas inte.</li>
+            <li><strong>OCR för bild-PDF:</strong> Om ett dokument verkar innehålla lite eller ingen text kan du köra OCR-skanning för att hämta text från inskannade sidor.</li>
+          </ul>
+        </div>
+        <div class="about-section">
+          <h3>Anpassning och integrationer</h3>
+          <ul>
+            <li>Personlig vitlista, blacklist och ignore.toml kan redigeras i Inställningar.</li>
+            <li>Anpassade regex-mönster kan läggas in via UI för interna ärendenummer, projektkoder eller andra organisationsspecifika format.</li>
+            <li>Kommentarer, speaker notes och stödda annoteringar kan tas bort vid redigering.</li>
+            <li>Microsoft 365-taggar och sensitivity/retention-labels kan läsas, föreslås och skrivas där Graph-åtkomst är konfigurerad.</li>
+            <li>Ett lokalt API med Swagger/OpenAPI-sida gör det möjligt att bygga andra frontender, till exempel Power Apps, utan att ändra desktop-appen.</li>
+          </ul>
         </div>
         <div class="about-section">
           <h3>Djupskanning med AI (Ollama)</h3>
@@ -963,6 +1002,25 @@
           <p style="color:var(--muted);font-size:12px;">⚠ PDF redaction replaces text in the content stream, but text in metadata or images is not redacted. Verify the result.</p>
         </div>
         <div class="about-section">
+          <h3>Workflows and monitoring</h3>
+          <ul>
+            <li><strong>File, paste, and folder:</strong> Scan single files, pasted text, or whole folders. Folder scans can run recursively with maximum file count and maximum depth.</li>
+            <li><strong>Folder watch:</strong> A selected folder, for example Downloads, is monitored locally. New and changed files are scanned once they are stable, and results appear in history.</li>
+            <li><strong>Clipboard guard:</strong> Warns locally if you copy red or black content before pasting it into another tool. Clipboard content is not stored.</li>
+            <li><strong>OCR for image PDFs:</strong> If a document appears to contain little or no text, you can run an OCR scan to extract text from scanned pages.</li>
+          </ul>
+        </div>
+        <div class="about-section">
+          <h3>Customisation and integrations</h3>
+          <ul>
+            <li>Personal whitelist, blacklist, and ignore.toml can be edited in Settings.</li>
+            <li>Custom regex patterns can be added through the UI for internal case numbers, project codes, or other organisation-specific formats.</li>
+            <li>Comments, speaker notes, and supported annotations can be removed during redaction.</li>
+            <li>Microsoft 365 tags and sensitivity/retention labels can be read, suggested, and written when Graph access is configured.</li>
+            <li>A local API with a Swagger/OpenAPI page makes it possible to build other frontends, such as Power Apps, without changing the desktop app.</li>
+          </ul>
+        </div>
+        <div class="about-section">
           <h3>AI Deep Scan (Ollama)</h3>
           <p>The Deep Scan tab sends document text to a local AI model via <strong>Ollama</strong> and asks it to identify sensitive information that rule-based detectors may miss — for example names in unusual formats, addresses without postal codes, or budget figures embedded in free text.</p>
           <p>You choose which categories the AI should look for: names, addresses, phone numbers, national ID numbers, bank details, company names, budget amounts, and optional medical information. Selected findings can be redacted directly from the tab and saved as a text file in the Downloads folder.</p>
@@ -1015,6 +1073,25 @@
           <h3>Anonymisierung und Export</h3>
           <p>Nach dem Scan können Sie Treffer auswählen und eine anonymisierte Version erzeugen. Bei DOCX, PPTX, XLSX und PDF wird der Text direkt in der Datei ersetzt. Treffer lassen sich auch als JSON oder CSV exportieren.</p>
           <p style="color:var(--muted);font-size:12px;">⚠ Bei PDF wird Text im Inhaltsstrom ersetzt, aber Text in Metadaten oder Bildern wird nicht anonymisiert. Ergebnis prüfen.</p>
+        </div>
+        <div class="about-section">
+          <h3>Arbeitsabläufe und Überwachung</h3>
+          <ul>
+            <li><strong>Datei, Einfügen und Ordner:</strong> Scannen Sie einzelne Dateien, eingefügten Text oder ganze Ordner. Ordnerscans können rekursiv mit maximaler Dateianzahl und maximaler Tiefe laufen.</li>
+            <li><strong>Ordnerwächter:</strong> Ein ausgewählter Ordner, zum Beispiel Downloads, wird lokal überwacht. Neue und geänderte Dateien werden nach stabilem Schreibzustand gescannt und im Verlauf angezeigt.</li>
+            <li><strong>Zwischenablage-Wächter:</strong> Warnt lokal, wenn Sie roten oder schwarzen Inhalt kopieren, bevor er in ein anderes Tool eingefügt wird. Der Inhalt wird nicht gespeichert.</li>
+            <li><strong>OCR für Bild-PDFs:</strong> Wenn ein Dokument wenig oder keinen Text enthält, kann ein OCR-Scan Text aus gescannten Seiten extrahieren.</li>
+          </ul>
+        </div>
+        <div class="about-section">
+          <h3>Anpassung und Integrationen</h3>
+          <ul>
+            <li>Persönliche Whitelist, Blacklist und ignore.toml können in den Einstellungen bearbeitet werden.</li>
+            <li>Benutzerdefinierte Regex-Muster können über die UI für interne Vorgangsnummern, Projektcodes oder andere organisationsspezifische Formate ergänzt werden.</li>
+            <li>Kommentare, Speaker Notes und unterstützte Annotationen können bei der Anonymisierung entfernt werden.</li>
+            <li>Microsoft 365-Tags sowie Sensitivity- und Retention-Labels können gelesen, vorgeschlagen und geschrieben werden, wenn Graph-Zugriff konfiguriert ist.</li>
+            <li>Ein lokales API mit Swagger/OpenAPI-Seite ermöglicht andere Frontends, zum Beispiel Power Apps, ohne die Desktop-App zu ändern.</li>
+          </ul>
         </div>
         <div class="about-section">
           <h3>KI-Tiefenscan (Ollama)</h3>
@@ -1071,6 +1148,25 @@
           <p style="color:var(--muted);font-size:12px;">⚠ Dans les PDF, le texte est remplacé dans le flux de contenu, mais le texte des métadonnées ou des images n’est pas anonymisé. Vérifiez le résultat.</p>
         </div>
         <div class="about-section">
+          <h3>Flux de travail et surveillance</h3>
+          <ul>
+            <li><strong>Fichier, collage et dossier :</strong> analysez des fichiers seuls, du texte collé ou des dossiers entiers. L’analyse de dossier peut être récursive avec un nombre maximal de fichiers et une profondeur maximale.</li>
+            <li><strong>Surveillance de dossier :</strong> un dossier choisi, par exemple Téléchargements, est surveillé localement. Les fichiers nouveaux ou modifiés sont analysés lorsqu’ils sont stables, puis affichés dans l’historique.</li>
+            <li><strong>Surveillance du presse-papiers :</strong> avertit localement si vous copiez du contenu rouge ou noir avant de le coller dans un autre outil. Le contenu n’est pas stocké.</li>
+            <li><strong>OCR pour PDF image :</strong> si un document contient peu ou pas de texte, vous pouvez lancer un OCR pour extraire le texte des pages scannées.</li>
+          </ul>
+        </div>
+        <div class="about-section">
+          <h3>Personnalisation et intégrations</h3>
+          <ul>
+            <li>La liste blanche personnelle, la blacklist et ignore.toml peuvent être modifiées dans les paramètres.</li>
+            <li>Des expressions régulières personnalisées (regex) peuvent être ajoutées via l’interface pour des numéros de dossier internes, codes projet ou autres formats propres à l’organisation.</li>
+            <li>Les commentaires, notes de présentation et annotations prises en charge peuvent être supprimés lors de l’anonymisation.</li>
+            <li>Les tags Microsoft 365 et les labels de sensibilité/rétention peuvent être lus, proposés et écrits lorsque l’accès Graph est configuré.</li>
+            <li>Une API locale avec page Swagger/OpenAPI permet de créer d’autres frontends, par exemple Power Apps, sans modifier l’application desktop.</li>
+          </ul>
+        </div>
+        <div class="about-section">
           <h3>Analyse IA approfondie (Ollama)</h3>
           <p>L’onglet d’analyse approfondie envoie le texte du document à un modèle IA local via <strong>Ollama</strong> pour identifier des informations sensibles que les détecteurs à règles peuvent manquer — par exemple des noms dans des formats inhabituels, des adresses sans code postal ou des montants de budget en texte libre.</p>
           <p>Vous choisissez les catégories à rechercher : noms, adresses, numéros de téléphone, identifiants personnels, coordonnées bancaires, noms d’entreprise, montants budgétaires et, en option, informations médicales. Les résultats sélectionnés peuvent être anonymisés directement depuis l’onglet et enregistrés en fichier texte dans le dossier Téléchargements.</p>
@@ -1123,6 +1219,25 @@
           <h3>Anonimización y exportación</h3>
           <p>Después del análisis puede seleccionar hallazgos y generar una versión anonimizada. En DOCX, PPTX, XLSX y PDF el texto se reemplaza directamente en el archivo. También puede exportar hallazgos como JSON o CSV.</p>
           <p style="color:var(--muted);font-size:12px;">⚠ En PDF se reemplaza texto en el flujo de contenido, pero el texto en metadatos o imágenes no se anonimiza. Verifique el resultado.</p>
+        </div>
+        <div class="about-section">
+          <h3>Flujos de trabajo y supervisión</h3>
+          <ul>
+            <li><strong>Archivo, pegar y carpeta:</strong> escanee archivos individuales, texto pegado o carpetas completas. El escaneo de carpetas puede ejecutarse recursivamente con número máximo de archivos y profundidad máxima.</li>
+            <li><strong>Vigilancia de carpeta:</strong> una carpeta elegida, por ejemplo Descargas, se supervisa localmente. Los archivos nuevos o modificados se escanean cuando están estables y los resultados aparecen en el historial.</li>
+            <li><strong>Vigilancia del portapapeles:</strong> avisa localmente si copia contenido rojo o negro antes de pegarlo en otra herramienta. El contenido no se guarda.</li>
+            <li><strong>OCR para PDF de imagen:</strong> si un documento contiene poco o ningún texto, puede ejecutar OCR para extraer texto de páginas escaneadas.</li>
+          </ul>
+        </div>
+        <div class="about-section">
+          <h3>Personalización e integraciones</h3>
+          <ul>
+            <li>La lista blanca personal, la blacklist e ignore.toml se pueden editar en Configuración.</li>
+            <li>Se pueden añadir patrones regex personalizados desde la UI para números de caso internos, códigos de proyecto u otros formatos específicos de la organización.</li>
+            <li>Comentarios, notas del orador y anotaciones compatibles pueden eliminarse durante la redacción.</li>
+            <li>Las etiquetas Microsoft 365 y los labels de sensibilidad/retención pueden leerse, sugerirse y escribirse cuando Graph está configurado.</li>
+            <li>Una API local con página Swagger/OpenAPI permite crear otros frontends, por ejemplo Power Apps, sin cambiar la aplicación desktop.</li>
+          </ul>
         </div>
         <div class="about-section">
           <h3>Escaneo profundo con IA (Ollama)</h3>
@@ -1696,6 +1811,8 @@
         watchNoFolder:       "Ingen mappe valgt.",
         watchActive:         "Mappeovervåking er aktiv: {folder}",
         watchInactive:       "Mappeovervåking er stoppet.",
+        watchScanned:        "{n} filer skannet av mappevakt",
+        historySourceWatch:  "mappevakt",
         ocrRescanBtn:        "Kjør OCR-skann",
         ocrRunning:          "Kjører OCR-skann…",
       },
@@ -2005,6 +2122,8 @@
         watchNoFolder:       "Ingen mapp vald.",
         watchActive:         "Mappövervakning är aktiv: {folder}",
         watchInactive:       "Mappövervakning är stoppad.",
+        watchScanned:        "{n} filer skannade av mappvakt",
+        historySourceWatch:  "mappvakt",
         ocrRescanBtn:        "Kör OCR-skanning",
         ocrRunning:          "Kör OCR-skanning…",
       },
@@ -2314,6 +2433,8 @@
         watchNoFolder:       "No folder selected.",
         watchActive:         "Folder monitoring is active: {folder}",
         watchInactive:       "Folder monitoring is stopped.",
+        watchScanned:        "{n} files scanned by folder watch",
+        historySourceWatch:  "watch",
         ocrRescanBtn:        "Run OCR scan",
         ocrRunning:          "Running OCR scan…",
       },
@@ -2545,6 +2666,8 @@
         watchNoFolder:       "Kein Ordner ausgewählt.",
         watchActive:         "Ordnerüberwachung ist aktiv: {folder}",
         watchInactive:       "Ordnerüberwachung ist gestoppt.",
+        watchScanned:        "{n} Dateien durch Ordnerwächter gescannt",
+        historySourceWatch:  "Ordnerwächter",
         ocrRescanBtn:        "OCR-Scan starten",
         ocrRunning:          "OCR-Scan läuft…",
         dstCatEpost:         "E-Mail",
@@ -2855,6 +2978,8 @@
         watchNoFolder:       "Aucun dossier choisi.",
         watchActive:         "Surveillance de dossier active : {folder}",
         watchInactive:       "Surveillance de dossier arrêtée.",
+        watchScanned:        "{n} fichiers analysés par la surveillance",
+        historySourceWatch:  "surveillance",
         ocrRescanBtn:        "Lancer l’OCR",
         ocrRunning:          "OCR en cours…",
         dstCatEpost:         "E-mail",
@@ -3165,6 +3290,8 @@
         watchNoFolder:       "No se ha elegido ninguna carpeta.",
         watchActive:         "Supervisión de carpeta activa: {folder}",
         watchInactive:       "Supervisión de carpeta detenida.",
+        watchScanned:        "{n} archivos escaneados por vigilancia",
+        historySourceWatch:  "vigilancia",
         ocrRescanBtn:        "Ejecutar OCR",
         ocrRunning:          "Ejecutando OCR…",
         dstCatEpost:         "Correo electrónico",
@@ -3322,6 +3449,8 @@
     let whitelistPath = "";
     let blacklistPath = "";
     let _aiCurrentJobId = "";
+    let _watchPollTimer = null;
+    let _watchLastScannedCount = 0;
 
     /* ══════════════════════════════════════════════════════════════════
        UI LANGUAGE
@@ -3769,6 +3898,51 @@
         _watchFolder || t("watchNoFolder");
     }
 
+    function stopWatchStatusPolling() {
+      if (_watchPollTimer) {
+        clearInterval(_watchPollTimer);
+        _watchPollTimer = null;
+      }
+    }
+
+    async function pollWatchStatus() {
+      try {
+        const d = await (await fetch(`${API}/folder-watch/status`)).json();
+        if (!d.ok) return;
+        if (!d.running) {
+          if (document.getElementById("watch-toggle").checked) {
+            document.getElementById("watch-toggle").checked = false;
+            try { localStorage.setItem("xlent_watch_enabled", "0"); } catch(_) {}
+            setWatchMessage(t("watchInactive"), "var(--muted)");
+          }
+          stopWatchStatusPolling();
+          return;
+        }
+        const scanned = Number(d.scanned_count || 0);
+        if (scanned !== _watchLastScannedCount) {
+          _watchLastScannedCount = scanned;
+          loadHistoryFromApi();
+        }
+        const latestResults = d.recent_results || [];
+        const latest = latestResults.length ? latestResults[latestResults.length - 1] : null;
+        const scannedText = scanned > 0 ? ` · ${t("watchScanned").replace("{n}", scanned)}` : "";
+        const latestText = latest?.file_name ? ` · ${latest.file_name}` : "";
+        setWatchMessage(
+          `${t("watchActive").replace("{folder}", d.folder || _watchFolder)}${scannedText}${latestText}`,
+          "var(--ok)",
+        );
+      } catch (_) {
+        // Statuspolling skal ikke forstyrre aktiv skanning eller brukerflyt.
+      }
+    }
+
+    function startWatchStatusPolling(initialScannedCount = 0) {
+      _watchLastScannedCount = Number(initialScannedCount || 0);
+      stopWatchStatusPolling();
+      pollWatchStatus();
+      _watchPollTimer = setInterval(pollWatchStatus, 4000);
+    }
+
     async function chooseWatchFolder() {
       try {
         const d = await (await fetch(`${API}/open-folder-dialog`, { method:"POST" })).json();
@@ -3813,6 +3987,12 @@
         setWatchMessage(
           enabled ? t("watchActive").replace("{folder}", _watchFolder) : t("watchInactive"),
           enabled ? "var(--ok)" : "var(--muted)");
+        if (enabled) {
+          startWatchStatusPolling(d.scanned_count || 0);
+          loadHistoryFromApi();
+        } else {
+          stopWatchStatusPolling();
+        }
       } catch (e) {
         setWatchMessage(`${t("netErr")} ${e}`, "#f44336");
       }
@@ -4511,6 +4691,7 @@
           <span class="h-badge" style="color:${LEVEL_COLOR[item.riskLevel]||"#8a96a8"}">
             ${item.riskLevel.toUpperCase()}
           </span>
+          ${item.source === "watch" ? `<span class="h-source">${t("historySourceWatch")}</span>` : ""}
           ${item.rescanFn
             ? `<button class="h-rescan" data-hidx="${idx}">${t("rescan")}</button>` : ""}
         </li>`).join("");
