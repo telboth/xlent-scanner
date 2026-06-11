@@ -1299,8 +1299,44 @@
       </div>
 
       <div class="settings-section">
+        <div class="settings-section-title" data-i18n="settingsCustomPatternsTitle">Egendefinerte mønstre</div>
+        <div class="settings-note" data-i18n="customPatternsNote">Egne regex-mønstre (prosjektkoder, interne ID-er) med valgfri alvorlighetsgrad. Tips: bruk enkle fnutter rundt regex-en, da slipper du å doble backslash-er.</div>
+        <div class="settings-note" id="custom-patterns-path"></div>
+        <textarea id="custom-patterns-editor" class="settings-textarea" spellcheck="false"></textarea>
+        <div class="settings-row" style="margin-top:8px;">
+          <button id="btn-custom-patterns-reload" class="ctrl-btn" data-i18n="customPatternsReload">Last inn</button>
+          <button id="btn-custom-patterns-save" class="ctrl-btn ctrl-btn-primary" data-i18n="customPatternsSave">Lagre mønstre</button>
+        </div>
+        <div class="settings-note" id="custom-patterns-msg"></div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-section-title" data-i18n="settingsClipGuardTitle">Utklippstavle-vakt</div>
+        <div class="settings-note" data-i18n="clipGuardNote">Overvåker utklippstavlen lokalt og varsler hvis du kopierer rødt/svart innhold — før du rekker å lime det inn i et AI-verktøy. Innholdet forlater aldri maskinen og lagres ikke.</div>
+        <div class="settings-row" style="margin-top:8px;">
+          <input type="checkbox" id="clipguard-toggle" />
+          <label for="clipguard-toggle" data-i18n="clipGuardToggle">Aktiver utklippstavle-vakt</label>
+        </div>
+        <div class="settings-note" id="clipguard-msg"></div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-section-title" data-i18n="settingsWatchTitle">Overvåket mappe</div>
+        <div class="settings-note" data-i18n="watchNote">Skanner automatisk nye og endrede filer i en valgt mappe (f.eks. Nedlastinger) og varsler ved røde/svarte funn.</div>
+        <div class="settings-row" style="margin-top:8px;">
+          <button id="btn-watch-choose" class="ctrl-btn" data-i18n="watchChoose">Velg mappe…</button>
+          <span class="settings-note" id="watch-folder-display" style="margin:0;"></span>
+        </div>
+        <div class="settings-row" style="margin-top:8px;">
+          <input type="checkbox" id="watch-toggle" />
+          <label for="watch-toggle" data-i18n="watchToggle">Aktiver mappeovervåking</label>
+        </div>
+        <div class="settings-note" id="watch-msg"></div>
+      </div>
+
+      <div class="settings-section">
         <div class="settings-section-title" data-i18n="settingsProfileTitle">Innstillingsprofil</div>
-        <div class="settings-note" data-i18n="settingsProfileNote">Eksporterer og importerer tema, dokumentspråk, hviteliste, blacklist og ignore.toml. Scan-historikk og dokumentinnhold tas ikke med.</div>
+        <div class="settings-note" data-i18n="settingsProfileNote">Eksporterer og importerer tema, dokumentspråk, hviteliste, blacklist, ignore.toml og egendefinerte mønstre. Scan-historikk og dokumentinnhold tas ikke med.</div>
         <div class="settings-row" style="margin-top:8px;">
           <button id="btn-export-settings" class="ctrl-btn" data-i18n="settingsExport">Eksporter innstillinger</button>
           <button id="btn-import-settings" class="ctrl-btn ctrl-btn-primary" data-i18n="settingsImport">Importer innstillinger</button>
@@ -1478,7 +1514,7 @@
         deepScanNoFindings:  "Ingen ekstra funn fra AI-analyse.",
         settingsUpdateTitle: "Oppdateringer",
         settingsProfileTitle:"Innstillingsprofil",
-        settingsProfileNote: "Eksporterer og importerer tema, dokumentspråk, hviteliste, blacklist og ignore.toml. Scan-historikk og dokumentinnhold tas ikke med.",
+        settingsProfileNote: "Eksporterer og importerer tema, dokumentspråk, hviteliste, blacklist, ignore.toml og egendefinerte mønstre. Scan-historikk og dokumentinnhold tas ikke med.",
         settingsExport:      "Eksporter innstillinger",
         settingsImport:      "Importer innstillinger",
         settingsExported:    "Innstillinger eksportert.",
@@ -1641,6 +1677,27 @@
         copiedToClipboard:   "✓ Kopiert til utklippstavle",
         batchScanning:       "Skanner {n} filer…",
         batchTitle:          "Skanneresultat ({n} filer)",
+        settingsCustomPatternsTitle:"Egendefinerte mønstre",
+        customPatternsNote:  "Legg inn organisasjonsspesifikke regex-mønstre som alltid skal flagges. Bruk TOML med [[patterns]], name, regex og severity.",
+        customPatternsReload:"Last inn mønstre",
+        customPatternsSave:  "Lagre mønstre",
+        customPatternsLoadErr:"Kunne ikke lese egendefinerte mønstre:",
+        customPatternsSaveErr:"Kunne ikke lagre egendefinerte mønstre:",
+        customPatternsSaved:"Egendefinerte mønstre lagret.",
+        settingsClipGuardTitle:"Utklippstavle-vakt",
+        clipGuardNote:       "Overvåker utklippstavlen lokalt og varsler hvis du kopierer rødt/svart innhold. Innholdet lagres ikke og forlater aldri maskinen.",
+        clipGuardToggle:     "Aktiver utklippstavle-vakt",
+        clipGuardActive:     "Utklippstavle-vakt er aktiv.",
+        clipGuardInactive:   "Utklippstavle-vakt er stoppet.",
+        settingsWatchTitle:  "Mappeovervåking",
+        watchNote:           "Skanner automatisk nye og endrede filer i valgt mappe og varsler ved røde/svarte funn.",
+        watchChoose:         "Velg mappe…",
+        watchToggle:         "Aktiver mappeovervåking",
+        watchNoFolder:       "Ingen mappe valgt.",
+        watchActive:         "Mappeovervåking er aktiv: {folder}",
+        watchInactive:       "Mappeovervåking er stoppet.",
+        ocrRescanBtn:        "Kjør OCR-skann",
+        ocrRunning:          "Kjører OCR-skann…",
       },
       sv: {
         subtitle:     "Kontrollerar dokument för känslig information innan uppladdning till online-AI-verktyg",
@@ -1766,7 +1823,7 @@
         deepScanNoFindings:  "Inga extra fynd från AI-analysen.",
         settingsUpdateTitle: "Uppdateringar",
         settingsProfileTitle:"Inställningsprofil",
-        settingsProfileNote: "Exporterar och importerar tema, dokumentspråk, vitlista, blacklist och ignore.toml. Skanningshistorik och dokumentinnehåll tas inte med.",
+        settingsProfileNote: "Exporterar och importerar tema, dokumentspråk, vitlista, blacklist, ignore.toml och anpassade mönster. Skanningshistorik och dokumentinnehåll tas inte med.",
         settingsExport:      "Exportera inställningar",
         settingsImport:      "Importera inställningar",
         settingsExported:    "Inställningar exporterade.",
@@ -1929,6 +1986,27 @@
         copiedToClipboard:   "✓ Kopierat till urklipp",
         batchScanning:       "Skannar {n} filer…",
         batchTitle:          "Skanningsresultat ({n} filer)",
+        settingsCustomPatternsTitle:"Anpassade mönster",
+        customPatternsNote:  "Lägg in organisationsspecifika regex-mönster som alltid ska flaggas. Använd TOML med [[patterns]], name, regex och severity.",
+        customPatternsReload:"Läs in mönster",
+        customPatternsSave:  "Spara mönster",
+        customPatternsLoadErr:"Kunde inte läsa anpassade mönster:",
+        customPatternsSaveErr:"Kunde inte spara anpassade mönster:",
+        customPatternsSaved:"Anpassade mönster sparade.",
+        settingsClipGuardTitle:"Urklippsvakt",
+        clipGuardNote:       "Övervakar urklipp lokalt och varnar om du kopierar rött/svart innehåll. Innehållet sparas inte och lämnar aldrig maskinen.",
+        clipGuardToggle:     "Aktivera urklippsvakt",
+        clipGuardActive:     "Urklippsvakten är aktiv.",
+        clipGuardInactive:   "Urklippsvakten är stoppad.",
+        settingsWatchTitle:  "Mappövervakning",
+        watchNote:           "Skannar automatiskt nya och ändrade filer i vald mapp och varnar vid röda/svarta fynd.",
+        watchChoose:         "Välj mapp…",
+        watchToggle:         "Aktivera mappövervakning",
+        watchNoFolder:       "Ingen mapp vald.",
+        watchActive:         "Mappövervakning är aktiv: {folder}",
+        watchInactive:       "Mappövervakning är stoppad.",
+        ocrRescanBtn:        "Kör OCR-skanning",
+        ocrRunning:          "Kör OCR-skanning…",
       },
       en: {
         subtitle:     "Checks documents for sensitive information before uploading to online AI tools",
@@ -2054,7 +2132,7 @@
         deepScanNoFindings:  "No additional findings from AI analysis.",
         settingsUpdateTitle: "Updates",
         settingsProfileTitle:"Settings profile",
-        settingsProfileNote: "Exports and imports theme, document language, whitelist, blacklist, and ignore.toml. Scan history and document content are not included.",
+        settingsProfileNote: "Exports and imports theme, document language, whitelist, blacklist, ignore.toml, and custom patterns. Scan history and document content are not included.",
         settingsExport:      "Export settings",
         settingsImport:      "Import settings",
         settingsExported:    "Settings exported.",
@@ -2217,6 +2295,27 @@
         copiedToClipboard:   "✓ Copied to clipboard",
         batchScanning:       "Scanning {n} files…",
         batchTitle:          "Scan results ({n} files)",
+        settingsCustomPatternsTitle:"Custom patterns",
+        customPatternsNote:  "Add organization-specific regex patterns that should always be flagged. Use TOML with [[patterns]], name, regex and severity.",
+        customPatternsReload:"Reload patterns",
+        customPatternsSave:  "Save patterns",
+        customPatternsLoadErr:"Could not read custom patterns:",
+        customPatternsSaveErr:"Could not save custom patterns:",
+        customPatternsSaved:"Custom patterns saved.",
+        settingsClipGuardTitle:"Clipboard guard",
+        clipGuardNote:       "Monitors the clipboard locally and warns if you copy red/black content. Content is not stored and never leaves the machine.",
+        clipGuardToggle:     "Enable clipboard guard",
+        clipGuardActive:     "Clipboard guard is active.",
+        clipGuardInactive:   "Clipboard guard is stopped.",
+        settingsWatchTitle:  "Folder monitoring",
+        watchNote:           "Automatically scans new and changed files in the selected folder and warns on red/black findings.",
+        watchChoose:         "Choose folder…",
+        watchToggle:         "Enable folder monitoring",
+        watchNoFolder:       "No folder selected.",
+        watchActive:         "Folder monitoring is active: {folder}",
+        watchInactive:       "Folder monitoring is stopped.",
+        ocrRescanBtn:        "Run OCR scan",
+        ocrRunning:          "Running OCR scan…",
       },
 
       // ── Deutsch ────────────────────────────────────────────────────────
@@ -2335,7 +2434,7 @@
         updateCheckBtn:      "Auf Updates prüfen",
         settingsUpdateTitle: "Updates",
         settingsProfileTitle:"Einstellungsprofil",
-        settingsProfileNote: "Exportiert und importiert Design, Dokumentsprache, Whitelist, Blacklist und ignore.toml. Scan-Verlauf und Dokumentinhalte werden nicht übernommen.",
+        settingsProfileNote: "Exportiert und importiert Design, Dokumentsprache, Whitelist, Blacklist, ignore.toml und benutzerdefinierte Muster. Scan-Verlauf und Dokumentinhalte werden nicht übernommen.",
         settingsExport:      "Einstellungen exportieren",
         settingsImport:      "Einstellungen importieren",
         settingsExported:    "Einstellungen exportiert.",
@@ -2427,6 +2526,27 @@
         copiedToClipboard:   "✓ In die Zwischenablage kopiert",
         batchScanning:       "Scanne {n} Dateien…",
         batchTitle:          "Scan-Ergebnisse ({n} Dateien)",
+        settingsCustomPatternsTitle:"Benutzerdefinierte Muster",
+        customPatternsNote:  "Fügen Sie organisationsspezifische Regex-Muster hinzu, die immer markiert werden sollen. Verwenden Sie TOML mit [[patterns]], name, regex und severity.",
+        customPatternsReload:"Muster laden",
+        customPatternsSave:  "Muster speichern",
+        customPatternsLoadErr:"Benutzerdefinierte Muster konnten nicht gelesen werden:",
+        customPatternsSaveErr:"Benutzerdefinierte Muster konnten nicht gespeichert werden:",
+        customPatternsSaved:"Benutzerdefinierte Muster gespeichert.",
+        settingsClipGuardTitle:"Zwischenablage-Wächter",
+        clipGuardNote:       "Überwacht die Zwischenablage lokal und warnt, wenn Sie roten/schwarzen Inhalt kopieren. Der Inhalt wird nicht gespeichert und verlässt nie den Rechner.",
+        clipGuardToggle:     "Zwischenablage-Wächter aktivieren",
+        clipGuardActive:     "Zwischenablage-Wächter ist aktiv.",
+        clipGuardInactive:   "Zwischenablage-Wächter ist gestoppt.",
+        settingsWatchTitle:  "Ordnerüberwachung",
+        watchNote:           "Scannt automatisch neue und geänderte Dateien im ausgewählten Ordner und warnt bei roten/schwarzen Funden.",
+        watchChoose:         "Ordner wählen…",
+        watchToggle:         "Ordnerüberwachung aktivieren",
+        watchNoFolder:       "Kein Ordner ausgewählt.",
+        watchActive:         "Ordnerüberwachung ist aktiv: {folder}",
+        watchInactive:       "Ordnerüberwachung ist gestoppt.",
+        ocrRescanBtn:        "OCR-Scan starten",
+        ocrRunning:          "OCR-Scan läuft…",
         dstCatEpost:         "E-Mail",
         dstCatTelefon:       "Telefon",
         dstCatAdresse:       "Adresse",
@@ -2624,7 +2744,7 @@
         updateCheckBtn:      "Vérifier les mises à jour",
         settingsUpdateTitle: "Mises à jour",
         settingsProfileTitle:"Profil de paramètres",
-        settingsProfileNote: "Exporte et importe le thème, la langue du document, la liste blanche, la blacklist et ignore.toml. L’historique d’analyse et le contenu des documents ne sont pas inclus.",
+        settingsProfileNote: "Exporte et importe le thème, la langue du document, la liste blanche, la blacklist, ignore.toml et les modèles personnalisés. L’historique d’analyse et le contenu des documents ne sont pas inclus.",
         settingsExport:      "Exporter les paramètres",
         settingsImport:      "Importer les paramètres",
         settingsExported:    "Paramètres exportés.",
@@ -2716,6 +2836,27 @@
         copiedToClipboard:   "✓ Copié dans le presse-papiers",
         batchScanning:       "Analyse de {n} fichiers…",
         batchTitle:          "Résultats d'analyse ({n} fichiers)",
+        settingsCustomPatternsTitle:"Modèles personnalisés",
+        customPatternsNote:  "Ajoutez des expressions régulières propres à l’organisation qui doivent toujours être signalées. Utilisez TOML avec [[patterns]], name, regex et severity.",
+        customPatternsReload:"Recharger les modèles",
+        customPatternsSave:  "Enregistrer les modèles",
+        customPatternsLoadErr:"Impossible de lire les modèles personnalisés :",
+        customPatternsSaveErr:"Impossible d’enregistrer les modèles personnalisés :",
+        customPatternsSaved:"Modèles personnalisés enregistrés.",
+        settingsClipGuardTitle:"Surveillance du presse-papiers",
+        clipGuardNote:       "Surveille le presse-papiers localement et avertit si vous copiez du contenu rouge/noir. Le contenu n’est pas stocké et ne quitte jamais la machine.",
+        clipGuardToggle:     "Activer la surveillance du presse-papiers",
+        clipGuardActive:     "La surveillance du presse-papiers est active.",
+        clipGuardInactive:   "La surveillance du presse-papiers est arrêtée.",
+        settingsWatchTitle:  "Surveillance de dossier",
+        watchNote:           "Analyse automatiquement les fichiers nouveaux et modifiés dans le dossier choisi et avertit en cas de résultats rouges/noirs.",
+        watchChoose:         "Choisir un dossier…",
+        watchToggle:         "Activer la surveillance de dossier",
+        watchNoFolder:       "Aucun dossier choisi.",
+        watchActive:         "Surveillance de dossier active : {folder}",
+        watchInactive:       "Surveillance de dossier arrêtée.",
+        ocrRescanBtn:        "Lancer l’OCR",
+        ocrRunning:          "OCR en cours…",
         dstCatEpost:         "E-mail",
         dstCatTelefon:       "Téléphone",
         dstCatAdresse:       "Adresse",
@@ -2913,7 +3054,7 @@
         updateCheckBtn:      "Buscar actualizaciones",
         settingsUpdateTitle: "Actualizaciones",
         settingsProfileTitle:"Perfil de configuración",
-        settingsProfileNote: "Exporta e importa tema, idioma del documento, lista blanca, blacklist e ignore.toml. No incluye historial de escaneos ni contenido de documentos.",
+        settingsProfileNote: "Exporta e importa tema, idioma del documento, lista blanca, blacklist, ignore.toml y patrones personalizados. No incluye historial de escaneos ni contenido de documentos.",
         settingsExport:      "Exportar configuración",
         settingsImport:      "Importar configuración",
         settingsExported:    "Configuración exportada.",
@@ -3005,6 +3146,27 @@
         copiedToClipboard:   "✓ Copiado al portapapeles",
         batchScanning:       "Escaneando {n} archivos…",
         batchTitle:          "Resultados del escaneo ({n} archivos)",
+        settingsCustomPatternsTitle:"Patrones personalizados",
+        customPatternsNote:  "Añada patrones regex específicos de la organización que siempre deben marcarse. Use TOML con [[patterns]], name, regex y severity.",
+        customPatternsReload:"Recargar patrones",
+        customPatternsSave:  "Guardar patrones",
+        customPatternsLoadErr:"No se pudieron leer los patrones personalizados:",
+        customPatternsSaveErr:"No se pudieron guardar los patrones personalizados:",
+        customPatternsSaved:"Patrones personalizados guardados.",
+        settingsClipGuardTitle:"Vigilancia del portapapeles",
+        clipGuardNote:       "Supervisa el portapapeles localmente y avisa si copia contenido rojo/negro. El contenido no se guarda y nunca sale de la máquina.",
+        clipGuardToggle:     "Activar vigilancia del portapapeles",
+        clipGuardActive:     "La vigilancia del portapapeles está activa.",
+        clipGuardInactive:   "La vigilancia del portapapeles está detenida.",
+        settingsWatchTitle:  "Supervisión de carpeta",
+        watchNote:           "Escanea automáticamente archivos nuevos y modificados en la carpeta elegida y avisa ante hallazgos rojos/negros.",
+        watchChoose:         "Elegir carpeta…",
+        watchToggle:         "Activar supervisión de carpeta",
+        watchNoFolder:       "No se ha elegido ninguna carpeta.",
+        watchActive:         "Supervisión de carpeta activa: {folder}",
+        watchInactive:       "Supervisión de carpeta detenida.",
+        ocrRescanBtn:        "Ejecutar OCR",
+        ocrRunning:          "Ejecutando OCR…",
         dstCatEpost:         "Correo electrónico",
         dstCatTelefon:       "Teléfono",
         dstCatAdresse:       "Dirección",
@@ -3521,6 +3683,150 @@
       }
     }
 
+    /* ── Egendefinerte mønstre (TOML-editor) ──────────────────────── */
+    function setCustomPatternsMessage(text, color = "var(--muted)") {
+      const el = document.getElementById("custom-patterns-msg");
+      el.textContent = text;
+      el.style.color = color;
+    }
+
+    async function loadCustomPatternsEditor() {
+      try {
+        const d = await (await fetch(`${API}/custom-patterns/get`, { method:"POST" })).json();
+        if (!d.ok) {
+          setCustomPatternsMessage(`${t("customPatternsLoadErr")} ${d.error || ""}`, "#f44336");
+          return;
+        }
+        document.getElementById("custom-patterns-path").textContent = String(d.path || "");
+        document.getElementById("custom-patterns-editor").value = String(d.content || "");
+        setCustomPatternsMessage("");
+      } catch (e) {
+        setCustomPatternsMessage(`${t("customPatternsLoadErr")} ${e}`, "#f44336");
+      }
+    }
+
+    async function saveCustomPatternsEditor() {
+      setCustomPatternsMessage(t("processing"));
+      try {
+        const d = await (await fetch(`${API}/custom-patterns/save`, {
+          method: "POST",
+          headers: {"Content-Type":"application/json"},
+          body: JSON.stringify({ content: document.getElementById("custom-patterns-editor").value }),
+        })).json();
+        if (!d.ok) {
+          setCustomPatternsMessage(`${t("customPatternsSaveErr")} ${d.error || ""}`, "#f44336");
+          return;
+        }
+        document.getElementById("custom-patterns-path").textContent = String(d.path || "");
+        setCustomPatternsMessage(
+          t("customPatternsSaved").replace("{n}", d.pattern_count ?? 0), "#4caf50");
+      } catch (e) {
+        setCustomPatternsMessage(`${t("customPatternsSaveErr")} ${e}`, "#f44336");
+      }
+    }
+
+    /* ── Utklippstavle-vakt ───────────────────────────────────────── */
+    function setClipGuardMessage(text, color = "var(--muted)") {
+      const el = document.getElementById("clipguard-msg");
+      el.textContent = text;
+      el.style.color = color;
+    }
+
+    async function setClipGuardEnabled(enabled) {
+      try {
+        const d = await (await fetch(`${API}/clipboard-guard/${enabled ? "start" : "stop"}`,
+          { method:"POST" })).json();
+        if (!d.ok) {
+          setClipGuardMessage(`${t("errPrefix")} ${d.error || ""}`, "#f44336");
+          return;
+        }
+        try { localStorage.setItem("xlent_clipguard", enabled ? "1" : "0"); } catch(_) {}
+        setClipGuardMessage(enabled ? t("clipGuardActive") : t("clipGuardInactive"),
+                            enabled ? "var(--ok)" : "var(--muted)");
+      } catch (e) {
+        setClipGuardMessage(`${t("netErr")} ${e}`, "#f44336");
+      }
+    }
+
+    async function restoreClipGuard() {
+      let enabled = false;
+      try { enabled = localStorage.getItem("xlent_clipguard") === "1"; } catch(_) {}
+      document.getElementById("clipguard-toggle").checked = enabled;
+      if (enabled) await setClipGuardEnabled(true);
+    }
+
+    /* ── Overvåket mappe ──────────────────────────────────────────── */
+    let _watchFolder = "";
+
+    function setWatchMessage(text, color = "var(--muted)") {
+      const el = document.getElementById("watch-msg");
+      el.textContent = text;
+      el.style.color = color;
+    }
+
+    function renderWatchFolder() {
+      document.getElementById("watch-folder-display").textContent =
+        _watchFolder || t("watchNoFolder");
+    }
+
+    async function chooseWatchFolder() {
+      try {
+        const d = await (await fetch(`${API}/open-folder-dialog`, { method:"POST" })).json();
+        if (d.path) {
+          _watchFolder = String(d.path);
+          try { localStorage.setItem("xlent_watch_folder", _watchFolder); } catch(_) {}
+          renderWatchFolder();
+          // Hvis overvåking er aktiv: restart på ny mappe
+          if (document.getElementById("watch-toggle").checked) {
+            await setWatchEnabled(true);
+          }
+        }
+      } catch (e) {
+        setWatchMessage(`${t("netErr")} ${e}`, "#f44336");
+      }
+    }
+
+    async function setWatchEnabled(enabled) {
+      if (enabled && !_watchFolder) {
+        setWatchMessage(t("watchNoFolder"), "var(--warn)");
+        document.getElementById("watch-toggle").checked = false;
+        return;
+      }
+      try {
+        const opts = getOpts();
+        const d = enabled
+          ? await (await fetch(`${API}/folder-watch/start`, {
+              method:"POST", headers:{"Content-Type":"application/json"},
+              body: JSON.stringify({
+                folder: _watchFolder,
+                ignore_xlent: opts.ignore_xlent,
+                language: opts.language,
+              }),
+            })).json()
+          : await (await fetch(`${API}/folder-watch/stop`, { method:"POST" })).json();
+        if (!d.ok) {
+          setWatchMessage(`${t("errPrefix")} ${d.error || ""}`, "#f44336");
+          document.getElementById("watch-toggle").checked = false;
+          return;
+        }
+        try { localStorage.setItem("xlent_watch_enabled", enabled ? "1" : "0"); } catch(_) {}
+        setWatchMessage(
+          enabled ? t("watchActive").replace("{folder}", _watchFolder) : t("watchInactive"),
+          enabled ? "var(--ok)" : "var(--muted)");
+      } catch (e) {
+        setWatchMessage(`${t("netErr")} ${e}`, "#f44336");
+      }
+    }
+
+    async function restoreWatch() {
+      try { _watchFolder = localStorage.getItem("xlent_watch_folder") || ""; } catch(_) {}
+      renderWatchFolder();
+      let enabled = false;
+      try { enabled = localStorage.getItem("xlent_watch_enabled") === "1"; } catch(_) {}
+      document.getElementById("watch-toggle").checked = enabled && !!_watchFolder;
+      if (enabled && _watchFolder) await setWatchEnabled(true);
+    }
+
     function setWhitelistMessage(text, color = "var(--muted)", mode = "") {
       whitelistMsgEl.textContent = text;
       whitelistMsgEl.style.color = color;
@@ -3637,6 +3943,7 @@
         await saveIgnoreEditor();
         await saveWhitelistEditor();
         await saveBlacklistEditor();
+        await saveCustomPatternsEditor();
         const d = await (await fetch(`${API}/settings/export`, {
           method: "POST",
           headers: {"Content-Type": "application/json"},
@@ -3684,6 +3991,8 @@
         ignoreEditorEl.value = String(d.ignore_toml || ignoreEditorEl.value || "");
         whitelistEditorEl.value = (d.whitelist || []).join("\n");
         blacklistEditorEl.value = (d.blacklist || []).join("\n");
+        document.getElementById("custom-patterns-editor").value =
+          String(d.custom_patterns_toml || document.getElementById("custom-patterns-editor").value || "");
         setSettingsProfileMessage(t("settingsImported"), "var(--ok)");
       } catch (e) {
         setSettingsProfileMessage(`${t("settingsImportErr")} ${String(e)}`, "#f44336");
@@ -3815,8 +4124,15 @@
         .sort((a, b) => (SEV_ORDER[b.f.severity]||0) - (SEV_ORDER[a.f.severity]||0));
 
       const warning = warningText(r);
+      // OCR-tilbud: bilde-PDF uten tekst kan re-skannes med OCR
+      const canOcr = ext === "pdf" && lastScan
+        && (r.warning_code === "no_text_extracted" || r.warning_code === "little_text_extracted");
+      const ocrBtnHtml = canOcr
+        ? ` <button id="btn-ocr-rescan" class="ctrl-btn ctrl-btn-primary"
+              style="margin-left:10px;font-size:12px;">${t("ocrRescanBtn")}</button>`
+        : "";
       const warningBanner = warning
-        ? `<div class="warning-banner">⚠️ ${escapeHtml(warning)}</div>` : "";
+        ? `<div class="warning-banner">⚠️ ${escapeHtml(warning)}${ocrBtnHtml}</div>` : "";
       const policyWarningBanner = r.policy_warning
         ? `<div class="policy-warning-banner">⛔ ${escapeHtml(t("m365PolicyWarning"))}: ${escapeHtml(r.policy_warning)}</div>` : "";
       const m365TagsHtml = buildM365TagsHtml(r);
@@ -3861,6 +4177,13 @@
       `;
 
       wireEvents(sorted, canPatch, ext);
+
+      // OCR re-skann av bilde-PDF (knappen finnes kun når canOcr var sann)
+      document.getElementById("btn-ocr-rescan")?.addEventListener("click", () => {
+        if (!lastScan) return;
+        if (lastScan.type === "path") scanPath(lastScan.path, { ocr: true });
+        else if (lastScan.type === "upload") scanUpload(lastScan.file, lastScan.name, { ocr: true });
+      });
       renderSeveritySummary();
 
       // Oppdater re-skann-knapp nå som lastResult er satt
@@ -4208,15 +4531,15 @@
       };
     }
 
-    async function scanPath(path) {
-      setStatus(t("statusScan"));
+    async function scanPath(path, extraOpts) {
+      setStatus(extraOpts?.ocr ? t("ocrRunning") : t("statusScan"));
       resultEl.classList.remove("show");
       lastScan = { type:"path", path };
       try {
         const opts = getOpts();
         const r = await (await fetch(`${API}/scan`, {
           method:"POST", headers:{"Content-Type":"application/json"},
-          body: JSON.stringify({ file_path: path, ...opts }),
+          body: JSON.stringify({ file_path: path, ...opts, ...(extraOpts || {}) }),
         })).json();
         setStatus("");
         renderResult(r);
@@ -4228,8 +4551,8 @@
       }
     }
 
-    async function scanUpload(file, name) {
-      setStatus(t("statusUp"));
+    async function scanUpload(file, name, extraOpts) {
+      setStatus(extraOpts?.ocr ? t("ocrRunning") : t("statusUp"));
       resultEl.classList.remove("show");
       lastScan = { type:"upload", file, name };
       try {
@@ -4239,6 +4562,7 @@
         fd.append("file", new Blob([buf]), name);
         fd.append("ignore_xlent", opts.ignore_xlent);
         fd.append("language",     opts.language);
+        if (extraOpts?.ocr) fd.append("ocr", "true");
         const r = await (await fetch(`${API}/scan-upload`, { method:"POST", body: fd })).json();
         setStatus("");
         renderResult(r);
@@ -4393,6 +4717,15 @@
     document.getElementById("btn-export-debug").addEventListener("click", exportDebugPackage);
     document.getElementById("btn-ignore-reload").addEventListener("click", loadIgnoreEditor);
     document.getElementById("btn-ignore-save").addEventListener("click", saveIgnoreEditor);
+    document.getElementById("btn-custom-patterns-reload").addEventListener("click", loadCustomPatternsEditor);
+    document.getElementById("btn-custom-patterns-save").addEventListener("click", saveCustomPatternsEditor);
+    document.getElementById("clipguard-toggle").addEventListener("change", function() {
+      setClipGuardEnabled(this.checked);
+    });
+    document.getElementById("btn-watch-choose").addEventListener("click", chooseWatchFolder);
+    document.getElementById("watch-toggle").addEventListener("change", function() {
+      setWatchEnabled(this.checked);
+    });
     document.getElementById("btn-whitelist-reload").addEventListener("click", loadWhitelistEditor);
     document.getElementById("btn-whitelist-save").addEventListener("click", saveWhitelistEditor);
     document.getElementById("btn-blacklist-reload").addEventListener("click", loadBlacklistEditor);
@@ -5894,6 +6227,9 @@
     }
     loadWhitelistEditor();
     loadBlacklistEditor();
+    loadCustomPatternsEditor();
+    restoreClipGuard();
+    restoreWatch();
     runUpdateCheck(false);
     m365RefreshStatus();
     loadNerStatus();

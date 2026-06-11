@@ -136,6 +136,7 @@ def test_settings_export_import_excludes_scan_history_and_document_text(monkeypa
     assert payload["ok"] is True
     assert payload["format"] == "xlent-scanner-settings"
     assert payload["blacklist"] == []
+    assert "custom_patterns_toml" in payload
     assert "scan_history" not in payload
     assert "original_text" not in payload
 
@@ -145,6 +146,12 @@ def test_settings_export_import_excludes_scan_history_and_document_text(monkeypa
         "whitelist": ["safe@example.com"],
         "blacklist": ["Project Raven"],
         "ignore_toml": 'email_domains = ["xlent.no"]\nnames = ["Test User"]\n',
+        "custom_patterns_toml": """\
+[[patterns]]
+name = "Sak"
+regex = 'SAK-\\d{3}'
+severity = "gul"
+""",
     }
     imported = client.post("/settings/import", json=profile)
 
@@ -155,6 +162,7 @@ def test_settings_export_import_excludes_scan_history_and_document_text(monkeypa
     assert data["whitelist"] == ["safe@example.com"]
     assert data["blacklist"] == ["Project Raven"]
     assert "Test User" in data["ignore_toml"]
+    assert "SAK-" in data["custom_patterns_toml"]
 
 
 def test_gui_deep_scan_status_route_accepts_specific_job_id(monkeypatch):

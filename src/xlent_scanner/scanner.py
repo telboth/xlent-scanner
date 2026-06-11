@@ -8,7 +8,8 @@ from pathlib import Path
 
 import fitz  # type: ignore[import-untyped]  # fallback PDF-parser
 
-_pdf_converter = None  # Docling DocumentConverter – lazy-initialisert ved første PDF-scan
+_pdf_converter = None      # Docling DocumentConverter – lazy-initialisert ved første PDF-scan
+_pdf_converter_ocr = None  # OCR-variant (do_ocr=True) – kun initialisert på eksplisitt forespørsel
 _DOCLING_TABLE_IMAGE_DEPRECATION = (
     r"This field is deprecated\. Use `generate_page_images=True` and call "
     r"`TableItem\.get_image\(\)` to extract table images from page images\."
@@ -36,6 +37,7 @@ from xlent_scanner.models import Finding, ScanResult  # noqa: F401
 from xlent_scanner.risk import assess
 from xlent_scanner.whitelist import mark_whitelist_findings
 from xlent_scanner.blacklist import detect_blacklist
+from xlent_scanner.detectors.custom_patterns import detect_custom_patterns
 
 SUPPORTED_SUFFIXES = {
     ".pdf", ".docx", ".pptx", ".xlsx",
@@ -87,26 +89,37 @@ def _ignore_docling_table_image_deprecation() -> None:
     )
 
 
-def _get_pdf_converter():
+def _build_pdf_converter(ocr: bool):
+    from docling.document_converter import DocumentConverter, PdfFormatOption
+    from docling.datamodel.pipeline_options import PdfPipelineOptions
+    from docling.datamodel.base_models import InputFormat
+
+    opts = PdfPipelineOptions()
+    opts.do_ocr = ocr
+    # Docling laster layout-modell automatisk ved første konvertering.
+    # Docling 2.x leser et deprecated internt bildefelt selv om vi ikke bruker det.
+    # Filtrer kun denne kjente tredjeparts-warningen uten å endre PDF-oppførsel.
+    with warnings.catch_warnings():
+        _ignore_docling_table_image_deprecation()
+        return DocumentConverter(
+            format_options={InputFormat.PDF: PdfFormatOption(pipeline_options=opts)}
+        )
+
+
+def _get_pdf_converter(ocr: bool = False):
     """Returnerer (og cacher) en Docling DocumentConverter for PDF-parsing.
+
+    OCR-varianten caches separat — den drar inn OCR-motoren (EasyOCR) og
+    skal kun initialiseres når brukeren eksplisitt ber om OCR.
     Raises RuntimeError hvis Docling eller en av dens avhengigheter ikke er tilgjengelig.
     """
-    global _pdf_converter
+    global _pdf_converter, _pdf_converter_ocr
+    if ocr:
+        if _pdf_converter_ocr is None:
+            _pdf_converter_ocr = _build_pdf_converter(ocr=True)
+        return _pdf_converter_ocr
     if _pdf_converter is None:
-        from docling.document_converter import DocumentConverter, PdfFormatOption
-        from docling.datamodel.pipeline_options import PdfPipelineOptions
-        from docling.datamodel.base_models import InputFormat
-
-        opts = PdfPipelineOptions()
-        opts.do_ocr = False  # hopp over EasyOCR (tung avhengighet, ikke nødvendig her)
-        # Docling laster layout-modell automatisk ved første konvertering.
-        # Docling 2.x leser et deprecated internt bildefelt selv om vi ikke bruker det.
-        # Filtrer kun denne kjente tredjeparts-warningen uten å endre PDF-oppførsel.
-        with warnings.catch_warnings():
-            _ignore_docling_table_image_deprecation()
-            _pdf_converter = DocumentConverter(
-                format_options={InputFormat.PDF: PdfFormatOption(pipeline_options=opts)}
-            )
+        _pdf_converter = _build_pdf_converter(ocr=False)
     return _pdf_converter
 
 
@@ -119,12 +132,29 @@ def _extract_text_pdf_fitz(path: Path) -> str:
     return "\n".join(chunks).strip()
 
 
-def _extract_text_pdf(path: Path) -> str:
+def _extract_text_pdf(path: Path, ocr: bool = False) -> str:
     """Ekstraherer tekst fra PDF.
 
     Prøver Docling først (bedre layout-rekonstruksjon og tabelldeteksjon).
     Faller tilbake til PyMuPDF ved feil (f.eks. hvis Docling ikke er tilgjengelig i frozen build).
+
+    Med ocr=True kjøres Docling med OCR-motor aktivert (for bilde-PDF-er).
+    Da er PyMuPDF-fallback meningsløs (den gir samme tomme resultat), så
+    feil propageres som RuntimeError med forklarende melding i stedet.
     """
+    if ocr:
+        try:
+            with warnings.catch_warnings():
+                _ignore_docling_table_image_deprecation()
+                converter = _get_pdf_converter(ocr=True)
+                return converter.convert(str(path)).document.export_to_markdown()
+        except Exception as exc:
+            raise RuntimeError(
+                "OCR er ikke tilgjengelig i denne installasjonen "
+                f"({type(exc).__name__}: {exc}). "
+                "OCR krever Docling med OCR-motor — kjør fra kildekode "
+                "med «uv sync» hvis pakken mangler den."
+            ) from exc
     try:
         with warnings.catch_warnings():
             _ignore_docling_table_image_deprecation()
@@ -334,10 +364,10 @@ def _extract_text_html(path: Path) -> str:
     return content.strip()
 
 
-def extract_text(path: Path) -> str:
+def extract_text(path: Path, ocr: bool = False) -> str:
     suffix = path.suffix.lower()
     if suffix == ".pdf":
-        return _extract_text_pdf(path)
+        return _extract_text_pdf(path, ocr=ocr)
     if suffix == ".docx":
         return _extract_text_docx(path)
     if suffix == ".pptx":
@@ -399,6 +429,7 @@ def scan_text(text: str, language: str = "auto", source_name: str = "Innlimt tek
     _run(detect_financials, text)
     _run(detect_clients, text)
     _run(detect_extra, text)
+    _run(detect_custom_patterns, text)
     _run(detect_names, text, lang)
 
     findings = mark_whitelist_findings(findings)
@@ -536,7 +567,12 @@ def scan_folder(
     return results
 
 
-def scan_file(path: str | Path, ignore_xlent: bool = False, language: str = "auto") -> ScanResult:
+def scan_file(
+    path: str | Path,
+    ignore_xlent: bool = False,
+    language: str = "auto",
+    ocr: bool = False,
+) -> ScanResult:
     p = Path(path)
     if not p.exists():
         return ScanResult(
@@ -551,7 +587,14 @@ def scan_file(path: str | Path, ignore_xlent: bool = False, language: str = "aut
             error=f"Filtype ikke støttet: {suffix}",
         )
     try:
-        text = extract_text(p)
+        try:
+            text = extract_text(p, ocr=ocr)
+        except TypeError as exc:
+            # Flere tester og tredjepartsintegrasjoner monkeypatcher extract_text(path).
+            # Behold bakoverkompatibilitet når OCR ikke er eksplisitt valgt.
+            if ocr or "unexpected keyword argument" not in str(exc):
+                raise
+            text = extract_text(p)
     except Exception as exc:
         msg = str(exc)
         if any(k in msg.lower() for k in ("illegal character", "not well-formed", "invalid token", "xml", "expat")):
@@ -624,6 +667,7 @@ def scan_file(path: str | Path, ignore_xlent: bool = False, language: str = "aut
     _run(detect_financials, text)
     _run(detect_clients, text)
     _run(detect_extra, text)
+    _run(detect_custom_patterns, text)
     _run(detect_names, text, lang)
 
     if ignore_xlent:

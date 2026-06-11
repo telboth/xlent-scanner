@@ -432,6 +432,59 @@ def test_empty_document_warning_translations_exist_for_all_languages():
         assert html.count(f"{key}:") == 6
 
 
+def test_guard_watch_custom_patterns_and_ocr_ui_are_wired():
+    html = HTML.read_text(encoding="utf-8")
+
+    for element_id in [
+        "custom-patterns-editor",
+        "btn-custom-patterns-reload",
+        "btn-custom-patterns-save",
+        "clipguard-toggle",
+        "watch-toggle",
+        "btn-watch-choose",
+    ]:
+        assert f'id="{element_id}"' in html
+
+    for snippet in [
+        'fetch(`${API}/custom-patterns/get`,',
+        'fetch(`${API}/custom-patterns/save`,',
+        'fetch(`${API}/clipboard-guard/${enabled ? "start" : "stop"}`',
+        'fetch(`${API}/folder-watch/start`,',
+        'fetch(`${API}/folder-watch/stop`,',
+        "loadCustomPatternsEditor();",
+        "restoreClipGuard();",
+        "restoreWatch();",
+        'fd.append("ocr", "true")',
+        'ocr: true',
+    ]:
+        assert snippet in html
+
+    for key in [
+        "settingsCustomPatternsTitle",
+        "customPatternsNote",
+        "customPatternsReload",
+        "customPatternsSave",
+        "customPatternsLoadErr",
+        "customPatternsSaveErr",
+        "customPatternsSaved",
+        "settingsClipGuardTitle",
+        "clipGuardNote",
+        "clipGuardToggle",
+        "clipGuardActive",
+        "clipGuardInactive",
+        "settingsWatchTitle",
+        "watchNote",
+        "watchChoose",
+        "watchToggle",
+        "watchNoFolder",
+        "watchActive",
+        "watchInactive",
+        "ocrRescanBtn",
+        "ocrRunning",
+    ]:
+        assert html.count(f"{key}:") == 6
+
+
 def test_medical_ai_category_is_available_but_default_off():
     html = HTML.read_text(encoding="utf-8")
 

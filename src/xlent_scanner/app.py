@@ -849,8 +849,9 @@ def scan():
         file_path = data.get("file_path", "")
         ignore_xlent = bool(data.get("ignore_xlent", False))
         language = data.get("language", "auto")
-        LOGGER.info("scan request path=%s lang=%s ignore_xlent=%s", file_path, language, ignore_xlent)
-        result = scan_file(file_path, ignore_xlent=ignore_xlent, language=language)
+        ocr = bool(data.get("ocr", False))
+        LOGGER.info("scan request path=%s lang=%s ignore_xlent=%s ocr=%s", file_path, language, ignore_xlent, ocr)
+        result = scan_file(file_path, ignore_xlent=ignore_xlent, language=language, ocr=ocr)
         _last_result = result
         _last_path = Path(file_path) if file_path else None
         _clear_ai_findings()
@@ -892,9 +893,10 @@ def scan_upload():
             return jsonify({"error": "Ingen fil mottatt."})
         ignore_xlent = request.form.get("ignore_xlent", "false").lower() == "true"
         language = request.form.get("language", "auto")
+        ocr = request.form.get("ocr", "false").lower() == "true"
         original_name = f.filename or "ukjent"
         suffix = Path(original_name).suffix.lower()
-        LOGGER.info("scan-upload request name=%s suffix=%s lang=%s ignore_xlent=%s", original_name, suffix, language, ignore_xlent)
+        LOGGER.info("scan-upload request name=%s suffix=%s lang=%s ignore_xlent=%s ocr=%s", original_name, suffix, language, ignore_xlent, ocr)
 
         # Rydd opp forrige temp-fil (fra tidligere drag-drop/upload)
         if _last_tmp_path and _last_tmp_path.exists():
@@ -909,7 +911,7 @@ def scan_upload():
         tmp_path = Path(tmp)
         os.close(fd)
         f.save(str(tmp_path))
-        result = scan_file(tmp_path, ignore_xlent=ignore_xlent, language=language)
+        result = scan_file(tmp_path, ignore_xlent=ignore_xlent, language=language, ocr=ocr)
         result.file_name = original_name   # vis originalt filnavn, ikke temp-sti
         _last_result = result
         _last_path = tmp_path              # brukes av /patch hvis aktuelt
@@ -2240,6 +2242,11 @@ def _api_openapi_spec() -> dict:
                                             "default": "auto",
                                         },
                                         "ignore_xlent": {"type": "boolean", "default": False},
+                                        "ocr": {
+                                            "type": "boolean",
+                                            "default": False,
+                                            "description": "Kjør OCR ved skanning av bildebasert PDF der dette er tilgjengelig.",
+                                        },
                                         "include_preview": {"type": "boolean", "default": False},
                                     },
                                 }
@@ -2413,6 +2420,7 @@ def api_scan_file():
 
         language = _api_language(data.get("language"))
         ignore_xlent = _api_bool(data.get("ignore_xlent"), False)
+        ocr = _api_bool(data.get("ocr"), False)
         include_preview = _api_bool(data.get("include_preview"), False)
 
         suffix = Path(file_name).suffix.lower() or ".txt"
@@ -2421,7 +2429,7 @@ def api_scan_file():
         with os.fdopen(fd, "wb") as fh:
             fh.write(raw)
 
-        result = scan_file(tmp_path, ignore_xlent=ignore_xlent, language=language)
+        result = scan_file(tmp_path, ignore_xlent=ignore_xlent, language=language, ocr=ocr)
         result.file_name = file_name
         scan_id = _api_store_scan_result(result, path=tmp_path, owns_path=True)
         tmp_path = None  # Eies nå av API-cache og ryddes derfra.
@@ -3138,9 +3146,116 @@ def blacklist_save():
     })
 
 
+# ── Egendefinerte regex-mønstre ─────────────────────────────────────────
+
+@flask_app.route("/custom-patterns/get", methods=["POST"])
+def custom_patterns_get():
+    from xlent_scanner.detectors.custom_patterns import (  # noqa: PLC0415
+        custom_patterns_path_str,
+        get_custom_patterns_text,
+    )
+    try:
+        return jsonify({
+            "ok": True,
+            "path": custom_patterns_path_str(),
+            "content": get_custom_patterns_text(),
+        })
+    except Exception as exc:
+        return jsonify({"ok": False, "error": str(exc)})
+
+
+@flask_app.route("/custom-patterns/save", methods=["POST"])
+def custom_patterns_save():
+    from xlent_scanner.detectors.custom_patterns import (  # noqa: PLC0415
+        custom_patterns_path_str,
+        get_custom_patterns_text,
+        save_custom_patterns_text,
+        validate_custom_patterns_text,
+    )
+    data = request.get_json(force=True)
+    content = data.get("content", "")
+    if not isinstance(content, str):
+        return jsonify({"ok": False, "error": "Ugyldig format for custom_patterns.toml."})
+    try:
+        patterns = validate_custom_patterns_text(content)
+        save_custom_patterns_text(content)
+        LOGGER.info("custom-patterns lagret: %d mønstre", len(patterns))
+        return jsonify({
+            "ok": True,
+            "path": custom_patterns_path_str(),
+            "content": get_custom_patterns_text(),
+            "pattern_count": len(patterns),
+        })
+    except ValueError as exc:
+        return jsonify({"ok": False, "error": str(exc)})
+    except Exception as exc:
+        LOGGER.error("custom-patterns save failed: %s", traceback.format_exc())
+        return jsonify({"ok": False, "error": str(exc)})
+
+
+# ── Utklippstavle-vakt ──────────────────────────────────────────────────
+
+@flask_app.route("/clipboard-guard/status", methods=["GET"])
+def clipboard_guard_status():
+    from xlent_scanner.clipboard_guard import guard  # noqa: PLC0415
+    return jsonify({"ok": True, **guard.status()})
+
+
+@flask_app.route("/clipboard-guard/start", methods=["POST"])
+def clipboard_guard_start():
+    from xlent_scanner.clipboard_guard import guard  # noqa: PLC0415
+    started = guard.start()
+    LOGGER.info("clipboard-guard start (started=%s)", started)
+    return jsonify({"ok": True, "started": started, **guard.status()})
+
+
+@flask_app.route("/clipboard-guard/stop", methods=["POST"])
+def clipboard_guard_stop():
+    from xlent_scanner.clipboard_guard import guard  # noqa: PLC0415
+    stopped = guard.stop()
+    LOGGER.info("clipboard-guard stop (stopped=%s)", stopped)
+    return jsonify({"ok": True, "stopped": stopped})
+
+
+# ── Overvåket mappe ─────────────────────────────────────────────────────
+
+@flask_app.route("/folder-watch/status", methods=["GET"])
+def folder_watch_status():
+    from xlent_scanner.folder_watch import watcher  # noqa: PLC0415
+    return jsonify({"ok": True, **watcher.status()})
+
+
+@flask_app.route("/folder-watch/start", methods=["POST"])
+def folder_watch_start():
+    from xlent_scanner.folder_watch import watcher  # noqa: PLC0415
+    data = request.get_json(force=True)
+    folder = str(data.get("folder") or "").strip()
+    if not folder:
+        return jsonify({"ok": False, "error": "Ingen mappe oppgitt."})
+    result = watcher.start(
+        folder,
+        ignore_xlent=bool(data.get("ignore_xlent", False)),
+        language=str(data.get("language") or "auto"),
+    )
+    LOGGER.info("folder-watch start folder=%s ok=%s", folder, result.get("ok"))
+    if not result.get("ok"):
+        return jsonify(result)
+    return jsonify({**result, **watcher.status()})
+
+
+@flask_app.route("/folder-watch/stop", methods=["POST"])
+def folder_watch_stop():
+    from xlent_scanner.folder_watch import watcher  # noqa: PLC0415
+    stopped = watcher.stop()
+    LOGGER.info("folder-watch stop (stopped=%s)", stopped)
+    return jsonify({"ok": True, "stopped": stopped})
+
+
 @flask_app.route("/settings/export", methods=["POST"])
 def settings_export():
     """Eksporter lokale brukerinnstillinger uten dokument- eller scan-data."""
+    from xlent_scanner.detectors.custom_patterns import get_custom_patterns_text  # noqa: PLC0415
+
     data = request.get_json(silent=True) or {}
     browser_settings = data.get("browser_settings")
     if not isinstance(browser_settings, dict):
@@ -3155,12 +3270,18 @@ def settings_export():
         "whitelist": get_whitelist_entries(),
         "blacklist": get_blacklist_entries(),
         "ignore_toml": get_ignore_toml_text(),
+        "custom_patterns_toml": get_custom_patterns_text(),
     })
 
 
 @flask_app.route("/settings/import", methods=["POST"])
 def settings_import():
     """Importer lokale brukerinnstillinger. Validerer ignore.toml før lagring."""
+    from xlent_scanner.detectors.custom_patterns import (  # noqa: PLC0415
+        get_custom_patterns_text,
+        save_custom_patterns_text,
+    )
+
     try:
         data = request.get_json(force=True)
         if not isinstance(data, dict) or data.get("format") != "xlent-scanner-settings":
@@ -3185,6 +3306,12 @@ def settings_import():
             save_ignore_toml_text(ignore_toml)
             reset_ignore_cache()
 
+        custom_patterns_toml = data.get("custom_patterns_toml")
+        if custom_patterns_toml is not None:
+            if not isinstance(custom_patterns_toml, str):
+                return jsonify({"ok": False, "error": "custom_patterns_toml må være tekst."})
+            save_custom_patterns_text(custom_patterns_toml)
+
         browser_settings = data.get("browser_settings")
         if not isinstance(browser_settings, dict):
             browser_settings = {}
@@ -3195,6 +3322,7 @@ def settings_import():
             "whitelist": get_whitelist_entries(),
             "blacklist": get_blacklist_entries(),
             "ignore_toml": get_ignore_toml_text(),
+            "custom_patterns_toml": get_custom_patterns_text(),
         })
     except Exception as exc:
         return jsonify({"ok": False, "error": str(exc)})

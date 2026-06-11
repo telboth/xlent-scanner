@@ -124,7 +124,12 @@ def assess(result: ScanResult) -> ScanResult:
         if f.severity == "grønn":
             # Hvitelistet funn – behold grønn, påvirker ikke risikonivå
             continue
-        sev = _category_severity(f.category)
+        if f.category.lower().startswith("egendefinert"):
+            # Egendefinerte mønstre har severity konfigurert per mønster
+            # (custom_patterns.toml) – ikke overstyr fra kategorinavnet.
+            sev = f.severity if f.severity in _LEVEL_ORDER else "gul"
+        else:
+            sev = _category_severity(f.category)
         f.severity = sev
         if _LEVEL_ORDER[sev] > _LEVEL_ORDER[overall]:
             overall = sev
