@@ -24,9 +24,19 @@ def test_macos_quick_action_accepts_finder_file_inputs() -> None:
         assert text in script
         assert text in app
 
+    # Quick Action-format: NSMessage MÅ være runWorkflowAsService og
+    # workflowTypeIdentifier MÅ være servicesMenu — ellers vises ikke
+    # menyvalget i Finder og/eller kjører ikke når det klikkes.
+    for doc in (script, app):
+        assert "runWorkflowAsService" in doc
+        assert ">runWorkflow<" not in doc
+        assert "com.apple.Automator.servicesMenu" in doc
+        assert ">com.apple.Automator.workflow<" not in doc
+        assert "inputTypeIdentifier" in doc
+        assert "presentationMode" in doc
+
     assert "<key>serviceProcessesInput</key>" in script
-    assert "<integer>1</integer>" in script
-    assert "<key>serviceProcessesInput</key><integer>1</integer>" in app
+    assert "<key>serviceProcessesInput</key><integer>0</integer>" in app
     assert "SUDO_USER" in script
     assert 'user="$(target_user)"' in script
     assert 'home_dir="$(target_home "${user}")"' in script

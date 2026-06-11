@@ -629,6 +629,8 @@ def _install_mac_quick_action() -> Path:
     app_binary_xml = html.escape(str(binary), quote=True)
     runner_script = contents_dir / "run_xlent_scanner.sh"
     runner_script_xml = html.escape(str(runner_script), quote=True)
+    # NSMessage MÅ være «runWorkflowAsService» for Quick Actions — med
+    # «runWorkflow» svarer ikke Automator-runneren når menyvalget klikkes.
     (contents_dir / "Info.plist").write_text(
         """<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
@@ -638,13 +640,17 @@ def _install_mac_quick_action() -> Path:
   <key>NSServices</key>
   <array>
     <dict>
+      <key>NSBackgroundColorName</key>
+      <string>background</string>
+      <key>NSIconName</key>
+      <string>NSActionTemplate</string>
       <key>NSMenuItem</key>
       <dict>
         <key>default</key>
         <string>Skann med XLENT</string>
       </dict>
       <key>NSMessage</key>
-      <string>runWorkflow</string>
+      <string>runWorkflowAsService</string>
       <key>NSRequiredContext</key>
       <dict>
         <key>NSApplicationIdentifier</key>
@@ -653,9 +659,6 @@ def _install_mac_quick_action() -> Path:
       <key>NSSendFileTypes</key>
       <array>
         <string>public.item</string>
-        <string>public.content</string>
-        <string>public.data</string>
-        <string>public.file-url</string>
       </array>
     </dict>
   </array>
@@ -816,10 +819,16 @@ mkdir -p "${LOG_DIR}"
   <key>connectors</key><dict/>
   <key>workflowMetaData</key>
   <dict>
+    <key>inputTypeIdentifier</key><string>com.apple.Automator.fileSystemObject</string>
+    <key>outputTypeIdentifier</key><string>com.apple.Automator.nothing</string>
+    <key>presentationMode</key><integer>11</integer>
+    <key>processesInput</key><integer>0</integer>
     <key>serviceInputTypeIdentifier</key><string>com.apple.Automator.fileSystemObject</string>
     <key>serviceOutputTypeIdentifier</key><string>com.apple.Automator.nothing</string>
-    <key>serviceProcessesInput</key><integer>1</integer>
-    <key>workflowTypeIdentifier</key><string>com.apple.Automator.workflow</string>
+    <key>serviceProcessesInput</key><integer>0</integer>
+    <key>systemImageName</key><string>NSActionTemplate</string>
+    <key>useAutomaticInputType</key><integer>0</integer>
+    <key>workflowTypeIdentifier</key><string>com.apple.Automator.servicesMenu</string>
   </dict>
 </dict>
 </plist>
