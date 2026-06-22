@@ -78,6 +78,9 @@ jobs:
       - name: Pakk .dmg
         run: bash scripts/package_mac.sh
 
+      - name: Release-gate
+        run: uv run python scripts/release_gate.py --platform macos
+
       - name: Last opp til GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -128,6 +131,9 @@ jobs:
       - name: Pakk installer (.exe)
         run: .\scripts\package_win.ps1
 
+      - name: Release-gate
+        run: uv run python scripts/release_gate.py --platform windows
+
       - name: Last opp til GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -174,6 +180,9 @@ jobs:
 
       - name: Pakk AppImage
         run: bash scripts/package_linux.sh
+
+      - name: Release-gate
+        run: uv run python scripts/release_gate.py --platform linux
 
       - name: Last opp til GitHub Release
         env:

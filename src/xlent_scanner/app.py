@@ -375,6 +375,16 @@ def _health_check() -> dict:
         add("python_docx", False, str(exc))
 
     try:
+        from docling.document_converter import DocumentConverter  # noqa: F401, PLC0415
+        try:
+            import rapidocr  # noqa: F401, PLC0415
+            add("ocr", True, "docling + rapidocr import ok")
+        except Exception as exc:
+            add("ocr", False, f"docling import ok, OCR engine missing: {exc}")
+    except Exception as exc:
+        add("ocr", False, f"docling missing: {exc}")
+
+    try:
         from xlent_scanner.model_manager import models_status  # noqa: PLC0415
         status = models_status()
         installed = sum(1 for m in status.get("models", []) if m.get("installed"))
@@ -3193,6 +3203,33 @@ def custom_patterns_save():
         return jsonify({"ok": False, "error": str(exc)})
 
 
+@flask_app.route("/custom-patterns/test", methods=["POST"])
+def custom_patterns_test():
+    import re  # noqa: PLC0415
+
+    data = request.get_json(force=True) or {}
+    regex = str(data.get("regex") or "")
+    sample = str(data.get("sample") or "")
+    ignore_case = bool(data.get("ignore_case", True))
+    if not regex:
+        return jsonify({"ok": False, "error": "Regex mangler."})
+    try:
+        flags = re.IGNORECASE if ignore_case else 0
+        pattern = re.compile(regex, flags)
+        matches = []
+        for idx, match in enumerate(pattern.finditer(sample)):
+            if idx >= 20:
+                break
+            matches.append({
+                "text": match.group(0),
+                "start": match.start(),
+                "end": match.end(),
+            })
+        return jsonify({"ok": True, "matches": matches, "match_count": len(matches)})
+    except re.error as exc:
+        return jsonify({"ok": False, "error": f"Ugyldig regex: {exc}"})
+
+
 # ── Utklippstavle-vakt ──────────────────────────────────────────────────
 
 @flask_app.route("/clipboard-guard/status", methods=["GET"])
@@ -3246,7 +3283,9 @@ def folder_watch_start():
 @flask_app.route("/folder-watch/stop", methods=["POST"])
 def folder_watch_stop():
     from xlent_scanner.folder_watch import watcher  # noqa: PLC0415
-    stopped = watcher.stop()
+    data = request.get_json(silent=True) or {}
+    folder = str(data.get("folder") or "").strip() or None
+    stopped = watcher.stop(folder)
     LOGGER.info("folder-watch stop (stopped=%s)", stopped)
     return jsonify({"ok": True, "stopped": stopped})
 

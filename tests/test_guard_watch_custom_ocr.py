@@ -52,6 +52,21 @@ severity = "gul"
         raise AssertionError("invalid regex was accepted")
 
 
+def test_custom_patterns_test_endpoint_returns_matches():
+    client = app_module.flask_app.test_client()
+
+    response = client.post(
+        "/custom-patterns/test",
+        json={"regex": r"PRJ-\d{4}", "sample": "PRJ-1234 og PRJ-5678", "ignore_case": True},
+    )
+
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data["ok"] is True
+    assert data["match_count"] == 2
+    assert data["matches"][0]["text"] == "PRJ-1234"
+
+
 def test_clipboard_guard_alerts_without_storing_clipboard_text(monkeypatch):
     alerts: list[tuple[str, str]] = []
     guard = clipboard_guard.ClipboardGuard(notifier=lambda title, msg: alerts.append((title, msg)))
@@ -114,6 +129,25 @@ def test_folder_watch_snapshot_changes_and_scan_one(monkeypatch, tmp_path: Path)
     assert history and history[0]["source"] == "watch"
 
 
+def test_folder_watch_manager_supports_multiple_folders(tmp_path: Path):
+    manager = folder_watch.FolderWatchManager(max_folders=3)
+    folders = [tmp_path / f"w{i}" for i in range(3)]
+    for folder in folders:
+        folder.mkdir()
+        assert manager.start(str(folder))["ok"] is True
+
+    status = manager.status()
+    assert status["running"] is True
+    assert len(status["folders"]) == 3
+
+    extra = tmp_path / "extra"
+    extra.mkdir()
+    assert manager.start(str(extra))["ok"] is False
+    assert manager.stop(str(folders[0])) is True
+    assert len(manager.status()["folders"]) == 2
+    manager.stop()
+
+
 def test_scan_file_passes_ocr_flag_to_extract_text(monkeypatch, tmp_path: Path):
     doc = tmp_path / "scan.pdf"
     doc.write_bytes(b"%PDF-1.4")
@@ -162,4 +196,3 @@ def test_api_scan_file_accepts_ocr_flag(monkeypatch):
 
     assert response.status_code == 200
     assert seen["ocr"] is True
-

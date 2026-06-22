@@ -1,6 +1,6 @@
 # XLENT Compliance-scanner
 
-> **v1.4.3** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
+> **v1.4.7** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
 
 Alt kjøres 100 % lokalt — ingen dokumenter, tekst eller funn sendes over internett.
 
@@ -415,6 +415,13 @@ src/xlent_scanner/
 ---
 
 ## Endringslogg
+
+### v1.4.7
+- La til manuell re-scan-knapp etter redaction, uten automatisk re-scan.
+- La til bakgrunnsstatus for mappeovervåkning og utklippstavlevakt.
+- Forbedret egendefinerte regex-mønstre med skjema og test mot eksempeltekst.
+- La til redaction-profiler, OCR-status i diagnostikk, flere samtidige mappeovervåkninger og konfigurerbar Microsoft 365-labelmapping.
+- La til release-gate som validerer installer-artifacts før opplasting til GitHub Release.
 
 ### v1.4.3
 - La til valgfri Microsoft 365 / Graph-integrasjon for sensitivity labels, retention labels og SharePoint scan-metadata.

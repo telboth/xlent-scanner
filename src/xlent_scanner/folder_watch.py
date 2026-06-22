@@ -22,6 +22,7 @@ LOGGER = logging.getLogger("xlent_scanner")
 _POLL_SECONDS = 5.0
 _ALERT_LEVELS = ("rød", "svart")
 _MAX_RESULTS = 50
+_MAX_WATCHED_FOLDERS = 3
 
 _SKIP_PREFIXES = ("~$", ".")
 _SKIP_SUFFIXES = (".tmp", ".crdownload", ".partial", ".download", ".part")
@@ -211,5 +212,78 @@ class FolderWatcher:
                 LOGGER.warning("Mappeovervåking: feil i runde: %s", exc)
 
 
+class FolderWatchManager:
+    """Holder opptil tre samtidige FolderWatcher-instanser."""
+
+    def __init__(self, max_folders: int = _MAX_WATCHED_FOLDERS) -> None:
+        self._lock = threading.Lock()
+        self._watchers: dict[str, FolderWatcher] = {}
+        self._max_folders = max_folders
+
+    def start(self, folder: str, ignore_xlent: bool = False, language: str = "auto") -> dict[str, Any]:
+        p = Path(folder)
+        if not p.is_dir():
+            return {"ok": False, "error": f"Ikke en mappe: {folder}"}
+        key = str(p.resolve())
+        with self._lock:
+            if key not in self._watchers and len(self._watchers) >= self._max_folders:
+                return {"ok": False, "error": f"Maks {_MAX_WATCHED_FOLDERS} mapper kan overvåkes samtidig."}
+            watcher = self._watchers.get(key)
+            if watcher is None:
+                watcher = FolderWatcher()
+                self._watchers[key] = watcher
+        return watcher.start(key, ignore_xlent=ignore_xlent, language=language)
+
+    def stop(self, folder: str | None = None) -> bool:
+        with self._lock:
+            if folder:
+                key = str(Path(folder).resolve())
+                watchers = [(key, self._watchers.get(key))]
+            else:
+                watchers = list(self._watchers.items())
+        stopped = False
+        for key, watcher in watchers:
+            if watcher is None:
+                continue
+            stopped = watcher.stop() or stopped
+            with self._lock:
+                status = watcher.status()
+                if not status.get("running"):
+                    self._watchers.pop(key, None)
+        return stopped
+
+    def status(self) -> dict[str, Any]:
+        folders = []
+        recent_results = []
+        scanned_count = 0
+        with self._lock:
+            items = list(self._watchers.items())
+        for key, watcher in items:
+            status = watcher.status()
+            if not status.get("running"):
+                with self._lock:
+                    self._watchers.pop(key, None)
+                continue
+            folders.append({
+                "folder": status.get("folder") or key,
+                "started_at": status.get("started_at"),
+                "scanned_count": status.get("scanned_count", 0),
+            })
+            scanned_count += int(status.get("scanned_count") or 0)
+            recent_results.extend(status.get("recent_results") or [])
+        recent_results.sort(key=lambda r: float(r.get("timestamp") or 0))
+        del recent_results[:-_MAX_RESULTS]
+        first_folder = folders[0]["folder"] if folders else None
+        return {
+            "running": bool(folders),
+            "folder": first_folder,
+            "folders": folders,
+            "started_at": folders[0]["started_at"] if folders else None,
+            "scanned_count": scanned_count,
+            "recent_results": recent_results,
+            "max_folders": self._max_folders,
+        }
+
+
 # Global singleton brukt av Flask-endepunktene
-watcher = FolderWatcher()
+watcher = FolderWatchManager()

@@ -88,7 +88,8 @@ def test_theme_translations_exist_for_all_ui_languages():
         "themeLight",
         "themeNote",
     ]:
-        assert html.count(f"{key}:") == 6
+        expected = 7 if key == "redactionProfile" else 6
+        assert html.count(f"{key}:") == expected
 
 
 def test_update_install_script_controls_exist_for_supported_desktop_platforms():
@@ -112,7 +113,8 @@ def test_update_install_script_controls_exist_for_supported_desktop_platforms():
         "updateInstallScriptFailed",
         "updateInstallScriptUnsupported",
     ]:
-        assert html.count(f"{key}:") == 6
+        expected = 7 if key == "redactionProfile" else 6
+        assert html.count(f"{key}:") == expected
 
 
 def test_diagnostics_controls_exist_for_all_languages():
@@ -235,6 +237,10 @@ def test_microsoft_365_graph_controls_exist_for_all_languages():
         'id="m365-sync-root"',
         'id="m365-sensitivity-label-id"',
         'id="m365-retention-label-name"',
+        'id="m365-map-gronn"',
+        'id="m365-map-gul"',
+        'id="m365-map-rod"',
+        'id="m365-map-svart"',
         'id="btn-m365-status"',
         'id="btn-m365-read-tags"',
         'id="btn-m365-read-local-tags"',
@@ -272,6 +278,11 @@ def test_microsoft_365_graph_controls_exist_for_all_languages():
         "m365AssignSensitivity",
         "m365SetRetention",
         "m365WriteMetadata",
+        "m365LabelMappingNote",
+        "m365MapGreen",
+        "m365MapYellow",
+        "m365MapRed",
+        "m365MapBlack",
         "m365TokenConfigured",
         "m365TokenMissing",
         "m365Done",
@@ -436,7 +447,16 @@ def test_guard_watch_custom_patterns_and_ocr_ui_are_wired():
     html = HTML.read_text(encoding="utf-8")
 
     for element_id in [
+        "background-panel",
+        "background-panel-body",
+        "redaction-profile",
         "custom-patterns-editor",
+        "custom-pattern-name",
+        "custom-pattern-regex",
+        "custom-pattern-severity",
+        "custom-pattern-sample",
+        "btn-custom-pattern-test",
+        "btn-custom-pattern-add",
         "btn-custom-patterns-reload",
         "btn-custom-patterns-save",
         "clipguard-toggle",
@@ -448,15 +468,22 @@ def test_guard_watch_custom_patterns_and_ocr_ui_are_wired():
     for snippet in [
         'fetch(`${API}/custom-patterns/get`,',
         'fetch(`${API}/custom-patterns/save`,',
+        'fetch(`${API}/custom-patterns/test`,',
         'fetch(`${API}/clipboard-guard/${enabled ? "start" : "stop"}`',
         'fetch(`${API}/folder-watch/start`,',
         'fetch(`${API}/folder-watch/stop`,',
         'fetch(`${API}/folder-watch/status`)',
+        "refreshBackgroundPanel",
         "startWatchStatusPolling",
         "stopWatchStatusPolling",
         "setInterval(pollWatchStatus, 4000)",
+        "At most 3 folders",
         "loadHistoryFromApi();",
         'item.source === "watch"',
+        "addCustomPatternFromForm",
+        "testCustomPatternForm",
+        "applyRedactionProfile",
+        "rescanRedacted",
         "loadCustomPatternsEditor();",
         "restoreClipGuard();",
         "restoreWatch();",
@@ -473,6 +500,16 @@ def test_guard_watch_custom_patterns_and_ocr_ui_are_wired():
         "customPatternsLoadErr",
         "customPatternsSaveErr",
         "customPatternsSaved",
+        "customPatternName",
+        "customPatternRegex",
+        "customPatternSeverity",
+        "customPatternIgnoreCase",
+        "customPatternSample",
+        "customPatternTest",
+        "customPatternAdd",
+        "customPatternMatches",
+        "customPatternMissing",
+        "customPatternAdded",
         "settingsClipGuardTitle",
         "clipGuardNote",
         "clipGuardToggle",
@@ -483,14 +520,26 @@ def test_guard_watch_custom_patterns_and_ocr_ui_are_wired():
         "watchChoose",
         "watchToggle",
         "watchNoFolder",
+        "watchMaxFolders",
         "watchActive",
         "watchInactive",
         "watchScanned",
         "historySourceWatch",
+        "backgroundTitle",
+        "backgroundWatch",
+        "backgroundClipboard",
+        "backgroundLast",
+        "backgroundLastClipboard",
+        "redactionProfile",
+        "profileNormal",
+        "profileLowFp",
+        "profileStrict",
+        "rescanRedacted",
         "ocrRescanBtn",
         "ocrRunning",
     ]:
-        assert html.count(f"{key}:") == 6
+        expected = 7 if key == "redactionProfile" else 6
+        assert html.count(f"{key}:") == expected
 
 
 def test_medical_ai_category_is_available_but_default_off():

@@ -495,6 +495,13 @@
       background: transparent; color: var(--muted); cursor: pointer; font-size: 11px;
     }
     .h-rescan:hover { border-color: var(--accent); color: var(--accent); }
+    .background-panel {
+      display:none; margin:8px 0 10px; padding:9px 11px; border:1px solid var(--border);
+      border-radius:8px; background:var(--panel2); font-size:12px; color:var(--muted);
+    }
+    .background-panel.show { display:block; }
+    .background-row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+    .background-pill { border:1px solid var(--border); border-radius:999px; padding:2px 8px; background:var(--panel); }
 
     /* Flagg-emoji i språkvelger */
     .flag-em { font-size: 15px; line-height: 1; }
@@ -663,7 +670,15 @@
       <div id="scan-opts">
         <div class="scan-opts-head">
           <span class="scan-opts-label" data-i18n="scanOptsTitle">Hva vil du finne?</span>
-          <div style="display:flex;gap:4px;">
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+            <label style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px;">
+              <span data-i18n="redactionProfile">Profil</span>
+              <select id="redaction-profile" style="font-size:11px;padding:2px 6px;">
+                <option value="normal" data-i18n="profileNormal">Normal</option>
+                <option value="lowfp" data-i18n="profileLowFp">Lav false positive</option>
+                <option value="strict" data-i18n="profileStrict">Streng</option>
+              </select>
+            </label>
             <button class="ctrl-btn" id="scan-sel-all" style="font-size:11px;padding:2px 8px;" data-i18n="selAll">Velg alle</button>
             <button class="ctrl-btn" id="scan-sel-none" style="font-size:11px;padding:2px 8px;" data-i18n="selNone">Fjern alle</button>
           </div>
@@ -777,6 +792,11 @@
           data-i18n="clearResult">🗑 Tøm</button>
       </div>
       <div id="result"></div>
+
+      <div id="background-panel" class="background-panel" aria-live="polite">
+        <div style="font-weight:700;color:var(--text);margin-bottom:5px;" data-i18n="backgroundTitle">Bakgrunnsjobber</div>
+        <div id="background-panel-body"></div>
+      </div>
 
       <!-- AI-scan resultater (vises etter skann når AI-toggle er på) -->
       <div id="ai-scan-status">
@@ -1328,6 +1348,13 @@
           <label for="m365-retention-label-name" data-i18n="m365RetentionLabelName">Retention label:</label>
           <input id="m365-retention-label-name" type="text" placeholder="Label name" style="min-width:260px;">
         </div>
+        <div class="settings-note" style="margin-top:8px;" data-i18n="m365LabelMappingNote">Valgfri mapping for foreslått label når scan-metadata skrives.</div>
+        <div class="settings-row" style="gap:8px;flex-wrap:wrap;">
+          <label><span data-i18n="m365MapGreen">Grønn</span><br><input id="m365-map-gronn" type="text" placeholder="Ingen label"></label>
+          <label><span data-i18n="m365MapYellow">Gul</span><br><input id="m365-map-gul" type="text" placeholder="Internal"></label>
+          <label><span data-i18n="m365MapRed">Rød</span><br><input id="m365-map-rod" type="text" placeholder="Confidential"></label>
+          <label><span data-i18n="m365MapBlack">Svart</span><br><input id="m365-map-svart" type="text" placeholder="Highly Confidential"></label>
+        </div>
         <div class="settings-row" style="margin-top:10px; gap:8px;">
           <button id="btn-m365-status" class="ctrl-btn" data-i18n="m365CheckStatus">Sjekk Graph-status</button>
           <button id="btn-m365-read-tags" class="ctrl-btn" data-i18n="m365ReadTags">Les dokumentmerking</button>
@@ -1416,6 +1443,24 @@
       <div class="settings-section">
         <div class="settings-section-title" data-i18n="settingsCustomPatternsTitle">Egendefinerte mønstre</div>
         <div class="settings-note" data-i18n="customPatternsNote">Egne regex-mønstre (prosjektkoder, interne ID-er) med valgfri alvorlighetsgrad. Tips: bruk enkle fnutter rundt regex-en, da slipper du å doble backslash-er.</div>
+        <div class="settings-row" style="align-items:flex-end;gap:8px;flex-wrap:wrap;margin-top:8px;">
+          <label><span data-i18n="customPatternName">Navn</span><br><input id="custom-pattern-name" type="text" placeholder="Prosjektkode"></label>
+          <label><span data-i18n="customPatternRegex">Regex</span><br><input id="custom-pattern-regex" type="text" placeholder="PRJ-\d{4}"></label>
+          <label><span data-i18n="customPatternSeverity">Alvorlighet</span><br>
+            <select id="custom-pattern-severity">
+              <option value="gul">gul</option>
+              <option value="rød">rød</option>
+              <option value="svart">svart</option>
+            </select>
+          </label>
+          <label style="align-self:center;"><input id="custom-pattern-ignore-case" type="checkbox" checked> <span data-i18n="customPatternIgnoreCase">Ignorer store/små bokstaver</span></label>
+        </div>
+        <textarea id="custom-pattern-sample" class="settings-textarea" spellcheck="false" style="min-height:58px;" data-i18n-placeholder="customPatternSample" placeholder="Test regex mot eksempeltekst her…"></textarea>
+        <div class="settings-row" style="margin-top:8px;">
+          <button id="btn-custom-pattern-test" class="ctrl-btn" data-i18n="customPatternTest">Test mønster</button>
+          <button id="btn-custom-pattern-add" class="ctrl-btn ctrl-btn-primary" data-i18n="customPatternAdd">Legg til i TOML</button>
+        </div>
+        <div class="settings-note" id="custom-pattern-form-msg"></div>
         <div class="settings-note" id="custom-patterns-path"></div>
         <textarea id="custom-patterns-editor" class="settings-textarea" spellcheck="false"></textarea>
         <div class="settings-row" style="margin-top:8px;">
@@ -1541,6 +1586,7 @@
         netErr:       "Nettverksfeil:",
         openReport:   "📄 Åpne fullstendig rapport",
         rescan:       "🔄 Skann på nytt",
+        rescanRedacted:"Kontrollskann output",
         extractedText:"Ekstrahert tekst",
         wlAdd:        "+ Hviteliste",
         wlAdded:      "✓ Lagt til",
@@ -1653,6 +1699,16 @@
         m365AssignSensitivity:"Sett sensitivity label",
         m365SetRetention:    "Sett retention label",
         m365WriteMetadata:   "Skriv scan-metadata",
+        m365LabelMappingNote:"Valfri mapping för föreslagen label när skanningsmetadata skrivs.",
+        m365MapGreen:"Grön",
+        m365MapYellow:"Gul",
+        m365MapRed:"Röd",
+        m365MapBlack:"Svart",
+        m365LabelMappingNote:"Valgfri mapping for foreslått label når scan-metadata skrives.",
+        m365MapGreen:"Grønn",
+        m365MapYellow:"Gul",
+        m365MapRed:"Rød",
+        m365MapBlack:"Svart",
         m365TokenConfigured: "Graph-token er konfigurert",
         m365TokenMissing:    "Graph-token mangler. Sett XLENT_GRAPH_TOKEN eller MICROSOFT_GRAPH_TOKEN før appen startes.",
         m365Done:            "Ferdig.",
@@ -1766,6 +1822,10 @@
         folderLevel:        "Nivå",
         folderFile:         "Fil",
         scanOptsTitle:       "Hva vil du finne?",
+        redactionProfile:    "Profil",
+        profileNormal:       "Normal",
+        profileLowFp:        "Lav false positive",
+        profileStrict:       "Streng",
         scanCatId:           "Personnummer / ID",
         scanCatKonto:        "Bankdetaljer",
         scanCatKredittkort:  "Kredittkort",
@@ -1792,6 +1852,11 @@
         copiedToClipboard:   "✓ Kopiert til utklippstavle",
         batchScanning:       "Skanner {n} filer…",
         batchTitle:          "Skanneresultat ({n} filer)",
+        backgroundTitle:     "Bakgrunnsjobber",
+        backgroundWatch:     "Mappevakt",
+        backgroundClipboard: "Utklippstavle",
+        backgroundLast:      "Siste fil",
+        backgroundLastClipboard:"Siste varsel",
         settingsCustomPatternsTitle:"Egendefinerte mønstre",
         customPatternsNote:  "Legg inn organisasjonsspesifikke regex-mønstre som alltid skal flagges. Bruk TOML med [[patterns]], name, regex og severity.",
         customPatternsReload:"Last inn mønstre",
@@ -1799,6 +1864,16 @@
         customPatternsLoadErr:"Kunne ikke lese egendefinerte mønstre:",
         customPatternsSaveErr:"Kunne ikke lagre egendefinerte mønstre:",
         customPatternsSaved:"Egendefinerte mønstre lagret.",
+        customPatternName:  "Navn",
+        customPatternRegex: "Regex",
+        customPatternSeverity:"Alvorlighet",
+        customPatternIgnoreCase:"Ignorer store/små bokstaver",
+        customPatternSample:"Test regex mot eksempeltekst her…",
+        customPatternTest:  "Test mønster",
+        customPatternAdd:   "Legg til i TOML",
+        customPatternMatches:"{n} treff",
+        customPatternMissing:"Navn og regex må fylles ut.",
+        customPatternAdded:"Mønster lagt til i TOML. Husk å lagre.",
         settingsClipGuardTitle:"Utklippstavle-vakt",
         clipGuardNote:       "Overvåker utklippstavlen lokalt og varsler hvis du kopierer rødt/svart innhold. Innholdet lagres ikke og forlater aldri maskinen.",
         clipGuardToggle:     "Aktiver utklippstavle-vakt",
@@ -1809,6 +1884,7 @@
         watchChoose:         "Velg mappe…",
         watchToggle:         "Aktiver mappeovervåking",
         watchNoFolder:       "Ingen mappe valgt.",
+        watchMaxFolders:     "Maks 3 mapper kan overvåkes samtidig.",
         watchActive:         "Mappeovervåking er aktiv: {folder}",
         watchInactive:       "Mappeovervåking er stoppet.",
         watchScanned:        "{n} filer skannet av mappevakt",
@@ -1852,6 +1928,7 @@
         netErr:       "Nätverksfel:",
         openReport:   "📄 Öppna fullständig rapport",
         rescan:       "🔄 Skanna igen",
+        rescanRedacted:"Kontrollskanna output",
         extractedText:"Extraherad text",
         wlAdd:        "+ Vitlista",
         wlAdded:      "✓ Tillagd",
@@ -2077,6 +2154,10 @@
         folderLevel:        "Nivå",
         folderFile:         "Fil",
         scanOptsTitle:       "Vad vill du hitta?",
+        redactionProfile:    "Profil",
+        profileNormal:       "Normal",
+        profileLowFp:        "Låg false positive",
+        profileStrict:       "Strikt",
         scanCatId:           "Personnummer / ID",
         scanCatKonto:        "Bankuppgifter",
         scanCatKredittkort:  "Kredittkort",
@@ -2103,6 +2184,11 @@
         copiedToClipboard:   "✓ Kopierat till urklipp",
         batchScanning:       "Skannar {n} filer…",
         batchTitle:          "Skanningsresultat ({n} filer)",
+        backgroundTitle:     "Bakgrundsjobb",
+        backgroundWatch:     "Mappvakt",
+        backgroundClipboard: "Urklipp",
+        backgroundLast:      "Senaste fil",
+        backgroundLastClipboard:"Senaste varning",
         settingsCustomPatternsTitle:"Anpassade mönster",
         customPatternsNote:  "Lägg in organisationsspecifika regex-mönster som alltid ska flaggas. Använd TOML med [[patterns]], name, regex och severity.",
         customPatternsReload:"Läs in mönster",
@@ -2110,6 +2196,16 @@
         customPatternsLoadErr:"Kunde inte läsa anpassade mönster:",
         customPatternsSaveErr:"Kunde inte spara anpassade mönster:",
         customPatternsSaved:"Anpassade mönster sparade.",
+        customPatternName:  "Namn",
+        customPatternRegex: "Regex",
+        customPatternSeverity:"Allvarlighet",
+        customPatternIgnoreCase:"Ignorera stora/små bokstäver",
+        customPatternSample:"Testa regex mot exempeltext här…",
+        customPatternTest:  "Testa mönster",
+        customPatternAdd:   "Lägg till i TOML",
+        customPatternMatches:"{n} träffar",
+        customPatternMissing:"Namn och regex måste fyllas i.",
+        customPatternAdded:"Mönster tillagt i TOML. Kom ihåg att spara.",
         settingsClipGuardTitle:"Urklippsvakt",
         clipGuardNote:       "Övervakar urklipp lokalt och varnar om du kopierar rött/svart innehåll. Innehållet sparas inte och lämnar aldrig maskinen.",
         clipGuardToggle:     "Aktivera urklippsvakt",
@@ -2120,6 +2216,7 @@
         watchChoose:         "Välj mapp…",
         watchToggle:         "Aktivera mappövervakning",
         watchNoFolder:       "Ingen mapp vald.",
+        watchMaxFolders:     "Max 3 mappar kan övervakas samtidigt.",
         watchActive:         "Mappövervakning är aktiv: {folder}",
         watchInactive:       "Mappövervakning är stoppad.",
         watchScanned:        "{n} filer skannade av mappvakt",
@@ -2163,6 +2260,7 @@
         netErr:       "Network error:",
         openReport:   "📄 Open full report",
         rescan:       "🔄 Re-scan",
+        rescanRedacted:"Check output",
         extractedText:"Extracted text",
         wlAdd:        "+ Whitelist",
         wlAdded:      "✓ Added",
@@ -2275,6 +2373,11 @@
         m365AssignSensitivity:"Set sensitivity label",
         m365SetRetention:    "Set retention label",
         m365WriteMetadata:   "Write scan metadata",
+        m365LabelMappingNote:"Optional mapping for suggested label when scan metadata is written.",
+        m365MapGreen:"Green",
+        m365MapYellow:"Yellow",
+        m365MapRed:"Red",
+        m365MapBlack:"Black",
         m365TokenConfigured: "Graph token is configured",
         m365TokenMissing:    "Graph token is missing. Set XLENT_GRAPH_TOKEN or MICROSOFT_GRAPH_TOKEN before starting the app.",
         m365Done:            "Done.",
@@ -2388,6 +2491,10 @@
         folderLevel:        "Level",
         folderFile:         "File",
         scanOptsTitle:       "What do you want to find?",
+        redactionProfile:    "Profile",
+        profileNormal:       "Normal",
+        profileLowFp:        "Low false positive",
+        profileStrict:       "Strict",
         scanCatId:           "National / personal ID numbers",
         scanCatKonto:        "Bank details",
         scanCatKredittkort:  "Credit cards",
@@ -2414,6 +2521,11 @@
         copiedToClipboard:   "✓ Copied to clipboard",
         batchScanning:       "Scanning {n} files…",
         batchTitle:          "Scan results ({n} files)",
+        backgroundTitle:     "Background jobs",
+        backgroundWatch:     "Folder watch",
+        backgroundClipboard: "Clipboard",
+        backgroundLast:      "Last file",
+        backgroundLastClipboard:"Last alert",
         settingsCustomPatternsTitle:"Custom patterns",
         customPatternsNote:  "Add organization-specific regex patterns that should always be flagged. Use TOML with [[patterns]], name, regex and severity.",
         customPatternsReload:"Reload patterns",
@@ -2421,6 +2533,16 @@
         customPatternsLoadErr:"Could not read custom patterns:",
         customPatternsSaveErr:"Could not save custom patterns:",
         customPatternsSaved:"Custom patterns saved.",
+        customPatternName:  "Name",
+        customPatternRegex: "Regex",
+        customPatternSeverity:"Severity",
+        customPatternIgnoreCase:"Ignore case",
+        customPatternSample:"Test regex against sample text here…",
+        customPatternTest:  "Test pattern",
+        customPatternAdd:   "Add to TOML",
+        customPatternMatches:"{n} matches",
+        customPatternMissing:"Name and regex are required.",
+        customPatternAdded:"Pattern added to TOML. Remember to save.",
         settingsClipGuardTitle:"Clipboard guard",
         clipGuardNote:       "Monitors the clipboard locally and warns if you copy red/black content. Content is not stored and never leaves the machine.",
         clipGuardToggle:     "Enable clipboard guard",
@@ -2431,6 +2553,7 @@
         watchChoose:         "Choose folder…",
         watchToggle:         "Enable folder monitoring",
         watchNoFolder:       "No folder selected.",
+        watchMaxFolders:     "At most 3 folders can be monitored at once.",
         watchActive:         "Folder monitoring is active: {folder}",
         watchInactive:       "Folder monitoring is stopped.",
         watchScanned:        "{n} files scanned by folder watch",
@@ -2466,6 +2589,7 @@
         openReport:          "HTML-Bericht öffnen",
         downloadPdf:         "PDF-Bericht herunterladen",
         rescan:              "Erneut scannen",
+        rescanRedacted:       "Output prüfen",
         exportJson:          "Exportieren als JSON",
         exportCsv:           "Exportieren als CSV",
         genMd:               ".md-Datei erstellen",
@@ -2579,6 +2703,11 @@
         m365AssignSensitivity:"Sensitivity label setzen",
         m365SetRetention:    "Retention label setzen",
         m365WriteMetadata:   "Scan-Metadaten schreiben",
+        m365LabelMappingNote:"Optionale Zuordnung für vorgeschlagenes Label beim Schreiben von Scan-Metadaten.",
+        m365MapGreen:"Grün",
+        m365MapYellow:"Gelb",
+        m365MapRed:"Rot",
+        m365MapBlack:"Schwarz",
         m365TokenConfigured: "Graph-Token ist konfiguriert",
         m365TokenMissing:    "Graph-Token fehlt. Setzen Sie XLENT_GRAPH_TOKEN oder MICROSOFT_GRAPH_TOKEN vor dem Start der App.",
         m365Done:            "Fertig.",
@@ -2647,6 +2776,11 @@
         copiedToClipboard:   "✓ In die Zwischenablage kopiert",
         batchScanning:       "Scanne {n} Dateien…",
         batchTitle:          "Scan-Ergebnisse ({n} Dateien)",
+        backgroundTitle:     "Hintergrundjobs",
+        backgroundWatch:     "Ordnerwächter",
+        backgroundClipboard: "Zwischenablage",
+        backgroundLast:      "Letzte Datei",
+        backgroundLastClipboard:"Letzte Warnung",
         settingsCustomPatternsTitle:"Benutzerdefinierte Muster",
         customPatternsNote:  "Fügen Sie organisationsspezifische Regex-Muster hinzu, die immer markiert werden sollen. Verwenden Sie TOML mit [[patterns]], name, regex und severity.",
         customPatternsReload:"Muster laden",
@@ -2654,6 +2788,16 @@
         customPatternsLoadErr:"Benutzerdefinierte Muster konnten nicht gelesen werden:",
         customPatternsSaveErr:"Benutzerdefinierte Muster konnten nicht gespeichert werden:",
         customPatternsSaved:"Benutzerdefinierte Muster gespeichert.",
+        customPatternName:  "Name",
+        customPatternRegex: "Regex",
+        customPatternSeverity:"Schweregrad",
+        customPatternIgnoreCase:"Groß-/Kleinschreibung ignorieren",
+        customPatternSample:"Regex hier gegen Beispieltext testen…",
+        customPatternTest:  "Muster testen",
+        customPatternAdd:   "Zu TOML hinzufügen",
+        customPatternMatches:"{n} Treffer",
+        customPatternMissing:"Name und Regex sind erforderlich.",
+        customPatternAdded:"Muster zu TOML hinzugefügt. Speichern nicht vergessen.",
         settingsClipGuardTitle:"Zwischenablage-Wächter",
         clipGuardNote:       "Überwacht die Zwischenablage lokal und warnt, wenn Sie roten/schwarzen Inhalt kopieren. Der Inhalt wird nicht gespeichert und verlässt nie den Rechner.",
         clipGuardToggle:     "Zwischenablage-Wächter aktivieren",
@@ -2664,6 +2808,7 @@
         watchChoose:         "Ordner wählen…",
         watchToggle:         "Ordnerüberwachung aktivieren",
         watchNoFolder:       "Kein Ordner ausgewählt.",
+        watchMaxFolders:     "Maximal 3 Ordner können gleichzeitig überwacht werden.",
         watchActive:         "Ordnerüberwachung ist aktiv: {folder}",
         watchInactive:       "Ordnerüberwachung ist gestoppt.",
         watchScanned:        "{n} Dateien durch Ordnerwächter gescannt",
@@ -2682,6 +2827,10 @@
         dstCatBankkonto:     "Bankkonto",
         dstHwReq:            "⚠ Tiefenscan läuft lokal und kann mehrere Minuten dauern. Empfohlen: mind. 16 GB RAM. GPU-Beschleunigung wird automatisch genutzt.",
         scanOptsTitle:       "Was soll gesucht werden?",
+        redactionProfile:    "Profil",
+        profileNormal:       "Normal",
+        profileLowFp:        "Wenige False Positives",
+        profileStrict:       "Streng",
         scanCatId:           "Personennummer / ID",
         scanCatKonto:        "Bankdaten",
         scanCatKredittkort:  "Kreditkarte",
@@ -2778,6 +2927,7 @@
         openReport:          "Ouvrir le rapport HTML",
         downloadPdf:         "Télécharger le rapport PDF",
         rescan:              "Réanalyser",
+        rescanRedacted:       "Vérifier la sortie",
         exportJson:          "Exporter en JSON",
         exportCsv:           "Exporter en CSV",
         genMd:               "Générer un fichier .md",
@@ -2891,6 +3041,11 @@
         m365AssignSensitivity:"Définir le sensitivity label",
         m365SetRetention:    "Définir le retention label",
         m365WriteMetadata:   "Écrire les métadonnées du scan",
+        m365LabelMappingNote:"Mapping facultatif du label suggéré lors de l’écriture des métadonnées d’analyse.",
+        m365MapGreen:"Vert",
+        m365MapYellow:"Jaune",
+        m365MapRed:"Rouge",
+        m365MapBlack:"Noir",
         m365TokenConfigured: "Le jeton Graph est configuré",
         m365TokenMissing:    "Le jeton Graph manque. Définissez XLENT_GRAPH_TOKEN ou MICROSOFT_GRAPH_TOKEN avant de lancer l’app.",
         m365Done:            "Terminé.",
@@ -2959,6 +3114,11 @@
         copiedToClipboard:   "✓ Copié dans le presse-papiers",
         batchScanning:       "Analyse de {n} fichiers…",
         batchTitle:          "Résultats d'analyse ({n} fichiers)",
+        backgroundTitle:     "Tâches en arrière-plan",
+        backgroundWatch:     "Surveillance dossier",
+        backgroundClipboard: "Presse-papiers",
+        backgroundLast:      "Dernier fichier",
+        backgroundLastClipboard:"Dernière alerte",
         settingsCustomPatternsTitle:"Modèles personnalisés",
         customPatternsNote:  "Ajoutez des expressions régulières propres à l’organisation qui doivent toujours être signalées. Utilisez TOML avec [[patterns]], name, regex et severity.",
         customPatternsReload:"Recharger les modèles",
@@ -2966,6 +3126,16 @@
         customPatternsLoadErr:"Impossible de lire les modèles personnalisés :",
         customPatternsSaveErr:"Impossible d’enregistrer les modèles personnalisés :",
         customPatternsSaved:"Modèles personnalisés enregistrés.",
+        customPatternName:  "Nom",
+        customPatternRegex: "Regex",
+        customPatternSeverity:"Gravité",
+        customPatternIgnoreCase:"Ignorer la casse",
+        customPatternSample:"Tester la regex sur un texte exemple ici…",
+        customPatternTest:  "Tester le modèle",
+        customPatternAdd:   "Ajouter au TOML",
+        customPatternMatches:"{n} correspondances",
+        customPatternMissing:"Le nom et la regex sont obligatoires.",
+        customPatternAdded:"Modèle ajouté au TOML. N’oubliez pas d’enregistrer.",
         settingsClipGuardTitle:"Surveillance du presse-papiers",
         clipGuardNote:       "Surveille le presse-papiers localement et avertit si vous copiez du contenu rouge/noir. Le contenu n’est pas stocké et ne quitte jamais la machine.",
         clipGuardToggle:     "Activer la surveillance du presse-papiers",
@@ -2976,6 +3146,7 @@
         watchChoose:         "Choisir un dossier…",
         watchToggle:         "Activer la surveillance de dossier",
         watchNoFolder:       "Aucun dossier choisi.",
+        watchMaxFolders:     "Au maximum 3 dossiers peuvent être surveillés simultanément.",
         watchActive:         "Surveillance de dossier active : {folder}",
         watchInactive:       "Surveillance de dossier arrêtée.",
         watchScanned:        "{n} fichiers analysés par la surveillance",
@@ -2994,6 +3165,10 @@
         dstCatBankkonto:     "Compte bancaire",
         dstHwReq:            "⚠ L'analyse approfondie s'exécute localement et peut prendre plusieurs minutes. Recommandé : au moins 16 Go de RAM. L'accélération GPU est utilisée automatiquement.",
         scanOptsTitle:       "Que rechercher ?",
+        redactionProfile:    "Profil",
+        profileNormal:       "Normal",
+        profileLowFp:        "Peu de faux positifs",
+        profileStrict:       "Strict",
         scanCatId:           "Numéro d'identité / ID",
         scanCatKonto:        "Coordonnées bancaires",
         scanCatKredittkort:  "Carte de crédit",
@@ -3090,6 +3265,7 @@
         openReport:          "Abrir informe HTML",
         downloadPdf:         "Descargar informe PDF",
         rescan:              "Volver a escanear",
+        rescanRedacted:       "Comprobar salida",
         exportJson:          "Exportar como JSON",
         exportCsv:           "Exportar como CSV",
         genMd:               "Generar archivo .md",
@@ -3203,6 +3379,11 @@
         m365AssignSensitivity:"Definir sensitivity label",
         m365SetRetention:    "Definir retention label",
         m365WriteMetadata:   "Escribir metadatos del escaneo",
+        m365LabelMappingNote:"Asignación opcional para la etiqueta sugerida al escribir metadatos del escaneo.",
+        m365MapGreen:"Verde",
+        m365MapYellow:"Amarillo",
+        m365MapRed:"Rojo",
+        m365MapBlack:"Negro",
         m365TokenConfigured: "El token de Graph está configurado",
         m365TokenMissing:    "Falta el token de Graph. Defina XLENT_GRAPH_TOKEN o MICROSOFT_GRAPH_TOKEN antes de iniciar la app.",
         m365Done:            "Listo.",
@@ -3271,6 +3452,11 @@
         copiedToClipboard:   "✓ Copiado al portapapeles",
         batchScanning:       "Escaneando {n} archivos…",
         batchTitle:          "Resultados del escaneo ({n} archivos)",
+        backgroundTitle:     "Tareas en segundo plano",
+        backgroundWatch:     "Vigilancia carpeta",
+        backgroundClipboard: "Portapapeles",
+        backgroundLast:      "Último archivo",
+        backgroundLastClipboard:"Última alerta",
         settingsCustomPatternsTitle:"Patrones personalizados",
         customPatternsNote:  "Añada patrones regex específicos de la organización que siempre deben marcarse. Use TOML con [[patterns]], name, regex y severity.",
         customPatternsReload:"Recargar patrones",
@@ -3278,6 +3464,16 @@
         customPatternsLoadErr:"No se pudieron leer los patrones personalizados:",
         customPatternsSaveErr:"No se pudieron guardar los patrones personalizados:",
         customPatternsSaved:"Patrones personalizados guardados.",
+        customPatternName:  "Nombre",
+        customPatternRegex: "Regex",
+        customPatternSeverity:"Severidad",
+        customPatternIgnoreCase:"Ignorar mayúsculas/minúsculas",
+        customPatternSample:"Pruebe la regex con texto de ejemplo aquí…",
+        customPatternTest:  "Probar patrón",
+        customPatternAdd:   "Añadir a TOML",
+        customPatternMatches:"{n} coincidencias",
+        customPatternMissing:"Nombre y regex son obligatorios.",
+        customPatternAdded:"Patrón añadido a TOML. Recuerde guardar.",
         settingsClipGuardTitle:"Vigilancia del portapapeles",
         clipGuardNote:       "Supervisa el portapapeles localmente y avisa si copia contenido rojo/negro. El contenido no se guarda y nunca sale de la máquina.",
         clipGuardToggle:     "Activar vigilancia del portapapeles",
@@ -3288,6 +3484,7 @@
         watchChoose:         "Elegir carpeta…",
         watchToggle:         "Activar supervisión de carpeta",
         watchNoFolder:       "No se ha elegido ninguna carpeta.",
+        watchMaxFolders:     "Como máximo se pueden supervisar 3 carpetas a la vez.",
         watchActive:         "Supervisión de carpeta activa: {folder}",
         watchInactive:       "Supervisión de carpeta detenida.",
         watchScanned:        "{n} archivos escaneados por vigilancia",
@@ -3306,6 +3503,10 @@
         dstCatBankkonto:     "Cuenta bancaria",
         dstHwReq:            "⚠ El escaneo profundo se ejecuta localmente y puede tardar varios minutos. Recomendado: al menos 16 GB de RAM. La aceleración GPU se usa automáticamente.",
         scanOptsTitle:       "¿Qué buscar?",
+        redactionProfile:    "Perfil",
+        profileNormal:       "Normal",
+        profileLowFp:        "Bajos falsos positivos",
+        profileStrict:       "Estricto",
         scanCatId:           "Número de identidad / ID",
         scanCatKonto:        "Datos bancarios",
         scanCatKredittkort:  "Tarjeta de crédito",
@@ -3451,6 +3652,7 @@
     let _aiCurrentJobId = "";
     let _watchPollTimer = null;
     let _watchLastScannedCount = 0;
+    let _backgroundStatusTimer = null;
 
     /* ══════════════════════════════════════════════════════════════════
        UI LANGUAGE
@@ -3854,6 +4056,70 @@
       }
     }
 
+    function _tomlString(value) {
+      return JSON.stringify(String(value || ""));
+    }
+
+    function setCustomPatternFormMessage(text, color = "var(--muted)") {
+      const el = document.getElementById("custom-pattern-form-msg");
+      if (!el) return;
+      el.textContent = text;
+      el.style.color = color;
+    }
+
+    function customPatternFormData() {
+      return {
+        name: document.getElementById("custom-pattern-name")?.value.trim() || "",
+        regex: document.getElementById("custom-pattern-regex")?.value || "",
+        severity: document.getElementById("custom-pattern-severity")?.value || "gul",
+        ignore_case: document.getElementById("custom-pattern-ignore-case")?.checked !== false,
+        sample: document.getElementById("custom-pattern-sample")?.value || "",
+      };
+    }
+
+    async function testCustomPatternForm() {
+      const data = customPatternFormData();
+      setCustomPatternFormMessage(t("processing"));
+      try {
+        const d = await (await fetch(`${API}/custom-patterns/test`, {
+          method: "POST",
+          headers: {"Content-Type":"application/json"},
+          body: JSON.stringify(data),
+        })).json();
+        if (!d.ok) {
+          setCustomPatternFormMessage(`${t("errPrefix")} ${d.error || ""}`, "#f44336");
+          return;
+        }
+        const matches = (d.matches || []).map(m => m.text).slice(0, 6).join(", ");
+        setCustomPatternFormMessage(
+          `${t("customPatternMatches").replace("{n}", d.match_count || 0)}${matches ? `: ${matches}` : ""}`,
+          (d.match_count || 0) ? "var(--ok)" : "var(--muted)",
+        );
+      } catch (e) {
+        setCustomPatternFormMessage(`${t("netErr")} ${e}`, "#f44336");
+      }
+    }
+
+    function addCustomPatternFromForm() {
+      const data = customPatternFormData();
+      if (!data.name || !data.regex) {
+        setCustomPatternFormMessage(t("customPatternMissing"), "#f44336");
+        return;
+      }
+      const editor = document.getElementById("custom-patterns-editor");
+      const block = [
+        "",
+        "[[patterns]]",
+        `name = ${_tomlString(data.name)}`,
+        `regex = ${_tomlString(data.regex)}`,
+        `severity = ${_tomlString(data.severity)}`,
+        `ignore_case = ${data.ignore_case ? "true" : "false"}`,
+        "",
+      ].join("\n");
+      editor.value = `${editor.value.trimEnd()}${block}`;
+      setCustomPatternFormMessage(t("customPatternAdded"), "var(--ok)");
+    }
+
     /* ── Utklippstavle-vakt ───────────────────────────────────────── */
     function setClipGuardMessage(text, color = "var(--muted)") {
       const el = document.getElementById("clipguard-msg");
@@ -3872,6 +4138,7 @@
         try { localStorage.setItem("xlent_clipguard", enabled ? "1" : "0"); } catch(_) {}
         setClipGuardMessage(enabled ? t("clipGuardActive") : t("clipGuardInactive"),
                             enabled ? "var(--ok)" : "var(--muted)");
+        refreshBackgroundPanel();
       } catch (e) {
         setClipGuardMessage(`${t("netErr")} ${e}`, "#f44336");
       }
@@ -3886,6 +4153,7 @@
 
     /* ── Overvåket mappe ──────────────────────────────────────────── */
     let _watchFolder = "";
+    let _watchFolders = [];
 
     function setWatchMessage(text, color = "var(--muted)") {
       const el = document.getElementById("watch-msg");
@@ -3894,8 +4162,9 @@
     }
 
     function renderWatchFolder() {
+      _watchFolder = _watchFolders[0] || "";
       document.getElementById("watch-folder-display").textContent =
-        _watchFolder || t("watchNoFolder");
+        _watchFolders.length ? _watchFolders.join(" · ") : t("watchNoFolder");
     }
 
     function stopWatchStatusPolling() {
@@ -3927,8 +4196,10 @@
         const latest = latestResults.length ? latestResults[latestResults.length - 1] : null;
         const scannedText = scanned > 0 ? ` · ${t("watchScanned").replace("{n}", scanned)}` : "";
         const latestText = latest?.file_name ? ` · ${latest.file_name}` : "";
+        const folders = (d.folders || []).map(f => f.folder).filter(Boolean);
+        const folderText = folders.length ? folders.join(", ") : (d.folder || _watchFolder);
         setWatchMessage(
-          `${t("watchActive").replace("{folder}", d.folder || _watchFolder)}${scannedText}${latestText}`,
+          `${t("watchActive").replace("{folder}", folderText)}${scannedText}${latestText}`,
           "var(--ok)",
         );
       } catch (_) {
@@ -3947,8 +4218,19 @@
       try {
         const d = await (await fetch(`${API}/open-folder-dialog`, { method:"POST" })).json();
         if (d.path) {
-          _watchFolder = String(d.path);
-          try { localStorage.setItem("xlent_watch_folder", _watchFolder); } catch(_) {}
+          const path = String(d.path);
+          if (!_watchFolders.includes(path)) {
+            if (_watchFolders.length >= 3) {
+              setWatchMessage(t("watchMaxFolders"), "var(--warn)");
+              return;
+            }
+            _watchFolders.push(path);
+          }
+          _watchFolder = _watchFolders[0] || "";
+          try {
+            localStorage.setItem("xlent_watch_folders", JSON.stringify(_watchFolders));
+            localStorage.setItem("xlent_watch_folder", _watchFolder);
+          } catch(_) {}
           renderWatchFolder();
           // Hvis overvåking er aktiv: restart på ny mappe
           if (document.getElementById("watch-toggle").checked) {
@@ -3961,23 +4243,29 @@
     }
 
     async function setWatchEnabled(enabled) {
-      if (enabled && !_watchFolder) {
+      if (enabled && !_watchFolders.length) {
         setWatchMessage(t("watchNoFolder"), "var(--warn)");
         document.getElementById("watch-toggle").checked = false;
         return;
       }
       try {
         const opts = getOpts();
-        const d = enabled
-          ? await (await fetch(`${API}/folder-watch/start`, {
+        let d = {ok: true};
+        if (enabled) {
+          for (const folder of _watchFolders.slice(0, 3)) {
+            d = await (await fetch(`${API}/folder-watch/start`, {
               method:"POST", headers:{"Content-Type":"application/json"},
               body: JSON.stringify({
-                folder: _watchFolder,
+                folder,
                 ignore_xlent: opts.ignore_xlent,
                 language: opts.language,
               }),
-            })).json()
-          : await (await fetch(`${API}/folder-watch/stop`, { method:"POST" })).json();
+            })).json();
+            if (!d.ok) break;
+          }
+        } else {
+          d = await (await fetch(`${API}/folder-watch/stop`, { method:"POST" })).json();
+        }
         if (!d.ok) {
           setWatchMessage(`${t("errPrefix")} ${d.error || ""}`, "#f44336");
           document.getElementById("watch-toggle").checked = false;
@@ -3985,7 +4273,7 @@
         }
         try { localStorage.setItem("xlent_watch_enabled", enabled ? "1" : "0"); } catch(_) {}
         setWatchMessage(
-          enabled ? t("watchActive").replace("{folder}", _watchFolder) : t("watchInactive"),
+          enabled ? t("watchActive").replace("{folder}", _watchFolders.join(", ")) : t("watchInactive"),
           enabled ? "var(--ok)" : "var(--muted)");
         if (enabled) {
           startWatchStatusPolling(d.scanned_count || 0);
@@ -3993,18 +4281,66 @@
         } else {
           stopWatchStatusPolling();
         }
+        refreshBackgroundPanel();
       } catch (e) {
         setWatchMessage(`${t("netErr")} ${e}`, "#f44336");
       }
     }
 
     async function restoreWatch() {
-      try { _watchFolder = localStorage.getItem("xlent_watch_folder") || ""; } catch(_) {}
+      try {
+        const raw = localStorage.getItem("xlent_watch_folders") || "";
+        _watchFolders = raw ? JSON.parse(raw) : [];
+        if (!Array.isArray(_watchFolders)) _watchFolders = [];
+      } catch(_) { _watchFolders = []; }
+      if (!_watchFolders.length) {
+        try {
+          const legacy = localStorage.getItem("xlent_watch_folder") || "";
+          if (legacy) _watchFolders = [legacy];
+        } catch(_) {}
+      }
+      _watchFolders = [...new Set(_watchFolders.map(String).filter(Boolean))].slice(0, 3);
+      _watchFolder = _watchFolders[0] || "";
       renderWatchFolder();
       let enabled = false;
       try { enabled = localStorage.getItem("xlent_watch_enabled") === "1"; } catch(_) {}
-      document.getElementById("watch-toggle").checked = enabled && !!_watchFolder;
-      if (enabled && _watchFolder) await setWatchEnabled(true);
+      document.getElementById("watch-toggle").checked = enabled && !!_watchFolders.length;
+      if (enabled && _watchFolders.length) await setWatchEnabled(true);
+    }
+
+    async function refreshBackgroundPanel() {
+      const panel = document.getElementById("background-panel");
+      const body = document.getElementById("background-panel-body");
+      if (!panel || !body) return;
+      try {
+        const [watch, clip] = await Promise.all([
+          fetch(`${API}/folder-watch/status`).then(r => r.json()).catch(() => ({ok:false})),
+          fetch(`${API}/clipboard-guard/status`).then(r => r.json()).catch(() => ({ok:false})),
+        ]);
+        const watchRunning = !!watch.running;
+        const clipRunning = !!clip.running;
+        const latestWatch = (watch.recent_results || []).slice(-1)[0];
+        const latestClip = (clip.recent_alerts || [])[0];
+        const rows = [];
+        rows.push(`<span class="background-pill">${escapeHtml(t("backgroundWatch"))}: ${watchRunning ? "ON" : "OFF"}</span>`);
+        rows.push(`<span class="background-pill">${escapeHtml(t("backgroundClipboard"))}: ${clipRunning ? "ON" : "OFF"}</span>`);
+        if (latestWatch?.file_name) {
+          rows.push(`<span class="background-pill">${escapeHtml(t("backgroundLast"))}: ${escapeHtml(latestWatch.file_name)} (${escapeHtml(latestWatch.risk_level || "")})</span>`);
+        }
+        if (latestClip?.risk_level) {
+          rows.push(`<span class="background-pill">${escapeHtml(t("backgroundLastClipboard"))}: ${escapeHtml(latestClip.risk_level)} · ${Number(latestClip.finding_count || 0)}</span>`);
+        }
+        body.innerHTML = `<div class="background-row">${rows.join("")}</div>`;
+        panel.classList.toggle("show", watchRunning || clipRunning || !!latestWatch || !!latestClip);
+      } catch (_) {
+        panel.classList.remove("show");
+      }
+    }
+
+    function startBackgroundStatusPolling() {
+      if (_backgroundStatusTimer) clearInterval(_backgroundStatusTimer);
+      refreshBackgroundPanel();
+      _backgroundStatusTimer = setInterval(refreshBackgroundPanel, 10000);
     }
 
     function setWhitelistMessage(text, color = "var(--muted)", mode = "") {
@@ -4612,7 +4948,13 @@
           method:"POST", headers:{"Content-Type":"application/json"},
           body: JSON.stringify(body),
         })).json();
-        if (d.ok) { msg.style.color="#4caf50"; msg.textContent=`${t("saved")} ${d.path}`; }
+        if (d.ok) {
+          msg.style.color="#4caf50";
+          msg.innerHTML =
+            `${escapeHtml(t("saved"))} ${escapeHtml(d.path)}` +
+            ` <button class="ctrl-btn" id="btn-rescan-redacted" style="font-size:11px;padding:2px 8px;">${escapeHtml(t("rescanRedacted"))}</button>`;
+          document.getElementById("btn-rescan-redacted")?.addEventListener("click", () => scanPath(d.path));
+        }
         else {
           const err = d.error_code && I18N[uiLang][d.error_code] ? t(d.error_code) : d.error;
           msg.style.color="#f44336"; msg.textContent=`${t("errPrefix")} ${err}`;
@@ -4625,7 +4967,13 @@
       msg.style.color="var(--muted)"; msg.textContent=t("processing");
       try {
         const d = await (await fetch(`${API}/${endpoint}`, { method:"POST" })).json();
-        if (d.ok) { msg.style.color="#4caf50"; msg.textContent=`${t("saved")} ${d.path}`; }
+        if (d.ok) {
+          msg.style.color="#4caf50";
+          msg.innerHTML =
+            `${escapeHtml(t("saved"))} ${escapeHtml(d.path)}` +
+            ` <button class="ctrl-btn" id="btn-rescan-ai-redacted" style="font-size:11px;padding:2px 8px;">${escapeHtml(t("rescanRedacted"))}</button>`;
+          document.getElementById("btn-rescan-ai-redacted")?.addEventListener("click", () => scanPath(d.path));
+        }
         else      { msg.style.color="#f44336"; msg.textContent=`${t("errPrefix")} ${d.error}`; }
       } catch(e)  { msg.style.color="#f44336"; msg.textContent=`${t("netErr")} ${e}`; }
     }
@@ -4710,6 +5058,19 @@
         ignore_xlent: document.getElementById("ignoreXlent").checked,
         language:     document.getElementById("langSelect").value,
       };
+    }
+
+    function applyRedactionProfile(profile, persist = true) {
+      const selectedByProfile = {
+        lowfp: new Set(["id", "konto", "kredittkort", "hemmeligheter", "konfidensielt", "orgnummer"]),
+        normal: new Set(["epost", "telefon", "id", "fodselsdato", "konto", "kredittkort", "navn", "nettadresse", "hemmeligheter", "finansielt", "konfidensielt", "klient", "orgnummer"]),
+        strict: new Set(["epost", "telefon", "id", "fodselsdato", "konto", "kredittkort", "navn", "nettadresse", "hemmeligheter", "finansielt", "medisinsk", "konfidensielt", "klient", "orgnummer"]),
+      };
+      const selected = selectedByProfile[profile] || selectedByProfile.normal;
+      document.querySelectorAll(".scan-cat").forEach(cb => { cb.checked = selected.has(cb.value); });
+      const conf = document.getElementById("ai-conf-select");
+      if (conf) conf.value = profile === "lowfp" ? "high" : (profile === "strict" ? "low" : "medium");
+      if (persist) saveSettings();
     }
 
     async function scanPath(path, extraOpts) {
@@ -4844,6 +5205,11 @@
         // language: default "auto"
         const ls = document.getElementById("langSelect");
         if (ls && s.language) ls.value = s.language;
+        const rp = document.getElementById("redaction-profile");
+        if (rp && s.redactionProfile) {
+          rp.value = s.redactionProfile;
+          applyRedactionProfile(s.redactionProfile, false);
+        }
         const sa = document.getElementById("stripAnnotations");
         if (sa) sa.checked = s.stripAnnotations === true;
         const m365Fields = {
@@ -4852,6 +5218,10 @@
           "m365-sync-root": "m365_sync_root",
           "m365-sensitivity-label-id": "m365_sensitivity_label_id",
           "m365-retention-label-name": "m365_retention_label_name",
+          "m365-map-gronn": "m365_map_gronn",
+          "m365-map-gul": "m365_map_gul",
+          "m365-map-rod": "m365_map_rod",
+          "m365-map-svart": "m365_map_svart",
         };
         for (const [id, key] of Object.entries(m365Fields)) {
           const el = document.getElementById(id);
@@ -4866,6 +5236,7 @@
         localStorage.setItem("xlentScannerSettings", JSON.stringify({
           ignoreXlent: document.getElementById("ignoreXlent").checked,
           language:    document.getElementById("langSelect").value,
+          redactionProfile: document.getElementById("redaction-profile")?.value || "normal",
           stripAnnotations: document.getElementById("stripAnnotations").checked,
           theme:       normalizeTheme(document.getElementById("themeSelect").value),
           m365_drive_id: document.getElementById("m365-drive-id")?.value || "",
@@ -4873,6 +5244,10 @@
           m365_sync_root: document.getElementById("m365-sync-root")?.value || "",
           m365_sensitivity_label_id: document.getElementById("m365-sensitivity-label-id")?.value || "",
           m365_retention_label_name: document.getElementById("m365-retention-label-name")?.value || "",
+          m365_map_gronn: document.getElementById("m365-map-gronn")?.value || "",
+          m365_map_gul: document.getElementById("m365-map-gul")?.value || "",
+          m365_map_rod: document.getElementById("m365-map-rod")?.value || "",
+          m365_map_svart: document.getElementById("m365-map-svart")?.value || "",
         }));
       } catch (_) {}
     }
@@ -4884,8 +5259,9 @@
     });
     document.getElementById("ignoreXlent").addEventListener("change", saveSettings);
     document.getElementById("langSelect").addEventListener("change", saveSettings);
+    document.getElementById("redaction-profile").addEventListener("change", e => applyRedactionProfile(e.target.value));
     document.getElementById("stripAnnotations").addEventListener("change", saveSettings);
-    ["m365-drive-id", "m365-item-id", "m365-sync-root", "m365-sensitivity-label-id", "m365-retention-label-name"].forEach(id => {
+    ["m365-drive-id", "m365-item-id", "m365-sync-root", "m365-sensitivity-label-id", "m365-retention-label-name", "m365-map-gronn", "m365-map-gul", "m365-map-rod", "m365-map-svart"].forEach(id => {
       document.getElementById(id)?.addEventListener("input", saveSettings);
     });
     document.getElementById("btn-check-updates").addEventListener("click", () => runUpdateCheck(true));
@@ -4900,6 +5276,8 @@
     document.getElementById("btn-ignore-save").addEventListener("click", saveIgnoreEditor);
     document.getElementById("btn-custom-patterns-reload").addEventListener("click", loadCustomPatternsEditor);
     document.getElementById("btn-custom-patterns-save").addEventListener("click", saveCustomPatternsEditor);
+    document.getElementById("btn-custom-pattern-test").addEventListener("click", testCustomPatternForm);
+    document.getElementById("btn-custom-pattern-add").addEventListener("click", addCustomPatternFromForm);
     document.getElementById("clipguard-toggle").addEventListener("change", function() {
       setClipGuardEnabled(this.checked);
     });
@@ -4935,6 +5313,16 @@
         sync_root: document.getElementById("m365-sync-root")?.value.trim() || "",
         ...extra,
       };
+    }
+
+    function _m365MappedLabelForRisk(risk) {
+      const map = {
+        "grønn": document.getElementById("m365-map-gronn")?.value.trim() || "",
+        "gul": document.getElementById("m365-map-gul")?.value.trim() || "",
+        "rød": document.getElementById("m365-map-rod")?.value.trim() || "",
+        "svart": document.getElementById("m365-map-svart")?.value.trim() || "",
+      };
+      return map[risk || ""] || "";
     }
 
     async function m365RefreshStatus() {
@@ -5034,7 +5422,9 @@
         _m365Msg(t("processing"));
         const r = await (await fetch(`${API}/microsoft/graph/write-scan-metadata`, {
           method: "POST", headers: {"Content-Type": "application/json"},
-          body: JSON.stringify(_m365Payload()),
+          body: JSON.stringify(_m365Payload({
+            suggested_label: _m365MappedLabelForRisk(lastResult?.risk_level),
+          })),
         })).json();
         if (!r.ok) throw new Error(r.error || "Graph error");
         const label = r.suggested_label?.name || "";
@@ -6416,6 +6806,7 @@
     loadNerStatus();
     loadOllamaSettingsStatus();
     loadHistoryFromApi();
+    startBackgroundStatusPolling();
     _loadAiModels();   // Pre-last Ollama-modeller ved oppstart så AI-toggle er klar umiddelbart
 
     /* ── Windows kontekstmeny: auto-skann fil sendt via høyreklikk ── */

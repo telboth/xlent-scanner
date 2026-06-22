@@ -64,6 +64,7 @@ def test_diagnostics_health_returns_checks(monkeypatch, tmp_path):
     assert "checks" in data
     assert data["version"]
     assert data["app_data_dir"] == str(tmp_path)
+    assert any(check["name"] == "ocr" for check in data["checks"])
 
 
 def test_diagnostics_health_reports_macos_quick_action_details(monkeypatch, tmp_path):
