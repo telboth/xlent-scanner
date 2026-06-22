@@ -416,6 +416,15 @@
     .ctrl-btn-primary:hover { background: #1f5aa8; }
     .ctrl-btn-accent  { background: #2d5a1b; border-color: #3a7a22; font-weight: 600; }
     .ctrl-btn-accent:hover  { background: #366820; }
+    /* Filled buttons are reserved for actions that start a scan/analysis. */
+    .ctrl-btn-outline-primary {
+      background: transparent; border-color: #2f7ed8; color: var(--text); font-weight: 600;
+    }
+    .ctrl-btn-outline-primary:hover { background: rgba(47,126,216,.12); border-color: #4c96ea; }
+    .ctrl-btn-outline-accent {
+      background: transparent; border-color: #43a047; color: var(--text); font-weight: 600;
+    }
+    .ctrl-btn-outline-accent:hover { background: rgba(67,160,71,.12); border-color: #5fbd63; }
     .anon-msg { font-size: 12px; margin-left: 2px; flex: 1; }
 
     /* PDF caveat */
@@ -703,7 +712,7 @@
         <!-- AI-dybdeskann toggle -->
         <div class="ai-toggle-row">
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-            <label class="ai-toggle-label">
+            <label class="ai-toggle-label" data-i18n-title="aiToggleTooltip" title="Kjører en lokal AI-modell for å lete etter sensitive ord og uttrykk. Dette er en grundig prosess som også tar noe tid.">
               <input type="checkbox" id="ai-scan-toggle">
               <span>🔬 <span data-i18n="aiToggleLabel">Kjør AI-dybdeskann (Ollama)</span></span>
             </label>
@@ -769,7 +778,7 @@
           <span id="folder-progress-text"></span>
         </div>
         <div class="folder-options">
-          <label><input type="checkbox" id="folder-recursive"> <span data-i18n="folderRecursive">Skann også undermapper</span></label>
+          <label data-i18n-title="folderRecursiveTooltip" title="Skanner også alle støttede filer i undermapper. Bruk maks filer og maks dybde for å holde jobben kontrollert."><input type="checkbox" id="folder-recursive"> <span data-i18n="folderRecursive">Skann også undermapper</span></label>
           <label><span data-i18n="folderMaxFiles">Maks filer</span> <input type="number" id="folder-max-files" min="1" max="10000" value="500"></label>
           <label><span data-i18n="folderMaxDepth">Maks dybde</span> <input type="number" id="folder-max-depth" min="0" max="50" value="5"></label>
         </div>
@@ -810,7 +819,7 @@
           <button class="ctrl-btn" id="ai-sel-all" data-i18n="selAll">Velg alle</button>
           <button class="ctrl-btn" id="ai-sel-none" data-i18n="selNone">Fjern alle</button>
           <span class="ctrl-sep"></span>
-          <button class="ctrl-btn ctrl-btn-primary" id="ai-anon-btn" data-i18n="saveAnon">Anonymiser valgte</button>
+          <button class="ctrl-btn ctrl-btn-outline-accent" id="ai-anon-btn" data-i18n="saveAnon">Anonymiser valgte</button>
           <span class="anon-msg" id="ai-anon-msg"></span>
         </div>
       </div>
@@ -854,6 +863,8 @@
             <li>Konfidensielle nøkkelord («konfidensielt», «hemmelig» m.fl.)</li>
             <li>Firmanavn fra intern firmaliste</li>
             <li>Høy-entropiske strenger (mulige hemmelige nøkler)</li>
+            <li>Medisinske opplysninger som sykdommer, diagnoser og medisiner når AI-dybdeskann er valgt</li>
+            <li>Egendefinerte blacklist- og regex-mønstre fra Innstillinger</li>
           </ul>
         </div>
         <div class="about-section">
@@ -872,16 +883,17 @@
         </div>
         <div class="about-section">
           <h3>Anonymisering og eksport</h3>
-          <p>Etter scanning kan du velge funn og generere en anonymisert versjon. For DOCX, PPTX, XLSX og PDF erstattes teksten direkte i filen. For andre formater genereres en renset .md-fil. Funn kan også eksporteres som JSON eller CSV.</p>
+          <p>Etter scanning kan du velge hvilke funn som skal brukes og generere en redigert/redacted versjon. For DOCX, PPTX, XLSX og PDF erstattes teksten direkte i filen. For andre formater genereres en renset .md-fil. Kommentarer, speaker notes og støttede annotasjoner kan fjernes, og resultatet kan re-scannes manuelt med egen knapp. Funn kan eksporteres som JSON/CSV, full HTML/PDF-rapport eller batch-/auditrapport for mappeskann.</p>
           <p style="color:var(--muted);font-size:12px;">⚠ PDF-redaktering erstatter tekst i innholdsstrømmen, men tekst i metadata eller bilder anonymiseres ikke. Kontroller resultatet.</p>
         </div>
         <div class="about-section">
           <h3>Arbeidsflyter og overvåking</h3>
           <ul>
-            <li><strong>Fil, lim inn og mappe:</strong> Skann enkeltfiler, tekst fra utklippstavlen eller hele mapper. Mappeskann kan kjøres rekursivt med maks antall filer og maks dybde.</li>
-            <li><strong>Mappevakt:</strong> En valgt mappe, for eksempel Downloads, overvåkes lokalt. Nye og endrede filer skannes når de er ferdig skrevet, og resultatene vises i historikken.</li>
+            <li><strong>Fil, lim inn og mappe:</strong> Skann enkeltfiler, flere filer via drag-and-drop, tekst fra utklippstavlen eller hele mapper. Mappeskann kan kjøres rekursivt med maks antall filer, maks dybde, tabellvisning, tooltip per fil, full rapport ved klikk, filter, sortering, eksport og batch-redaction av valgte filer.</li>
+            <li><strong>Mappevakt:</strong> Opptil tre valgte mapper, for eksempel Downloads, overvåkes lokalt. Nye og endrede filer skannes når de er ferdig skrevet, og resultatene vises i historikken og bakgrunnsstatusen.</li>
             <li><strong>Utklippstavle-vakt:</strong> Varsler lokalt hvis du kopierer rødt eller svart innhold før det limes inn i et annet verktøy. Innholdet lagres ikke.</li>
             <li><strong>OCR for bilde-PDF:</strong> Hvis et dokument ser ut til å inneholde lite eller ingen tekst, kan du kjøre en OCR-skann for å hente tekst fra innskannede sider.</li>
+            <li><strong>Desktop, web og hurtigvalg:</strong> Programmet kan kjøres som desktop-app eller lokal webmodus. Windows høyreklikk og macOS Finder Quick Action kan sende filer direkte til scanneren når installasjonsskriptet er brukt.</li>
           </ul>
         </div>
         <div class="about-section">
@@ -889,15 +901,16 @@
           <ul>
             <li>Personlig hviteliste, blacklist og ignore.toml kan redigeres i Innstillinger.</li>
             <li>Egendefinerte regex-mønstre kan legges inn via UI for interne saksnumre, prosjektkoder eller andre organisasjonsspesifikke formater.</li>
-            <li>Kommentarer, speaker notes og støttede annotasjoner kan fjernes ved redigering.</li>
-            <li>Microsoft 365-tags og sensitivity/retention-labels kan leses, foreslås og skrives der Graph-tilgang er konfigurert.</li>
+            <li>Redaction-profiler kan brukes for å velge mellom normal, streng og mer konservativ scanning.</li>
+            <li>Microsoft 365-tags og sensitivity/retention-labels kan leses, foreslås og skrives der Graph-tilgang er konfigurert, inkludert lokal mapping fra trafikklysnivå til ønsket label.</li>
             <li>Et lokalt API med Swagger/OpenAPI-side gjør det mulig å bygge andre frontender, for eksempel Power Apps, uten å endre desktop-appen.</li>
+            <li>Appen kan sjekke GitHub for ny versjon, laste ned riktig installer for operativsystemet og vise installasjonsskript der dette er relevant.</li>
           </ul>
         </div>
         <div class="about-section">
           <h3>Dybdeskann med AI (Ollama)</h3>
           <p>Dybdeskann-fanen sender dokumentteksten til en lokal AI-modell via <strong>Ollama</strong> og ber den identifisere sensitiv informasjon som regel-baserte detektorer kan misse – for eksempel navn i uvanlige formater, adresser uten postnummer, eller budsjettall i fritekst.</p>
-          <p>Du velger selv hvilke kategorier AI-en skal lete etter: navn, adresser, telefonnumre, personnumre, bankdetaljer, firmanavn, budsjetttall og valgfritt medisinske opplysninger. Valgte funn kan anonymiseres direkte fra fanen og lagres som tekstfil i nedlastingsmappen.</p>
+          <p>Du velger selv hvilke kategorier AI-en skal lete etter: navn, adresser, telefonnumre, personnumre, bankdetaljer, firmanavn, budsjetttall og valgfritt medisinske opplysninger. AI-funn flettes inn i den vanlige funnlisten og kan brukes i samme redaction-flyt som regelbaserte funn.</p>
           <div class="local-badge" style="margin-top:8px"><span class="icon">⏱️</span><span><strong>Maskinvarekrav:</strong> Dybdeskanning kan ta fra noen sekunder til flere minutter avhengig av dokumentstørrelse. Anbefalt maskin: minst 16 GB RAM og en relativt moderne CPU (fra ca. 2018 eller nyere). <strong>GPU-akselerasjon</strong> (NVIDIA/AMD) benyttes automatisk dersom det er tilgjengelig og gir betydelig kortere analysetid. Programmet viser om det kjører på CPU eller GPU.</span></div>
           <p style="margin-top:8px;">Ollama lastes ned gratis fra <a href="https://ollama.ai" target="_blank" style="color:var(--accent)">ollama.ai</a>. Anbefalt modell: <strong>llama3.2:3b</strong> (~1,9 GB).</p>
         </div>
@@ -927,6 +940,8 @@
             <li>Konfidentiella nyckelord («konfidentiellt», «hemligt» m.fl.)</li>
             <li>Företagsnamn från intern företagslista</li>
             <li>Högentropi-strängar (möjliga hemliga nycklar)</li>
+            <li>Medicinsk information som sjukdomar, diagnoser och läkemedel när AI-djupskanning är vald</li>
+            <li>Anpassade blacklist- och regex-mönster från Inställningar</li>
           </ul>
         </div>
         <div class="about-section">
@@ -945,16 +960,17 @@
         </div>
         <div class="about-section">
           <h3>Anonymisering och export</h3>
-          <p>Efter skanning kan du välja fynd och generera en anonymiserad version. För DOCX, PPTX, XLSX och PDF ersätts texten direkt i filen. Fynd kan också exporteras som JSON eller CSV.</p>
+          <p>Efter skanning kan du välja vilka fynd som ska användas och generera en redigerad/redacted version. För DOCX, PPTX, XLSX och PDF ersätts texten direkt i filen. Kommentarer, speaker notes och stödda annoteringar kan tas bort, och resultatet kan skannas om manuellt med en egen knapp. Fynd kan exporteras som JSON/CSV, full HTML/PDF-rapport eller batch-/auditrapport för mappskanning.</p>
           <p style="color:var(--muted);font-size:12px;">⚠ PDF-redigering ersätter text i innehållsströmmen, men text i metadata eller bilder anonymiseras inte. Kontrollera resultatet.</p>
         </div>
         <div class="about-section">
           <h3>Arbetsflöden och övervakning</h3>
           <ul>
-            <li><strong>Fil, klistra in och mapp:</strong> Skanna enskilda filer, text från urklipp eller hela mappar. Mappskanning kan köras rekursivt med max antal filer och max djup.</li>
-            <li><strong>Mappvakt:</strong> En vald mapp, till exempel Downloads, övervakas lokalt. Nya och ändrade filer skannas när de är färdigskrivna, och resultaten visas i historiken.</li>
+            <li><strong>Fil, klistra in och mapp:</strong> Skanna enskilda filer, flera filer via drag-and-drop, text från urklipp eller hela mappar. Mappskanning kan köras rekursivt med max antal filer, max djup, tabellvy, tooltip per fil, full rapport vid klick, filter, sortering, export och batch-redaction av valda filer.</li>
+            <li><strong>Mappvakt:</strong> Upp till tre valda mappar, till exempel Downloads, övervakas lokalt. Nya och ändrade filer skannas när de är färdigskrivna, och resultaten visas i historiken och bakgrundsstatusen.</li>
             <li><strong>Urklippsvakt:</strong> Varnar lokalt om du kopierar rött eller svart innehåll innan det klistras in i ett annat verktyg. Innehållet sparas inte.</li>
             <li><strong>OCR för bild-PDF:</strong> Om ett dokument verkar innehålla lite eller ingen text kan du köra OCR-skanning för att hämta text från inskannade sidor.</li>
+            <li><strong>Desktop, webb och snabbval:</strong> Programmet kan köras som desktop-app eller lokal webbläge. Windows högerklick och macOS Finder Quick Action kan skicka filer direkt till scannern när installationsskriptet har använts.</li>
           </ul>
         </div>
         <div class="about-section">
@@ -962,15 +978,16 @@
           <ul>
             <li>Personlig vitlista, blacklist och ignore.toml kan redigeras i Inställningar.</li>
             <li>Anpassade regex-mönster kan läggas in via UI för interna ärendenummer, projektkoder eller andra organisationsspecifika format.</li>
-            <li>Kommentarer, speaker notes och stödda annoteringar kan tas bort vid redigering.</li>
-            <li>Microsoft 365-taggar och sensitivity/retention-labels kan läsas, föreslås och skrivas där Graph-åtkomst är konfigurerad.</li>
+            <li>Redaction-profiler kan användas för att välja mellan normal, strikt och mer konservativ skanning.</li>
+            <li>Microsoft 365-taggar och sensitivity/retention-labels kan läsas, föreslås och skrivas där Graph-åtkomst är konfigurerad, inklusive lokal mapping från trafikljusnivå till önskad label.</li>
             <li>Ett lokalt API med Swagger/OpenAPI-sida gör det möjligt att bygga andra frontender, till exempel Power Apps, utan att ändra desktop-appen.</li>
+            <li>Appen kan kontrollera GitHub för ny version, ladda ned rätt installer för operativsystemet och visa installationsskript där det är relevant.</li>
           </ul>
         </div>
         <div class="about-section">
           <h3>Djupskanning med AI (Ollama)</h3>
           <p>Fliken Djupskanning skickar dokumenttexten till en lokal AI-modell via <strong>Ollama</strong> och ber den identifiera känslig information som regelbaserade detektorer kan missa – till exempel namn i ovanliga format, adresser utan postnummer eller budgetsiffror i fritext.</p>
-          <p>Du väljer själv vilka kategorier AI:n ska leta efter: namn, adresser, telefonnummer, personnummer, bankuppgifter, företagsnamn, budgetbelopp och valfritt medicinska uppgifter. Valda fynd kan anonymiseras direkt från fliken och sparas som en textfil i nedladdningsmappen.</p>
+          <p>Du väljer själv vilka kategorier AI:n ska leta efter: namn, adresser, telefonnummer, personnummer, bankuppgifter, företagsnamn, budgetbelopp och valfritt medicinska uppgifter. AI-fynd slås ihop med den vanliga fyndlistan och kan användas i samma redaction-flöde som regelbaserade fynd.</p>
           <div class="local-badge" style="margin-top:8px"><span class="icon">⏱️</span><span><strong>Maskinvarukrav:</strong> Djupskanning kan ta från några sekunder till flera minuter beroende på dokumentets storlek. Rekommenderat: minst 16 GB RAM och en relativt modern CPU (från ca 2018 eller senare). <strong>GPU-acceleration</strong> (NVIDIA/AMD) används automatiskt om tillgänglig och ger avsevärt kortare analystid. Programmet visar om det körs på CPU eller GPU.</span></div>
           <p style="margin-top:8px;">Ollama laddas ned gratis från <a href="https://ollama.ai" target="_blank" style="color:var(--accent)">ollama.ai</a>. Rekommenderad modell: <strong>llama3.2:3b</strong> (~1,9 GB).</p>
         </div>
@@ -1000,6 +1017,8 @@
             <li>Confidential keywords ("confidential", "secret", etc.)</li>
             <li>Company names from the internal company list</li>
             <li>High-entropy strings (possible secret keys)</li>
+            <li>Medical information such as diseases, diagnoses, and medicines when AI Deep Scan is enabled</li>
+            <li>Custom blacklist and regex patterns from Settings</li>
           </ul>
         </div>
         <div class="about-section">
@@ -1018,16 +1037,17 @@
         </div>
         <div class="about-section">
           <h3>Redaction and export</h3>
-          <p>After scanning you can select findings and generate a redacted version. For DOCX, PPTX, XLSX, and PDF the text is replaced directly in the file. Findings can also be exported as JSON or CSV.</p>
+          <p>After scanning you can select which findings to use and generate a redacted version. For DOCX, PPTX, XLSX, and PDF the text is replaced directly in the file. Comments, speaker notes, and supported annotations can be removed, and the result can be manually re-scanned with a dedicated button. Findings can be exported as JSON/CSV, full HTML/PDF reports, or batch/audit reports for folder scans.</p>
           <p style="color:var(--muted);font-size:12px;">⚠ PDF redaction replaces text in the content stream, but text in metadata or images is not redacted. Verify the result.</p>
         </div>
         <div class="about-section">
           <h3>Workflows and monitoring</h3>
           <ul>
-            <li><strong>File, paste, and folder:</strong> Scan single files, pasted text, or whole folders. Folder scans can run recursively with maximum file count and maximum depth.</li>
-            <li><strong>Folder watch:</strong> A selected folder, for example Downloads, is monitored locally. New and changed files are scanned once they are stable, and results appear in history.</li>
+            <li><strong>File, paste, and folder:</strong> Scan single files, multiple files via drag-and-drop, pasted text, or whole folders. Folder scans can run recursively with maximum file count, maximum depth, table view, per-file tooltips, full report on click, filtering, sorting, export, and batch redaction of selected files.</li>
+            <li><strong>Folder watch:</strong> Up to three selected folders, for example Downloads, are monitored locally. New and changed files are scanned once they are stable, and results appear in history and the background status panel.</li>
             <li><strong>Clipboard guard:</strong> Warns locally if you copy red or black content before pasting it into another tool. Clipboard content is not stored.</li>
             <li><strong>OCR for image PDFs:</strong> If a document appears to contain little or no text, you can run an OCR scan to extract text from scanned pages.</li>
+            <li><strong>Desktop, web, and quick actions:</strong> The app can run as a desktop app or in local web mode. Windows right-click and macOS Finder Quick Action can send files directly to the scanner when the installer script has been used.</li>
           </ul>
         </div>
         <div class="about-section">
@@ -1035,15 +1055,16 @@
           <ul>
             <li>Personal whitelist, blacklist, and ignore.toml can be edited in Settings.</li>
             <li>Custom regex patterns can be added through the UI for internal case numbers, project codes, or other organisation-specific formats.</li>
-            <li>Comments, speaker notes, and supported annotations can be removed during redaction.</li>
-            <li>Microsoft 365 tags and sensitivity/retention labels can be read, suggested, and written when Graph access is configured.</li>
+            <li>Redaction profiles can be used to choose between normal, strict, and more conservative scanning.</li>
+            <li>Microsoft 365 tags and sensitivity/retention labels can be read, suggested, and written when Graph access is configured, including local mapping from traffic-light level to target label.</li>
             <li>A local API with a Swagger/OpenAPI page makes it possible to build other frontends, such as Power Apps, without changing the desktop app.</li>
+            <li>The app can check GitHub for new versions, download the correct installer for the operating system, and show installer scripts where relevant.</li>
           </ul>
         </div>
         <div class="about-section">
           <h3>AI Deep Scan (Ollama)</h3>
           <p>The Deep Scan tab sends document text to a local AI model via <strong>Ollama</strong> and asks it to identify sensitive information that rule-based detectors may miss — for example names in unusual formats, addresses without postal codes, or budget figures embedded in free text.</p>
-          <p>You choose which categories the AI should look for: names, addresses, phone numbers, national ID numbers, bank details, company names, budget amounts, and optional medical information. Selected findings can be redacted directly from the tab and saved as a text file in the Downloads folder.</p>
+          <p>You choose which categories the AI should look for: names, addresses, phone numbers, national ID numbers, bank details, company names, budget amounts, and optional medical information. AI findings are merged into the normal findings list and can be used in the same redaction flow as rule-based findings.</p>
           <div class="local-badge" style="margin-top:8px"><span class="icon">⏱️</span><span><strong>Hardware requirements:</strong> Deep scanning can take anywhere from a few seconds to several minutes depending on document size. Recommended: at least 16 GB RAM and a relatively modern CPU (circa 2018 or newer). <strong>GPU acceleration</strong> (NVIDIA/AMD) is used automatically when available and provides significantly faster analysis. The app shows whether it is running on CPU or GPU.</span></div>
           <p style="margin-top:8px;">Ollama is available free at <a href="https://ollama.ai" target="_blank" style="color:var(--accent)">ollama.ai</a>. Recommended model: <strong>llama3.2:3b</strong> (~1.9 GB).</p>
         </div>
@@ -1073,6 +1094,8 @@
             <li>Vertrauliche Schlüsselwörter ("vertraulich", "geheim" usw.)</li>
             <li>Firmennamen aus interner Firmenliste</li>
             <li>Hochentropie-Strings (mögliche geheime Schlüssel)</li>
+            <li>Medizinische Informationen wie Krankheiten, Diagnosen und Medikamente, wenn der KI-Tiefenscan aktiviert ist</li>
+            <li>Benutzerdefinierte Blacklist- und Regex-Muster aus den Einstellungen</li>
           </ul>
         </div>
         <div class="about-section">
@@ -1091,16 +1114,17 @@
         </div>
         <div class="about-section">
           <h3>Anonymisierung und Export</h3>
-          <p>Nach dem Scan können Sie Treffer auswählen und eine anonymisierte Version erzeugen. Bei DOCX, PPTX, XLSX und PDF wird der Text direkt in der Datei ersetzt. Treffer lassen sich auch als JSON oder CSV exportieren.</p>
+          <p>Nach dem Scan können Sie auswählen, welche Treffer verwendet werden sollen, und eine redigierte/redacted Version erzeugen. Bei DOCX, PPTX, XLSX und PDF wird der Text direkt in der Datei ersetzt. Kommentare, Speaker Notes und unterstützte Annotationen können entfernt werden, und das Ergebnis kann per eigener Schaltfläche manuell erneut gescannt werden. Treffer lassen sich als JSON/CSV, vollständiger HTML/PDF-Bericht oder Batch-/Auditbericht für Ordnerscans exportieren.</p>
           <p style="color:var(--muted);font-size:12px;">⚠ Bei PDF wird Text im Inhaltsstrom ersetzt, aber Text in Metadaten oder Bildern wird nicht anonymisiert. Ergebnis prüfen.</p>
         </div>
         <div class="about-section">
           <h3>Arbeitsabläufe und Überwachung</h3>
           <ul>
-            <li><strong>Datei, Einfügen und Ordner:</strong> Scannen Sie einzelne Dateien, eingefügten Text oder ganze Ordner. Ordnerscans können rekursiv mit maximaler Dateianzahl und maximaler Tiefe laufen.</li>
-            <li><strong>Ordnerwächter:</strong> Ein ausgewählter Ordner, zum Beispiel Downloads, wird lokal überwacht. Neue und geänderte Dateien werden nach stabilem Schreibzustand gescannt und im Verlauf angezeigt.</li>
+            <li><strong>Datei, Einfügen und Ordner:</strong> Scannen Sie einzelne Dateien, mehrere Dateien per Drag-and-drop, eingefügten Text oder ganze Ordner. Ordnerscans können rekursiv mit maximaler Dateianzahl, maximaler Tiefe, Tabellenansicht, Tooltip pro Datei, vollständigem Bericht per Klick, Filter, Sortierung, Export und Batch-Redaction ausgewählter Dateien laufen.</li>
+            <li><strong>Ordnerwächter:</strong> Bis zu drei ausgewählte Ordner, zum Beispiel Downloads, werden lokal überwacht. Neue und geänderte Dateien werden nach stabilem Schreibzustand gescannt und im Verlauf sowie im Hintergrundstatus angezeigt.</li>
             <li><strong>Zwischenablage-Wächter:</strong> Warnt lokal, wenn Sie roten oder schwarzen Inhalt kopieren, bevor er in ein anderes Tool eingefügt wird. Der Inhalt wird nicht gespeichert.</li>
             <li><strong>OCR für Bild-PDFs:</strong> Wenn ein Dokument wenig oder keinen Text enthält, kann ein OCR-Scan Text aus gescannten Seiten extrahieren.</li>
+            <li><strong>Desktop, Web und Schnellaktionen:</strong> Die App kann als Desktop-App oder im lokalen Webmodus laufen. Windows-Rechtsklick und macOS Finder Quick Action können Dateien direkt an den Scanner senden, wenn das Installationsskript verwendet wurde.</li>
           </ul>
         </div>
         <div class="about-section">
@@ -1108,15 +1132,16 @@
           <ul>
             <li>Persönliche Whitelist, Blacklist und ignore.toml können in den Einstellungen bearbeitet werden.</li>
             <li>Benutzerdefinierte Regex-Muster können über die UI für interne Vorgangsnummern, Projektcodes oder andere organisationsspezifische Formate ergänzt werden.</li>
-            <li>Kommentare, Speaker Notes und unterstützte Annotationen können bei der Anonymisierung entfernt werden.</li>
-            <li>Microsoft 365-Tags sowie Sensitivity- und Retention-Labels können gelesen, vorgeschlagen und geschrieben werden, wenn Graph-Zugriff konfiguriert ist.</li>
+            <li>Redaction-Profile erlauben die Wahl zwischen normalem, strengem und konservativerem Scanverhalten.</li>
+            <li>Microsoft 365-Tags sowie Sensitivity- und Retention-Labels können gelesen, vorgeschlagen und geschrieben werden, wenn Graph-Zugriff konfiguriert ist, inklusive lokaler Zuordnung von Ampelniveau zu Ziel-Label.</li>
             <li>Ein lokales API mit Swagger/OpenAPI-Seite ermöglicht andere Frontends, zum Beispiel Power Apps, ohne die Desktop-App zu ändern.</li>
+            <li>Die App kann GitHub auf neue Versionen prüfen, den passenden Installer für das Betriebssystem herunterladen und relevante Installationsskripte anzeigen.</li>
           </ul>
         </div>
         <div class="about-section">
           <h3>KI-Tiefenscan (Ollama)</h3>
           <p>Der Tab Tiefenscan sendet den Dokumenttext an ein lokales KI-Modell über <strong>Ollama</strong> und identifiziert sensible Informationen, die regelbasierte Detektoren übersehen können — z. B. Namen in ungewöhnlichen Formaten, Adressen ohne Postleitzahl oder Budgetwerte in Freitext.</p>
-          <p>Sie wählen selbst die Kategorien: Namen, Adressen, Telefonnummern, Personenkennzahlen, Bankdaten, Firmennamen, Budgetbeträge und optional medizinische Informationen. Ausgewählte Treffer können direkt im Tab anonymisiert und als Textdatei im Download-Ordner gespeichert werden.</p>
+          <p>Sie wählen selbst die Kategorien: Namen, Adressen, Telefonnummern, Personenkennzahlen, Bankdaten, Firmennamen, Budgetbeträge und optional medizinische Informationen. KI-Treffer werden in die normale Trefferliste übernommen und können im gleichen Redaction-Ablauf wie regelbasierte Treffer verwendet werden.</p>
           <div class="local-badge" style="margin-top:8px"><span class="icon">⏱️</span><span><strong>Hardware:</strong> Tiefenscan kann je nach Dokumentgröße wenige Sekunden bis mehrere Minuten dauern. Empfohlen: mindestens 16 GB RAM und eine relativ moderne CPU (ca. 2018 oder neuer). <strong>GPU-Beschleunigung</strong> (NVIDIA/AMD) wird automatisch genutzt, falls verfügbar, und verkürzt die Analysezeit deutlich. Die App zeigt an, ob CPU oder GPU verwendet wird.</span></div>
           <p style="margin-top:8px;">Ollama ist kostenlos verfügbar unter <a href="https://ollama.ai" target="_blank" style="color:var(--accent)">ollama.ai</a>. Empfohlenes Modell: <strong>llama3.2:3b</strong> (~1,9 GB).</p>
         </div>
@@ -1146,6 +1171,8 @@
             <li>Mots-clés confidentiels ("confidentiel", "secret", etc.)</li>
             <li>Noms de sociétés depuis la liste interne</li>
             <li>Chaînes à forte entropie (clés secrètes possibles)</li>
+            <li>Informations médicales comme maladies, diagnostics et médicaments lorsque l’analyse IA approfondie est activée</li>
+            <li>Blacklist et expressions régulières personnalisées depuis les paramètres</li>
           </ul>
         </div>
         <div class="about-section">
@@ -1164,16 +1191,17 @@
         </div>
         <div class="about-section">
           <h3>Anonymisation et export</h3>
-          <p>Après le scan, vous pouvez sélectionner des résultats et générer une version anonymisée. Pour DOCX, PPTX, XLSX et PDF, le texte est remplacé directement dans le fichier. Les résultats peuvent aussi être exportés en JSON ou CSV.</p>
+          <p>Après le scan, vous pouvez choisir les résultats à utiliser et générer une version expurgée/redacted. Pour DOCX, PPTX, XLSX et PDF, le texte est remplacé directement dans le fichier. Les commentaires, notes de présentation et annotations prises en charge peuvent être supprimés, et le résultat peut être rescanné manuellement avec un bouton dédié. Les résultats peuvent être exportés en JSON/CSV, rapport HTML/PDF complet ou rapport batch/audit pour les analyses de dossier.</p>
           <p style="color:var(--muted);font-size:12px;">⚠ Dans les PDF, le texte est remplacé dans le flux de contenu, mais le texte des métadonnées ou des images n’est pas anonymisé. Vérifiez le résultat.</p>
         </div>
         <div class="about-section">
           <h3>Flux de travail et surveillance</h3>
           <ul>
-            <li><strong>Fichier, collage et dossier :</strong> analysez des fichiers seuls, du texte collé ou des dossiers entiers. L’analyse de dossier peut être récursive avec un nombre maximal de fichiers et une profondeur maximale.</li>
-            <li><strong>Surveillance de dossier :</strong> un dossier choisi, par exemple Téléchargements, est surveillé localement. Les fichiers nouveaux ou modifiés sont analysés lorsqu’ils sont stables, puis affichés dans l’historique.</li>
+            <li><strong>Fichier, collage et dossier :</strong> analysez des fichiers seuls, plusieurs fichiers par glisser-déposer, du texte collé ou des dossiers entiers. L’analyse de dossier peut être récursive avec un nombre maximal de fichiers, une profondeur maximale, une vue tableau, des infobulles par fichier, un rapport complet au clic, filtres, tri, export et redaction batch des fichiers sélectionnés.</li>
+            <li><strong>Surveillance de dossier :</strong> jusqu’à trois dossiers choisis, par exemple Téléchargements, sont surveillés localement. Les fichiers nouveaux ou modifiés sont analysés lorsqu’ils sont stables, puis affichés dans l’historique et le statut d’arrière-plan.</li>
             <li><strong>Surveillance du presse-papiers :</strong> avertit localement si vous copiez du contenu rouge ou noir avant de le coller dans un autre outil. Le contenu n’est pas stocké.</li>
             <li><strong>OCR pour PDF image :</strong> si un document contient peu ou pas de texte, vous pouvez lancer un OCR pour extraire le texte des pages scannées.</li>
+            <li><strong>Desktop, web et actions rapides :</strong> l’application peut fonctionner comme application desktop ou en mode web local. Le clic droit Windows et Finder Quick Action sur macOS peuvent envoyer des fichiers directement au scanner lorsque le script d’installation a été utilisé.</li>
           </ul>
         </div>
         <div class="about-section">
@@ -1181,15 +1209,16 @@
           <ul>
             <li>La liste blanche personnelle, la blacklist et ignore.toml peuvent être modifiées dans les paramètres.</li>
             <li>Des expressions régulières personnalisées (regex) peuvent être ajoutées via l’interface pour des numéros de dossier internes, codes projet ou autres formats propres à l’organisation.</li>
-            <li>Les commentaires, notes de présentation et annotations prises en charge peuvent être supprimés lors de l’anonymisation.</li>
-            <li>Les tags Microsoft 365 et les labels de sensibilité/rétention peuvent être lus, proposés et écrits lorsque l’accès Graph est configuré.</li>
+            <li>Les profils de redaction permettent de choisir entre une analyse normale, stricte ou plus conservatrice.</li>
+            <li>Les tags Microsoft 365 et les labels de sensibilité/rétention peuvent être lus, proposés et écrits lorsque l’accès Graph est configuré, avec mapping local du niveau de risque vers le label cible.</li>
             <li>Une API locale avec page Swagger/OpenAPI permet de créer d’autres frontends, par exemple Power Apps, sans modifier l’application desktop.</li>
+            <li>L’application peut vérifier GitHub pour les nouvelles versions, télécharger l’installer adapté au système d’exploitation et afficher les scripts d’installation pertinents.</li>
           </ul>
         </div>
         <div class="about-section">
           <h3>Analyse IA approfondie (Ollama)</h3>
           <p>L’onglet d’analyse approfondie envoie le texte du document à un modèle IA local via <strong>Ollama</strong> pour identifier des informations sensibles que les détecteurs à règles peuvent manquer — par exemple des noms dans des formats inhabituels, des adresses sans code postal ou des montants de budget en texte libre.</p>
-          <p>Vous choisissez les catégories à rechercher : noms, adresses, numéros de téléphone, identifiants personnels, coordonnées bancaires, noms d’entreprise, montants budgétaires et, en option, informations médicales. Les résultats sélectionnés peuvent être anonymisés directement depuis l’onglet et enregistrés en fichier texte dans le dossier Téléchargements.</p>
+          <p>Vous choisissez les catégories à rechercher : noms, adresses, numéros de téléphone, identifiants personnels, coordonnées bancaires, noms d’entreprise, montants budgétaires et, en option, informations médicales. Les résultats IA sont fusionnés dans la liste normale et peuvent être utilisés dans le même flux de redaction que les résultats basés sur des règles.</p>
           <div class="local-badge" style="margin-top:8px"><span class="icon">⏱️</span><span><strong>Configuration matérielle :</strong> l’analyse approfondie peut prendre de quelques secondes à plusieurs minutes selon la taille du document. Recommandé : au moins 16 Go de RAM et un CPU relativement moderne (vers 2018 ou plus récent). L’<strong>accélération GPU</strong> (NVIDIA/AMD) est utilisée automatiquement si disponible et réduit nettement le temps d’analyse. L’application indique si elle tourne sur CPU ou GPU.</span></div>
           <p style="margin-top:8px;">Ollama est disponible gratuitement sur <a href="https://ollama.ai" target="_blank" style="color:var(--accent)">ollama.ai</a>. Modèle recommandé : <strong>llama3.2:3b</strong> (~1,9 Go).</p>
         </div>
@@ -1219,6 +1248,8 @@
             <li>Palabras clave confidenciales ("confidencial", "secreto", etc.)</li>
             <li>Nombres de empresas de la lista interna</li>
             <li>Cadenas de alta entropía (posibles claves secretas)</li>
+            <li>Información médica como enfermedades, diagnósticos y medicamentos cuando se activa el escaneo profundo con IA</li>
+            <li>Blacklist y patrones regex personalizados desde Configuración</li>
           </ul>
         </div>
         <div class="about-section">
@@ -1237,16 +1268,17 @@
         </div>
         <div class="about-section">
           <h3>Anonimización y exportación</h3>
-          <p>Después del análisis puede seleccionar hallazgos y generar una versión anonimizada. En DOCX, PPTX, XLSX y PDF el texto se reemplaza directamente en el archivo. También puede exportar hallazgos como JSON o CSV.</p>
+          <p>Después del análisis puede elegir qué hallazgos usar y generar una versión redactada/redacted. En DOCX, PPTX, XLSX y PDF el texto se reemplaza directamente en el archivo. Se pueden eliminar comentarios, notas del orador y anotaciones compatibles, y el resultado puede volver a escanearse manualmente con un botón dedicado. También puede exportar hallazgos como JSON/CSV, informe HTML/PDF completo o informe batch/audit para escaneos de carpeta.</p>
           <p style="color:var(--muted);font-size:12px;">⚠ En PDF se reemplaza texto en el flujo de contenido, pero el texto en metadatos o imágenes no se anonimiza. Verifique el resultado.</p>
         </div>
         <div class="about-section">
           <h3>Flujos de trabajo y supervisión</h3>
           <ul>
-            <li><strong>Archivo, pegar y carpeta:</strong> escanee archivos individuales, texto pegado o carpetas completas. El escaneo de carpetas puede ejecutarse recursivamente con número máximo de archivos y profundidad máxima.</li>
-            <li><strong>Vigilancia de carpeta:</strong> una carpeta elegida, por ejemplo Descargas, se supervisa localmente. Los archivos nuevos o modificados se escanean cuando están estables y los resultados aparecen en el historial.</li>
+            <li><strong>Archivo, pegar y carpeta:</strong> escanee archivos individuales, varios archivos mediante arrastrar y soltar, texto pegado o carpetas completas. El escaneo de carpetas puede ejecutarse recursivamente con número máximo de archivos, profundidad máxima, vista de tabla, tooltip por archivo, informe completo al hacer clic, filtros, ordenación, exportación y redaction batch de archivos seleccionados.</li>
+            <li><strong>Vigilancia de carpeta:</strong> hasta tres carpetas elegidas, por ejemplo Descargas, se supervisan localmente. Los archivos nuevos o modificados se escanean cuando están estables y los resultados aparecen en el historial y el estado de fondo.</li>
             <li><strong>Vigilancia del portapapeles:</strong> avisa localmente si copia contenido rojo o negro antes de pegarlo en otra herramienta. El contenido no se guarda.</li>
             <li><strong>OCR para PDF de imagen:</strong> si un documento contiene poco o ningún texto, puede ejecutar OCR para extraer texto de páginas escaneadas.</li>
+            <li><strong>Desktop, web y acciones rápidas:</strong> la aplicación puede ejecutarse como app de escritorio o en modo web local. El clic derecho de Windows y Finder Quick Action en macOS pueden enviar archivos directamente al scanner cuando se ha usado el script de instalación.</li>
           </ul>
         </div>
         <div class="about-section">
@@ -1254,15 +1286,16 @@
           <ul>
             <li>La lista blanca personal, la blacklist e ignore.toml se pueden editar en Configuración.</li>
             <li>Se pueden añadir patrones regex personalizados desde la UI para números de caso internos, códigos de proyecto u otros formatos específicos de la organización.</li>
-            <li>Comentarios, notas del orador y anotaciones compatibles pueden eliminarse durante la redacción.</li>
-            <li>Las etiquetas Microsoft 365 y los labels de sensibilidad/retención pueden leerse, sugerirse y escribirse cuando Graph está configurado.</li>
+            <li>Los perfiles de redaction permiten elegir entre análisis normal, estricto o más conservador.</li>
+            <li>Las etiquetas Microsoft 365 y los labels de sensibilidad/retención pueden leerse, sugerirse y escribirse cuando Graph está configurado, con mapping local del nivel de semáforo al label objetivo.</li>
             <li>Una API local con página Swagger/OpenAPI permite crear otros frontends, por ejemplo Power Apps, sin cambiar la aplicación desktop.</li>
+            <li>La app puede comprobar GitHub para nuevas versiones, descargar el instalador correcto para el sistema operativo y mostrar scripts de instalación cuando corresponda.</li>
           </ul>
         </div>
         <div class="about-section">
           <h3>Escaneo profundo con IA (Ollama)</h3>
           <p>La pestaña de escaneo profundo envía el texto del documento a un modelo de IA local vía <strong>Ollama</strong> para identificar información sensible que los detectores basados en reglas pueden pasar por alto — por ejemplo nombres en formatos inusuales, direcciones sin código postal o cifras de presupuesto en texto libre.</p>
-          <p>Usted elige las categorías que la IA debe buscar: nombres, direcciones, teléfonos, identificaciones personales, datos bancarios, nombres de empresa, montos de presupuesto e información médica opcional. Los hallazgos seleccionados pueden anonimizarse directamente desde la pestaña y guardarse como archivo de texto en Descargas.</p>
+          <p>Usted elige las categorías que la IA debe buscar: nombres, direcciones, teléfonos, identificaciones personales, datos bancarios, nombres de empresa, montos de presupuesto e información médica opcional. Los hallazgos de IA se fusionan con la lista normal y pueden usarse en el mismo flujo de redaction que los hallazgos basados en reglas.</p>
           <div class="local-badge" style="margin-top:8px"><span class="icon">⏱️</span><span><strong>Requisitos de hardware:</strong> el escaneo profundo puede tardar desde segundos hasta varios minutos según el tamaño del documento. Recomendado: al menos 16 GB de RAM y una CPU relativamente moderna (aprox. 2018 o posterior). La <strong>aceleración por GPU</strong> (NVIDIA/AMD) se usa automáticamente cuando está disponible y reduce significativamente el tiempo de análisis. La app muestra si se ejecuta en CPU o GPU.</span></div>
           <p style="margin-top:8px;">Ollama se descarga gratis en <a href="https://ollama.ai" target="_blank" style="color:var(--accent)">ollama.ai</a>. Modelo recomendado: <strong>llama3.2:3b</strong> (~1,9 GB).</p>
         </div>
@@ -1361,7 +1394,7 @@
           <button id="btn-m365-read-local-tags" class="ctrl-btn" data-i18n="m365ReadLocalTags">Les fra sist skannet fil</button>
           <button id="btn-m365-assign-sensitivity" class="ctrl-btn" data-i18n="m365AssignSensitivity">Sett sensitivity label</button>
           <button id="btn-m365-set-retention" class="ctrl-btn" data-i18n="m365SetRetention">Sett retention label</button>
-          <button id="btn-m365-write-metadata" class="ctrl-btn ctrl-btn-primary" data-i18n="m365WriteMetadata">Skriv scan-metadata</button>
+          <button id="btn-m365-write-metadata" class="ctrl-btn ctrl-btn-outline-primary" data-i18n="m365WriteMetadata" data-i18n-title="m365WriteMetadataTooltip" title="Skriver scan-resultat og foreslått klassifisering til Microsoft 365/SharePoint metadata når Graph-tilgang er konfigurert.">Skriv scan-metadata</button>
         </div>
         <div class="settings-note" id="m365-msg" style="margin-top:6px;"></div>
       </div>
@@ -1372,7 +1405,7 @@
         <div class="settings-note" data-i18n="settingsNerNote">Navnegjenkjenning krever spaCy-modeller som lastes ned én gang og lagres lokalt på maskinen. Nedlastingen krever internettforbindelse.</div>
         <div id="ner-models-list" style="margin-top:10px;"></div>
         <div class="settings-row" style="margin-top:10px;">
-          <button id="btn-download-all-models" class="ctrl-btn ctrl-btn-primary" data-i18n="nerDownloadAll">⬇ Last ned alle modeller</button>
+          <button id="btn-download-all-models" class="ctrl-btn ctrl-btn-outline-primary" data-i18n="nerDownloadAll">⬇ Last ned alle modeller</button>
           <button id="btn-refresh-models" class="ctrl-btn" data-i18n="nerRefresh">↻ Oppdater</button>
         </div>
         <div class="settings-note" id="ner-models-msg" style="margin-top:6px;"></div>
@@ -1385,7 +1418,7 @@
         <div class="settings-row" style="margin-top:10px; align-items:center; gap:10px;">
           <span id="ollama-settings-status" style="font-size:13px;"></span>
           <button id="btn-refresh-ollama" class="ctrl-btn" data-i18n="ollamaRefresh">↻ Sjekk status</button>
-          <button id="btn-pull-ollama-model" class="ctrl-btn ctrl-btn-primary" data-i18n="ollamaPullRecommended">Last ned anbefalt modell</button>
+          <button id="btn-pull-ollama-model" class="ctrl-btn ctrl-btn-outline-primary" data-i18n="ollamaPullRecommended">Last ned anbefalt modell</button>
           <button id="btn-stop-ollama-model" class="ctrl-btn" data-i18n="ollamaStopModel" disabled>Stopp aktiv AI-modell</button>
         </div>
         <div class="settings-row" style="margin-top:10px; align-items:center; gap:10px;">
@@ -1411,7 +1444,7 @@
         <textarea id="ignore-editor" class="settings-textarea" spellcheck="false"></textarea>
         <div class="settings-row" style="margin-top:8px;">
           <button id="btn-ignore-reload" class="ctrl-btn" data-i18n="ignoreReload">Last inn</button>
-          <button id="btn-ignore-save" class="ctrl-btn ctrl-btn-primary" data-i18n="ignoreSave">Lagre ignore.toml</button>
+          <button id="btn-ignore-save" class="ctrl-btn ctrl-btn-outline-primary" data-i18n="ignoreSave">Lagre ignore.toml</button>
         </div>
         <div class="settings-note" id="ignore-msg"></div>
       </div>
@@ -1423,7 +1456,7 @@
         <textarea id="whitelist-editor" class="settings-textarea" spellcheck="false"></textarea>
         <div class="settings-row" style="margin-top:8px;">
           <button id="btn-whitelist-reload" class="ctrl-btn" data-i18n="whitelistReload">Last inn</button>
-          <button id="btn-whitelist-save" class="ctrl-btn ctrl-btn-primary" data-i18n="whitelistSave">Lagre hviteliste</button>
+          <button id="btn-whitelist-save" class="ctrl-btn ctrl-btn-outline-primary" data-i18n="whitelistSave">Lagre hviteliste</button>
         </div>
         <div class="settings-note" id="whitelist-msg"></div>
       </div>
@@ -1435,7 +1468,7 @@
         <textarea id="blacklist-editor" class="settings-textarea" spellcheck="false"></textarea>
         <div class="settings-row" style="margin-top:8px;">
           <button id="btn-blacklist-reload" class="ctrl-btn" data-i18n="blacklistReload">Last inn</button>
-          <button id="btn-blacklist-save" class="ctrl-btn ctrl-btn-primary" data-i18n="blacklistSave">Lagre blacklist</button>
+          <button id="btn-blacklist-save" class="ctrl-btn ctrl-btn-outline-primary" data-i18n="blacklistSave">Lagre blacklist</button>
         </div>
         <div class="settings-note" id="blacklist-msg"></div>
       </div>
@@ -1458,14 +1491,14 @@
         <textarea id="custom-pattern-sample" class="settings-textarea" spellcheck="false" style="min-height:58px;" data-i18n-placeholder="customPatternSample" placeholder="Test regex mot eksempeltekst her…"></textarea>
         <div class="settings-row" style="margin-top:8px;">
           <button id="btn-custom-pattern-test" class="ctrl-btn" data-i18n="customPatternTest">Test mønster</button>
-          <button id="btn-custom-pattern-add" class="ctrl-btn ctrl-btn-primary" data-i18n="customPatternAdd">Legg til i TOML</button>
+          <button id="btn-custom-pattern-add" class="ctrl-btn ctrl-btn-outline-primary" data-i18n="customPatternAdd">Legg til i TOML</button>
         </div>
         <div class="settings-note" id="custom-pattern-form-msg"></div>
         <div class="settings-note" id="custom-patterns-path"></div>
         <textarea id="custom-patterns-editor" class="settings-textarea" spellcheck="false"></textarea>
         <div class="settings-row" style="margin-top:8px;">
           <button id="btn-custom-patterns-reload" class="ctrl-btn" data-i18n="customPatternsReload">Last inn</button>
-          <button id="btn-custom-patterns-save" class="ctrl-btn ctrl-btn-primary" data-i18n="customPatternsSave">Lagre mønstre</button>
+          <button id="btn-custom-patterns-save" class="ctrl-btn ctrl-btn-outline-primary" data-i18n="customPatternsSave">Lagre mønstre</button>
         </div>
         <div class="settings-note" id="custom-patterns-msg"></div>
       </div>
@@ -1499,7 +1532,7 @@
         <div class="settings-note" data-i18n="settingsProfileNote">Eksporterer og importerer tema, dokumentspråk, hviteliste, blacklist, ignore.toml og egendefinerte mønstre. Scan-historikk og dokumentinnhold tas ikke med.</div>
         <div class="settings-row" style="margin-top:8px;">
           <button id="btn-export-settings" class="ctrl-btn" data-i18n="settingsExport">Eksporter innstillinger</button>
-          <button id="btn-import-settings" class="ctrl-btn ctrl-btn-primary" data-i18n="settingsImport">Importer innstillinger</button>
+          <button id="btn-import-settings" class="ctrl-btn ctrl-btn-outline-primary" data-i18n="settingsImport">Importer innstillinger</button>
           <input type="file" id="settings-import-file" accept="application/json,.json" style="display:none" />
         </div>
         <div class="settings-note" id="settings-profile-msg"></div>
@@ -1509,7 +1542,7 @@
         <div class="settings-section-title" data-i18n="settingsUpdateTitle">Oppdateringer</div>
         <div class="settings-row">
           <button id="btn-check-updates" class="ctrl-btn" data-i18n="updateCheckNow">Se etter oppdateringer nå</button>
-          <button id="btn-run-install-script" class="ctrl-btn ctrl-btn-primary" data-i18n="updateRunScript">Last ned og kjør installasjonsscript</button>
+          <button id="btn-run-install-script" class="ctrl-btn ctrl-btn-outline-primary" data-i18n="updateRunScript" data-i18n-title="updateRunScriptTooltip" title="Laster ned riktig installasjonsscript for operativsystemet og starter installasjon lokalt. Kan trigge sikkerhetsdialoger i Windows eller macOS.">Last ned og kjør installasjonsscript</button>
           <button id="btn-open-web-mode" class="ctrl-btn" data-i18n="openWebModeBtn">Start web-modus i nettleser</button>
         </div>
         <div class="settings-note" id="update-check-msg"></div>
@@ -1521,7 +1554,7 @@
         <div class="settings-section-title" data-i18n="settingsMacTitle">macOS Finder-hurtighandling</div>
         <div class="settings-note" data-i18n="settingsMacNote">Installerer høyreklikk-valget «Skann med XLENT» i Finder for denne brukeren.</div>
         <div class="settings-row" style="margin-top:8px;">
-          <button id="btn-install-mac-quick-action" class="ctrl-btn ctrl-btn-primary" data-i18n="installMacQuickAction">Installer Finder-hurtighandling</button>
+          <button id="btn-install-mac-quick-action" class="ctrl-btn ctrl-btn-outline-primary" data-i18n="installMacQuickAction">Installer Finder-hurtighandling</button>
         </div>
         <div class="settings-note" id="mac-quick-action-msg"></div>
       </div>
@@ -1533,7 +1566,7 @@
           <button id="btn-load-log" class="ctrl-btn" data-i18n="loadLog">Vis logg</button>
           <button id="btn-open-log" class="ctrl-btn" data-i18n="openLog">Åpne loggfil</button>
           <button id="btn-run-health" class="ctrl-btn" data-i18n="runHealthCheck">Kjør selvtest</button>
-          <button id="btn-export-debug" class="ctrl-btn ctrl-btn-primary" data-i18n="exportDebugPackage">Eksporter feilsøkingspakke</button>
+          <button id="btn-export-debug" class="ctrl-btn ctrl-btn-outline-primary" data-i18n="exportDebugPackage">Eksporter feilsøkingspakke</button>
         </div>
         <textarea id="log-viewer" class="settings-textarea" spellcheck="false" readonly style="display:none;min-height:180px;margin-top:8px;"></textarea>
         <div class="settings-note" id="log-msg"></div>
@@ -1699,6 +1732,7 @@
         m365AssignSensitivity:"Sett sensitivity label",
         m365SetRetention:    "Sett retention label",
         m365WriteMetadata:   "Skriv scan-metadata",
+        m365WriteMetadataTooltip:"Skriver scan-resultat og foreslått klassifisering til Microsoft 365/SharePoint metadata når Graph-tilgang er konfigurert.",
         m365LabelMappingNote:"Valfri mapping för föreslagen label när skanningsmetadata skrivs.",
         m365MapGreen:"Grön",
         m365MapYellow:"Gul",
@@ -1728,6 +1762,7 @@
         updateDirectInstall:"Direkte installasjon",
         updateRunScript:    "Last ned og kjør installasjonsscript",
         updateRunScriptShort:"Kjør installasjonsscript",
+        updateRunScriptTooltip:"Laster ned riktig installasjonsscript for operativsystemet og starter installasjon lokalt. Kan trigge sikkerhetsdialoger i Windows eller macOS.",
         updateInstallScriptRunning:"Laster ned og starter installasjonsscript…",
         updateInstallScriptStarted:"Installasjonsscript startet:",
         updateInstallScriptFailed:"Kunne ikke starte installasjonsscript.",
@@ -1784,6 +1819,7 @@
         folderError:        "Feil under mappeskanning:",
         folderNoFiles:      "Ingen støttede filer funnet i mappen.",
         folderRecursive:    "Skann også undermapper",
+        folderRecursiveTooltip:"Skanner også alle støttede filer i undermapper. Bruk maks filer og maks dybde for å holde jobben kontrollert.",
         folderMaxFiles:     "Maks filer",
         folderMaxDepth:     "Maks dybde",
         folderPreview:      "Fant {files} støttede filer i {folders} mapper. Starte skanning?",
@@ -1804,6 +1840,7 @@
         folderAuditHtml:    "Audit HTML",
         folderAuditPdf:     "Audit PDF",
         folderRedactSelected:"Redact valgte",
+        folderRedactSelectedTooltip:"Lager redacted kopier av valgte filer fra mappeskann-resultatet. Kontroller resultatfilene før deling.",
         folderM365Metadata: "Skriv M365-metadata",
         folderNoSelection:  "Velg minst én fil.",
         folderOpenFile:     "Åpne",
@@ -1839,6 +1876,7 @@
         scanCatFodselsdato:  "Fødselsdato",
         scanCatLonn:         "Lønn / salary",
         aiToggleLabel:       "Kjør AI-dybdeskann (Ollama)",
+        aiToggleTooltip:     "Kjører en lokal AI-modell for å lete etter sensitive ord og uttrykk. Dette er en grundig prosess som også tar noe tid.",
         aiExtraCats:         "Ekstra AI-kategorier:",
         aiResultsTitle:      "AI-funn",
         rescanAi:            "🔄 Re-skann",
@@ -1890,6 +1928,7 @@
         watchScanned:        "{n} filer skannet av mappevakt",
         historySourceWatch:  "mappevakt",
         ocrRescanBtn:        "Kjør OCR-skann",
+        ocrRescanTooltip:    "Kjører OCR for å hente tekst fra bildebaserte PDF-er. Dette kan ta tid og bør brukes når vanlig tekstuttrekk finner lite eller ingen tekst.",
         ocrRunning:          "Kjører OCR-skann…",
       },
       sv: {
@@ -2041,6 +2080,7 @@
         m365AssignSensitivity:"Sätt sensitivity label",
         m365SetRetention:    "Sätt retention label",
         m365WriteMetadata:   "Skriv scan-metadata",
+        m365WriteMetadataTooltip:"Skriver skanningsresultat och föreslagen klassificering till Microsoft 365/SharePoint-metadata när Graph-åtkomst är konfigurerad.",
         m365TokenConfigured: "Graph-token är konfigurerad",
         m365TokenMissing:    "Graph-token saknas. Sätt XLENT_GRAPH_TOKEN eller MICROSOFT_GRAPH_TOKEN innan appen startas.",
         m365Done:            "Klart.",
@@ -2060,6 +2100,7 @@
         updateDirectInstall:"Direkt installation",
         updateRunScript:    "Ladda ned och kör installationsskript",
         updateRunScriptShort:"Kör installationsskript",
+        updateRunScriptTooltip:"Laddar ned rätt installationsskript för operativsystemet och startar installation lokalt. Kan trigga säkerhetsdialoger i Windows eller macOS.",
         updateInstallScriptRunning:"Laddar ned och startar installationsskript…",
         updateInstallScriptStarted:"Installationsskript startat:",
         updateInstallScriptFailed:"Kunde inte starta installationsskript.",
@@ -2116,6 +2157,7 @@
         folderError:        "Fel vid mappskanning:",
         folderNoFiles:      "Inga filer som stöds hittades i mappen.",
         folderRecursive:    "Skanna även undermappar",
+        folderRecursiveTooltip:"Skannar även alla stödda filer i undermappar. Använd max antal filer och max djup för att hålla jobbet kontrollerat.",
         folderMaxFiles:     "Max filer",
         folderMaxDepth:     "Max djup",
         folderPreview:      "Hittade {files} filer som stöds i {folders} mappar. Starta skanning?",
@@ -2136,6 +2178,7 @@
         folderAuditHtml:    "Audit HTML",
         folderAuditPdf:     "Audit PDF",
         folderRedactSelected:"Redact valda",
+        folderRedactSelectedTooltip:"Skapar redacted kopior av valda filer från mappskanningsresultatet. Kontrollera resultatfilerna före delning.",
         folderM365Metadata: "Skriv M365-metadata",
         folderNoSelection:  "Välj minst en fil.",
         folderOpenFile:     "Öppna",
@@ -2171,6 +2214,7 @@
         scanCatFodselsdato:  "Födelsedatum",
         scanCatLonn:         "Lön / salary",
         aiToggleLabel:       "Kör AI-djupskanning (Ollama)",
+        aiToggleTooltip:     "Kör en lokal AI-modell för att leta efter känsliga ord och uttryck. Detta är en grundlig process som också tar viss tid.",
         aiExtraCats:         "Extra AI-kategorier:",
         aiResultsTitle:      "AI-fynd",
         rescanAi:            "🔄 Re-skanna",
@@ -2222,6 +2266,7 @@
         watchScanned:        "{n} filer skannade av mappvakt",
         historySourceWatch:  "mappvakt",
         ocrRescanBtn:        "Kör OCR-skanning",
+        ocrRescanTooltip:    "Kör OCR för att hämta text från bildbaserade PDF:er. Detta kan ta tid och bör användas när vanlig textextraktion hittar lite eller ingen text.",
         ocrRunning:          "Kör OCR-skanning…",
       },
       en: {
@@ -2373,6 +2418,7 @@
         m365AssignSensitivity:"Set sensitivity label",
         m365SetRetention:    "Set retention label",
         m365WriteMetadata:   "Write scan metadata",
+        m365WriteMetadataTooltip:"Writes scan results and suggested classification to Microsoft 365/SharePoint metadata when Graph access is configured.",
         m365LabelMappingNote:"Optional mapping for suggested label when scan metadata is written.",
         m365MapGreen:"Green",
         m365MapYellow:"Yellow",
@@ -2397,6 +2443,7 @@
         updateDirectInstall:"Direct install",
         updateRunScript:    "Download and run install script",
         updateRunScriptShort:"Run install script",
+        updateRunScriptTooltip:"Downloads the correct install script for the operating system and starts local installation. This may trigger Windows or macOS security prompts.",
         updateInstallScriptRunning:"Downloading and starting install script…",
         updateInstallScriptStarted:"Install script started:",
         updateInstallScriptFailed:"Could not start install script.",
@@ -2453,6 +2500,7 @@
         folderError:        "Error during folder scan:",
         folderNoFiles:      "No supported files found in the folder.",
         folderRecursive:    "Scan subfolders too",
+        folderRecursiveTooltip:"Also scans all supported files in subfolders. Use maximum files and maximum depth to keep the job controlled.",
         folderMaxFiles:     "Max files",
         folderMaxDepth:     "Max depth",
         folderPreview:      "Found {files} supported files in {folders} folders. Start scan?",
@@ -2473,6 +2521,7 @@
         folderAuditHtml:    "Audit HTML",
         folderAuditPdf:     "Audit PDF",
         folderRedactSelected:"Redact selected",
+        folderRedactSelectedTooltip:"Creates redacted copies of selected files from the folder scan result. Verify the output files before sharing.",
         folderM365Metadata: "Write M365 metadata",
         folderNoSelection:  "Select at least one file.",
         folderOpenFile:     "Open",
@@ -2508,6 +2557,7 @@
         scanCatFodselsdato:  "Dates of birth",
         scanCatLonn:         "Salary / compensation",
         aiToggleLabel:       "Run AI deep scan (Ollama)",
+        aiToggleTooltip:     "Runs a local AI model to look for sensitive words and phrases. This is a thorough process and may take some time.",
         aiExtraCats:         "Extra AI categories:",
         aiResultsTitle:      "AI findings",
         rescanAi:            "🔄 Re-scan",
@@ -2559,6 +2609,7 @@
         watchScanned:        "{n} files scanned by folder watch",
         historySourceWatch:  "watch",
         ocrRescanBtn:        "Run OCR scan",
+        ocrRescanTooltip:    "Runs OCR to extract text from image-based PDFs. This can take time and should be used when normal text extraction finds little or no text.",
         ocrRunning:          "Running OCR scan…",
       },
 
@@ -2641,6 +2692,7 @@
         updateDirectInstall: "Direkte Installation",
         updateRunScript:     "Installationsskript herunterladen und ausführen",
         updateRunScriptShort:"Installationsskript ausführen",
+        updateRunScriptTooltip:"Lädt das passende Installationsskript für das Betriebssystem herunter und startet die lokale Installation. Dies kann Sicherheitsdialoge in Windows oder macOS auslösen.",
         updateInstallScriptRunning:"Installationsskript wird heruntergeladen und gestartet…",
         updateInstallScriptStarted:"Installationsskript gestartet:",
         updateInstallScriptFailed:"Installationsskript konnte nicht gestartet werden.",
@@ -2703,6 +2755,7 @@
         m365AssignSensitivity:"Sensitivity label setzen",
         m365SetRetention:    "Retention label setzen",
         m365WriteMetadata:   "Scan-Metadaten schreiben",
+        m365WriteMetadataTooltip:"Schreibt Scan-Ergebnisse und vorgeschlagene Klassifizierung in Microsoft 365/SharePoint-Metadaten, wenn Graph-Zugriff konfiguriert ist.",
         m365LabelMappingNote:"Optionale Zuordnung für vorgeschlagenes Label beim Schreiben von Scan-Metadaten.",
         m365MapGreen:"Grün",
         m365MapYellow:"Gelb",
@@ -2764,6 +2817,7 @@
         deepScanError:       "Tiefenscan fehlgeschlagen:",
         deepScanCancelled:   "Abgebrochen.",
         aiToggleLabel:       "KI-Tiefenscan ausführen (Ollama)",
+        aiToggleTooltip:     "Führt ein lokales KI-Modell aus, um nach sensiblen Wörtern und Ausdrücken zu suchen. Dies ist ein gründlicher Prozess und kann etwas Zeit benötigen.",
         aiExtraCats:         "Zusätzliche KI-Kategorien:",
         aiResultsTitle:      "KI-Treffer",
         aiCheckingOllama:    "⏳ Prüfe Ollama…",
@@ -2814,6 +2868,7 @@
         watchScanned:        "{n} Dateien durch Ordnerwächter gescannt",
         historySourceWatch:  "Ordnerwächter",
         ocrRescanBtn:        "OCR-Scan starten",
+        ocrRescanTooltip:    "Führt OCR aus, um Text aus bildbasierten PDFs zu extrahieren. Dies kann Zeit benötigen und sollte genutzt werden, wenn die normale Textextraktion wenig oder keinen Text findet.",
         ocrRunning:          "OCR-Scan läuft…",
         dstCatEpost:         "E-Mail",
         dstCatTelefon:       "Telefon",
@@ -2854,6 +2909,7 @@
         folderError:         "Fehler beim Ordner-Scan:",
         folderNoFiles:       "Keine unterstützten Dateien gefunden.",
         folderRecursive:     "Auch Unterordner scannen",
+        folderRecursiveTooltip:"Scannt auch alle unterstützten Dateien in Unterordnern. Verwenden Sie maximale Dateianzahl und maximale Tiefe, um den Job kontrolliert zu halten.",
         folderMaxFiles:      "Max. Dateien",
         folderMaxDepth:      "Max. Tiefe",
         folderPreview:       "{files} unterstützte Dateien in {folders} Ordnern gefunden. Scan starten?",
@@ -2874,6 +2930,7 @@
         folderAuditHtml:     "Audit HTML",
         folderAuditPdf:      "Audit PDF",
         folderRedactSelected:"Ausgewählte redigieren",
+        folderRedactSelectedTooltip:"Erstellt redigierte Kopien der ausgewählten Dateien aus dem Ordnerscan-Ergebnis. Prüfen Sie die Ergebnisdateien vor dem Teilen.",
         folderM365Metadata:  "M365-Metadaten schreiben",
         folderNoSelection:   "Wählen Sie mindestens eine Datei.",
         folderOpenFile:      "Öffnen",
@@ -2979,6 +3036,7 @@
         updateDirectInstall: "Installation directe",
         updateRunScript:     "Télécharger et exécuter le script d’installation",
         updateRunScriptShort:"Exécuter le script d’installation",
+        updateRunScriptTooltip:"Télécharge le script d’installation adapté au système d’exploitation et lance l’installation locale. Cela peut déclencher des alertes de sécurité Windows ou macOS.",
         updateInstallScriptRunning:"Téléchargement et lancement du script d’installation…",
         updateInstallScriptStarted:"Script d’installation lancé :",
         updateInstallScriptFailed:"Impossible de lancer le script d’installation.",
@@ -3041,6 +3099,7 @@
         m365AssignSensitivity:"Définir le sensitivity label",
         m365SetRetention:    "Définir le retention label",
         m365WriteMetadata:   "Écrire les métadonnées du scan",
+        m365WriteMetadataTooltip:"Écrit les résultats du scan et la classification suggérée dans les métadonnées Microsoft 365/SharePoint lorsque l’accès Graph est configuré.",
         m365LabelMappingNote:"Mapping facultatif du label suggéré lors de l’écriture des métadonnées d’analyse.",
         m365MapGreen:"Vert",
         m365MapYellow:"Jaune",
@@ -3102,6 +3161,7 @@
         deepScanError:       "Échec de l'analyse approfondie :",
         deepScanCancelled:   "Annulé.",
         aiToggleLabel:       "Exécuter l'analyse IA approfondie (Ollama)",
+        aiToggleTooltip:     "Exécute un modèle IA local pour rechercher des mots et expressions sensibles. C’est un processus approfondi qui peut prendre du temps.",
         aiExtraCats:         "Catégories IA supplémentaires :",
         aiResultsTitle:      "Résultats IA",
         aiCheckingOllama:    "⏳ Vérification d'Ollama…",
@@ -3152,6 +3212,7 @@
         watchScanned:        "{n} fichiers analysés par la surveillance",
         historySourceWatch:  "surveillance",
         ocrRescanBtn:        "Lancer l’OCR",
+        ocrRescanTooltip:    "Lance l’OCR pour extraire le texte des PDF basés sur des images. Cela peut prendre du temps et doit être utilisé lorsque l’extraction normale trouve peu ou pas de texte.",
         ocrRunning:          "OCR en cours…",
         dstCatEpost:         "E-mail",
         dstCatTelefon:       "Téléphone",
@@ -3192,6 +3253,7 @@
         folderError:         "Erreur lors de l'analyse du dossier :",
         folderNoFiles:       "Aucun fichier pris en charge trouvé.",
         folderRecursive:     "Analyser aussi les sous-dossiers",
+        folderRecursiveTooltip:"Analyse aussi tous les fichiers pris en charge dans les sous-dossiers. Utilisez le nombre maximal de fichiers et la profondeur maximale pour garder la tâche maîtrisée.",
         folderMaxFiles:      "Fichiers max.",
         folderMaxDepth:      "Profondeur max.",
         folderPreview:       "{files} fichiers pris en charge trouvés dans {folders} dossiers. Lancer l'analyse ?",
@@ -3212,6 +3274,7 @@
         folderAuditHtml:     "Audit HTML",
         folderAuditPdf:      "Audit PDF",
         folderRedactSelected:"Redacter la sélection",
+        folderRedactSelectedTooltip:"Crée des copies expurgées/redacted des fichiers sélectionnés depuis le résultat d’analyse de dossier. Vérifiez les fichiers produits avant partage.",
         folderM365Metadata:  "Écrire les métadonnées M365",
         folderNoSelection:   "Sélectionnez au moins un fichier.",
         folderOpenFile:      "Ouvrir",
@@ -3317,6 +3380,7 @@
         updateDirectInstall: "Instalación directa",
         updateRunScript:     "Descargar y ejecutar script de instalación",
         updateRunScriptShort:"Ejecutar script de instalación",
+        updateRunScriptTooltip:"Descarga el script de instalación correcto para el sistema operativo e inicia la instalación local. Puede activar diálogos de seguridad en Windows o macOS.",
         updateInstallScriptRunning:"Descargando e iniciando script de instalación…",
         updateInstallScriptStarted:"Script de instalación iniciado:",
         updateInstallScriptFailed:"No se pudo iniciar el script de instalación.",
@@ -3379,6 +3443,7 @@
         m365AssignSensitivity:"Definir sensitivity label",
         m365SetRetention:    "Definir retention label",
         m365WriteMetadata:   "Escribir metadatos del escaneo",
+        m365WriteMetadataTooltip:"Escribe los resultados del escaneo y la clasificación sugerida en metadatos de Microsoft 365/SharePoint cuando Graph está configurado.",
         m365LabelMappingNote:"Asignación opcional para la etiqueta sugerida al escribir metadatos del escaneo.",
         m365MapGreen:"Verde",
         m365MapYellow:"Amarillo",
@@ -3440,6 +3505,7 @@
         deepScanError:       "Falló el escaneo profundo:",
         deepScanCancelled:   "Cancelado.",
         aiToggleLabel:       "Ejecutar escaneo profundo con IA (Ollama)",
+        aiToggleTooltip:     "Ejecuta un modelo de IA local para buscar palabras y expresiones sensibles. Es un proceso exhaustivo que puede tardar algo de tiempo.",
         aiExtraCats:         "Categorías IA adicionales:",
         aiResultsTitle:      "Resultados IA",
         aiCheckingOllama:    "⏳ Comprobando Ollama…",
@@ -3490,6 +3556,7 @@
         watchScanned:        "{n} archivos escaneados por vigilancia",
         historySourceWatch:  "vigilancia",
         ocrRescanBtn:        "Ejecutar OCR",
+        ocrRescanTooltip:    "Ejecuta OCR para extraer texto de PDF basados en imágenes. Puede tardar y debe usarse cuando la extracción normal encuentra poco o ningún texto.",
         ocrRunning:          "Ejecutando OCR…",
         dstCatEpost:         "Correo electrónico",
         dstCatTelefon:       "Teléfono",
@@ -3530,6 +3597,7 @@
         folderError:         "Error al escanear la carpeta:",
         folderNoFiles:       "No se encontraron archivos compatibles.",
         folderRecursive:     "Escanear también subcarpetas",
+        folderRecursiveTooltip:"También escanea todos los archivos compatibles en subcarpetas. Use máximo de archivos y profundidad máxima para mantener el trabajo controlado.",
         folderMaxFiles:      "Máx. archivos",
         folderMaxDepth:      "Profundidad máx.",
         folderPreview:       "Se encontraron {files} archivos compatibles en {folders} carpetas. ¿Iniciar escaneo?",
@@ -3550,6 +3618,7 @@
         folderAuditHtml:     "Audit HTML",
         folderAuditPdf:      "Audit PDF",
         folderRedactSelected:"Redactar seleccionados",
+        folderRedactSelectedTooltip:"Crea copias redactadas/redacted de los archivos seleccionados del resultado de escaneo de carpeta. Verifique los archivos generados antes de compartirlos.",
         folderM365Metadata:  "Escribir metadatos M365",
         folderNoSelection:   "Seleccione al menos un archivo.",
         folderOpenFile:      "Abrir",
@@ -3673,6 +3742,11 @@
       // Update placeholders
       document.querySelectorAll("[data-i18n-placeholder]").forEach(el => {
         el.placeholder = t(el.dataset.i18nPlaceholder);
+      });
+
+      // Update tooltips
+      document.querySelectorAll("[data-i18n-title]").forEach(el => {
+        el.title = t(el.dataset.i18nTitle);
       });
 
       // Update confidence select options (dybdeskann tab + AI-scan panel)
@@ -4645,7 +4719,8 @@
         && (r.warning_code === "no_text_extracted" || r.warning_code === "little_text_extracted");
       const ocrBtnHtml = canOcr
         ? ` <button id="btn-ocr-rescan" class="ctrl-btn ctrl-btn-primary"
-              style="margin-left:10px;font-size:12px;">${t("ocrRescanBtn")}</button>`
+              style="margin-left:10px;font-size:12px;"
+              title="${escapeHtml(t("ocrRescanTooltip"))}">${t("ocrRescanBtn")}</button>`
         : "";
       const warningBanner = warning
         ? `<div class="warning-banner">⚠️ ${escapeHtml(warning)}${ocrBtnHtml}</div>` : "";
@@ -4753,11 +4828,11 @@
           <button class="ctrl-btn" id="g-sel-none">${t("selNone")}</button>
           <span class="ctrl-sep"></span>
           ${canPatch
-            ? `<button class="ctrl-btn ctrl-btn-accent" id="g-patch">${t("saveAnon")} .${ext}</button>`
+            ? `<button class="ctrl-btn ctrl-btn-outline-accent" id="g-patch">${t("saveAnon")} .${ext}</button>`
             : ""}
           <button class="ctrl-btn" id="g-preview">${t("previewRedaction")}</button>
-          <button class="ctrl-btn ctrl-btn-primary" id="g-anon">${t("genMd")}</button>
-          <button class="ctrl-btn ctrl-btn-primary" id="g-anon-pdf">${t("genPdf")}</button>
+          <button class="ctrl-btn ctrl-btn-outline-primary" id="g-anon">${t("genMd")}</button>
+          <button class="ctrl-btn ctrl-btn-outline-primary" id="g-anon-pdf">${t("genPdf")}</button>
           <span class="anon-msg" id="g-anon-msg"></span>
         </div>`;
 
@@ -5487,7 +5562,7 @@
           btnHtml = `<button class="ctrl-btn" style="flex-shrink:0" onclick="nerDownload('${m.model}')">${t("nerRetry")}</button>`;
         } else {
           badge = `<span style="color:var(--muted)">${t("nerNotInstalled")}</span>`;
-          btnHtml = `<button class="ctrl-btn ctrl-btn-primary" style="flex-shrink:0" onclick="nerDownload('${m.model}')">${t("nerDownload")}</button>`;
+          btnHtml = `<button class="ctrl-btn ctrl-btn-outline-primary" style="flex-shrink:0" onclick="nerDownload('${m.model}')">${t("nerDownload")}</button>`;
         }
 
         html += `<div style="display:flex;align-items:center;gap:8px;padding:7px 2px;border-bottom:1px solid var(--border);font-size:13px">
@@ -6562,7 +6637,7 @@
         <button type="button" class="ctrl-btn" id="folder-audit-html">${escapeHtml(t("folderAuditHtml"))}</button>
         <button type="button" class="ctrl-btn" id="folder-audit-pdf">${escapeHtml(t("folderAuditPdf"))}</button>
         <button type="button" class="ctrl-btn" id="folder-m365-metadata">${escapeHtml(t("folderM365Metadata"))}</button>
-        <button type="button" class="ctrl-btn ctrl-btn-primary" id="folder-redact-selected">${escapeHtml(t("folderRedactSelected"))}</button>
+        <button type="button" class="ctrl-btn ctrl-btn-outline-accent" id="folder-redact-selected" title="${escapeHtml(t("folderRedactSelectedTooltip"))}">${escapeHtml(t("folderRedactSelected"))}</button>
         <span id="folder-action-msg" class="folder-action-msg"></span>
       </div>`;
     }
@@ -6779,6 +6854,9 @@
     // Apply initial placeholder translations
     document.querySelectorAll("[data-i18n-placeholder]").forEach(el => {
       el.placeholder = t(el.dataset.i18nPlaceholder);
+    });
+    document.querySelectorAll("[data-i18n-title]").forEach(el => {
+      el.title = t(el.dataset.i18nTitle);
     });
     setIgnoreMessage(t("ignoreHint"), "var(--muted)", "hint");
     renderIgnorePath();

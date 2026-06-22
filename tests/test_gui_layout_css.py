@@ -536,10 +536,41 @@ def test_guard_watch_custom_patterns_and_ocr_ui_are_wired():
         "profileStrict",
         "rescanRedacted",
         "ocrRescanBtn",
+        "ocrRescanTooltip",
         "ocrRunning",
+        "aiToggleTooltip",
+        "folderRecursiveTooltip",
+        "folderRedactSelectedTooltip",
+        "updateRunScriptTooltip",
+        "m365WriteMetadataTooltip",
     ]:
         expected = 7 if key == "redactionProfile" else 6
         assert html.count(f"{key}:") == expected
+
+
+def test_tooltips_exist_for_expensive_or_external_actions():
+    html = HTML.read_text(encoding="utf-8")
+
+    assert 'data-i18n-title="aiToggleTooltip"' in html
+    assert 'data-i18n-title="folderRecursiveTooltip"' in html
+    assert 'data-i18n-title="m365WriteMetadataTooltip"' in html
+    assert 'data-i18n-title="updateRunScriptTooltip"' in html
+    assert 'title="${escapeHtml(t("ocrRescanTooltip"))}"' in html
+    assert 'title="${escapeHtml(t("folderRedactSelectedTooltip"))}"' in html
+    assert 'document.querySelectorAll("[data-i18n-title]")' in html
+    assert "el.title = t(el.dataset.i18nTitle);" in html
+
+
+def test_settings_panel_does_not_use_filled_primary_buttons():
+    html = HTML.read_text(encoding="utf-8")
+
+    start = html.index('id="panel-settings"')
+    end = html.index("<script>", start)
+    settings_panel = html[start:end]
+
+    assert "ctrl-btn-primary" not in settings_panel
+    assert "ctrl-btn-accent" not in settings_panel
+    assert "ctrl-btn-outline-primary" in settings_panel
 
 
 def test_medical_ai_category_is_available_but_default_off():

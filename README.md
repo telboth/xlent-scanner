@@ -1,6 +1,6 @@
 # XLENT Compliance-scanner
 
-> **v1.4.7** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
+> **v1.4.8** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
 
 Alt kjøres 100 % lokalt — ingen dokumenter, tekst eller funn sendes over internett.
 
@@ -415,6 +415,13 @@ src/xlent_scanner/
 ---
 
 ## Endringslogg
+
+### v1.4.8
+- Oppdaterte «Om programmet»-teksten på alle språk slik at den dekker dagens funksjoner, inkludert webmodus, mappevakt, OCR, M365, redaction-profiler og AI-dybdeskann.
+- Forbedret lesbarhet på redaction-, eksport- og innstillingsknapper ved å bruke outline-stil i stedet for fylte farger.
+- Standardiserte knappestil: fylte knapper brukes til scan/analyse, mens lagring, eksport, installasjon og konfigurasjon bruker outline.
+- La til tooltips for tunge eller eksterne handlinger: AI-dybdeskann, OCR, rekursiv mappeskann, batch-redaction, installasjonsscript og Microsoft 365 metadata.
+- La til regresjonstest som hindrer fylte primærknapper i Innstillinger.
 
 ### v1.4.7
 - La til manuell re-scan-knapp etter redaction, uten automatisk re-scan.
