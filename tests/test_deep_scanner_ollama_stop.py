@@ -329,6 +329,104 @@ def test_deep_scan_drops_llm_personnummer_not_present_in_source(monkeypatch):
     assert "Anne Hansen" in texts
 
 
+def test_deep_scan_drops_false_positive_person_names(monkeypatch):
+    false_positive_names = [
+        "brukeren",
+        "veilederen",
+        "brukere",
+        "saksbehandlere",
+        "saksbehandler",
+        "Visma, Tieto og Oslo kommunes Fasit-team",
+        "Arbeids- og velferdsdirektoratet, KS, Trondheim Digital og DigiRogland",
+    ]
+    monkeypatch.setattr(
+        deep_scanner,
+        "_call_ollama",
+        lambda model, prompt: [
+            {
+                "category": "Personnavn",
+                "text": value,
+                "context": f"Teksten nevner {value}",
+                "confidence": "high",
+            }
+            for value in false_positive_names
+        ] + [
+            {
+                "category": "Personnavn",
+                "text": "Anne Hansen",
+                "context": "Kontakt Anne Hansen",
+                "confidence": "high",
+            }
+        ],
+    )
+    deep_scanner._jobs.clear()
+    job_id = "namefp01"
+    deep_scanner._jobs[job_id] = {
+        "job_id": job_id,
+        "status": "running",
+        "progress": "",
+        "findings": [],
+        "cancelled": False,
+        "started_at": time.time(),
+    }
+    text = "\n".join([
+        "Teksten nevner " + value
+        for value in false_positive_names
+    ] + [
+        "Kontakt Anne Hansen om saken."
+    ])
+
+    deep_scanner._run_deep_scan(text, "llama3.2:3b", "nb", job_id, ["navn"])
+
+    texts = {f["text"] for f in deep_scanner.get_deep_scan_status(job_id)["findings"]}
+    assert "Anne Hansen" in texts
+    for value in false_positive_names:
+        assert value not in texts
+
+
+def test_deep_scan_drops_sentence_misclassified_as_bank_account(monkeypatch):
+    false_bank = (
+        "Kolonne B omfatter datakilder som hentes i fagsystemet under "
+        "saksbehandlingen, der saksbehandler eller KI-assistent henter når "
+        "det trengs is saken"
+    )
+    monkeypatch.setattr(
+        deep_scanner,
+        "_call_ollama",
+        lambda model, prompt: [
+            {
+                "category": "Bankkonto",
+                "text": false_bank,
+                "context": false_bank,
+                "confidence": "high",
+            },
+            {
+                "category": "Bankkonto",
+                "text": "1000.00.00006",
+                "context": "Konto: 1000.00.00006",
+                "confidence": "high",
+            },
+        ],
+    )
+    deep_scanner._jobs.clear()
+    job_id = "bankfp01"
+    deep_scanner._jobs[job_id] = {
+        "job_id": job_id,
+        "status": "running",
+        "progress": "",
+        "findings": [],
+        "cancelled": False,
+        "started_at": time.time(),
+    }
+    text = f"{false_bank}\nKonto: 1000.00.00006"
+
+    deep_scanner._run_deep_scan(text, "llama3.2:3b", "nb", job_id, ["bankkonto"])
+
+    texts = {f["text"] for f in deep_scanner.get_deep_scan_status(job_id)["findings"]}
+    assert false_bank not in texts
+    assert "1000.00.00006" in texts
+
+
 def test_deep_scan_accepts_llm_finding_with_different_spacing_in_source(monkeypatch):
     monkeypatch.setattr(
         deep_scanner,

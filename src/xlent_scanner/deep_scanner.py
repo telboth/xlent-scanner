@@ -16,6 +16,8 @@ import urllib.request
 import uuid
 from typing import Any
 
+from xlent_scanner.detectors.ner_names import looks_like_person_name
+
 LOGGER = logging.getLogger(__name__)
 
 # URL kan overstyres med miljøvariabelen OLLAMA_BASE_URL.
@@ -38,7 +40,7 @@ RECOMMENDED_MODELS = [
 
 # Søkekategorier – nøkkel → kort beskrivelse (vises i UI og sendes til LLM som kontekst)
 CATEGORIES: dict[str, str] = {
-    "navn":          "personnavn – fornavn OG etternavn (ikke bynavn, titler eller CAPS-fraser)",
+    "navn":          "personnavn – fornavn OG etternavn (ikke roller, organisasjoner, kommuner, etater, team eller leverandører)",
     "adresse":       "fysisk adresse – gatenavn OG husnummer (ikke bynavn alene eller tekniske termer)",
     "epost":         "e-postadresser – format: navn@domene.tld",
     "telefon":       "telefonnumre – 8-sifret norsk eller internasjonal med landkode",
@@ -263,6 +265,8 @@ Finn KUN personopplysninger som KONKRET identifiserer enkeltpersoner. Bruk disse
 Personnavn – MÅ ha fornavn OG etternavn på en virkelig person:
   ✅ «Thomas Elboth»  ✅ «Maria Hansen»  ✅ «John Smith»
   ❌ «YARA»  ❌ «YARA PAYS FOR»  ❌ «Oslo»  ❌ «CEO»  ❌ «Microsoft»  ❌ enkelt fornavn  ❌ enkelt etternavn
+  ❌ roller/generiske ord: «brukeren», «veilederen», «saksbehandler»
+  ❌ organisasjoner/etater/team: «Visma, Tieto og Oslo kommunes Fasit-team», «Arbeids- og velferdsdirektoratet», «Trondheim Digital», «DigiRogland»
 
 Adresse – MÅ ha gatenavn OG husnummer (eller postboks):
   ✅ «Storgata 14»  ✅ «Karl Johans gate 1, 0154 Oslo»  ✅ «Pb 123, 1234 Sted»
@@ -309,6 +313,8 @@ Hitta BARA personuppgifter som KONKRET identifierar enskilda personer. Använd d
 Personnamn – MÅSTE ha förnamn OCH efternamn på en verklig person:
   ✅ «Anna Svensson»  ✅ «Erik Lindqvist»
   ❌ «Stockholm»  ❌ «YARA PAYS FOR»  ❌ «CEO»  ❌ «Azure»  ❌ enbart förnamn  ❌ enbart efternamn
+  ❌ roller/generiska ord: «användaren», «handledaren», «handläggare»
+  ❌ organisationer/myndigheter/team: «Visma, Tieto och Oslo kommunes Fasit-team», «Arbeids- og velferdsdirektoratet», «Trondheim Digital», «DigiRogland»
 
 Adress – MÅSTE ha gatunamn OCH husnummer (eller postbox):
   ✅ «Storgatan 14»  ✅ «Kungsgatan 1, 111 43 Stockholm»
@@ -353,6 +359,8 @@ Find ONLY personal data that CONCRETELY identifies individuals. Use these rules:
 Personal name – MUST have both first name AND last name of a real person:
   ✅ «John Smith»  ✅ «Maria Hansen»
   ❌ «YARA»  ❌ «YARA PAYS FOR»  ❌ «London»  ❌ «CEO»  ❌ «Microsoft»  ❌ first name only  ❌ last name only
+  ❌ roles/generic words: «the user», «case worker», «supervisor»
+  ❌ organizations/agencies/teams: «Visma, Tieto and Oslo municipality's Fasit team», «Arbeids- og velferdsdirektoratet», «Trondheim Digital», «DigiRogland»
 
 Address – MUST have a street name AND house/building number:
   ✅ «14 Baker Street»  ✅ «Karl Johans gate 1, Oslo»
@@ -563,6 +571,84 @@ def _category_key(category: str) -> str:
     return category.replace("🤖", "").strip().casefold()
 
 
+_PERSON_NAME_CATEGORIES = {
+    "personnavn",
+    "navn",
+    "navn (person)",
+    "person name",
+    "personal name",
+    "personnamn",
+    "namn",
+    "namn (person)",
+    "nom",
+    "nom (personne)",
+    "nombre",
+    "nombre (persona)",
+}
+
+
+def _is_person_name_category(category: str) -> bool:
+    return _category_key(category) in _PERSON_NAME_CATEGORIES
+
+
+_BANK_ACCOUNT_CATEGORIES = {
+    "bankkonto",
+    "bankkontonummer",
+    "kontonummer",
+    "account number",
+    "bank account",
+    "iban",
+}
+
+
+def _is_bank_account_category(category: str) -> bool:
+    return _category_key(category) in _BANK_ACCOUNT_CATEGORIES
+
+
+def _valid_bank_account_text(value: str) -> str | None:
+    """Returner presist kontonummer/IBAN bare hvis teksten faktisk validerer."""
+    from xlent_scanner.detectors.iban import find_iban  # noqa: PLC0415
+    from xlent_scanner.detectors.regex_no import find_kontonummer  # noqa: PLC0415
+
+    konto_hits = list(find_kontonummer(value))
+    if konto_hits:
+        return konto_hits[0].text
+
+    iban_hits = list(find_iban(value))
+    if not iban_hits:
+        return None
+    raw = " ".join(str(value or "").strip().split())
+    compact = re.sub(r"\s+", "", raw).upper()
+    # LLM må ha rapportert selve IBAN-verdien, ikke en hel kontekstsetning.
+    for hit in iban_hits:
+        if compact == str(hit.raw_text or "").upper():
+            return raw
+    return None
+
+
+def _filter_llm_findings_by_category_precision(findings: list[dict]) -> list[dict]:
+    result: list[dict] = []
+    removed = 0
+    for f in findings:
+        cat = str(f.get("category") or "")
+        raw_text = str(f.get("text") or "")
+        if _is_bank_account_category(cat):
+            bank_text = _valid_bank_account_text(raw_text)
+            if not bank_text:
+                removed += 1
+                continue
+            f = dict(f)
+            f["text"] = bank_text
+            if _category_key(cat) == "iban":
+                f["category"] = "IBAN"
+            else:
+                f["category"] = "Kontonummer"
+        result.append(f)
+    if removed:
+        LOGGER.info("AI-bankkonto-filter: fjernet %d ugyldige bankkonto-funn", removed)
+    return result
+
+
 _EMAIL_RE = re.compile(r"[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}", re.IGNORECASE)
 _US_PHONE_RE = re.compile(
     r"(?<![\w])"
@@ -715,7 +801,9 @@ def _filter_ignored_findings(findings: list[dict], ignore: dict) -> list[dict]:
         if _email_matches_ignore(raw_val, domains, emails):
             continue
 
-        if cat in {"personnavn", "navn", "navn (person)", "person name"}:
+        if _is_person_name_category(str(f.get("category") or "")):
+            if not looks_like_person_name(raw_val):
+                continue
             if val in ignore_names or val in ignore_name_parts:
                 continue
 
@@ -741,6 +829,7 @@ def _run_deep_scan(
         prompt = _build_prompt(categories, chunk, lang)
         findings = _call_ollama(model, prompt)
         findings = _filter_llm_findings_to_source(findings, chunk)
+        findings = _filter_llm_findings_by_category_precision(findings)
         all_raw.extend(findings)
 
     # ── Regex-supplementer: kategorier der regelbaserte detektorer er mer

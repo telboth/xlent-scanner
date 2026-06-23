@@ -12,9 +12,11 @@ Filtrering for å redusere falske positiver:
   - Hvert ord må starte med stor bokstav, ikke være hel-caps (akronymer)
   - Minimumlengde per del: 2 tegn
   - Felles stoppord-liste for engelske tekniske termer
+  - Forkast organisasjoner, offentlige etater, teamnavn og generiske roller
 """
 from __future__ import annotations
 
+import re
 import sys
 from typing import Any, Iterator
 
@@ -66,17 +68,61 @@ _STOPWORDS: frozenset[str] = frozenset({
     # Svenske ord som kan forveksles med navn
     "aktiebolag", "handelsbolag", "ekonomi", "styrelse", "direktion",
     "avdelning", "verksamhet", "tjänst", "produkt",
+    # Norske/svenske rolleord som modeller ofte forveksler med personer
+    "bruker", "brukeren", "brukere", "brukerne",
+    "veileder", "veilederen", "veiledere", "veilederne",
+    "saksbehandler", "saksbehandleren", "saksbehandlere", "saksbehandlerne",
+    "kunde", "kunden", "kunder", "klient", "klienten", "klienter",
+    "leverandør", "leverandøren", "leverandører",
 })
+
+_ORG_KEYWORDS: frozenset[str] = frozenset({
+    "as", "asa", "ab", "oy", "ltd", "limited", "gmbh", "inc", "llc",
+    "kommune", "kommunen", "kommunes", "kommunal", "fylkeskommune",
+    "direktorat", "direktoratet", "departement", "departementet",
+    "etat", "etaten", "tilsyn", "tilsynet", "nav", "ks",
+    "team", "teamet", "fasit-team", "digital", "digirogland",
+    "arbeids-", "velferdsdirektoratet",
+})
+
+_ORG_NAMES: frozenset[str] = frozenset({
+    "visma", "tieto", "tietoevry", "microsoft", "google", "amazon",
+    "dnb", "equinor", "yara", "xlent",
+    "arbeids- og velferdsdirektoratet",
+    "trondheim digital", "digirogland", "oslo kommune",
+})
+
+_LIST_SEPARATORS_RE = re.compile(r"[,;:/|]|\s+(?:og|och|and|samt|eller|or)\s+", re.IGNORECASE)
+_WORD_RE = re.compile(r"[a-zæøåäöüéèáàóòíìñß]+", re.IGNORECASE)
 
 
 # ── Hjelpefunksjoner ──────────────────────────────────────────────────────────
 
 
-def _looks_like_name(name: str) -> bool:
+def looks_like_person_name(name: str) -> bool:
+    """Returner True bare for konkrete personnavn.
+
+    Brukes både av spaCy-detektoren og AI-dypscann som siste sikkerhetsnett.
+    """
+    name = " ".join(str(name or "").strip().split())
+    if not name:
+        return False
+    folded = name.casefold()
+    if folded in _ORG_NAMES:
+        return False
+    if _LIST_SEPARATORS_RE.search(name):
+        return False
+    words = set(_WORD_RE.findall(folded))
+    if any(keyword in words for keyword in _ORG_KEYWORDS if "-" not in keyword):
+        return False
+    if any(keyword in folded for keyword in _ORG_KEYWORDS if "-" in keyword):
+        return False
+
     parts = name.split()
-    if len(parts) < 2:
+    if len(parts) < 2 or len(parts) > 4:
         return False
     for part in parts:
+        part = part.strip(".,;:()[]{}«»\"'")
         if len(part) < 2:
             return False
         # Personnavn inneholder aldri sifre – filtrer bort "G3 Legemiddelbruk" o.l.
@@ -103,6 +149,10 @@ def _looks_like_name(name: str) -> bool:
             if part.isupper() and len(part) > 2:
                 return False
     return True
+
+
+def _looks_like_name(name: str) -> bool:
+    return looks_like_person_name(name)
 
 
 # ── Modellhåndtering ──────────────────────────────────────────────────────────
