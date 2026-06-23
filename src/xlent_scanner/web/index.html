@@ -322,6 +322,16 @@
     }
     .ai-results-title { font-size: 13px; font-weight: 600; }
     #ai-progress { font-size: 12px; color: var(--muted); margin-bottom: 6px; min-height: 16px; }
+    .ai-inline-progress {
+      display: none; width: 150px; height: 7px; overflow: hidden;
+      border-radius: 999px; background: color-mix(in srgb, var(--muted) 18%, transparent);
+      border: 1px solid var(--border);
+    }
+    .ai-inline-progress span {
+      display: block; width: 0%; height: 100%; border-radius: inherit;
+      background: linear-gradient(90deg, #f0b429, #2f80ed, #4caf50);
+      transition: width .35s ease;
+    }
     #ai-progress-meter {
       display: none; margin: 4px 0 10px; padding: 8px 10px;
       border: 1px solid var(--border); border-radius: 8px; background: var(--panel2);
@@ -334,6 +344,15 @@
       width: 0%; height: 100%; border-radius: inherit;
       background: linear-gradient(90deg, #f0b429, #2f80ed, #4caf50);
       transition: width .35s ease;
+    }
+    .ai-progress-fill.indeterminate,
+    .ai-inline-progress span.indeterminate {
+      width: 35%;
+      animation: ai-progress-indeterminate 1.2s ease-in-out infinite;
+    }
+    @keyframes ai-progress-indeterminate {
+      0% { transform: translateX(-120%); }
+      100% { transform: translateX(320%); }
     }
     .ai-progress-meta {
       margin-top: 5px; font-size: 11.5px; color: var(--muted);
@@ -737,6 +756,7 @@
               style="font-size:11px;padding:2px 9px;display:none;"
               data-i18n="rescanAi">🔄 Re-skann</button>
             <span id="ai-inline-status" style="font-size:11px;color:var(--muted);"></span>
+            <span id="ai-inline-progress" class="ai-inline-progress" aria-hidden="true"><span id="ai-inline-progress-fill"></span></span>
           </div>
           <div id="ai-scan-opts">
             <div id="ai-status-row" style="font-size:12px;color:var(--muted);margin-bottom:6px;" data-i18n="ollamaChecking">Sjekker Ollama…</div>
@@ -6282,10 +6302,35 @@
       const fill = document.getElementById("ai-progress-fill");
       const chunks = document.getElementById("ai-progress-chunks");
       const eta = document.getElementById("ai-progress-eta");
+      const inline = document.getElementById("ai-inline-progress");
+      const inlineFill = document.getElementById("ai-inline-progress-fill");
       if (meter) meter.style.display = "none";
-      if (fill) fill.style.width = "0%";
+      if (fill) {
+        fill.classList.remove("indeterminate");
+        fill.style.width = "0%";
+      }
       if (chunks) chunks.textContent = "";
       if (eta) eta.textContent = "";
+      if (inline) inline.style.display = "none";
+      if (inlineFill) {
+        inlineFill.classList.remove("indeterminate");
+        inlineFill.style.width = "0%";
+      }
+    }
+
+    function _showAiProgressPreparing(label) {
+      const meter = document.getElementById("ai-progress-meter");
+      const fill = document.getElementById("ai-progress-fill");
+      const chunks = document.getElementById("ai-progress-chunks");
+      const eta = document.getElementById("ai-progress-eta");
+      const inline = document.getElementById("ai-inline-progress");
+      const inlineFill = document.getElementById("ai-inline-progress-fill");
+      if (meter) meter.style.display = "";
+      if (fill) fill.classList.add("indeterminate");
+      if (chunks) chunks.textContent = label || t("deepScanRunning");
+      if (eta) eta.textContent = t("aiEtaCalculating");
+      if (inline) inline.style.display = "inline-block";
+      if (inlineFill) inlineFill.classList.add("indeterminate");
     }
 
     function _updateAiProgressMeter(s) {
@@ -6293,30 +6338,42 @@
       const fill = document.getElementById("ai-progress-fill");
       const chunksEl = document.getElementById("ai-progress-chunks");
       const etaEl = document.getElementById("ai-progress-eta");
+      const inline = document.getElementById("ai-inline-progress");
+      const inlineFill = document.getElementById("ai-inline-progress-fill");
       if (!meter || !fill || !chunksEl || !etaEl) return;
 
       const total = Number(s.total_chunks || 0);
       if (!total) {
-        meter.style.display = "none";
+        if (s.status === "running") _showAiProgressPreparing(s.progress || t("deepScanRunning"));
+        else _resetAiProgressMeter();
         return;
       }
       const completed = Math.max(0, Math.min(total, Number(s.completed_chunks || 0)));
       const percent = Math.max(0, Math.min(100, Number(s.progress_percent ?? ((completed / total) * 100))));
       meter.style.display = "";
+      fill.classList.remove("indeterminate");
       fill.style.width = `${percent}%`;
+      if (inline) inline.style.display = "inline-block";
+      if (inlineFill) {
+        inlineFill.classList.remove("indeterminate");
+        inlineFill.style.width = `${percent}%`;
+      }
       chunksEl.textContent = t("aiProgressParts")
         .replace("{done}", String(completed))
         .replace("{total}", String(total));
 
+      let etaText = "";
       if (s.status === "done") {
-        etaEl.textContent = "100%";
+        etaText = "100%";
       } else if (completed > 0 && Number(s.elapsed_seconds || 0) > 0) {
         const avg = Number(s.elapsed_seconds) / completed;
         const remaining = Math.max(0, (total - completed) * avg);
-        etaEl.textContent = `${Math.round(percent)}% · ${t("aiEtaRemaining").replace("{time}", _formatAiDuration(remaining))}`;
+        etaText = `${Math.round(percent)}% · ${t("aiEtaRemaining").replace("{time}", _formatAiDuration(remaining))}`;
       } else {
-        etaEl.textContent = `${Math.round(percent)}% · ${t("aiEtaCalculating")}`;
+        etaText = `${Math.round(percent)}% · ${t("aiEtaCalculating")}`;
       }
+      etaEl.textContent = etaText;
+      if (s.status === "running") _setAiInlineStatus(`${s.progress || t("aiAnalyzing")} · ${etaText}`);
     }
 
     async function autoAiScan() {
@@ -6357,6 +6414,7 @@
       statusEl.style.display = "";
       progressEl.textContent = t("deepScanRunning");
       _resetAiProgressMeter();
+      _showAiProgressPreparing(t("deepScanRunning"));
       cancelBtn.style.display = "";
       document.getElementById("ai-findings-area").innerHTML = "";
       document.getElementById("ai-anon-bar").style.display = "none";

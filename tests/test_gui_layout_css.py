@@ -613,13 +613,20 @@ def test_ai_deep_scan_progress_bar_and_eta_are_wired():
 
     assert 'id="ai-progress-meter"' in html
     assert 'id="ai-progress-fill"' in html
+    assert 'id="ai-inline-progress"' in html
+    assert 'id="ai-inline-progress-fill"' in html
     assert 'id="ai-progress-chunks"' in html
     assert 'id="ai-progress-eta"' in html
     assert ".ai-progress-track" in html
+    assert ".ai-inline-progress" in html
+    assert "ai-progress-indeterminate" in html
     assert "function _updateAiProgressMeter" in html
     assert "function _formatAiDuration" in html
     assert "function _resetAiProgressMeter" in html
+    assert "function _showAiProgressPreparing" in html
     assert "_updateAiProgressMeter(s);" in html
+    assert "_showAiProgressPreparing(t(\"deepScanRunning\"));" in html
+    assert 'inlineFill.style.width = `${percent}%`;' in html
     assert "s.total_chunks" in html
     assert "s.completed_chunks" in html
     assert "s.progress_percent" in html
