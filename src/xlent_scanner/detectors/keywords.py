@@ -26,11 +26,11 @@ _CONFIDENTIAL_TERMS = [
     "konfidensielt", "strengt konfidensielt",
     "fortrolig", "strengt fortrolig",
     "kun til intern bruk", "ikke for distribusjon",
-    "hemmelig", "taushetsplikt", "begrenset tilgang",
+    "hemmelig", "begrenset tilgang",
     # Svensk
     "konfidentiellt", "strikt konfidentiellt",
     "hemlig", "hemligt",
-    "sekretess", "tystnadsplikt",
+    "sekretess",
     "ej för distribution", "internt bruk",
     "skyddat",
     # Engelsk
@@ -41,6 +41,22 @@ _CONFIDENTIAL_TERMS = [
     "privileged and confidential", "eyes only",
     # Felles forkortelser og avtaler
     "nda", "non-disclosure", "dpa",
+]
+
+# Juridiske begreper som "taushetsplikt" er ofte del av normal fagtekst
+# ("regler om taushetsplikt og informasjonsdeling"). Flagges bare når teksten
+# faktisk markerer dokumentet/innholdet som underlagt taushet/sekretess.
+_CONTEXTUAL_CONFIDENTIAL_PHRASES = [
+    "underlagt taushetsplikt",
+    "omfattet av taushetsplikt",
+    "taushetsbelagt",
+    "taushetsbelagte",
+    "taushetsbelagt informasjon",
+    "under tystnadsplikt",
+    "omfattas av tystnadsplikt",
+    "sekretessbelagd",
+    "sekretessbelagt",
+    "under sekretess",
 ]
 
 # Ord som indikerer kildekode eller konfig som ikke bør deles
@@ -55,6 +71,11 @@ _CODE_TERMS = [
 
 _CONF_PATTERN = re.compile(
     r"(?<!\w)(" + "|".join(re.escape(t) for t in _CONFIDENTIAL_TERMS) + r")(?!\w)",
+    re.IGNORECASE,
+)
+
+_CONTEXTUAL_CONF_PATTERN = re.compile(
+    r"(?<!\w)(" + "|".join(re.escape(t) for t in _CONTEXTUAL_CONFIDENTIAL_PHRASES) + r")(?!\w)",
     re.IGNORECASE,
 )
 
@@ -78,6 +99,14 @@ def find_confidential_markers(text: str) -> Iterator[Finding]:
         return any(start <= pos <= end for start, end, _ in heading_spans)
 
     for m in _CONF_PATTERN.finditer(text):
+        label = (
+            "konfidensielt dokument (overskrift)"
+            if _in_heading(m.start())
+            else "konfidensielt dokument (brødtekst)"
+        )
+        yield Finding(label, m.group(0), _ctx(text, m.start(), m.end()))
+
+    for m in _CONTEXTUAL_CONF_PATTERN.finditer(text):
         label = (
             "konfidensielt dokument (overskrift)"
             if _in_heading(m.start())

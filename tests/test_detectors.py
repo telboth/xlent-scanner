@@ -497,6 +497,17 @@ class TestKeywords:
         f = list(find_confidential_markers("Partene er bundet av NDA."))
         assert any("konfidensielt" in x.category.lower() for x in f)
 
+    def test_taushetsplikt_as_general_legal_topic_is_not_confidential_marker(self):
+        text = (
+            "ulike lover, ulike styringslinjer og delvis ulike regler om "
+            "taushetsplikt og informasjonsdeling"
+        )
+        assert list(find_confidential_markers(text)) == []
+
+    def test_taushetsplikt_with_strong_confidential_context_is_marker(self):
+        f = list(find_confidential_markers("Dokumentet er underlagt taushetsplikt."))
+        assert any("konfidensielt" in x.category.lower() for x in f)
+
     def test_api_key_code_word(self):
         f = list(find_confidential_markers("Sett api_key=verdi"))
         cats = _cats(f)
