@@ -53,6 +53,31 @@ def test_deep_scan_status_is_isolated_per_job(monkeypatch):
     assert deep_scanner.get_deep_scan_status(first)["status"] == "cancelled"
 
 
+def test_deep_scan_status_reports_chunk_progress(monkeypatch):
+    monkeypatch.setattr(deep_scanner, "_call_ollama", lambda model, prompt: [])
+    deep_scanner._jobs.clear()
+    job_id = "progress01"
+    deep_scanner._jobs[job_id] = {
+        "job_id": job_id,
+        "status": "running",
+        "progress": "",
+        "findings": [],
+        "cancelled": False,
+        "started_at": time.time(),
+    }
+    text = " ".join(f"ord{i}" for i in range(deep_scanner._CHUNK_WORDS + 100))
+
+    deep_scanner._run_deep_scan(text, "llama3.2:3b", "nb", job_id, ["navn"])
+
+    status = deep_scanner.get_deep_scan_status(job_id)
+    assert status["status"] == "done"
+    assert status["total_chunks"] >= 2
+    assert status["completed_chunks"] == status["total_chunks"]
+    assert status["current_chunk"] == status["total_chunks"]
+    assert status["progress_percent"] == 100
+    assert status["elapsed_seconds"] >= 0
+
+
 def test_pull_ollama_model_tracks_status(monkeypatch):
     calls = []
 
@@ -204,7 +229,50 @@ def test_deep_scan_ignores_email_with_model_category_and_punctuation(monkeypatch
     texts = {f["text"] for f in deep_scanner.get_deep_scan_status(job_id)["findings"]}
     assert "Thomas.elboth@xlent.no." not in texts
     assert "(Thomas.elboth@xlent.no)" not in texts
-    assert "external@example.com." in texts
+    assert "external@example.com" in texts
+
+
+def test_deep_scan_drops_email_category_without_email_pattern(monkeypatch):
+    monkeypatch.setattr(
+        deep_scanner,
+        "_call_ollama",
+        lambda model, prompt: [
+            {
+                "category": "E-post",
+                "text": "Digdir",
+                "context": "Digdir har ansvar for felleslosninger.",
+                "confidence": "high",
+            },
+            {
+                "category": "E-post",
+                "text": "kontakt@digdir.no",
+                "context": "Kontakt kontakt@digdir.no for mer informasjon.",
+                "confidence": "high",
+            },
+        ],
+    )
+    deep_scanner._jobs.clear()
+    job_id = "email01"
+    deep_scanner._jobs[job_id] = {
+        "job_id": job_id,
+        "status": "running",
+        "progress": "",
+        "findings": [],
+        "cancelled": False,
+        "started_at": time.time(),
+    }
+
+    deep_scanner._run_deep_scan(
+        "Digdir har ansvar for felleslosninger. Kontakt kontakt@digdir.no for mer informasjon.",
+        "llama3.2:3b",
+        "nb",
+        job_id,
+        ["epost"],
+    )
+
+    texts = {f["text"] for f in deep_scanner.get_deep_scan_status(job_id)["findings"]}
+    assert "Digdir" not in texts
+    assert "kontakt@digdir.no" in texts
 
 
 def test_deep_scan_reclassifies_us_phone_misclassified_as_url(monkeypatch):
@@ -425,6 +493,63 @@ def test_deep_scan_drops_sentence_misclassified_as_bank_account(monkeypatch):
     texts = {f["text"] for f in deep_scanner.get_deep_scan_status(job_id)["findings"]}
     assert false_bank not in texts
     assert "1000.00.00006" in texts
+
+
+def test_deep_scan_drops_false_positive_address_and_medical_findings(monkeypatch):
+    monkeypatch.setattr(
+        deep_scanner,
+        "_call_ollama",
+        lambda model, prompt: [
+            {
+                "category": "Adresse",
+                "text": "kontorene vi besøkte",
+                "context": "kontorene vi besøkte hadde ulike rutiner",
+                "confidence": "high",
+            },
+            {
+                "category": "Adresse",
+                "text": "Storgata 14",
+                "context": "Møtet holdes i Storgata 14",
+                "confidence": "high",
+            },
+            {
+                "category": "Medisinsk",
+                "text": "physisk betydning for brukeren",
+                "context": "Dette har physisk betydning for brukeren",
+                "confidence": "high",
+            },
+            {
+                "category": "Medisinsk",
+                "text": "diabetes type 2",
+                "context": "Anne har diabetes type 2",
+                "confidence": "high",
+            },
+        ],
+    )
+    deep_scanner._jobs.clear()
+    job_id = "precision01"
+    deep_scanner._jobs[job_id] = {
+        "job_id": job_id,
+        "status": "running",
+        "progress": "",
+        "findings": [],
+        "cancelled": False,
+        "started_at": time.time(),
+    }
+    text = "\n".join([
+        "kontorene vi besøkte hadde ulike rutiner",
+        "Møtet holdes i Storgata 14",
+        "Dette har physisk betydning for brukeren",
+        "Anne har diabetes type 2",
+    ])
+
+    deep_scanner._run_deep_scan(text, "llama3.2:3b", "nb", job_id, ["adresse", "medisinsk"])
+
+    texts = {f["text"] for f in deep_scanner.get_deep_scan_status(job_id)["findings"]}
+    assert "kontorene vi besøkte" not in texts
+    assert "physisk betydning for brukeren" not in texts
+    assert "Storgata 14" in texts
+    assert "diabetes type 2" in texts
 
 
 def test_deep_scan_accepts_llm_finding_with_different_spacing_in_source(monkeypatch):

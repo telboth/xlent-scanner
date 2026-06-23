@@ -322,6 +322,23 @@
     }
     .ai-results-title { font-size: 13px; font-weight: 600; }
     #ai-progress { font-size: 12px; color: var(--muted); margin-bottom: 6px; min-height: 16px; }
+    #ai-progress-meter {
+      display: none; margin: 4px 0 10px; padding: 8px 10px;
+      border: 1px solid var(--border); border-radius: 8px; background: var(--panel2);
+    }
+    .ai-progress-track {
+      height: 9px; overflow: hidden; border-radius: 999px;
+      background: color-mix(in srgb, var(--muted) 18%, transparent);
+    }
+    .ai-progress-fill {
+      width: 0%; height: 100%; border-radius: inherit;
+      background: linear-gradient(90deg, #f0b429, #2f80ed, #4caf50);
+      transition: width .35s ease;
+    }
+    .ai-progress-meta {
+      margin-top: 5px; font-size: 11.5px; color: var(--muted);
+      display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+    }
     .dst-cat-label {
       display: flex; align-items: center; gap: 7px;
       font-size: 13px; cursor: pointer; user-select: none;
@@ -814,6 +831,13 @@
           <button id="ai-cancel-btn" class="ctrl-btn" style="display:none;" data-i18n="deepScanCancel">✕ Avbryt</button>
         </div>
         <div id="ai-progress"></div>
+        <div id="ai-progress-meter" aria-live="polite">
+          <div class="ai-progress-track"><div id="ai-progress-fill" class="ai-progress-fill"></div></div>
+          <div class="ai-progress-meta">
+            <span id="ai-progress-chunks"></span>
+            <span id="ai-progress-eta"></span>
+          </div>
+        </div>
         <div id="ai-findings-area"></div>
         <div id="ai-anon-bar" class="anon-bar" style="display:none;">
           <button class="ctrl-btn" id="ai-sel-all" data-i18n="selAll">Velg alle</button>
@@ -1713,6 +1737,9 @@
         deepScanRunning:     "🔬 Dybdeskanning pågår… (kan ta opptil flere minutter avhengig av maskin og dokumentstørrelse)",
         deepScanDone:        "✅ Dybdeskann ferdig",
         deepScanNoFindings:  "Ingen ekstra funn fra AI-analyse.",
+        aiEtaCalculating:    "Beregner tid…",
+        aiEtaRemaining:      "Ca. {time} igjen",
+        aiProgressParts:     "{done}/{total} deler",
         settingsUpdateTitle: "Oppdateringer",
         settingsProfileTitle:"Innstillingsprofil",
         settingsProfileNote: "Eksporterer og importerer tema, dokumentspråk, hviteliste, blacklist, ignore.toml og egendefinerte mønstre. Scan-historikk og dokumentinnhold tas ikke med.",
@@ -2067,6 +2094,9 @@
         deepScanRunning:     "🔬 Djupskanning pågår… (kan ta upp till flera minuter beroende på maskin och dokumentstorlek)",
         deepScanDone:        "✅ Djupskanning klar",
         deepScanNoFindings:  "Inga extra fynd från AI-analysen.",
+        aiEtaCalculating:    "Beräknar tid…",
+        aiEtaRemaining:      "Ca {time} kvar",
+        aiProgressParts:     "{done}/{total} delar",
         settingsUpdateTitle: "Uppdateringar",
         settingsProfileTitle:"Inställningsprofil",
         settingsProfileNote: "Exporterar och importerar tema, dokumentspråk, vitlista, blacklist, ignore.toml och anpassade mönster. Skanningshistorik och dokumentinnehåll tas inte med.",
@@ -2411,6 +2441,9 @@
         deepScanRunning:     "🔬 Deep scan in progress… (may take several minutes depending on machine and document size)",
         deepScanDone:        "✅ Deep scan complete",
         deepScanNoFindings:  "No additional findings from AI analysis.",
+        aiEtaCalculating:    "Calculating time…",
+        aiEtaRemaining:      "About {time} left",
+        aiProgressParts:     "{done}/{total} parts",
         settingsUpdateTitle: "Updates",
         settingsProfileTitle:"Settings profile",
         settingsProfileNote: "Exports and imports theme, document language, whitelist, blacklist, ignore.toml, and custom patterns. Scan history and document content are not included.",
@@ -2837,6 +2870,9 @@
         deepScanRunning:     "🔬 Tiefenscan läuft… (kann mehrere Minuten dauern)",
         deepScanDone:        "✅ Tiefenscan abgeschlossen",
         deepScanNoFindings:  "Keine zusätzlichen Treffer durch KI-Analyse.",
+        aiEtaCalculating:    "Berechne Zeit…",
+        aiEtaRemaining:      "Ca. {time} verbleibend",
+        aiProgressParts:     "{done}/{total} Teile",
         deepScanAIFindings:  "KI-Treffer ({n} neue):",
         deepScanCancel:      "✕ Abbrechen",
         deepScanError:       "Tiefenscan fehlgeschlagen:",
@@ -3187,6 +3223,9 @@
         deepScanRunning:     "🔬 Analyse approfondie en cours… (peut prendre plusieurs minutes)",
         deepScanDone:        "✅ Analyse approfondie terminée",
         deepScanNoFindings:  "Aucun résultat supplémentaire de l'analyse IA.",
+        aiEtaCalculating:    "Calcul du temps…",
+        aiEtaRemaining:      "Environ {time} restantes",
+        aiProgressParts:     "{done}/{total} parties",
         deepScanAIFindings:  "Résultats IA ({n} nouveaux) :",
         deepScanCancel:      "✕ Annuler",
         deepScanError:       "Échec de l'analyse approfondie :",
@@ -3537,6 +3576,9 @@
         deepScanRunning:     "🔬 Escaneo profundo en curso… (puede tardar varios minutos)",
         deepScanDone:        "✅ Escaneo profundo completado",
         deepScanNoFindings:  "No se encontraron resultados adicionales del análisis IA.",
+        aiEtaCalculating:    "Calculando tiempo…",
+        aiEtaRemaining:      "Aprox. {time} restantes",
+        aiProgressParts:     "{done}/{total} partes",
         deepScanAIFindings:  "Resultados IA ({n} nuevos):",
         deepScanCancel:      "✕ Cancelar",
         deepScanError:       "Falló el escaneo profundo:",
@@ -4641,6 +4683,7 @@
       document.getElementById("result-header").style.display = "none";
       document.getElementById("ai-scan-status").style.display = "none";
       document.getElementById("ai-progress").textContent = "";
+      _resetAiProgressMeter();
       document.getElementById("ai-findings-area").innerHTML = "";
       document.getElementById("ai-anon-bar").style.display = "none";
       _aiFindingsData = [];
@@ -4827,11 +4870,13 @@
       if (_scanMode !== "folder") {
         document.getElementById("ai-scan-status").style.display = "none";
         document.getElementById("ai-progress").textContent = "";
+        _resetAiProgressMeter();
         document.getElementById("ai-findings-area").innerHTML = "";
         document.getElementById("ai-anon-bar").style.display = "none";
         autoAiScan();
       } else {
         document.getElementById("ai-scan-status").style.display = "none";
+        _resetAiProgressMeter();
       }
 
       // Tekst-forhåndsvisning vises ETTER deep-scan-seksjonen
@@ -6221,6 +6266,59 @@
       rescanBtn.title = loading ? t("aiAnalyzing") : "";
     }
 
+    function _formatAiDuration(seconds) {
+      const sec = Math.max(0, Math.round(Number(seconds) || 0));
+      if (sec < 60) return `${sec}s`;
+      const min = Math.floor(sec / 60);
+      const rem = sec % 60;
+      if (min < 60) return rem ? `${min}m ${rem}s` : `${min}m`;
+      const hours = Math.floor(min / 60);
+      const restMin = min % 60;
+      return restMin ? `${hours}t ${restMin}m` : `${hours}t`;
+    }
+
+    function _resetAiProgressMeter() {
+      const meter = document.getElementById("ai-progress-meter");
+      const fill = document.getElementById("ai-progress-fill");
+      const chunks = document.getElementById("ai-progress-chunks");
+      const eta = document.getElementById("ai-progress-eta");
+      if (meter) meter.style.display = "none";
+      if (fill) fill.style.width = "0%";
+      if (chunks) chunks.textContent = "";
+      if (eta) eta.textContent = "";
+    }
+
+    function _updateAiProgressMeter(s) {
+      const meter = document.getElementById("ai-progress-meter");
+      const fill = document.getElementById("ai-progress-fill");
+      const chunksEl = document.getElementById("ai-progress-chunks");
+      const etaEl = document.getElementById("ai-progress-eta");
+      if (!meter || !fill || !chunksEl || !etaEl) return;
+
+      const total = Number(s.total_chunks || 0);
+      if (!total) {
+        meter.style.display = "none";
+        return;
+      }
+      const completed = Math.max(0, Math.min(total, Number(s.completed_chunks || 0)));
+      const percent = Math.max(0, Math.min(100, Number(s.progress_percent ?? ((completed / total) * 100))));
+      meter.style.display = "";
+      fill.style.width = `${percent}%`;
+      chunksEl.textContent = t("aiProgressParts")
+        .replace("{done}", String(completed))
+        .replace("{total}", String(total));
+
+      if (s.status === "done") {
+        etaEl.textContent = "100%";
+      } else if (completed > 0 && Number(s.elapsed_seconds || 0) > 0) {
+        const avg = Number(s.elapsed_seconds) / completed;
+        const remaining = Math.max(0, (total - completed) * avg);
+        etaEl.textContent = `${Math.round(percent)}% · ${t("aiEtaRemaining").replace("{time}", _formatAiDuration(remaining))}`;
+      } else {
+        etaEl.textContent = `${Math.round(percent)}% · ${t("aiEtaCalculating")}`;
+      }
+    }
+
     async function autoAiScan() {
       const toggle = document.getElementById("ai-scan-toggle");
       if (!toggle?.checked) return;
@@ -6258,6 +6356,7 @@
 
       statusEl.style.display = "";
       progressEl.textContent = t("deepScanRunning");
+      _resetAiProgressMeter();
       cancelBtn.style.display = "";
       document.getElementById("ai-findings-area").innerHTML = "";
       document.getElementById("ai-anon-bar").style.display = "none";
@@ -6320,6 +6419,7 @@
           return;
         }
         document.getElementById("ai-progress").textContent = s.progress || "";
+        _updateAiProgressMeter(s);
         if (s.status === "done") {
           _stopAiPolling();
           document.getElementById("ai-cancel-btn").style.display = "none";
@@ -6336,6 +6436,7 @@
             const n = _aiFindingsData.length;
             const doneMsg = `${t("deepScanDone")} – ${n} ${t("metaFindings")}`;
             document.getElementById("ai-progress").textContent = doneMsg;
+            _updateAiProgressMeter({...s, status:"done", progress_percent:100});
             _restoreRescanBtn(`✅ ${n} ${t("metaFindings")}`);
           } catch (e) {
             document.getElementById("ai-progress").innerHTML =
@@ -6345,6 +6446,7 @@
         } else if (s.status === "cancelled" || s.status === "error") {
           _stopAiPolling();
           document.getElementById("ai-cancel-btn").style.display = "none";
+          _resetAiProgressMeter();
           _restoreRescanBtn(t("aiCancelled"));
         }
       } catch (e) {
@@ -6532,6 +6634,7 @@
       await fetch(cancelUrl, { method:"POST" }).catch(()=>{});
       document.getElementById("ai-cancel-btn").style.display = "none";
       document.getElementById("ai-progress").textContent = t("deepScanCancelled");
+      _resetAiProgressMeter();
       _restoreRescanBtn(t("aiCancelled"));
     }
 

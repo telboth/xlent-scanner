@@ -270,11 +270,11 @@ Personnavn – MÅ ha fornavn OG etternavn på en virkelig person:
 
 Adresse – MÅ ha gatenavn OG husnummer (eller postboks):
   ✅ «Storgata 14»  ✅ «Karl Johans gate 1, 0154 Oslo»  ✅ «Pb 123, 1234 Sted»
-  ❌ «Oslo»  ❌ «Trondheim»  ❌ «Ålesund»  ❌ «Østersund/ÅRE»  ❌ «Azure App Service»  ❌ «Cosmos DB»  ❌ sky-tjenester  ❌ tekniske termer  ❌ bynavn alene
+  ❌ «Oslo»  ❌ «Trondheim»  ❌ «Ålesund»  ❌ «Østersund/ÅRE»  ❌ «kontorene vi besøkte»  ❌ «Azure App Service»  ❌ «Cosmos DB»  ❌ sky-tjenester  ❌ tekniske termer  ❌ bynavn alene
 
 E-postadresse – MÅ ha @-tegn og domenenavn:
   ✅ «thomas@xlent.no»  ✅ «kontakt@firma.com»  ✅ «user.name+tag@example.co.uk»
-  ❌ URL-er uten @  ❌ brukernavn uten @
+  ❌ «Digdir»  ❌ URL-er uten @  ❌ brukernavn uten @  ❌ organisasjonsnavn uten @
 
 Telefon – 8-sifret norsk eller internasjonal med landkode:
   ✅ «90123456»  ✅ «+47 901 23 456»  ✅ «+47 91717678»  ✅ «0047 12345678»  ✅ «91 23 45 67»
@@ -318,11 +318,11 @@ Personnamn – MÅSTE ha förnamn OCH efternamn på en verklig person:
 
 Adress – MÅSTE ha gatunamn OCH husnummer (eller postbox):
   ✅ «Storgatan 14»  ✅ «Kungsgatan 1, 111 43 Stockholm»
-  ❌ «Stockholm»  ❌ «Göteborg»  ❌ «Östersund»  ❌ «Azure App Service»  ❌ molntjänster  ❌ stadsnamn ensamt
+  ❌ «Stockholm»  ❌ «Göteborg»  ❌ «Östersund»  ❌ «kontoren vi besökte»  ❌ «Azure App Service»  ❌ molntjänster  ❌ stadsnamn ensamt
 
 E-postadress – MÅSTE ha @-tecken och domännamn:
   ✅ «anna@xlent.se»  ✅ «kontakt@foretag.com»
-  ❌ URL-er utan @  ❌ användarnamn utan @
+  ❌ «Digdir»  ❌ URL-er utan @  ❌ användarnamn utan @  ❌ organisationsnamn utan @
 
 Telefon – 8-siffrigt svenskt/norskt eller internationellt med landskod:
   ✅ «070-123 45 67»  ✅ «+46 701 23 45 67»  ✅ «+47 91717678»  ✅ «0047 12345678»
@@ -364,11 +364,11 @@ Personal name – MUST have both first name AND last name of a real person:
 
 Address – MUST have a street name AND house/building number:
   ✅ «14 Baker Street»  ✅ «Karl Johans gate 1, Oslo»
-  ❌ «Oslo»  ❌ «Trondheim»  ❌ «London»  ❌ «Azure App Service»  ❌ «Cosmos DB vector store»  ❌ cloud services  ❌ city name alone  ❌ technical terms
+  ❌ «Oslo»  ❌ «Trondheim»  ❌ «London»  ❌ «the offices we visited»  ❌ «Azure App Service»  ❌ «Cosmos DB vector store»  ❌ cloud services  ❌ city name alone  ❌ technical terms
 
 Email address – MUST have @ sign and domain name:
   ✅ «john@xlent.com»  ✅ «contact@company.co.uk»
-  ❌ URLs without @  ❌ usernames without @
+  ❌ «Digdir»  ❌ URLs without @  ❌ usernames without @  ❌ organization names without @
 
 Phone – 8-digit national or international with country code:
   ✅ «+44 7911 123456»  ✅ «90123456»  ✅ «+47 91717678»  ✅ «0047 12345678»
@@ -404,7 +404,7 @@ _MEDICAL_RULES_NB = """\
 Medisinsk informasjon – sykdommer, diagnoser, symptomer, behandlinger eller legemidler knyttet til en person:
   ✅ «Anne har diabetes type 2»  ✅ «diagnose: ADHD»  ✅ «bruker Metformin»  ✅ «behandles med Sertralin»
   ✅ «sykmeldt for depresjon»  ✅ «astma», «kreft», «migrene» når teksten beskriver en person/pasient
-  ❌ generelle medisinske ord uten personkontekst  ❌ firmanavn  ❌ produktnavn uten helse-/pasientkontekst
+  ❌ «fysisk betydning for brukeren»  ❌ generelle medisinske ord uten diagnose/sykdom/medisin/behandling  ❌ firmanavn  ❌ produktnavn uten helse-/pasientkontekst
   Rapporter den eksakte teksten som må redigeres bort, for eksempel sykdomsnavnet, diagnosen eller medisinnavnet.
 """
 
@@ -412,7 +412,7 @@ _MEDICAL_RULES_SV = """\
 Medicinsk information – sjukdomar, diagnoser, symtom, behandlingar eller läkemedel kopplade till en person:
   ✅ «Anna har typ 2-diabetes»  ✅ «diagnos: ADHD»  ✅ «använder Metformin»  ✅ «behandlas med Sertralin»
   ✅ «sjukskriven för depression»  ✅ «astma», «cancer», «migrän» när texten beskriver en person/patient
-  ❌ generella medicinska ord utan personkontext  ❌ företagsnamn  ❌ produktnamn utan vård-/patientkontext
+  ❌ «fysisk betydelse för användaren»  ❌ generella medicinska ord utan diagnos/sjukdom/läkemedel/behandling  ❌ företagsnamn  ❌ produktnamn utan vård-/patientkontext
   Rapportera den exakta text som ska redigeras bort, till exempel sjukdomsnamnet, diagnosen eller läkemedelsnamnet.
 """
 
@@ -420,7 +420,7 @@ _MEDICAL_RULES_EN = """\
 Medical information – diseases, diagnoses, symptoms, treatments, or medication names linked to a person:
   ✅ «Anne has type 2 diabetes»  ✅ «diagnosis: ADHD»  ✅ «uses Metformin»  ✅ «treated with Sertraline»
   ✅ «on sick leave for depression»  ✅ «asthma», «cancer», «migraine» when the text describes a person/patient
-  ❌ generic medical words without person context  ❌ company names  ❌ product names without health/patient context
+  ❌ «physical significance for the user»  ❌ generic medical words without diagnosis/disease/medication/treatment  ❌ company names  ❌ product names without health/patient context
   Report the exact text that should be redacted, for example the disease name, diagnosis, or medication name.
 """
 
@@ -605,6 +605,116 @@ def _is_bank_account_category(category: str) -> bool:
     return _category_key(category) in _BANK_ACCOUNT_CATEGORIES
 
 
+_EMAIL_CATEGORIES = {
+    "e-post",
+    "epost",
+    "e-postadresse",
+    "e-postadresser",
+    "epostadresse",
+    "epostadresser",
+    "email",
+    "e-mail",
+    "email address",
+    "email addresses",
+    "e-mail address",
+    "e-mail addresses",
+    "mail",
+    "mail address",
+    "mail addresses",
+    "mailadresse",
+    "mailadresser",
+    "e-postadress",
+    "e-postadresser",
+    "e-mailadress",
+    "e-mailadresser",
+    "correo electronico",
+    "correo electrónico",
+    "adresse e-mail",
+}
+
+
+def _is_email_category(category: str) -> bool:
+    return _category_key(category) in _EMAIL_CATEGORIES
+
+
+_ADDRESS_CATEGORIES = {
+    "adresse",
+    "address",
+    "fysisk adresse",
+    "physical address",
+    "postadresse",
+    "street address",
+}
+
+
+def _is_address_category(category: str) -> bool:
+    return _category_key(category) in _ADDRESS_CATEGORIES
+
+
+_ADDRESS_NUMBER_RE = re.compile(r"\b\d{1,5}[A-Za-z]?\b")
+_PO_BOX_RE = re.compile(r"\b(?:pb|p\.b\.|postboks|postbox|po box|p\.o\. box)\s*\d+\b", re.IGNORECASE)
+
+
+def _looks_like_physical_address(value: str) -> bool:
+    """LLM-adressefunn må ha husnummer eller postboks, ikke bare sted/bygg."""
+    text = " ".join(str(value or "").strip().split())
+    if not text or len(text) > 140:
+        return False
+    if _PO_BOX_RE.search(text):
+        return True
+    if not _ADDRESS_NUMBER_RE.search(text):
+        return False
+    return bool(re.search(r"[A-Za-zÆØÅæøåÄÖäö]", text))
+
+
+_MEDICAL_CATEGORIES = {
+    "medisinsk",
+    "medicinsk",
+    "medical",
+    "diagnose",
+    "diagnosis",
+    "legemiddel",
+    "läkemedel",
+    "medication",
+}
+
+
+def _is_medical_category(category: str) -> bool:
+    key = _category_key(category)
+    return key in _MEDICAL_CATEGORIES or any(key.startswith(prefix) for prefix in _MEDICAL_CATEGORIES)
+
+
+_MEDICAL_CONTEXT_RE = re.compile(
+    r"\b("
+    r"diagnose|diagnosis|sykdom|sjukdom|disease|lidelse|condition|"
+    r"symptom|symptomer|symptoms?|behandling|treatment|treated|behandles|"
+    r"medisin|medisiner|legemiddel|läkemedel|medication|medicine|"
+    r"pasient|patient|helse|health|sykmeldt|sick leave|"
+    r"diabetes|adhd|depresjon|depression|astma|asthma|kreft|cancer|"
+    r"migrene|migraine|metformin|sertralin|sertraline|insulin"
+    r")\b",
+    re.IGNORECASE,
+)
+
+
+_GENERIC_MEDICAL_FALSE_POSITIVE_RE = re.compile(
+    r"\b(fysisk|physisk|physical|psykisk|mental)\s+betydning\b",
+    re.IGNORECASE,
+)
+
+
+def _looks_like_medical_information(value: str, context: str = "") -> bool:
+    """Krev konkret medisinsk innhold, ikke generiske uttrykk om betydning."""
+    text = " ".join(str(value or "").strip().split())
+    ctx = " ".join(str(context or "").strip().split())
+    combined = f"{text} {ctx}".strip()
+    if not text or len(text) > 180:
+        return False
+    if _GENERIC_MEDICAL_FALSE_POSITIVE_RE.search(combined):
+        return False
+    return bool(_MEDICAL_CONTEXT_RE.search(combined))
+
+
 def _valid_bank_account_text(value: str) -> str | None:
     """Returner presist kontonummer/IBAN bare hvis teksten faktisk validerer."""
     from xlent_scanner.detectors.iban import find_iban  # noqa: PLC0415
@@ -626,13 +736,29 @@ def _valid_bank_account_text(value: str) -> str | None:
     return None
 
 
+def _valid_email_text(value: str) -> str | None:
+    """Returner en faktisk e-postadresse, aldri bare en organisasjon/brukernavn."""
+    match = _EMAIL_RE.search(str(value or ""))
+    if not match:
+        return None
+    return match.group(0).strip("<>()[]{}.,;:'\"")
+
+
 def _filter_llm_findings_by_category_precision(findings: list[dict]) -> list[dict]:
     result: list[dict] = []
     removed = 0
     for f in findings:
         cat = str(f.get("category") or "")
         raw_text = str(f.get("text") or "")
-        if _is_bank_account_category(cat):
+        if _is_email_category(cat):
+            email_text = _valid_email_text(raw_text)
+            if not email_text:
+                removed += 1
+                continue
+            f = dict(f)
+            f["text"] = email_text
+            f["category"] = "E-post"
+        elif _is_bank_account_category(cat):
             bank_text = _valid_bank_account_text(raw_text)
             if not bank_text:
                 removed += 1
@@ -643,9 +769,17 @@ def _filter_llm_findings_by_category_precision(findings: list[dict]) -> list[dic
                 f["category"] = "IBAN"
             else:
                 f["category"] = "Kontonummer"
+        elif _is_address_category(cat):
+            if not _looks_like_physical_address(raw_text):
+                removed += 1
+                continue
+        elif _is_medical_category(cat):
+            if not _looks_like_medical_information(raw_text, str(f.get("context") or "")):
+                removed += 1
+                continue
         result.append(f)
     if removed:
-        LOGGER.info("AI-bankkonto-filter: fjernet %d ugyldige bankkonto-funn", removed)
+        LOGGER.info("AI-presisjonsfilter: fjernet %d ugyldige AI-funn", removed)
     return result
 
 
@@ -818,19 +952,41 @@ def _run_deep_scan(
     chunks = _split_chunks(text)
     n = len(chunks)
     all_raw: list[dict] = []
+    with _job_lock:
+        job = _jobs.get(job_id)
+        if job:
+            job.update({
+                "total_chunks": n,
+                "current_chunk": 0,
+                "completed_chunks": 0,
+                "progress_percent": 0,
+            })
 
     for idx, chunk in enumerate(chunks, 1):
         with _job_lock:
             job = _jobs.get(job_id)
             if not job or job.get("cancelled"):
                 return
-            job["progress"] = f"Analyserer del {idx} av {n}…"
+            job.update({
+                "progress": f"Analyserer del {idx} av {n}…",
+                "current_chunk": idx,
+                "completed_chunks": idx - 1,
+                "total_chunks": n,
+                "progress_percent": int(((idx - 1) / max(n, 1)) * 100),
+            })
 
         prompt = _build_prompt(categories, chunk, lang)
         findings = _call_ollama(model, prompt)
         findings = _filter_llm_findings_to_source(findings, chunk)
         findings = _filter_llm_findings_by_category_precision(findings)
         all_raw.extend(findings)
+        with _job_lock:
+            job = _jobs.get(job_id)
+            if job and not job.get("cancelled"):
+                job.update({
+                    "completed_chunks": idx,
+                    "progress_percent": int((idx / max(n, 1)) * 100),
+                })
 
     # ── Regex-supplementer: kategorier der regelbaserte detektorer er mer
     # pålitelige enn LLM-modellen (spesielt små modeller som llama3.2:1b/3b).
@@ -989,6 +1145,11 @@ def _run_deep_scan(
             job.update({
                 "status":   "done",
                 "progress": f"Ferdig – {len(deduped)} nye funn",
+                "current_chunk": n,
+                "completed_chunks": n,
+                "total_chunks": n,
+                "progress_percent": 100,
+                "completed_at": time.time(),
                 "findings": deduped,
             })
     LOGGER.info("Dybdeskann ferdig: job=%s model=%s funn=%d", job_id, model, len(deduped))
@@ -1008,6 +1169,10 @@ def start_deep_scan(
         "job_id":         job_id,
         "status":         "running",
         "progress":       "Starter…",
+        "current_chunk":  0,
+        "completed_chunks": 0,
+        "total_chunks":   0,
+        "progress_percent": 0,
         "findings":       [],
         "cancelled":      False,
         "model":          model,
@@ -1035,8 +1200,14 @@ def get_deep_scan_status(job_id: str | None = None) -> dict[str, Any]:
     with _job_lock:
         _cleanup_jobs_locked()
         if job_id:
-            return dict(_jobs.get(job_id, {}))
-        return dict(_job)
+            status = dict(_jobs.get(job_id, {}))
+        else:
+            status = dict(_job)
+    started = status.get("started_at")
+    if started:
+        end = status.get("completed_at") or time.time()
+        status["elapsed_seconds"] = max(0.0, float(end) - float(started))
+    return status
 
 
 def cancel_deep_scan(job_id: str | None = None) -> None:

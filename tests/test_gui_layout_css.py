@@ -608,6 +608,25 @@ def test_ai_deep_scan_polling_uses_job_id_and_restores_rescan_button():
     assert "_restoreRescanBtn(`✅ ${n} ${t(\"metaFindings\")}`);" in html
 
 
+def test_ai_deep_scan_progress_bar_and_eta_are_wired():
+    html = HTML.read_text(encoding="utf-8")
+
+    assert 'id="ai-progress-meter"' in html
+    assert 'id="ai-progress-fill"' in html
+    assert 'id="ai-progress-chunks"' in html
+    assert 'id="ai-progress-eta"' in html
+    assert ".ai-progress-track" in html
+    assert "function _updateAiProgressMeter" in html
+    assert "function _formatAiDuration" in html
+    assert "function _resetAiProgressMeter" in html
+    assert "_updateAiProgressMeter(s);" in html
+    assert "s.total_chunks" in html
+    assert "s.completed_chunks" in html
+    assert "s.progress_percent" in html
+    for key in ["aiEtaCalculating", "aiEtaRemaining", "aiProgressParts"]:
+        assert html.count(f"{key}:") == 6
+
+
 def test_ai_deep_scan_updates_main_risk_and_redaction_controls():
     html = HTML.read_text(encoding="utf-8")
 
