@@ -1,6 +1,6 @@
 # XLENT Compliance-scanner
 
-> **v1.4.8** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
+> **v1.5.3** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
 
 Alt kjøres 100 % lokalt — ingen dokumenter, tekst eller funn sendes over internett.
 
@@ -21,9 +21,10 @@ Alt kjøres 100 % lokalt — ingen dokumenter, tekst eller funn sendes over inte
 - Huk av **🔬 Kjør AI-dybdeskann** før du skanner, så analyseres dokumentet også av en lokal AI-modell (Ollama)
 - Fanger funn som regelmotoren kan misse (adresser, selskapsnavn, kontekstuelle navn)
 - AI-funnene **flettes rett inn i den vanlige funnlisten** med samme alvorlighetsgrad-klassifisering
-- Regelbaserte detektorer (personnummer, e-post, konto, IBAN, URL) **supplerer** AI-en automatisk for 100 % pålitelig dekning
+- AI-dybdeskann fokuserer på kategorier der kontekst hjelper, mens regex-dekkede kategorier (e-post, URL/IP, telefon, org.nummer, personnummer/ID, kredittkort og konfidensielle ord) håndteres av vanlig scan for bedre hastighet
+- Regelbaserte detektorer (personnummer, e-post, konto, IBAN, URL) **supplerer** AI-en automatisk for pålitelig dekning uten å bruke Ollama på samme mønstre på nytt
 - **Konfidensfilter**: `høy` / `medium` / `lav`
-- **Re-skann**-knapp + inline statusindikator
+- **Re-skann**-knapp + inline statusindikator med fremdriftsbar, delstatus og estimert gjenstående tid
 - **Stopp aktiv AI-modell** i Innstillinger for å frigjøre minne/CPU/GPU uten å stoppe Ollama-tjenesten
 - Ollama-adresse kan overstyres med miljøvariabelen `OLLAMA_BASE_URL`
 
@@ -230,8 +231,14 @@ Støttede filtyper: `pdf`, `docx`, `pptx`, `xlsx`, `txt`, `md`, `html`, `csv`, `
 3. Skann en fil — AI-analysen kjører automatisk etter den regelbaserte skannen
 4. AI-funnene flettes inn i funnlisten. Bruk **🔄 Re-skann** for å kjøre på nytt med andre innstillinger
 
-Dybdeskann kjøres lokalt og kan ta opptil flere minutter avhengig av maskin og dokumentstørrelse.
+Dybdeskann kjøres lokalt og kan ta opptil flere minutter avhengig av maskin og dokumentstørrelse. Appen viser fremdriftsbar, antall tekstdeler og estimert gjenstående tid mens analysen kjører.
 Anbefalt: minst **16 GB RAM** og en relativt moderne CPU. GPU-akselerasjon (NVIDIA/AMD) brukes automatisk.
+
+Ytelse:
+- Standardmodus bruker nå en balansert chunking: ca. `1600` ord per del med `60` ord overlapp.
+- Ollama-kall bruker `num_ctx=8192` og `num_predict=512` for å redusere unødvendig outputtid.
+- AI-dybdeskann sender ikke kategorier som allerede fanges presist av vanlig regex-scan: e-post, URL/IP, telefon, org.nummer, personnummer/ID, kredittkort og konfidensielle ord.
+- Vanlig scan kjører fortsatt med alle valgte kategorier; AI-optimaliseringen påvirker bare hva som sendes til Ollama.
 
 Egendefinert Ollama-adresse:
 ```bash
@@ -415,6 +422,11 @@ src/xlent_scanner/
 ---
 
 ## Endringslogg
+
+### v1.5.3
+- Gjorde AI-dybdeskann raskere med balansert chunking (`1600` ord, `60` ord overlapp), eksplisitt `num_ctx=8192` og kortere `num_predict=512`.
+- AI-dybdeskann hopper nå over regex-dekkede kategorier (e-post, URL/IP, telefon, org.nummer, personnummer/ID, kredittkort og konfidensielle ord), mens vanlig scan fortsatt kjører som før.
+- La til synlig AI-fremdriftsbar med delstatus og estimert gjenstående tid.
 
 ### v1.4.8
 - Oppdaterte «Om programmet»-teksten på alle språk slik at den dekker dagens funksjoner, inkludert webmodus, mappevakt, OCR, M365, redaction-profiler og AI-dybdeskann.

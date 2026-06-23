@@ -24,9 +24,9 @@ LOGGER = logging.getLogger(__name__)
 # Eksempel: OLLAMA_BASE_URL=http://192.168.1.10:11434 xlent-scanner
 OLLAMA_BASE: str = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434").rstrip("/")
 
-# Chunk-størrelse i ord. 900 ord gir ~1200 tokens – passer alle 1B-7B-modeller.
-_CHUNK_WORDS   = 900
-_CHUNK_OVERLAP = 80   # overlappende ord mellom påfølgende chunks
+# Balansert chunk-størrelse: færre Ollama-kall uten å presse kontekstvinduet for hardt.
+_CHUNK_WORDS   = 1600
+_CHUNK_OVERLAP = 60   # overlappende ord mellom påfølgende chunks
 
 # Anbefalte modeller i prioritert rekkefølge (vises som forslag i UI)
 RECOMMENDED_MODELS = [
@@ -508,7 +508,7 @@ def _call_ollama(model: str, prompt: str) -> list[dict]:
             "system":  _SYS,
             "stream":  False,
             "format":  "json",
-            "options": {"temperature": 0.05, "num_predict": 1024},
+            "options": {"temperature": 0.05, "num_ctx": 8192, "num_predict": 512},
         })
         return _parse_findings(result.get("response", ""))
     except Exception as exc:

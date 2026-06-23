@@ -6181,6 +6181,17 @@
       "medisinsk":   "medisinsk",
     };
 
+    // Disse kategoriene dekkes godt av vanlig regex-scan og sendes ikke til AI.
+    const AI_REGEX_COVERED_SCAN_CATS = new Set([
+      "epost",
+      "nettadresse",
+      "telefon",
+      "orgnummer",
+      "id",
+      "kredittkort",
+      "konfidensielt",
+    ]);
+
     function _findingMatchesCat(f, selectedCats) {
       const cat = (f.category || "").toLowerCase();
       if (cat.startsWith("⚠")) return true; // vis alltid systemadvarsler
@@ -6195,6 +6206,7 @@
       const selected = [...document.querySelectorAll(".scan-cat:checked")].map(cb => cb.value);
       const cats = [];
       for (const key of selected) {
+        if (AI_REGEX_COVERED_SCAN_CATS.has(key)) continue;
         const mapped = AI_CAT_MAP[key];
         const values = Array.isArray(mapped) ? mapped : (mapped ? [mapped] : []);
         values.forEach(value => {

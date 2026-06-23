@@ -103,6 +103,32 @@ def test_pull_ollama_model_tracks_status(monkeypatch):
     )
 
 
+def test_deep_scan_ollama_call_uses_balanced_speed_options(monkeypatch):
+    calls = []
+
+    def fake_post(path, data, timeout=180):
+        calls.append((path, data, timeout))
+        return {"response": '{"findings":[]}'}
+
+    monkeypatch.setattr(deep_scanner, "_post", fake_post)
+
+    assert deep_scanner._call_ollama("llama3.2:3b", "tekst") == []
+    assert calls == [
+        (
+            "/api/generate",
+            {
+                "model": "llama3.2:3b",
+                "prompt": "tekst",
+                "system": deep_scanner._SYS,
+                "stream": False,
+                "format": "json",
+                "options": {"temperature": 0.05, "num_ctx": 8192, "num_predict": 512},
+            },
+            180,
+        )
+    ]
+
+
 def test_deep_scan_ignores_email_domain_case_insensitive(monkeypatch):
     monkeypatch.setattr(
         deep_scanner,

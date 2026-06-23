@@ -634,6 +634,23 @@ def test_ai_deep_scan_progress_bar_and_eta_are_wired():
         assert html.count(f"{key}:") == 6
 
 
+def test_ai_deep_scan_skips_regex_covered_categories():
+    html = HTML.read_text(encoding="utf-8")
+
+    assert "const AI_REGEX_COVERED_SCAN_CATS = new Set([" in html
+    for value in [
+        '"epost"',
+        '"nettadresse"',
+        '"telefon"',
+        '"orgnummer"',
+        '"id"',
+        '"kredittkort"',
+        '"konfidensielt"',
+    ]:
+        assert value in html
+    assert "if (AI_REGEX_COVERED_SCAN_CATS.has(key)) continue;" in html
+
+
 def test_ai_deep_scan_updates_main_risk_and_redaction_controls():
     html = HTML.read_text(encoding="utf-8")
 
