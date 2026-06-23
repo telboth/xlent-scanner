@@ -820,6 +820,7 @@
           <button class="ctrl-btn" id="ai-sel-none" data-i18n="selNone">Fjern alle</button>
           <span class="ctrl-sep"></span>
           <button class="ctrl-btn ctrl-btn-outline-accent" id="ai-anon-btn" data-i18n="saveAnon">Anonymiser valgte</button>
+          <button class="ctrl-btn ctrl-btn-outline-primary" id="ai-redacted-doc-btn" data-i18n="downloadRedactedDoc">Last ned redacted dokument</button>
           <span class="anon-msg" id="ai-anon-msg"></span>
         </div>
       </div>
@@ -1607,9 +1608,15 @@
         metaFindings: "funn",
         sectionFind:  "Funn",
         noFindings:   "✓ Ingen sensitive funn oppdaget.",
+        aiRiskGreenSummary:"Ingen aktive sensitive funn etter AI-dypscann.",
+        aiRiskGreenAction: "Dokumentet har ingen aktive funn valgt for redaction etter AI-dypscann.",
+        aiRiskSummary:"AI-dypscann fant sensitive funn.",
+        aiRiskAction: "Se gjennom AI-funnene og lag et redacted dokument før deling.",
         selAll:       "Velg alle",
         selNone:      "Fjern alle",
         saveAnon:     "Lagre anonymisert",
+        downloadRedactedDoc:"Last ned redacted dokument",
+        aiNamesOverride:"Regelbasert navnefunn brukes ikke etter AI-dypscann.",
         genMd:        "Generer .md-fil",
         genPdf:       "Generer PDF",
         selectOne:    "Velg minst ett funn.",
@@ -1955,9 +1962,15 @@
         metaFindings: "fynd",
         sectionFind:  "Fynd",
         noFindings:   "✓ Inga känsliga fynd hittades.",
+        aiRiskGreenSummary:"Inga aktiva känsliga fynd efter AI-djupskanning.",
+        aiRiskGreenAction: "Dokumentet har inga aktiva fynd valda för redaction efter AI-djupskanning.",
+        aiRiskSummary:"AI-djupskanning hittade känsliga fynd.",
+        aiRiskAction: "Granska AI-fynden och skapa ett redacted dokument innan delning.",
         selAll:       "Välj alla",
         selNone:      "Ta bort alla",
         saveAnon:     "Spara anonymiserad",
+        downloadRedactedDoc:"Ladda ned redacted dokument",
+        aiNamesOverride:"Regelbaserade namnfynd används inte efter AI-djupskanning.",
         genMd:        "Generera .md-fil",
         genPdf:       "Generera PDF",
         selectOne:    "Välj minst ett fynd.",
@@ -2293,9 +2306,15 @@
         metaFindings: "findings",
         sectionFind:  "Findings",
         noFindings:   "✓ No sensitive findings detected.",
+        aiRiskGreenSummary:"No active sensitive findings after AI deep scan.",
+        aiRiskGreenAction: "The document has no active findings selected for redaction after AI deep scan.",
+        aiRiskSummary:"AI deep scan found sensitive findings.",
+        aiRiskAction: "Review the AI findings and create a redacted document before sharing.",
         selAll:       "Select all",
         selNone:      "Deselect all",
         saveAnon:     "Save redacted",
+        downloadRedactedDoc:"Download redacted document",
+        aiNamesOverride:"Rule-based name findings are not used after AI deep scan.",
         genMd:        "Generate .md file",
         genPdf:       "Generate PDF",
         selectOne:    "Select at least one finding.",
@@ -2637,6 +2656,10 @@
         metaFindings:        "Treffer",
         sectionFind:         "Treffer",
         noFindings:          "✓ Keine sensiblen Daten gefunden.",
+        aiRiskGreenSummary:  "Keine aktiven sensiblen Treffer nach dem KI-Tiefenscan.",
+        aiRiskGreenAction:   "Das Dokument hat nach dem KI-Tiefenscan keine aktiven Treffer für Redaction.",
+        aiRiskSummary:       "Der KI-Tiefenscan hat sensible Treffer gefunden.",
+        aiRiskAction:        "Prüfen Sie die KI-Treffer und erstellen Sie vor dem Teilen ein redacted Dokument.",
         openReport:          "HTML-Bericht öffnen",
         downloadPdf:         "PDF-Bericht herunterladen",
         rescan:              "Erneut scannen",
@@ -2646,6 +2669,8 @@
         genMd:               ".md-Datei erstellen",
         genPdf:              "PDF erstellen",
         saveAnon:            "Anonymisiert speichern",
+        downloadRedactedDoc: "Redacted Dokument herunterladen",
+        aiNamesOverride:     "Regelbasierte Namenstreffer werden nach dem KI-Tiefenscan nicht verwendet.",
         selAll:              "Alle auswählen",
         selNone:             "Alle abwählen",
         selectOne:           "Mindestens einen Treffer auswählen.",
@@ -2981,6 +3006,10 @@
         metaFindings:        "résultats",
         sectionFind:         "Résultats",
         noFindings:          "✓ Aucune donnée sensible trouvée.",
+        aiRiskGreenSummary:  "Aucun résultat sensible actif après l'analyse approfondie IA.",
+        aiRiskGreenAction:   "Le document n'a aucun résultat actif sélectionné pour redaction après l'analyse IA.",
+        aiRiskSummary:       "L'analyse approfondie IA a trouvé des éléments sensibles.",
+        aiRiskAction:        "Vérifiez les résultats IA et créez un document redacted avant le partage.",
         openReport:          "Ouvrir le rapport HTML",
         downloadPdf:         "Télécharger le rapport PDF",
         rescan:              "Réanalyser",
@@ -2990,6 +3019,8 @@
         genMd:               "Générer un fichier .md",
         genPdf:              "Générer un PDF",
         saveAnon:            "Enregistrer anonymisé",
+        downloadRedactedDoc: "Télécharger le document redacted",
+        aiNamesOverride:     "Les noms détectés par règles ne sont pas utilisés après l'analyse approfondie IA.",
         selAll:              "Tout sélectionner",
         selNone:             "Tout désélectionner",
         selectOne:           "Sélectionnez au moins un résultat.",
@@ -3325,6 +3356,10 @@
         metaFindings:        "resultados",
         sectionFind:         "Resultados",
         noFindings:          "✓ No se encontraron datos sensibles.",
+        aiRiskGreenSummary:  "No hay hallazgos sensibles activos después del escaneo profundo con IA.",
+        aiRiskGreenAction:   "El documento no tiene hallazgos activos seleccionados para redaction después del escaneo con IA.",
+        aiRiskSummary:       "El escaneo profundo con IA encontró datos sensibles.",
+        aiRiskAction:        "Revise los hallazgos de IA y cree un documento redacted antes de compartirlo.",
         openReport:          "Abrir informe HTML",
         downloadPdf:         "Descargar informe PDF",
         rescan:              "Volver a escanear",
@@ -3334,6 +3369,8 @@
         genMd:               "Generar archivo .md",
         genPdf:              "Generar PDF",
         saveAnon:            "Guardar anonimizado",
+        downloadRedactedDoc: "Descargar documento redacted",
+        aiNamesOverride:     "Los nombres detectados por reglas no se usan después del escaneo profundo con IA.",
         selAll:              "Seleccionar todo",
         selNone:             "Deseleccionar todo",
         selectOne:           "Seleccione al menos un resultado.",
@@ -4606,6 +4643,8 @@
       document.getElementById("ai-progress").textContent = "";
       document.getElementById("ai-findings-area").innerHTML = "";
       document.getElementById("ai-anon-bar").style.display = "none";
+      _aiFindingsData = [];
+      _aiDeepScanCompleted = false;
       document.getElementById("text-preview-section").style.display = "none";
       const rescanBtn = document.getElementById("ai-rescan-btn");
       if (rescanBtn) rescanBtn.style.display = "none";
@@ -4620,7 +4659,8 @@
       const el = document.getElementById("severity-summary");
       if (!el) return;
       const counts = { svart:0, rød:0, gul:0, grønn:0 };
-      (lastResult?.findings || []).forEach(f => {
+      (lastResult?.findings || []).forEach((f, idx) => {
+        if (_regularNameIgnoredByAi(idx)) return;
         if (counts[f.severity] !== undefined && !f.category.startsWith("⚠")) counts[f.severity]++;
       });
       (_aiFindingsData || []).forEach(f => {
@@ -4693,6 +4733,8 @@
 
     function renderResult(r) {
       lastResult = r;
+      _aiFindingsData = [];
+      _aiDeepScanCompleted = false;
       resultEl.classList.add("show");
       document.getElementById("result-header").style.display = "flex";
       document.getElementById("btn-copy-findings").style.display = "";
@@ -4730,9 +4772,9 @@
 
       resultEl.innerHTML = `
         <div class="result-header">
-          <div class="tl" style="background:${color}">${icon}</div>
+          <div class="tl" id="result-risk-dot" style="background:${color}">${icon}</div>
           <div>
-            <div style="font-size:16px;font-weight:700;color:${color}">
+            <div id="result-risk-title" style="font-size:16px;font-weight:700;color:${color}">
               ${lvl.toUpperCase()} — ${escapeHtml(r.risk_summary)}
             </div>
             <div style="font-size:12px;color:var(--muted);margin-top:2px;">
@@ -4749,7 +4791,7 @@
         ${policyWarningBanner}
         ${m365TagsHtml}
 
-        <div class="action-box" style="color:${color};border-left-color:${color};">
+        <div class="action-box" id="result-action-box" style="color:${color};border-left-color:${color};">
           ${escapeHtml(r.recommended_action)}
         </div>
 
@@ -4813,8 +4855,8 @@
         : sorted;
 
       if (!filtered.length) {
-        if (!sorted.length) return `<p style="color:var(--ok);margin-top:6px;">${t("noFindings")}</p>`;
-        return `<p style="color:var(--ok);margin-top:6px;">${t("noFindings")} <span style="color:var(--muted);font-size:11px">(${sorted.length - filtered.length} skjult av filter)</span></p>`;
+        if (!sorted.length) return `<p class="no-findings-message" style="color:var(--ok);margin-top:6px;">${t("noFindings")}</p>`;
+        return `<p class="no-findings-message" style="color:var(--ok);margin-top:6px;">${t("noFindings")} <span style="color:var(--muted);font-size:11px">(${sorted.length - filtered.length} skjult av filter)</span></p>`;
       }
       const sorted_use = filtered;
 
@@ -4877,7 +4919,9 @@
     }
 
     function _redactionPayload(format) {
-      const indices = [...document.querySelectorAll(".g-cb:checked")].map(cb => +cb.value);
+      const indices = [...document.querySelectorAll(".g-cb:checked")]
+        .map(cb => +cb.value)
+        .filter(idx => !_regularNameIgnoredByAi(idx));
       const aiRows = [...document.querySelectorAll(".g-ai-cb:checked")];
       const aiTexts = aiRows.map(cb => (cb.dataset.aiText || "").trim()).filter(Boolean);
       const aiTextsUnique = [...new Set(aiTexts)];
@@ -4916,6 +4960,146 @@
         `${escapeHtml(t("redactionSelected"))}: ${selected} · ` +
         `${escapeHtml(t("redactionNotSelected"))}: ${Math.max(0, total - selected)} · ` +
         `${escapeHtml(t("redactionUnsafe"))}: ${escapeHtml(unsafeText)}`;
+    }
+
+    function _currentResultExt() {
+      return (lastResult?.file_name || "").split(".").pop().toLowerCase();
+    }
+
+    function _isPersonNameFinding(f) {
+      const c = String(f?.category || "").replace(/^🤖\s*/u, "").toLowerCase();
+      return c.startsWith("navn (person)") ||
+             c.startsWith("personnavn") ||
+             c.startsWith("namn (person)") ||
+             c.startsWith("personnamn") ||
+             c.startsWith("personal name") ||
+             c.startsWith("person name") ||
+             c.startsWith("name (person)") ||
+             c.startsWith("nom (personne)") ||
+             c.startsWith("nombre (persona)");
+    }
+
+    function _regularNameIgnoredByAi(idx) {
+      return _aiDeepScanCompleted && _isPersonNameFinding(lastResult?.findings?.[idx]);
+    }
+
+    function _applyAiNameOverrideToRegularRows() {
+      document.querySelectorAll(".g-cb").forEach(cb => {
+        const idx = Number(cb.value);
+        const ignored = Number.isInteger(idx) && _regularNameIgnoredByAi(idx);
+        cb.disabled = ignored;
+        if (ignored) cb.checked = false;
+        const row = cb.closest(".finding-row");
+        if (row) {
+          row.classList.toggle("ai-name-overridden", ignored);
+          let note = row.querySelector(".ai-name-override-note");
+          if (ignored && !note) {
+            note = document.createElement("div");
+            note.className = "ctx ai-name-override-note";
+            note.textContent = t("aiNamesOverride");
+            row.querySelector(".finding-body")?.appendChild(note);
+          } else if (!ignored && note) {
+            note.remove();
+          }
+        }
+      });
+    }
+
+    function _syncMainAiSelectionFromAiPanel() {
+      const panelByIndex = new Map([...document.querySelectorAll(".ai-cb")]
+        .map(cb => [Number(cb.value), cb.checked]));
+      document.querySelectorAll(".g-ai-cb").forEach(cb => {
+        const idx = Number(cb.dataset.aiIndex);
+        if (panelByIndex.has(idx)) cb.checked = panelByIndex.get(idx);
+      });
+    }
+
+    function _wireRedactionControlButtons(canPatch, ext) {
+      document.getElementById("g-sel-all")?.addEventListener("click", () =>
+        { document.querySelectorAll(".g-cb:not(:disabled), .g-ai-cb").forEach(cb => cb.checked = true); updateRedactionReport(ext); });
+      document.getElementById("g-sel-none")?.addEventListener("click", () =>
+        { document.querySelectorAll(".g-cb, .g-ai-cb").forEach(cb => cb.checked = false); updateRedactionReport(ext); });
+      document.querySelectorAll(".g-cb, .g-ai-cb").forEach(cb => cb.addEventListener("change", () => updateRedactionReport(ext)));
+      if (canPatch) document.getElementById("g-patch")?.addEventListener("click", () => postAnon("patch"));
+      document.getElementById("g-preview")?.addEventListener("click", previewRedaction);
+      document.getElementById("g-anon")?.addEventListener("click", () => postAnon("anonymize", "md"));
+      document.getElementById("g-anon-pdf")?.addEventListener("click", () => postAnon("anonymize", "pdf"));
+      updateRedactionReport(ext);
+    }
+
+    function _ensureRedactionControlsForAiFindings() {
+      if (document.getElementById("g-anon-msg")) return;
+      const list = resultEl.querySelector("ul.findings-list");
+      if (!list) return;
+      const ext = _currentResultExt();
+      const canPatch = PATCH_EXT.has(ext);
+      const pdfNote = (ext === "pdf")
+        ? `<div class="pdf-caveat">⚠ ${t("pdfCaveat")}</div>` : "";
+      const wrapper = document.createElement("div");
+      wrapper.innerHTML = `
+        ${pdfNote}
+        <div class="anon-bar">
+          <button class="ctrl-btn" id="g-sel-all">${t("selAll")}</button>
+          <button class="ctrl-btn" id="g-sel-none">${t("selNone")}</button>
+          <span class="ctrl-sep"></span>
+          ${canPatch
+            ? `<button class="ctrl-btn ctrl-btn-outline-accent" id="g-patch">${t("saveAnon")} .${ext}</button>`
+            : ""}
+          <button class="ctrl-btn" id="g-preview">${t("previewRedaction")}</button>
+          <button class="ctrl-btn ctrl-btn-outline-primary" id="g-anon">${t("genMd")}</button>
+          <button class="ctrl-btn ctrl-btn-outline-primary" id="g-anon-pdf">${t("genPdf")}</button>
+          <span class="anon-msg" id="g-anon-msg"></span>
+        </div>
+        <div class="redaction-report" id="redaction-report"></div>
+        <div class="redaction-preview" id="redaction-preview"></div>`;
+      list.parentNode.insertBefore(wrapper, list);
+      _wireRedactionControlButtons(canPatch, ext);
+    }
+
+    function _highestRiskIncludingAi() {
+      let level = "grønn";
+      (lastResult?.findings || []).forEach((f, idx) => {
+        if (_regularNameIgnoredByAi(idx)) return;
+        const sev = f?.severity || "grønn";
+        if ((SEV_ORDER[sev] || 0) > (SEV_ORDER[level] || 0)) level = sev;
+      });
+      (_aiFindingsData || []).forEach(f => {
+        const sev = _aiSev(f);
+        if ((SEV_ORDER[sev] || 0) > (SEV_ORDER[level] || 0)) level = sev;
+      });
+      return level;
+    }
+
+    function _updateRiskHeaderForAiFindings() {
+      if (!lastResult) return;
+      const level = _highestRiskIncludingAi();
+      const current = lastResult.risk_level || "grønn";
+      if (level === current && !_aiDeepScanCompleted) return;
+
+      const color = LEVEL_COLOR[level] || "#8a96a8";
+      const icon = LEVEL_ICON[level] || "•";
+      const summary = level === "grønn" ? t("aiRiskGreenSummary") : t("aiRiskSummary");
+      const action = level === "grønn" ? t("aiRiskGreenAction") : t("aiRiskAction");
+      lastResult.risk_level = level;
+      lastResult.risk_summary = summary;
+      lastResult.recommended_action = action;
+
+      const dot = document.getElementById("result-risk-dot");
+      if (dot) {
+        dot.style.background = color;
+        dot.textContent = icon;
+      }
+      const title = document.getElementById("result-risk-title");
+      if (title) {
+        title.style.color = color;
+        title.textContent = `${level.toUpperCase()} — ${summary}`;
+      }
+      const box = document.getElementById("result-action-box");
+      if (box) {
+        box.style.color = color;
+        box.style.borderLeftColor = color;
+        box.textContent = action;
+      }
     }
 
     async function previewRedaction() {
@@ -4978,18 +5162,8 @@
 
       if (!sorted.length) return;
 
-      document.getElementById("g-sel-all")?.addEventListener("click", () =>
-        { document.querySelectorAll(".g-cb, .g-ai-cb").forEach(cb => cb.checked = true); updateRedactionReport(ext); });
-      document.getElementById("g-sel-none")?.addEventListener("click", () =>
-        { document.querySelectorAll(".g-cb, .g-ai-cb").forEach(cb => cb.checked = false); updateRedactionReport(ext); });
-      document.querySelectorAll(".g-cb").forEach(cb => cb.addEventListener("change", () => updateRedactionReport(ext)));
-
       // Null-sjekk: knappene finnes bare når det er funn (ellers TypeError ved høyreklikk/startup)
-      if (canPatch) document.getElementById("g-patch")?.addEventListener("click", () => postAnon("patch"));
-      document.getElementById("g-preview")?.addEventListener("click", previewRedaction);
-      document.getElementById("g-anon")?.addEventListener("click", () => postAnon("anonymize", "md"));
-      document.getElementById("g-anon-pdf")?.addEventListener("click", () => postAnon("anonymize", "pdf"));
-      updateRedactionReport(ext);
+      _wireRedactionControlButtons(canPatch, ext);
 
       document.querySelectorAll(".wl-btn").forEach(btn =>
         btn.addEventListener("click", async () => {
@@ -5011,8 +5185,9 @@
     /* ══════════════════════════════════════════════════════════════════
        ASYNC ACTIONS
     ══════════════════════════════════════════════════════════════════ */
-    async function postAnon(endpoint, format) {
-      const msg = document.getElementById("g-anon-msg");
+    async function postAnon(endpoint, format, msgId = "g-anon-msg") {
+      const msg = document.getElementById(msgId);
+      if (!msg) return;
       const body = _redactionPayload(format);
       if (!body.indices.length && !body.ai_texts.length && !(endpoint === "patch" && body.strip_annotations)) {
         msg.style.color="#ffb84d"; msg.textContent=t("selectOne"); return;
@@ -6030,6 +6205,7 @@
 
     let _aiPollTimer  = null;
     let _aiFindingsData = [];
+    let _aiDeepScanCompleted = false;
 
     function _setAiInlineStatus(msg) {
       const el = document.getElementById("ai-inline-status");
@@ -6149,6 +6325,7 @@
           document.getElementById("ai-cancel-btn").style.display = "none";
           try {
             _aiFindingsData = s.findings || [];
+            _aiDeepScanCompleted = true;
             _renderAiFindings(_aiFindingsData);
             // Persistér AI-funn server-side slik at de inkluderes i rapporten
             fetch(`${API}/report/ai-findings`, {
@@ -6180,8 +6357,15 @@
     function _injectAiFindingsIntoMainList(findings) {
       // Fjern evt. tidligere injiserte AI-rader
       resultEl.querySelectorAll(".ai-injected-finding, .ai-injected-sep").forEach(el => el.remove());
+      _applyAiNameOverrideToRegularRows();
 
-      if (!findings.length) return;
+      if (!findings.length) {
+        renderSeveritySummary();
+        _updateRiskHeaderForAiFindings();
+        updateRedactionReport(_currentResultExt());
+        return;
+      }
+      resultEl.querySelectorAll(".no-findings-message").forEach(el => el.remove());
 
       let list = resultEl.querySelector("ul.findings-list");
       if (!list) {
@@ -6216,6 +6400,10 @@
           heading.innerHTML = heading.innerHTML.replace(/\(\d+\)/, `(${total})`);
         }
         renderSeveritySummary();
+        _ensureRedactionControlsForAiFindings();
+        _updateRiskHeaderForAiFindings();
+        _applyAiNameOverrideToRegularRows();
+        updateRedactionReport(_currentResultExt());
         return;
       }
 
@@ -6283,7 +6471,10 @@
         heading.innerHTML = heading.innerHTML.replace(/\(\d+\)/, `(${total})`);
       }
       renderSeveritySummary();
-      updateRedactionReport((lastResult?.file_name || "").split(".").pop().toLowerCase());
+      _ensureRedactionControlsForAiFindings();
+      _updateRiskHeaderForAiFindings();
+      _applyAiNameOverrideToRegularRows();
+      updateRedactionReport(_currentResultExt());
     }
 
     /* Severity for et AI-funn-dict: bruker f.severity hvis allerede satt (grønn = hvitelistet),
@@ -6370,8 +6561,19 @@
       } catch (e) { msg.style.color="#f44336"; msg.textContent=`${t("netErr")} ${e}`; }
     }
 
+    async function _downloadRedactedDocAfterAi() {
+      const ext = _currentResultExt();
+      _ensureRedactionControlsForAiFindings();
+      _syncMainAiSelectionFromAiPanel();
+      _applyAiNameOverrideToRegularRows();
+      updateRedactionReport(ext);
+      if (PATCH_EXT.has(ext)) await postAnon("patch", undefined, "ai-anon-msg");
+      else await postAnon("anonymize", "md", "ai-anon-msg");
+    }
+
     document.getElementById("ai-cancel-btn").addEventListener("click", _cancelAiScan);
     document.getElementById("ai-anon-btn").addEventListener("click",   _anonymizeAi);
+    document.getElementById("ai-redacted-doc-btn").addEventListener("click", _downloadRedactedDocAfterAi);
     document.getElementById("btn-clear-result").addEventListener("click", clearResult);
     document.getElementById("btn-copy-findings").addEventListener("click", _copyFindings);
 
@@ -6834,7 +7036,7 @@
         }
       }
       setStatus("");
-      lastResult = null; lastScan = null; _aiFindingsData = [];
+      lastResult = null; lastScan = null; _aiFindingsData = []; _aiDeepScanCompleted = false;
       resultEl.classList.add("show");
       document.getElementById("result-header").style.display = "flex";
       document.getElementById("btn-copy-findings").style.display = "none";

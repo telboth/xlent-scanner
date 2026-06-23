@@ -608,6 +608,43 @@ def test_ai_deep_scan_polling_uses_job_id_and_restores_rescan_button():
     assert "_restoreRescanBtn(`✅ ${n} ${t(\"metaFindings\")}`);" in html
 
 
+def test_ai_deep_scan_updates_main_risk_and_redaction_controls():
+    html = HTML.read_text(encoding="utf-8")
+
+    assert 'id="ai-redacted-doc-btn"' in html
+    assert 'data-i18n="downloadRedactedDoc"' in html
+    assert "function _downloadRedactedDocAfterAi" in html
+    assert 'document.getElementById("ai-redacted-doc-btn").addEventListener("click", _downloadRedactedDocAfterAi);' in html
+    assert 'id="result-risk-dot"' in html
+    assert 'id="result-risk-title"' in html
+    assert 'id="result-action-box"' in html
+    assert "function _updateRiskHeaderForAiFindings" in html
+    assert "lastResult.risk_level = level;" in html
+    assert "resultEl.querySelectorAll(\".no-findings-message\").forEach(el => el.remove());" in html
+    assert "function _ensureRedactionControlsForAiFindings" in html
+
+    assert "const summary = level === \"grønn\" ? t(\"aiRiskGreenSummary\") : t(\"aiRiskSummary\");" in html
+    assert "let level = \"grønn\";" in html
+    assert "(lastResult?.findings || []).forEach((f, idx) => {" in html
+
+    for key in ["downloadRedactedDoc", "aiRiskGreenSummary", "aiRiskGreenAction", "aiRiskSummary", "aiRiskAction"]:
+        assert html.count(f"{key}:") == 6
+
+
+def test_ai_deep_scan_disables_rule_based_person_names_for_redaction():
+    html = HTML.read_text(encoding="utf-8")
+
+    assert "let _aiDeepScanCompleted = false;" in html
+    assert "_aiDeepScanCompleted = true;" in html
+    assert "function _isPersonNameFinding" in html
+    assert "function _regularNameIgnoredByAi" in html
+    assert "function _applyAiNameOverrideToRegularRows" in html
+    assert ".filter(idx => !_regularNameIgnoredByAi(idx));" in html
+    assert 'document.querySelectorAll(".g-cb:not(:disabled), .g-ai-cb")' in html
+    assert "ai-name-override-note" in html
+    assert html.count("aiNamesOverride:") == 6
+
+
 def test_about_hardware_requirement_is_16gb_in_all_languages():
     html = HTML.read_text(encoding="utf-8")
 
