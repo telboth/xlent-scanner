@@ -86,7 +86,7 @@ def test_pull_ollama_model_tracks_status(monkeypatch):
         return {"status": "success"}
 
     monkeypatch.setattr(deep_scanner, "_post", fake_post)
-    deep_scanner._pull_job.clear()
+    deep_scanner._pull_jobs.clear()
 
     result = deep_scanner.pull_ollama_model("llama3.2:3b")
 
@@ -122,7 +122,7 @@ def test_deep_scan_ollama_call_uses_balanced_speed_options(monkeypatch):
                 "system": deep_scanner._SYS,
                 "stream": False,
                 "format": "json",
-                "options": {"temperature": 0.05, "num_ctx": 8192, "num_predict": 512},
+                "options": {"temperature": 0.05, "num_ctx": 8192, "num_predict": 1024},
             },
             180,
         )
@@ -619,6 +619,130 @@ def test_medical_category_is_opt_in_for_prompt():
     assert "Medisinsk informasjon" in prompt_with
     assert "sykdommer, diagnoser, symptomer" in prompt_with
     assert "Metformin" in prompt_with
+
+
+def test_medical_prompt_is_focused_and_requires_exact_source_text():
+    prompt = deep_scanner._build_medical_prompt(
+        "I sometimes take Paracetamol.",
+        "en",
+    )
+
+    assert "Find every explicit disease" in prompt
+    assert "First-person statements" in prompt
+    assert "exact source substrings" in prompt
+    assert "Personal name" not in prompt
+    assert "Monetary amount" not in prompt
+
+
+def test_medical_filter_accepts_exact_high_confidence_source_finding():
+    source = "The patient takes the synthetic medicine Zorvex every morning."
+    findings = [{
+        "category": "Medical information",
+        "text": "Zorvex",
+        "context": "",
+        "confidence": "high",
+    }]
+
+    filtered = deep_scanner._filter_llm_findings_by_category_precision(
+        findings,
+        source=source,
+    )
+
+    assert filtered == findings
+
+
+def test_medical_filter_rejects_unknown_medium_confidence_without_context():
+    findings = [{
+        "category": "Medical information",
+        "text": "Zorvex",
+        "context": "",
+        "confidence": "medium",
+    }]
+
+    assert deep_scanner._filter_llm_findings_by_category_precision(
+        findings,
+        source="The patient takes Zorvex.",
+    ) == []
+
+
+def test_medical_filter_accepts_common_medication_terms():
+    findings = [
+        {
+            "category": "Medical information",
+            "text": "Paracetamol",
+            "context": "",
+            "confidence": "medium",
+        },
+        {
+            "category": "Medical information",
+            "text": "antibiotics",
+            "context": "",
+            "confidence": "medium",
+        },
+    ]
+
+    filtered = deep_scanner._filter_llm_findings_by_category_precision(findings)
+
+    assert {finding["text"] for finding in filtered} == {
+        "Paracetamol",
+        "antibiotics",
+    }
+
+
+def test_deep_scan_keeps_medical_findings_from_english_test_text(monkeypatch):
+    text = (
+        "I never had a serious illness like Malaria, but the Malaria medication "
+        "Malarone induces strange dreams. When I have a cold, I sometimes take "
+        "Paracetamol. A few years ago I was prescribed antibiotics."
+    )
+    monkeypatch.setattr(
+        deep_scanner,
+        "_call_ollama",
+        lambda model, prompt: [
+            {
+                "category": "Medical information",
+                "text": "Malarone",
+                "context": "",
+                "confidence": "high",
+            },
+            {
+                "category": "Medical information",
+                "text": "Paracetamol",
+                "context": "",
+                "confidence": "medium",
+            },
+            {
+                "category": "Medical information",
+                "text": "antibiotics",
+                "context": "",
+                "confidence": "medium",
+            },
+        ],
+    )
+    deep_scanner._jobs.clear()
+    job_id = "medical01"
+    deep_scanner._jobs[job_id] = {
+        "job_id": job_id,
+        "status": "running",
+        "progress": "",
+        "findings": [],
+        "cancelled": False,
+        "started_at": time.time(),
+    }
+
+    deep_scanner._run_deep_scan(
+        text,
+        "llama3.2:3b",
+        "en",
+        job_id,
+        ["budsjett_tall", "medisinsk"],
+    )
+
+    finding_texts = {
+        finding["text"]
+        for finding in deep_scanner.get_deep_scan_status(job_id)["findings"]
+    }
+    assert {"Malarone", "Paracetamol", "antibiotics"} <= finding_texts
 
 
 def test_deep_scan_extracts_financial_numbers_from_budget_table(monkeypatch):

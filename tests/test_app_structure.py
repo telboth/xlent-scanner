@@ -9,7 +9,10 @@ def test_app_uses_explicit_state_and_expected_blueprints():
     assert {
         "background",
         "diagnostics",
+        "folders",
         "microsoft",
+        "ollama",
+        "api",
         "reports",
         "scanning",
         "settings",
@@ -28,3 +31,14 @@ def test_no_duplicate_route_and_method_pairs():
             seen.add(key)
 
     assert duplicates == []
+
+
+def test_app_only_keeps_core_routes_directly_registered():
+    direct_rules = {
+        rule.rule
+        for rule in app_module.flask_app.url_map.iter_rules()
+        if rule.endpoint.startswith("index")
+        or rule.endpoint in {"startup_file", "logo_svg"}
+    }
+
+    assert direct_rules == {"/", "/startup-file", "/logo.svg"}
