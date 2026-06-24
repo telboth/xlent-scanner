@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from xlent_scanner.jobs import JobManager
 from xlent_scanner.models import ScanResult
 
 
@@ -24,9 +25,9 @@ class AppState:
 
     folder_scan_results: dict[str, ScanResult] = field(default_factory=dict)
     folder_scan_lock: threading.Lock = field(default_factory=threading.Lock)
-    folder_jobs: dict[str, dict] = field(default_factory=dict)
-    folder_jobs_lock: threading.Lock = field(default_factory=threading.Lock)
-    last_folder_job_id: str = ""
+    folder_job_manager: JobManager = field(
+        default_factory=lambda: JobManager(ttl_seconds=60 * 60, max_jobs=20)
+    )
 
     window: Any | None = None
     initial_file: str | None = None
@@ -35,6 +36,23 @@ class AppState:
     def clear_ai_findings(self) -> None:
         self.last_ai_findings.clear()
         self.last_ai_findings_file_name = ""
+
+    @property
+    def folder_jobs(self) -> dict[str, dict]:
+        """Bakoverkompatibelt innsyn; ny kode bør bruke folder_job_manager."""
+        return self.folder_job_manager.jobs
+
+    @property
+    def folder_jobs_lock(self) -> threading.RLock:
+        return self.folder_job_manager.lock
+
+    @property
+    def last_folder_job_id(self) -> str:
+        return self.folder_job_manager.last_job_id
+
+    @last_folder_job_id.setter
+    def last_folder_job_id(self, value: str) -> None:
+        self.folder_job_manager.last_job_id = value
 
 
 app_state = AppState()

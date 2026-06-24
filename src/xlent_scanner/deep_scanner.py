@@ -13,10 +13,10 @@ import threading
 import time
 import urllib.error
 import urllib.request
-import uuid
 from typing import Any
 
 from xlent_scanner.detectors.ner_names import looks_like_person_name
+from xlent_scanner.jobs import JobManager
 
 LOGGER = logging.getLogger(__name__)
 
@@ -27,6 +27,8 @@ OLLAMA_BASE: str = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434").r
 # Balansert chunk-størrelse: færre Ollama-kall uten å presse kontekstvinduet for hardt.
 _CHUNK_WORDS   = 1600
 _CHUNK_OVERLAP = 60   # overlappende ord mellom påfølgende chunks
+_OLLAMA_NUM_CTX = 8192
+_OLLAMA_NUM_PREDICT = 1024
 
 # Anbefalte modeller i prioritert rekkefølge (vises som forslag i UI)
 RECOMMENDED_MODELS = [
@@ -53,15 +55,27 @@ CATEGORIES: dict[str, str] = {
 }
 DEFAULT_CATEGORIES: tuple[str, ...] = tuple(c for c in CATEGORIES if c != "medisinsk")
 
-# GUI-et bruker fortsatt "siste jobb", men API-et kan hente/cancelle konkret job_id.
-_job: dict[str, Any] = {}
-_jobs: dict[str, dict[str, Any]] = {}
-_job_lock = threading.Lock()
 _JOB_TTL_SECONDS = 60 * 60
 _MAX_JOBS = 20
 
+# GUI-et bruker fortsatt "siste jobb", mens API-et kan hente konkret job_id.
+_deep_jobs = JobManager(
+    ttl_seconds=_JOB_TTL_SECONDS,
+    max_jobs=_MAX_JOBS,
+    id_length=8,
+)
+_pull_jobs = JobManager(
+    ttl_seconds=_JOB_TTL_SECONDS,
+    max_jobs=1,
+    id_length=8,
+)
+
+# Midlertidige aliaser for intern test-/bakoverkompatibilitet.
+_jobs = _deep_jobs.jobs
+_job_lock = _deep_jobs.lock
+_job: dict[str, Any] = {}
 _pull_job: dict[str, Any] = {}
-_pull_lock = threading.Lock()
+_pull_lock = _pull_jobs.lock
 
 
 # ── Ollama REST-hjelpere ────────────────────────────────────────────────
@@ -88,16 +102,7 @@ def _post(path: str, data: dict, timeout: int = 180) -> Any:
 
 
 def _cleanup_jobs_locked(now: float | None = None) -> None:
-    now = now or time.time()
-    expired = [
-        jid for jid, job in _jobs.items()
-        if now - float(job.get("started_at", 0)) > _JOB_TTL_SECONDS
-    ]
-    for jid in expired:
-        _jobs.pop(jid, None)
-    while len(_jobs) > _MAX_JOBS:
-        oldest = min(_jobs, key=lambda jid: float(_jobs[jid].get("started_at", 0)))
-        _jobs.pop(oldest, None)
+    _deep_jobs.cleanup_locked(now)
 
 
 # ── Status ──────────────────────────────────────────────────────────────
@@ -139,23 +144,34 @@ def ollama_status() -> dict[str, Any]:
 
 
 def _run_pull_model(model: str, job_id: str) -> None:
-    with _pull_lock:
-        if _pull_job.get("job_id") != job_id:
+    with _pull_jobs.mutate(job_id) as job:
+        if job is None:
             return
-        _pull_job.update({"status": "running", "progress": f"Laster ned {model}…"})
+        job.update({"status": "running", "progress": f"Laster ned {model}…"})
     try:
         _post("/api/pull", {"name": model, "stream": False}, timeout=900)
-        with _pull_lock:
-            if _pull_job.get("job_id") == job_id:
-                _pull_job.update({"status": "done", "progress": f"{model} er installert."})
+        _pull_jobs.update(
+            job_id,
+            status="done",
+            progress=f"{model} er installert.",
+            completed_at=time.time(),
+        )
     except (urllib.error.URLError, OSError) as exc:
-        with _pull_lock:
-            if _pull_job.get("job_id") == job_id:
-                _pull_job.update({"status": "error", "progress": "Ollama kjører ikke.", "error": str(exc)})
+        _pull_jobs.update(
+            job_id,
+            status="error",
+            progress="Ollama kjører ikke.",
+            error=str(exc),
+            completed_at=time.time(),
+        )
     except Exception as exc:
-        with _pull_lock:
-            if _pull_job.get("job_id") == job_id:
-                _pull_job.update({"status": "error", "progress": str(exc), "error": str(exc)})
+        _pull_jobs.update(
+            job_id,
+            status="error",
+            progress=str(exc),
+            error=str(exc),
+            completed_at=time.time(),
+        )
 
 
 def pull_ollama_model(model: str | None = None) -> dict[str, Any]:
@@ -163,17 +179,13 @@ def pull_ollama_model(model: str | None = None) -> dict[str, Any]:
     model = (model or RECOMMENDED_MODELS[0]).strip()
     if model not in RECOMMENDED_MODELS:
         return {"ok": False, "error": f"Ukjent eller ikke-anbefalt modell: {model}"}
-    job_id = str(uuid.uuid4())[:8]
-    with _pull_lock:
-        if _pull_job.get("status") in {"queued", "running"}:
-            return {"ok": True, "already_running": True, **dict(_pull_job)}
-        _pull_job.clear()
-        _pull_job.update({
-            "job_id": job_id,
+    current = _pull_jobs.snapshot()
+    if current.get("status") in {"queued", "running"}:
+        return {"ok": True, "already_running": True, **current}
+    job_id = _pull_jobs.create({
             "status": "queued",
             "progress": f"Køet nedlasting av {model}…",
             "model": model,
-            "started_at": time.time(),
         })
     threading.Thread(
         target=_run_pull_model,
@@ -185,8 +197,7 @@ def pull_ollama_model(model: str | None = None) -> dict[str, Any]:
 
 
 def get_ollama_pull_status() -> dict[str, Any]:
-    with _pull_lock:
-        return dict(_pull_job) if _pull_job else {"status": "idle", "progress": ""}
+    return _pull_jobs.snapshot() or {"status": "idle", "progress": ""}
 
 
 def ollama_hardware_info() -> dict[str, Any]:
@@ -462,6 +473,41 @@ def _build_prompt(categories: list[str], chunk: str, lang: str = "nb") -> str:
         )
 
 
+def _build_medical_prompt(chunk: str, lang: str = "nb") -> str:
+    """Kort, fokusert prompt som hindrer at medisinske funn drukner i andre regler."""
+    if lang == "sv":
+        instruction = (
+            "Hitta varje uttrycklig sjukdom, diagnos, symptom, behandling eller "
+            "läkemedel som gäller en person. Första person (jag/min) räknas som "
+            "en person. Rapportera exakt källtext, inte omskrivningar."
+        )
+        category = "Medicinsk information"
+    elif lang == "en":
+        instruction = (
+            "Find every explicit disease, diagnosis, symptom, treatment, drug, "
+            "or medication that applies to a person. First-person statements "
+            "(I/my) count as applying to a person. Report exact source substrings, "
+            "not paraphrases. Include prescribed and over-the-counter medication."
+        )
+        category = "Medical information"
+    else:
+        instruction = (
+            "Finn alle uttrykkelige sykdommer, diagnoser, symptomer, behandlinger "
+            "og legemidler som gjelder en person. Førsteperson (jeg/min) regnes "
+            "som en person. Rapporter eksakt kildetekst, ikke omskrivinger."
+        )
+        category = "Medisinsk informasjon"
+
+    return (
+        f"{instruction}\n"
+        "Svar KUN med gyldig JSON på denne formen:\n"
+        f'{{"findings":[{{"category":"{category}","text":"eksakt tekst",'
+        '"context":"kort eksakt kontekst","confidence":"high"}}]}\n'
+        'Ingen funn → {"findings":[]}\n\n'
+        f"Text:\n{chunk}"
+    )
+
+
 # ── Tekst-oppdeling ─────────────────────────────────────────────────────
 
 def _split_chunks(text: str) -> list[str]:
@@ -508,8 +554,17 @@ def _call_ollama(model: str, prompt: str) -> list[dict]:
             "system":  _SYS,
             "stream":  False,
             "format":  "json",
-            "options": {"temperature": 0.05, "num_ctx": 8192, "num_predict": 512},
+            "options": {
+                "temperature": 0.05,
+                "num_ctx": _OLLAMA_NUM_CTX,
+                "num_predict": _OLLAMA_NUM_PREDICT,
+            },
         })
+        if result.get("done_reason") == "length":
+            LOGGER.warning(
+                "Ollama-svar ble avkortet ved %s outputtokens.",
+                _OLLAMA_NUM_PREDICT,
+            )
         return _parse_findings(result.get("response", ""))
     except Exception as exc:
         LOGGER.warning("Ollama-kall feilet: %s", exc)
@@ -551,6 +606,12 @@ def _reported_text_exists_in_source(source: str, reported: str) -> bool:
     compact_value = re.sub(r"[\s.\-_/()]+", "", value)
     compact_source = re.sub(r"[\s.\-_/()]+", "", haystack)
     return len(compact_value) >= 4 and compact_value in compact_source
+
+
+def _reported_text_exactly_exists_in_source(source: str, reported: str) -> bool:
+    """Krev faktisk tekstmatch, med kun normalisering av mellomrom og casing."""
+    value = _norm_for_source_match(reported)
+    return bool(value) and value in _norm_for_source_match(source)
 
 
 def _filter_llm_findings_to_source(findings: list[dict], source: str) -> list[dict]:
@@ -688,10 +749,13 @@ _MEDICAL_CONTEXT_RE = re.compile(
     r"\b("
     r"diagnose|diagnosis|sykdom|sjukdom|disease|lidelse|condition|"
     r"symptom|symptomer|symptoms?|behandling|treatment|treated|behandles|"
-    r"medisin|medisiner|legemiddel|läkemedel|medication|medicine|"
+    r"medisin|medisiner|legemidler?|läkemedel|medications?|medicines?|"
+    r"drug|drugs|prescribed|prescription|dose|dosage|tablets?|pills?|"
+    r"antibiotics?|painkillers?|paracetamol|acetaminophen|ibuprofen|aspirin|"
+    r"malarone|antimalarial|pharmaceutical|vaccines?|vaccination|"
     r"pasient|patient|helse|health|sykmeldt|sick leave|"
     r"diabetes|adhd|depresjon|depression|astma|asthma|kreft|cancer|"
-    r"migrene|migraine|metformin|sertralin|sertraline|insulin"
+    r"migrene|migraine|malaria|metformin|sertralin|sertraline|insulin"
     r")\b",
     re.IGNORECASE,
 )
@@ -744,7 +808,10 @@ def _valid_email_text(value: str) -> str | None:
     return match.group(0).strip("<>()[]{}.,;:'\"")
 
 
-def _filter_llm_findings_by_category_precision(findings: list[dict]) -> list[dict]:
+def _filter_llm_findings_by_category_precision(
+    findings: list[dict],
+    source: str = "",
+) -> list[dict]:
     result: list[dict] = []
     removed = 0
     for f in findings:
@@ -774,7 +841,20 @@ def _filter_llm_findings_by_category_precision(findings: list[dict]) -> list[dic
                 removed += 1
                 continue
         elif _is_medical_category(cat):
-            if not _looks_like_medical_information(raw_text, str(f.get("context") or "")):
+            medical_context = str(f.get("context") or "")
+            combined_medical_text = f"{raw_text} {medical_context}"
+            medically_supported = _looks_like_medical_information(
+                raw_text,
+                medical_context,
+            )
+            exact_high_confidence = (
+                str(f.get("confidence") or "").casefold() == "high"
+                and _reported_text_exactly_exists_in_source(source, raw_text)
+                and not _GENERIC_MEDICAL_FALSE_POSITIVE_RE.search(
+                    combined_medical_text
+                )
+            )
+            if not medically_supported and not exact_high_confidence:
                 removed += 1
                 continue
         result.append(f)
@@ -930,7 +1010,6 @@ def _filter_ignored_findings(findings: list[dict], ignore: dict) -> list[dict]:
     for f in findings:
         raw_val = str(f.get("text") or "")
         val = raw_val.strip().casefold()
-        cat = _category_key(str(f.get("category") or ""))
 
         if _email_matches_ignore(raw_val, domains, emails):
             continue
@@ -952,8 +1031,7 @@ def _run_deep_scan(
     chunks = _split_chunks(text)
     n = len(chunks)
     all_raw: list[dict] = []
-    with _job_lock:
-        job = _jobs.get(job_id)
+    with _deep_jobs.mutate(job_id) as job:
         if job:
             job.update({
                 "total_chunks": n,
@@ -963,8 +1041,7 @@ def _run_deep_scan(
             })
 
     for idx, chunk in enumerate(chunks, 1):
-        with _job_lock:
-            job = _jobs.get(job_id)
+        with _deep_jobs.mutate(job_id) as job:
             if not job or job.get("cancelled"):
                 return
             job.update({
@@ -975,13 +1052,20 @@ def _run_deep_scan(
                 "progress_percent": int(((idx - 1) / max(n, 1)) * 100),
             })
 
-        prompt = _build_prompt(categories, chunk, lang)
-        findings = _call_ollama(model, prompt)
+        findings: list[dict] = []
+        standard_categories = [
+            category for category in categories if category != "medisinsk"
+        ]
+        if standard_categories:
+            findings.extend(
+                _call_ollama(model, _build_prompt(standard_categories, chunk, lang))
+            )
+        if "medisinsk" in categories:
+            findings.extend(_call_ollama(model, _build_medical_prompt(chunk, lang)))
         findings = _filter_llm_findings_to_source(findings, chunk)
-        findings = _filter_llm_findings_by_category_precision(findings)
+        findings = _filter_llm_findings_by_category_precision(findings, source=chunk)
         all_raw.extend(findings)
-        with _job_lock:
-            job = _jobs.get(job_id)
+        with _deep_jobs.mutate(job_id) as job:
             if job and not job.get("cancelled"):
                 job.update({
                     "completed_chunks": idx,
@@ -1139,8 +1223,7 @@ def _run_deep_scan(
         if not cat.startswith("🤖"):
             f["category"] = f"🤖 {cat}"
 
-    with _job_lock:
-        job = _jobs.get(job_id)
+    with _deep_jobs.mutate(job_id) as job:
         if job:
             job.update({
                 "status":   "done",
@@ -1162,11 +1245,8 @@ def start_deep_scan(
     min_confidence: str = "medium",
 ) -> str:
     """Start dybdeskanning i bakgrunn. Returnerer job_id."""
-    global _job
-    job_id = str(uuid.uuid4())[:8]
     cats = categories or list(DEFAULT_CATEGORIES)
     job = {
-        "job_id":         job_id,
         "status":         "running",
         "progress":       "Starter…",
         "current_chunk":  0,
@@ -1178,12 +1258,8 @@ def start_deep_scan(
         "model":          model,
         "categories":     cats,
         "min_confidence": min_confidence,
-        "started_at":     time.time(),
     }
-    with _job_lock:
-        _cleanup_jobs_locked()
-        _jobs[job_id] = job
-        _job = job
+    job_id = _deep_jobs.create(job)
     t = threading.Thread(
         target=_run_deep_scan,
         args=(text, model, lang, job_id, cats, min_confidence),
@@ -1197,12 +1273,7 @@ def start_deep_scan(
 
 def get_deep_scan_status(job_id: str | None = None) -> dict[str, Any]:
     """Hent status/resultat for en bestemt jobb, eller siste GUI-jobb."""
-    with _job_lock:
-        _cleanup_jobs_locked()
-        if job_id:
-            status = dict(_jobs.get(job_id, {}))
-        else:
-            status = dict(_job)
+    status = _deep_jobs.snapshot(job_id)
     started = status.get("started_at")
     if started:
         end = status.get("completed_at") or time.time()
@@ -1212,10 +1283,12 @@ def get_deep_scan_status(job_id: str | None = None) -> dict[str, Any]:
 
 def cancel_deep_scan(job_id: str | None = None) -> None:
     """Avbryt en bestemt dybdeskann, eller siste GUI-jobb."""
-    with _job_lock:
-        job = _jobs.get(job_id) if job_id else _job
+    resolved_id = job_id or _deep_jobs.last_job_id
+    if not resolved_id:
+        return
+    with _deep_jobs.mutate(resolved_id) as job:
         if not job:
             return
         job["cancelled"] = True
-        job["status"]    = "cancelled"
-        job["progress"]  = "Avbrutt"
+        job["status"] = "cancelled"
+        job["progress"] = "Avbrutt"

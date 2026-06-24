@@ -1,6 +1,6 @@
 # XLENT Compliance-scanner
 
-> **v1.5.4** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
+> **v1.5.5** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
 
 Alt kjøres 100 % lokalt — ingen dokumenter, tekst eller funn sendes over internett.
 
@@ -422,6 +422,14 @@ src/xlent_scanner/
 ---
 
 ## Endringslogg
+
+### v1.5.5
+- Øker AI-dybdeskannens outputgrense fra 512 til 1024 tokens og varsler i loggen dersom Ollama fortsatt avkorter svaret.
+- Kjører valgt medisinsk analyse i en separat, fokusert modellpassering og beholder eksakte, kildeverifiserte funn med høy konfidens.
+- Utvider medisinsk kontekst for legemidler og behandling, inkludert Paracetamol, antibiotika, Malarone og generiske medisinuttrykk.
+- Hindrer falske SWIFT/BIC-funn på stedsnavn som Horten gjennom gyldig ISO-landkode og strammere bankkontekst.
+- Sikrer release-scriptet mot feil branch, usynkronisert `master`, versjonsavvik og tag som peker på feil commit.
+- Flytter mappe-, API- og Ollama-ruter til egne Blueprints og innfører en felles `JobManager` for bakgrunnsjobber.
 
 ### v1.5.4
 - Skiller teknisk skannstatus (`success`, `partial`, `failed`) fra dokumentets risikonivå, og CLI returnerer nå exit-kode 4 ved tekniske skannfeil.

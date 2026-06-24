@@ -3,6 +3,7 @@ param(
     [string]$RepoName = "",
     [string]$Version = "",
     [string]$Tag = "",
+    [string]$ReleaseBranch = "master",
     [string]$ReleaseTitle = "",
     [string]$ReleaseNotes = "",
     [switch]$AutoCommit,
@@ -10,6 +11,7 @@ param(
     [switch]$GenerateReleaseNotes = $true,
     [switch]$UploadAssets = $true,
     [switch]$OverwriteAssets = $true,
+    [switch]$ValidateOnly,
     [string[]]$AssetGlobs = @(
         "artifacts/windows/installer/*",
         "artifacts/macos/installer/*",
@@ -31,6 +33,24 @@ function Invoke-Git {
     & git @ArgList
     if ($LASTEXITCODE -ne 0) {
         throw "git-kommando feilet: git $($ArgList -join ' ')"
+    }
+}
+
+function Invoke-ReleasePreflight {
+    param([switch]$AllowAhead)
+    $preflightArgs = @(
+        "scripts/release_preflight.py",
+        "--repo", [string]$RepoRoot,
+        "--version", $Version,
+        "--tag", $Tag,
+        "--release-branch", $ReleaseBranch
+    )
+    if ($AllowAhead) {
+        $preflightArgs += "--allow-ahead"
+    }
+    & python @preflightArgs
+    if ($LASTEXITCODE -ne 0) {
+        throw "Release preflight feilet."
     }
 }
 
@@ -219,6 +239,14 @@ if (-not $ReleaseTitle) {
     $ReleaseTitle = $Tag
 }
 
+$branch = ((& git branch --show-current).Trim())
+if ($LASTEXITCODE -ne 0 -or -not $branch) {
+    throw "Fant ingen aktiv branch."
+}
+if ($branch -ne $ReleaseBranch) {
+    throw "Release må kjøres fra '$ReleaseBranch'; aktiv branch er '$branch'."
+}
+
 $statusLines = (& git status --porcelain)
 if ($LASTEXITCODE -ne 0) {
     throw "Kunne ikke lese git status."
@@ -234,9 +262,9 @@ if ($statusLines -and $AutoCommit) {
     }
 }
 
-$branch = ((& git branch --show-current).Trim())
-if ($LASTEXITCODE -ne 0 -or -not $branch) {
-    throw "Fant ingen aktiv branch."
+$statusLines = (& git status --porcelain)
+if ($LASTEXITCODE -ne 0 -or $statusLines) {
+    throw "Arbeidstreet er fortsatt ikke rent etter eventuell auto-commit."
 }
 
 if ((& git remote) -contains "origin") {
@@ -248,7 +276,26 @@ if ((& git remote) -contains "origin") {
     Invoke-Git -ArgList @("remote", "add", "origin", $FixedRemoteUrl)
 }
 
-Invoke-Git -ArgList @("push", "origin", $branch)
+Invoke-Git -ArgList @(
+    "fetch", "origin",
+    "+refs/heads/$ReleaseBranch`:refs/remotes/origin/$ReleaseBranch",
+    "--tags"
+)
+Invoke-ReleasePreflight -AllowAhead
+
+if ($ValidateOnly) {
+    Invoke-ReleasePreflight
+    Write-Host "Release-validering fullført uten publisering."
+    exit 0
+}
+
+Invoke-Git -ArgList @("push", "origin", "HEAD`:refs/heads/$ReleaseBranch")
+Invoke-Git -ArgList @(
+    "fetch", "origin",
+    "+refs/heads/$ReleaseBranch`:refs/remotes/origin/$ReleaseBranch",
+    "--tags"
+)
+Invoke-ReleasePreflight
 
 $localTag = (& git tag --list $Tag)
 if ($LASTEXITCODE -ne 0) {
@@ -259,6 +306,8 @@ if (-not $localTag) {
 }
 
 Invoke-Git -ArgList @("push", "origin", $Tag)
+Invoke-Git -ArgList @("fetch", "origin", "refs/tags/$Tag`:refs/tags/$Tag")
+Invoke-ReleasePreflight
 
 $headers = Get-GitHubHeaders
 Ensure-Owner -Headers $headers -Owner $Owner
@@ -267,7 +316,7 @@ $release = Get-ReleaseByTag -Headers $headers -Owner $Owner -RepoName $RepoName 
 if (-not $release) {
     $payload = @{
         tag_name = $Tag
-        target_commitish = $branch
+        target_commitish = $ReleaseBranch
         name = $ReleaseTitle
         draft = $false
         prerelease = $false

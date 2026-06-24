@@ -8,14 +8,11 @@ Flask kjører i en bakgrunnstråd og eksponerer:
 from __future__ import annotations
 
 import faulthandler
-import base64
-import binascii
 import html
 import json
 import logging
 import os
 import platform
-import secrets
 import socket
 import subprocess
 import sys
@@ -25,11 +22,50 @@ import time
 import traceback
 import urllib.parse
 import urllib.request
-import uuid
 import warnings
 import webbrowser
 import zipfile
 from pathlib import Path
+
+import webview
+from flask import Flask, jsonify, request
+
+from xlent_scanner import __version__
+from xlent_scanner.app_state import app_state
+from xlent_scanner.blacklist import (
+    get_blacklist_entries,
+)
+from xlent_scanner.paths import app_data_dir
+from xlent_scanner.ignore import (
+    get_ignore_toml_text,
+)
+from xlent_scanner.patch import patch_file
+from xlent_scanner.routes.api import (
+    api_key_configured as _api_key_configured,
+    create_api_blueprint,
+    validate_api_bind as _validate_api_bind,
+)
+from xlent_scanner.routes.background import background_bp
+from xlent_scanner.routes.diagnostics import create_diagnostics_blueprint
+from xlent_scanner.routes.folders import (
+    create_folders_blueprint,
+    folder_job_from_request as _folder_job_from_request,
+    folder_result_for_report_id as _folder_result_for_report_id,
+    folder_result_row as _folder_result_row,  # noqa: F401
+)
+from xlent_scanner.routes.microsoft import create_microsoft_blueprint
+from xlent_scanner.routes.ollama import create_ollama_blueprint
+from xlent_scanner.routes.reports import reports_bp
+from xlent_scanner.routes.scanning import scanning_bp
+from xlent_scanner.routes.settings import settings_bp
+from xlent_scanner.scanner import (
+    scan_file,
+    scan_folder,
+    scan_text,
+)
+from xlent_scanner.whitelist import (
+    get_whitelist_entries,
+)
 
 # Docling gir UserWarning for bilder i PPTX-filer som mangler innebygd bildedata.
 # Dette er støy vi ikke kan gjøre noe med – demp det.
@@ -40,61 +76,20 @@ warnings.filterwarnings(
     module=r"docling\..+",
 )
 
-import webview
-from flask import Flask, jsonify, request
-
-from xlent_scanner import __version__
-from xlent_scanner.ai_findings import findings_from_payload, replacement_texts
-from xlent_scanner.anonymize import build_replacements
-from xlent_scanner.app_state import app_state
-from xlent_scanner.blacklist import (
-    get_blacklist_entries,
-)
-from xlent_scanner.paths import app_data_dir
-from xlent_scanner.ignore import (
-    get_ignore_toml_text,
-)
-from xlent_scanner.models import ScanResult
-from xlent_scanner.patch import SUPPORTED_PATCH_SUFFIXES, patch_file
-from xlent_scanner.report import generate_html
-from xlent_scanner.routes.background import background_bp
-from xlent_scanner.routes.diagnostics import create_diagnostics_blueprint
-from xlent_scanner.routes.microsoft import create_microsoft_blueprint
-from xlent_scanner.routes.reports import reports_bp, write_text_pdf
-from xlent_scanner.routes.scanning import scanning_bp
-from xlent_scanner.routes.settings import settings_bp
-from xlent_scanner.history import add_history_entry
-from xlent_scanner.scanner import (
-    DEFAULT_FOLDER_MAX_DEPTH,
-    DEFAULT_FOLDER_MAX_FILES,
-    build_folder_scan_plan,
-    scan_file,
-    scan_folder,
-    scan_text,
-)
-from xlent_scanner.whitelist import (
-    get_whitelist_entries,
-)
-
-_FOLDER_SCAN_MAX_RESULTS = 10000
 flask_app = Flask(__name__, static_folder=None)
 flask_app.register_blueprint(settings_bp)
 flask_app.register_blueprint(background_bp)
 flask_app.register_blueprint(scanning_bp)
 flask_app.register_blueprint(reports_bp)
 _web_dir = Path(__file__).parent / "web"
-_API_SCAN_TTL_SECONDS = 60 * 60
-_API_MAX_SCAN_RESULTS = 50
 _API_DEFAULT_PORT = 51291
 _API_DEFAULT_HOST = "127.0.0.1"
-_API_ALLOWED_LANGUAGES = {"auto", "nb", "sv", "en", "de", "fr", "es"}
-_LOCAL_API_HOSTS = {"127.0.0.1", "localhost", "::1"}
-
 _NO_CACHE = {
     "Cache-Control": "no-cache, no-store, must-revalidate",
     "Pragma": "no-cache",
     "Expires": "0",
 }
+
 
 def _setup_logging() -> tuple[logging.Logger, Path]:
     log_dir = app_data_dir() / "logs"
@@ -628,562 +623,13 @@ mkdir -p "${LOG_DIR}"
     return service_path
 
 
-def _folder_scan_options(data: dict) -> dict:
-    def _int(name: str, default: int, minimum: int, maximum: int) -> int:
-        try:
-            value = int(data.get(name, default))
-        except (TypeError, ValueError):
-            value = default
-        return max(minimum, min(value, maximum))
-
-    def _bool(name: str, default: bool = False) -> bool:
-        value = data.get(name, default)
-        if isinstance(value, str):
-            return value.strip().lower() in {"1", "true", "yes", "on"}
-        return bool(value)
-
-    return {
-        "recursive": _bool("recursive", False),
-        "max_files": _int("max_files", DEFAULT_FOLDER_MAX_FILES, 1, 10_000),
-        "max_depth": _int("max_depth", DEFAULT_FOLDER_MAX_DEPTH, 0, 50),
-    }
-
-
-def _folder_finding_summary(result: ScanResult, limit: int = 8) -> list[dict]:
-    rows = []
-    for finding in result.findings:
-        if finding.category.startswith("⚠"):
-            continue
-        rows.append({
-            "category": finding.category,
-            "text": finding.text,
-            "severity": finding.severity,
-            "context": finding.context,
-        })
-        if len(rows) >= limit:
-            break
-    return rows
-
-
-def _remember_folder_result(result: ScanResult) -> str:
-    report_id = uuid.uuid4().hex
-    with app_state.folder_scan_lock:
-        app_state.folder_scan_results[report_id] = result
-        while len(app_state.folder_scan_results) > _FOLDER_SCAN_MAX_RESULTS:
-            oldest = next(iter(app_state.folder_scan_results))
-            app_state.folder_scan_results.pop(oldest, None)
-    return report_id
-
-
-def _folder_result_row(result: ScanResult, report_id: str | None = None) -> dict:
-    report_id = report_id or _remember_folder_result(result)
-    return {
-        "file_name": result.file_name,
-        "relative_path": result.relative_path or result.file_name,
-        "report_id": report_id,
-        "risk_level": result.risk_level,
-        "scan_status": result.scan_status,
-        "finding_count": len(result.findings),
-        "findings_summary": _folder_finding_summary(result),
-        "error": result.error,
-        "file_size": result.file_size,
-        "text_length": result.text_length,
-        "warning": result.warning,
-        "warning_code": result.warning_code,
-    }
-
-
-def _folder_job_snapshot(job_id: str) -> dict | None:
-    with app_state.folder_jobs_lock:
-        job = app_state.folder_jobs.get(job_id)
-        if not job:
-            return None
-        return {
-            "ok": True,
-            "job_id": job_id,
-            "status": job["status"],
-            "folder": job.get("folder", ""),
-            "recursive": job.get("recursive", False),
-            "total": job.get("total", 0),
-            "completed": job.get("completed", 0),
-            "folder_count": job.get("folder_count", 0),
-            "truncated": job.get("truncated", False),
-            "max_files": job.get("max_files", DEFAULT_FOLDER_MAX_FILES),
-            "max_depth": job.get("max_depth", DEFAULT_FOLDER_MAX_DEPTH),
-            "cancel_requested": job.get("cancel_requested", False),
-            "error": job.get("error", ""),
-            "files": list(job.get("files", [])),
-        }
-
-
-def _folder_job_from_request(data: dict | None = None) -> tuple[str, dict]:
-    job_id = str((data or {}).get("job_id") or app_state.last_folder_job_id or "")
-    if not job_id:
-        raise ValueError("Ingen mappeskann tilgjengelig.")
-    with app_state.folder_jobs_lock:
-        job = app_state.folder_jobs.get(job_id)
-        if not job:
-            raise ValueError("Ukjent mappeskann-jobb.")
-        return job_id, {
-            **job,
-            "files": list(job.get("files", [])),
-        }
-
-
-def _folder_result_for_report_id(report_id: str) -> ScanResult:
-    with app_state.folder_scan_lock:
-        result = app_state.folder_scan_results.get(report_id)
-    if result is None:
-        raise ValueError("Ukjent filrapport.")
-    return result
-
-
-def _folder_export_rows(job: dict) -> list[dict]:
-    rows = []
-    for row in job.get("files", []):
-        rows.append({
-            "relative_path": row.get("relative_path", ""),
-            "file_name": row.get("file_name", ""),
-            "risk_level": row.get("risk_level", ""),
-            "scan_status": row.get("scan_status", "success"),
-            "finding_count": row.get("finding_count", 0),
-            "file_size": row.get("file_size", 0),
-            "text_length": row.get("text_length", 0),
-            "error": row.get("error") or "",
-            "warning": row.get("warning") or "",
-            "top_findings": "; ".join(
-                f"{f.get('category', '')}: {f.get('text', '')}"
-                for f in (row.get("findings_summary") or [])
-            ),
-        })
-    return rows
-
-
-def _safe_csv_cell(value) -> str:
-    text = "" if value is None else str(value)
-    if text.startswith(("=", "+", "-", "@")):
-        return "'" + text
-    return text
-
-
-def _folder_audit_html(job_id: str, job: dict) -> str:
-    from datetime import datetime  # noqa: PLC0415
-
-    rows = _folder_export_rows(job)
-    tr = []
-    for row in rows:
-        tr.append(
-            "<tr>"
-            f"<td>{html.escape(str(row['relative_path']))}</td>"
-            f"<td>{html.escape(str(row['risk_level']))}</td>"
-            f"<td>{html.escape(str(row['finding_count']))}</td>"
-            f"<td>{html.escape(str(row['top_findings']))}</td>"
-            f"<td>{html.escape(str(row['error']))}</td>"
-            "</tr>"
-        )
-    return f"""<!doctype html>
-<html lang="nb">
-<head>
-  <meta charset="utf-8">
-  <title>XLENT mappeskann-rapport</title>
-  <style>
-    body {{ font-family: Arial, sans-serif; margin: 28px; color: #172033; }}
-    table {{ border-collapse: collapse; width: 100%; font-size: 13px; }}
-    th, td {{ border-bottom: 1px solid #d9dee8; padding: 7px 8px; text-align: left; vertical-align: top; }}
-    th {{ background: #eef3f8; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }}
-    .meta {{ color: #5d6980; line-height: 1.6; margin-bottom: 18px; }}
-  </style>
-</head>
-<body>
-  <h1>XLENT mappeskann-rapport</h1>
-  <div class="meta">
-    <div>Jobb: {html.escape(job_id)}</div>
-    <div>Mappe: {html.escape(str(job.get("folder", "")))}</div>
-    <div>Tidspunkt: {datetime.now().isoformat(timespec="seconds")}</div>
-    <div>Rekursiv: {html.escape(str(job.get("recursive", False)))}</div>
-    <div>Filer: {html.escape(str(job.get("completed", 0)))} / {html.escape(str(job.get("total", 0)))}</div>
-    <div>Status: {html.escape(str(job.get("status", "")))}</div>
-  </div>
-  <table>
-    <thead><tr><th>Fil</th><th>Risiko</th><th>Funn</th><th>Toppfunn</th><th>Feil</th></tr></thead>
-    <tbody>{''.join(tr)}</tbody>
-  </table>
-</body>
-</html>"""
-
-
-def _run_folder_scan_job(
-    job_id: str,
-    folder_path: str,
-    ignore_xlent: bool,
-    language: str,
-    opts: dict,
-) -> None:
-    try:
-        plan = build_folder_scan_plan(folder_path, **opts)
-        with app_state.folder_jobs_lock:
-            job = app_state.folder_jobs[job_id]
-            job.update({
-                "status": "running",
-                "folder": plan["folder"],
-                "recursive": plan["recursive"],
-                "total": plan["file_count"],
-                "folder_count": plan["folder_count"],
-                "truncated": plan["truncated"],
-                "max_files": plan["max_files"],
-                "max_depth": plan["max_depth"],
-            })
-        root = Path(folder_path)
-        for file_path in plan["files"]:
-            with app_state.folder_jobs_lock:
-                if app_state.folder_jobs[job_id].get("cancel_requested"):
-                    app_state.folder_jobs[job_id]["status"] = "cancelled"
-                    return
-            result = scan_file(file_path, ignore_xlent=ignore_xlent, language=language)
-            result.relative_path = str(Path(file_path).relative_to(root))
-            result.source_path = str(file_path)
-            row = _folder_result_row(result)
-            add_history_entry(
-                file_name=result.file_name,
-                risk_level=result.risk_level,
-                finding_count=len(result.findings),
-                file_size=result.file_size,
-                source="batch",
-            )
-            with app_state.folder_jobs_lock:
-                job = app_state.folder_jobs[job_id]
-                job["files"].append(row)
-                job["completed"] = len(job["files"])
-        with app_state.folder_jobs_lock:
-            if not app_state.folder_jobs[job_id].get("cancel_requested"):
-                app_state.folder_jobs[job_id]["status"] = "completed"
-            else:
-                app_state.folder_jobs[job_id]["status"] = "cancelled"
-    except Exception as exc:
-        LOGGER.error("folder scan job failed: %s", traceback.format_exc())
-        with app_state.folder_jobs_lock:
-            if job_id in app_state.folder_jobs:
-                app_state.folder_jobs[job_id]["status"] = "error"
-                app_state.folder_jobs[job_id]["error"] = str(exc)
-
-
-@flask_app.route("/scan-folder/preview", methods=["POST"])
-def scan_folder_preview_endpoint():
-    """Tell støttede filer i en mappe før scanning."""
-    try:
-        data = request.get_json(force=True)
-        folder_path = data.get("folder_path", "")
-        opts = _folder_scan_options(data)
-        LOGGER.info("scan-folder preview path=%s recursive=%s", folder_path, opts["recursive"])
-        plan = build_folder_scan_plan(folder_path, **opts)
-        return jsonify({
-            "ok": True,
-            "folder": plan["folder"],
-            "recursive": plan["recursive"],
-            "file_count": plan["file_count"],
-            "folder_count": plan["folder_count"],
-            "truncated": plan["truncated"],
-            "max_files": plan["max_files"],
-            "max_depth": plan["max_depth"],
-            "samples": plan["samples"],
-            "excluded_dirs": plan["excluded_dirs"],
-        })
-    except Exception as exc:
-        LOGGER.error("scan-folder preview failed: %s", traceback.format_exc())
-        return jsonify({"ok": False, "error": str(exc)})
-
-
-@flask_app.route("/scan-folder", methods=["POST"])
-def scan_folder_endpoint():
-    """Skann alle støttede filer i en mappe (batch)."""
-    try:
-        data = request.get_json(force=True)
-        folder_path = data.get("folder_path", "")
-        ignore_xlent = bool(data.get("ignore_xlent", False))
-        language = data.get("language", "auto")
-        opts = _folder_scan_options(data)
-        LOGGER.info("scan-folder request path=%s recursive=%s", folder_path, opts["recursive"])
-        plan = build_folder_scan_plan(folder_path, **opts)
-        results = scan_folder(folder_path, ignore_xlent=ignore_xlent, language=language, **opts)
-        summary = []
-        for r in results:
-            add_history_entry(
-                file_name=r.file_name,
-                risk_level=r.risk_level,
-                finding_count=len(r.findings),
-                file_size=r.file_size,
-                source="batch",
-            )
-            summary.append(_folder_result_row(r))
-        LOGGER.info("scan-folder result files=%d", len(summary))
-        return jsonify({
-            "files": summary,
-            "total": len(summary),
-            "folder_count": plan["folder_count"],
-            "truncated": plan["truncated"],
-            "max_files": plan["max_files"],
-            "max_depth": plan["max_depth"],
-            "recursive": plan["recursive"],
-        })
-    except Exception as exc:
-        LOGGER.error("scan-folder endpoint failed: %s", traceback.format_exc())
-        return jsonify({"error": str(exc)})
-
-
-@flask_app.route("/scan-folder/start", methods=["POST"])
-def scan_folder_start_endpoint():
-    """Start mappeskann som bakgrunnsjobb med progress."""
-    try:
-        data = request.get_json(force=True)
-        folder_path = data.get("folder_path", "")
-        ignore_xlent = bool(data.get("ignore_xlent", False))
-        language = data.get("language", "auto")
-        opts = _folder_scan_options(data)
-        job_id = uuid.uuid4().hex
-        with app_state.folder_jobs_lock:
-            app_state.folder_jobs[job_id] = {
-                "status": "queued",
-                "folder": folder_path,
-                "recursive": opts["recursive"],
-                "total": 0,
-                "completed": 0,
-                "folder_count": 0,
-                "truncated": False,
-                "max_files": opts["max_files"],
-                "max_depth": opts["max_depth"],
-                "cancel_requested": False,
-                "error": "",
-                "files": [],
-            }
-            app_state.last_folder_job_id = job_id
-        thread = threading.Thread(
-            target=_run_folder_scan_job,
-            args=(job_id, folder_path, ignore_xlent, language, opts),
-            daemon=True,
-            name=f"folder-scan-{job_id[:8]}",
-        )
-        thread.start()
-        return jsonify({"ok": True, "job_id": job_id})
-    except Exception as exc:
-        LOGGER.error("scan-folder/start failed: %s", traceback.format_exc())
-        return jsonify({"ok": False, "error": str(exc)})
-
-
-@flask_app.route("/scan-folder/status/<job_id>", methods=["GET"])
-def scan_folder_status_endpoint(job_id: str):
-    snapshot = _folder_job_snapshot(job_id)
-    if snapshot is None:
-        return jsonify({"ok": False, "error": "Ukjent mappeskann-jobb."}), 404
-    return jsonify(snapshot)
-
-
-@flask_app.route("/scan-folder/cancel/<job_id>", methods=["POST"])
-def scan_folder_cancel_endpoint(job_id: str):
-    with app_state.folder_jobs_lock:
-        job = app_state.folder_jobs.get(job_id)
-        if not job:
-            return jsonify({"ok": False, "error": "Ukjent mappeskann-jobb."}), 404
-        job["cancel_requested"] = True
-        if job["status"] in {"queued"}:
-            job["status"] = "cancelled"
-    return jsonify({"ok": True, "job_id": job_id})
-
-
-@flask_app.route("/folder-export/json", methods=["POST"])
-def folder_export_json_endpoint():
-    try:
-        data = request.get_json(force=True) or {}
-        job_id, job = _folder_job_from_request(data)
-        payload = {
-            "job_id": job_id,
-            "folder": job.get("folder", ""),
-            "status": job.get("status", ""),
-            "recursive": job.get("recursive", False),
-            "total": job.get("total", 0),
-            "completed": job.get("completed", 0),
-            "truncated": job.get("truncated", False),
-            "files": _folder_export_rows(job),
-        }
-        out = _downloads_dir() / f"xlent-folder-scan-{job_id[:8]}.json"
-        counter = 1
-        while out.exists():
-            out = _downloads_dir() / f"xlent-folder-scan-{job_id[:8]}-{counter}.json"
-            counter += 1
-        out.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-        return jsonify({"ok": True, "path": str(out)})
-    except Exception as exc:
-        return jsonify({"ok": False, "error": str(exc)})
-
-
-@flask_app.route("/folder-export/csv", methods=["POST"])
-def folder_export_csv_endpoint():
-    try:
-        import csv as _csv  # noqa: PLC0415
-        import io as _io  # noqa: PLC0415
-
-        data = request.get_json(force=True) or {}
-        job_id, job = _folder_job_from_request(data)
-        rows = _folder_export_rows(job)
-        buf = _io.StringIO()
-        fieldnames = [
-            "relative_path", "risk_level", "scan_status", "finding_count",
-            "file_size", "text_length", "error", "warning", "top_findings",
-        ]
-        writer = _csv.DictWriter(buf, fieldnames=fieldnames, extrasaction="ignore")
-        writer.writeheader()
-        for row in rows:
-            writer.writerow({key: _safe_csv_cell(row.get(key, "")) for key in fieldnames})
-        out = _downloads_dir() / f"xlent-folder-scan-{job_id[:8]}.csv"
-        counter = 1
-        while out.exists():
-            out = _downloads_dir() / f"xlent-folder-scan-{job_id[:8]}-{counter}.csv"
-            counter += 1
-        out.write_text(buf.getvalue(), encoding="utf-8-sig")
-        return jsonify({"ok": True, "path": str(out)})
-    except Exception as exc:
-        return jsonify({"ok": False, "error": str(exc)})
-
-
-@flask_app.route("/folder-audit/html", methods=["POST"])
-def folder_audit_html_endpoint():
-    try:
-        data = request.get_json(force=True) or {}
-        job_id, job = _folder_job_from_request(data)
-        out = _downloads_dir() / f"xlent-folder-audit-{job_id[:8]}.html"
-        counter = 1
-        while out.exists():
-            out = _downloads_dir() / f"xlent-folder-audit-{job_id[:8]}-{counter}.html"
-            counter += 1
-        out.write_text(_folder_audit_html(job_id, job), encoding="utf-8")
-        return jsonify({"ok": True, "path": str(out)})
-    except Exception as exc:
-        return jsonify({"ok": False, "error": str(exc)})
-
-
-@flask_app.route("/folder-audit/pdf", methods=["POST"])
-def folder_audit_pdf_endpoint():
-    try:
-        data = request.get_json(force=True) or {}
-        job_id, job = _folder_job_from_request(data)
-        rows = _folder_export_rows(job)
-        lines = [
-            "XLENT mappeskann-rapport",
-            f"Jobb: {job_id}",
-            f"Mappe: {job.get('folder', '')}",
-            f"Status: {job.get('status', '')}",
-            f"Filer: {job.get('completed', 0)} / {job.get('total', 0)}",
-            "",
-        ]
-        for row in rows:
-            lines.append(f"{row['risk_level'].upper()} | {row['relative_path']} | {row['finding_count']} funn | {row['top_findings']}")
-            if row["error"]:
-                lines.append(f"  Feil: {row['error']}")
-        out = _downloads_dir() / f"xlent-folder-audit-{job_id[:8]}.pdf"
-        counter = 1
-        while out.exists():
-            out = _downloads_dir() / f"xlent-folder-audit-{job_id[:8]}-{counter}.pdf"
-            counter += 1
-        write_text_pdf("\n".join(lines), out, title="XLENT mappeskann-rapport")
-        return jsonify({"ok": True, "path": str(out)})
-    except Exception as exc:
-        LOGGER.error("folder-audit/pdf failed: %s", traceback.format_exc())
-        return jsonify({"ok": False, "error": str(exc)})
-
-
-@flask_app.route("/folder-file/open", methods=["POST"])
-def folder_file_open_endpoint():
-    try:
-        data = request.get_json(force=True) or {}
-        result = _folder_result_for_report_id(str(data.get("report_id") or ""))
-        path = Path(result.source_path)
-        if not path.exists():
-            return jsonify({"ok": False, "error": "Filen finnes ikke lenger."})
-        _open_path(path)
-        return jsonify({"ok": True})
-    except Exception as exc:
-        return jsonify({"ok": False, "error": str(exc)})
-
-
-@flask_app.route("/folder-file/reveal", methods=["POST"])
-def folder_file_reveal_endpoint():
-    try:
-        data = request.get_json(force=True) or {}
-        result = _folder_result_for_report_id(str(data.get("report_id") or ""))
-        path = Path(result.source_path)
-        if not path.exists():
-            return jsonify({"ok": False, "error": "Filen finnes ikke lenger."})
-        if sys.platform.startswith("win"):
-            subprocess.Popen(["explorer", f"/select,{path}"])
-        elif sys.platform == "darwin":
-            subprocess.Popen(["open", "-R", str(path)])
-        else:
-            subprocess.Popen(["xdg-open", str(path.parent)])
-        return jsonify({"ok": True})
-    except Exception as exc:
-        return jsonify({"ok": False, "error": str(exc)})
-
-
-@flask_app.route("/folder-redact", methods=["POST"])
-def folder_redact_endpoint():
-    try:
-        import shutil  # noqa: PLC0415
-        from datetime import datetime  # noqa: PLC0415
-
-        data = request.get_json(force=True) or {}
-        report_ids = [str(v) for v in data.get("report_ids") or [] if str(v)]
-        strip_annotations = bool(data.get("strip_annotations", False))
-        if not report_ids:
-            return jsonify({"ok": False, "error": "Ingen filer valgt."})
-        out_root = _downloads_dir() / f"XLENT-redacted-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
-        out_root.mkdir(parents=True, exist_ok=True)
-        outputs = []
-        errors = []
-        for report_id in report_ids:
-            try:
-                result = _folder_result_for_report_id(report_id)
-                source = Path(result.source_path)
-                if not source.exists():
-                    errors.append({"file": result.relative_path or result.file_name, "error": "Originalfilen finnes ikke lenger."})
-                    continue
-                if source.suffix.lower() not in SUPPORTED_PATCH_SUFFIXES:
-                    errors.append({"file": result.relative_path or result.file_name, "error": "Formatet støttes ikke for redaction."})
-                    continue
-                findings = [
-                    f for f in result.findings
-                    if not f.category.startswith("⚠") and f.severity != "grønn"
-                ]
-                replacements = build_replacements(findings)
-                if not replacements:
-                    errors.append({"file": result.relative_path or result.file_name, "error": "Ingen direkte redigerbare funn."})
-                    continue
-                rel = Path(result.relative_path or result.file_name)
-                out = out_root / rel.parent / f"{rel.stem}-redacted{source.suffix}"
-                out.parent.mkdir(parents=True, exist_ok=True)
-                patch_file(source, replacements, out, strip_annotations=strip_annotations)
-                outputs.append({"file": result.relative_path or result.file_name, "path": str(out)})
-            except Exception as exc:
-                errors.append({"file": report_id, "error": str(exc)})
-        if not outputs and errors:
-            shutil.rmtree(out_root, ignore_errors=True)
-        return jsonify({"ok": bool(outputs), "folder": str(out_root), "outputs": outputs, "errors": errors})
-    except Exception as exc:
-        LOGGER.error("folder-redact failed: %s", traceback.format_exc())
-        return jsonify({"ok": False, "error": str(exc)})
-
-
-@flask_app.route("/folder-report/<report_id>", methods=["GET"])
-def folder_report(report_id: str):
-    with app_state.folder_scan_lock:
-        result = app_state.folder_scan_results.get(report_id)
-    if result is None:
-        return "Ingen rapport tilgjengelig for denne filen.", 404
-    html = generate_html(
-        result,
-        api_base=f"http://127.0.0.1:{app_state.port}",
-        ai_findings=[],
-    )
-    return html, 200, {"Content-Type": "text/html; charset=utf-8"}
-
+flask_app.register_blueprint(create_folders_blueprint(
+    downloads_dir=lambda: _downloads_dir(),
+    open_path=lambda path: _open_path(path),
+    scan_file_fn=lambda *args, **kwargs: scan_file(*args, **kwargs),
+    scan_folder_fn=lambda *args, **kwargs: scan_folder(*args, **kwargs),
+    patch_file_fn=lambda *args, **kwargs: patch_file(*args, **kwargs),
+))
 
 flask_app.register_blueprint(create_microsoft_blueprint(
     folder_job_from_request=_folder_job_from_request,
@@ -1194,171 +640,6 @@ flask_app.register_blueprint(create_microsoft_blueprint(
 # ── Stabilt API-lag for eksterne frontender / Power Apps ─────────────────────
 # Disse endepunktene er additive og bruker separat scan-state. De skal ikke sette
 # app_state.last_result/app_state.last_path, siden det ville påvirket desktop/web-GUI.
-
-def _api_max_file_bytes() -> int:
-    raw = os.environ.get("XLENT_SCANNER_API_MAX_FILE_MB", "25").strip()
-    try:
-        mb = max(1, int(raw))
-    except ValueError:
-        mb = 25
-    return mb * 1024 * 1024
-
-
-def _api_key_configured() -> bool:
-    return bool(os.environ.get("XLENT_SCANNER_API_KEY", "").strip())
-
-
-def _is_local_host(host: str) -> bool:
-    return host.strip().lower() in _LOCAL_API_HOSTS
-
-
-def _validate_api_bind(host: str) -> None:
-    if _is_local_host(host) or _api_key_configured():
-        return
-    raise RuntimeError(
-        "API kan ikke bindes til nettverk uten XLENT_SCANNER_API_KEY. "
-        "Sett miljøvariabelen eller bruk --host 127.0.0.1."
-    )
-
-
-def _api_auth_error():
-    expected = os.environ.get("XLENT_SCANNER_API_KEY", "").strip()
-    if not expected:
-        return None
-
-    provided = request.headers.get("X-API-Key", "").strip()
-    auth = request.headers.get("Authorization", "").strip()
-    if auth.lower().startswith("bearer "):
-        provided = auth[7:].strip()
-
-    if not secrets.compare_digest(provided, expected):
-        return jsonify({
-            "ok": False,
-            "error": "Ugyldig eller manglende API-nøkkel.",
-            "error_code": "unauthorized",
-        }), 401
-    return None
-
-
-def _api_json_body() -> dict:
-    data = request.get_json(force=True, silent=True)
-    return data if isinstance(data, dict) else {}
-
-
-def _api_bool(value, default: bool = False) -> bool:
-    if isinstance(value, bool):
-        return value
-    if isinstance(value, str):
-        return value.strip().lower() in {"1", "true", "yes", "ja"}
-    return default
-
-
-def _api_language(value) -> str:
-    lang = str(value or "auto").strip().lower()
-    if lang not in _API_ALLOWED_LANGUAGES:
-        raise ValueError(
-            "Ugyldig språk. Bruk auto, nb, sv, en, de, fr eller es."
-        )
-    return lang
-
-
-def _api_cleanup_locked(now: float) -> None:
-    expired = [
-        scan_id for scan_id, entry in app_state.api_scan_results.items()
-        if now - float(entry.get("created_at", 0)) > _API_SCAN_TTL_SECONDS
-    ]
-    for scan_id in expired:
-        _api_delete_scan_locked(scan_id)
-
-    while len(app_state.api_scan_results) > _API_MAX_SCAN_RESULTS:
-        oldest = min(
-            app_state.api_scan_results,
-            key=lambda sid: float(app_state.api_scan_results[sid].get("created_at", 0)),
-        )
-        _api_delete_scan_locked(oldest)
-
-
-def _api_delete_scan_locked(scan_id: str) -> None:
-    entry = app_state.api_scan_results.pop(scan_id, None)
-    if not entry:
-        return
-    path = entry.get("path")
-    if entry.get("owns_path") and isinstance(path, Path):
-        try:
-            path.unlink(missing_ok=True)
-        except OSError:
-            pass
-
-
-def _api_store_scan_result(result, path: Path | None = None, owns_path: bool = False) -> str:
-    scan_id = str(uuid.uuid4())
-    now = time.time()
-    with app_state.api_scan_lock:
-        _api_cleanup_locked(now)
-        app_state.api_scan_results[scan_id] = {
-            "result": result,
-            "path": path,
-            "owns_path": owns_path,
-            "created_at": now,
-        }
-    return scan_id
-
-
-def _api_get_scan(scan_id: str) -> dict | None:
-    now = time.time()
-    with app_state.api_scan_lock:
-        _api_cleanup_locked(now)
-        return app_state.api_scan_results.get(scan_id)
-
-
-def _api_result_payload(result, scan_id: str, include_preview: bool = False) -> dict:
-    payload = {
-        "ok": result.scan_status != "failed",
-        "scan_id": scan_id,
-        "file_name": result.file_name,
-        "file_size": result.file_size,
-        "text_length": result.text_length,
-        "risk_level": result.risk_level,
-        "scan_status": result.scan_status,
-        "risk_summary": result.risk_summary,
-        "recommended_action": result.recommended_action,
-        "language": result.language,
-        "warning": result.warning,
-        "warning_code": getattr(result, "warning_code", None),
-        "microsoft_tags": getattr(result, "microsoft_tags", {}) or {},
-        "policy_warning": getattr(result, "policy_warning", None),
-        "policy_warning_level": getattr(result, "policy_warning_level", None),
-        "error": result.error,
-        "findings": [
-            {
-                "category": f.category,
-                "text": f.text,
-                "context": f.context,
-                "severity": f.severity,
-            }
-            for f in result.findings
-        ],
-    }
-    if include_preview:
-        payload["text_preview"] = result.text_preview
-    return payload
-
-
-@flask_app.route("/api/health", methods=["GET"])
-def api_health():
-    return jsonify({
-        "ok": True,
-        "service": "xlent-scanner",
-        "version": __version__,
-        "api_key_configured": _api_key_configured(),
-        "max_file_mb": _api_max_file_bytes() // (1024 * 1024),
-    })
-
-
-@flask_app.route("/api/version", methods=["GET"])
-def api_version():
-    return jsonify({"ok": True, "version": __version__})
-
 
 def _api_openapi_spec() -> dict:
     base_url = request.url_root.rstrip("/")
@@ -1757,209 +1038,11 @@ def _api_openapi_spec() -> dict:
     }
 
 
-@flask_app.route("/api/openapi.json", methods=["GET"])
-def api_openapi_json():
-    return jsonify(_api_openapi_spec())
-
-
-@flask_app.route("/api/docs", methods=["GET"])
-def api_docs():
-    return """<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <title>XLENT Scanner API Docs</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css">
-  <style>body{margin:0;background:#fafafa}.topbar{display:none}</style>
-</head>
-<body>
-  <div id="swagger-ui"></div>
-  <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
-  <script>
-    window.onload = () => SwaggerUIBundle({
-      url: "/api/openapi.json",
-      dom_id: "#swagger-ui",
-      deepLinking: true,
-      persistAuthorization: true
-    });
-  </script>
-</body>
-</html>""", 200, {"Content-Type": "text/html; charset=utf-8", **_NO_CACHE}
-
-
-@flask_app.route("/api/scan-text", methods=["POST"])
-def api_scan_text():
-    auth_error = _api_auth_error()
-    if auth_error:
-        return auth_error
-
-    try:
-        data = _api_json_body()
-        text = str(data.get("text") or "")
-        if not text.strip():
-            return jsonify({"ok": False, "error": "Mangler tekst.", "error_code": "missing_text"}), 400
-        language = _api_language(data.get("language"))
-        include_preview = _api_bool(data.get("include_preview"), False)
-
-        result = scan_text(text, language=language, source_name="Power Apps tekst")
-        scan_id = _api_store_scan_result(result)
-        return jsonify(_api_result_payload(result, scan_id, include_preview=include_preview))
-    except ValueError as exc:
-        return jsonify({"ok": False, "error": str(exc), "error_code": "bad_request"}), 400
-    except Exception as exc:
-        LOGGER.error("api/scan-text failed: %s", traceback.format_exc())
-        return jsonify({"ok": False, "error": str(exc), "error_code": "scan_failed"}), 500
-
-
-@flask_app.route("/api/scan-file", methods=["POST"])
-def api_scan_file():
-    auth_error = _api_auth_error()
-    if auth_error:
-        return auth_error
-
-    tmp_path: Path | None = None
-    try:
-        data = _api_json_body()
-        file_name = Path(str(data.get("file_name") or "document.txt")).name
-        content_base64 = str(data.get("content_base64") or "")
-        if not content_base64:
-            return jsonify({
-                "ok": False,
-                "error": "Mangler content_base64.",
-                "error_code": "missing_file_content",
-            }), 400
-
-        try:
-            raw = base64.b64decode(content_base64, validate=True)
-        except binascii.Error:
-            return jsonify({
-                "ok": False,
-                "error": "content_base64 er ikke gyldig base64.",
-                "error_code": "invalid_base64",
-            }), 400
-
-        max_bytes = _api_max_file_bytes()
-        if len(raw) > max_bytes:
-            return jsonify({
-                "ok": False,
-                "error": f"Filen er for stor. Maks er {max_bytes // (1024 * 1024)} MB.",
-                "error_code": "file_too_large",
-            }), 413
-
-        language = _api_language(data.get("language"))
-        ignore_xlent = _api_bool(data.get("ignore_xlent"), False)
-        ocr = _api_bool(data.get("ocr"), False)
-        include_preview = _api_bool(data.get("include_preview"), False)
-
-        suffix = Path(file_name).suffix.lower() or ".txt"
-        fd, tmp = tempfile.mkstemp(prefix="xlent-api-", suffix=suffix)
-        tmp_path = Path(tmp)
-        with os.fdopen(fd, "wb") as fh:
-            fh.write(raw)
-
-        result = scan_file(tmp_path, ignore_xlent=ignore_xlent, language=language, ocr=ocr)
-        result.file_name = file_name
-        scan_id = _api_store_scan_result(result, path=tmp_path, owns_path=True)
-        tmp_path = None  # Eies nå av API-cache og ryddes derfra.
-        return jsonify(_api_result_payload(result, scan_id, include_preview=include_preview))
-    except ValueError as exc:
-        return jsonify({"ok": False, "error": str(exc), "error_code": "bad_request"}), 400
-    except Exception as exc:
-        LOGGER.error("api/scan-file failed: %s", traceback.format_exc())
-        return jsonify({"ok": False, "error": str(exc), "error_code": "scan_failed"}), 500
-    finally:
-        if tmp_path is not None:
-            try:
-                tmp_path.unlink(missing_ok=True)
-            except OSError:
-                pass
-
-
-@flask_app.route("/api/scans/<scan_id>", methods=["GET"])
-def api_get_scan_result(scan_id: str):
-    auth_error = _api_auth_error()
-    if auth_error:
-        return auth_error
-
-    entry = _api_get_scan(scan_id)
-    if not entry:
-        return jsonify({"ok": False, "error": "Ukjent eller utløpt scan_id.", "error_code": "not_found"}), 404
-    include_preview = _api_bool(request.args.get("include_preview"), False)
-    return jsonify(_api_result_payload(entry["result"], scan_id, include_preview=include_preview))
-
-
-@flask_app.route("/api/deep-scan", methods=["POST"])
-def api_deep_scan():
-    auth_error = _api_auth_error()
-    if auth_error:
-        return auth_error
-
-    try:
-        from xlent_scanner.deep_scanner import start_deep_scan  # noqa: PLC0415
-
-        data = _api_json_body()
-        scan_id = str(data.get("scan_id") or "").strip()
-        model = str(data.get("model") or "").strip()
-        if not scan_id:
-            return jsonify({"ok": False, "error": "Mangler scan_id.", "error_code": "missing_scan_id"}), 400
-        if not model:
-            return jsonify({"ok": False, "error": "Mangler Ollama-modell.", "error_code": "missing_model"}), 400
-
-        entry = _api_get_scan(scan_id)
-        if not entry:
-            return jsonify({"ok": False, "error": "Ukjent eller utløpt scan_id.", "error_code": "not_found"}), 404
-        result = entry["result"]
-        text = getattr(result, "original_text", "") or ""
-        if not text.strip():
-            return jsonify({
-                "ok": False,
-                "error": "Ingen ekstrahert tekst tilgjengelig for scan_id.",
-                "error_code": "no_text",
-            }), 400
-
-        min_confidence = str(data.get("min_confidence") or "medium").strip().lower()
-        if min_confidence not in {"high", "medium", "low"}:
-            min_confidence = "medium"
-        categories = data.get("categories") or None
-        if categories is not None and not isinstance(categories, list):
-            return jsonify({"ok": False, "error": "categories må være en liste.", "error_code": "bad_request"}), 400
-        lang = getattr(result, "language", "nb") or "nb"
-
-        job_id = start_deep_scan(text, model, lang, categories=categories, min_confidence=min_confidence)
-        return jsonify({"ok": True, "job_id": job_id, "scan_id": scan_id})
-    except Exception as exc:
-        LOGGER.error("api/deep-scan failed: %s", traceback.format_exc())
-        return jsonify({"ok": False, "error": str(exc), "error_code": "deep_scan_failed"}), 500
-
-
-@flask_app.route("/api/deep-scan/<job_id>", methods=["GET"])
-def api_deep_scan_status(job_id: str):
-    auth_error = _api_auth_error()
-    if auth_error:
-        return auth_error
-
-    from xlent_scanner.deep_scanner import get_deep_scan_status  # noqa: PLC0415
-
-    status = get_deep_scan_status(job_id)
-    if not status:
-        return jsonify({"ok": False, "error": "Ukjent job_id.", "error_code": "not_found"}), 404
-    status["ok"] = True
-    return jsonify(status)
-
-
-@flask_app.route("/api/deep-scan/<job_id>/cancel", methods=["POST"])
-def api_deep_scan_cancel(job_id: str):
-    auth_error = _api_auth_error()
-    if auth_error:
-        return auth_error
-
-    from xlent_scanner.deep_scanner import cancel_deep_scan, get_deep_scan_status  # noqa: PLC0415
-
-    status = get_deep_scan_status(job_id)
-    if not status:
-        return jsonify({"ok": False, "error": "Ukjent job_id.", "error_code": "not_found"}), 404
-    cancel_deep_scan(job_id)
-    return jsonify({"ok": True, "job_id": job_id, "status": "cancelled"})
+flask_app.register_blueprint(create_api_blueprint(
+    scan_text_fn=lambda *args, **kwargs: scan_text(*args, **kwargs),
+    scan_file_fn=lambda *args, **kwargs: scan_file(*args, **kwargs),
+    openapi_spec_fn=_api_openapi_spec,
+))
 
 
 @flask_app.route("/startup-file", methods=["GET"])
@@ -1976,198 +1059,9 @@ def logo_svg():
     return svg_path.read_text("utf-8"), 200, {"Content-Type": "image/svg+xml"}
 
 
-# ── Ollama / dybdeskann ─────────────────────────────────────────────────
-
-@flask_app.route("/ollama/status", methods=["GET"])
-def ollama_status_endpoint():
-    """Sjekk om Ollama kjører og hent tilgjengelige modeller."""
-    from xlent_scanner.deep_scanner import ollama_status  # noqa: PLC0415
-    return jsonify(ollama_status())
-
-
-@flask_app.route("/ollama/hardware-info", methods=["GET"])
-def ollama_hardware_info_endpoint():
-    """Returner GPU/CPU-info for pågående Ollama-modell via /api/ps."""
-    from xlent_scanner.deep_scanner import ollama_hardware_info  # noqa: PLC0415
-    return jsonify(ollama_hardware_info())
-
-
-@flask_app.route("/ollama/model/stop", methods=["POST"])
-def ollama_model_stop_endpoint():
-    """Last ut valgt Ollama-modell uten å stoppe Ollama-tjenesten."""
-    from xlent_scanner.deep_scanner import stop_ollama_model  # noqa: PLC0415
-
-    data = request.get_json(force=True) or {}
-    model = (data.get("model") or "").strip()
-    result = stop_ollama_model(model)
-    LOGGER.info("ollama/model/stop model=%s ok=%s", model, result.get("ok"))
-    return jsonify(result)
-
-
-@flask_app.route("/ollama/model/pull", methods=["POST"])
-def ollama_model_pull_endpoint():
-    """Last ned anbefalt Ollama-modell via lokal Ollama-tjeneste."""
-    from xlent_scanner.deep_scanner import pull_ollama_model  # noqa: PLC0415
-
-    data = request.get_json(force=True) or {}
-    model = (data.get("model") or "").strip() or None
-    result = pull_ollama_model(model)
-    LOGGER.info("ollama/model/pull model=%s ok=%s", model, result.get("ok"))
-    return jsonify(result)
-
-
-@flask_app.route("/ollama/model/pull/status", methods=["GET"])
-def ollama_model_pull_status_endpoint():
-    from xlent_scanner.deep_scanner import get_ollama_pull_status  # noqa: PLC0415
-
-    status = get_ollama_pull_status()
-    status["ok"] = True
-    return jsonify(status)
-
-
-@flask_app.route("/ollama/last-file-info", methods=["GET"])
-def ollama_last_file_info():
-    """Returnerer info om sist skannede fil for Dybdeskann-fanen."""
-    if app_state.last_result is None or getattr(app_state.last_result, "error", None):
-        return jsonify({"available": False})
-    text = getattr(app_state.last_result, "original_text", "") or ""
-    return jsonify({
-        "available": bool(text.strip()),
-        "file_name": app_state.last_result.file_name or "",
-        "text_length": app_state.last_result.text_length or 0,
-    })
-
-
-@flask_app.route("/ollama/deep-scan", methods=["POST"])
-def ollama_deep_scan_endpoint():
-    """Start dybdeskanning med Ollama på sist skannede fil."""
-    from xlent_scanner.deep_scanner import start_deep_scan  # noqa: PLC0415
-    if app_state.last_result is None:
-        return jsonify({"ok": False, "error": "Ingen fil er skannet ennå."})
-    text = getattr(app_state.last_result, "original_text", "") or ""
-    if not text.strip():
-        return jsonify({"ok": False, "error": "Ingen tekst å analysere i sist skannede fil."})
-    data  = request.get_json(force=True)
-    model = (data.get("model") or "").strip()
-    if not model:
-        return jsonify({"ok": False, "error": "Ingen Ollama-modell oppgitt."})
-    categories = data.get("categories") or None
-    lang = getattr(app_state.last_result, "language", "nb") or "nb"
-    min_confidence = (data.get("min_confidence") or "medium").strip().lower()
-    if min_confidence not in ("high", "medium", "low"):
-        min_confidence = "medium"
-    job_id = start_deep_scan(text, model, lang, categories=categories, min_confidence=min_confidence)
-    LOGGER.info("ollama/deep-scan started job=%s model=%s cats=%s", job_id, model, categories)
-    return jsonify({"ok": True, "job_id": job_id})
-
-
-@flask_app.route("/ollama/anonymize-findings", methods=["POST"])
-def ollama_anonymize_findings():
-    """Anonymiser valgte AI-funn og lagre til fil.
-
-    Produserer samme filformat som kilden (docx→docx, pptx→pptx, xlsx→xlsx, pdf→pdf).
-    Faller tilbake til .txt hvis formatet ikke støttes eller kildefilen mangler.
-    """
-    if app_state.last_result is None:
-        return jsonify({"error": "Ingen fil skannet."})
-    data = request.get_json(force=True) or {}
-    texts_to_remove = [str(t).strip() for t in (data.get("texts") or []) if t and str(t).strip()]
-    ai_findings = findings_from_payload(data)
-    for text in replacement_texts(ai_findings):
-        if text not in texts_to_remove:
-            texts_to_remove.append(text)
-    strip_annotations = bool(data.get("strip_annotations", False))
-    if not texts_to_remove:
-        return jsonify({"error": "Ingen tekst valgt for anonymisering."})
-
-    stem = (
-        Path(app_state.last_result.file_name).stem
-        if app_state.last_result.file_name
-        else "dokument"
-    )
-    suffix = app_state.last_path.suffix.lower() if app_state.last_path else ""
-    downloads = Path.home() / "Downloads"
-    if not downloads.exists():
-        downloads = Path.home() / "Desktop"
-
-    # Bruk patch_file for støttede filformater når kildefilen er tilgjengelig
-    if (
-        app_state.last_path
-        and app_state.last_path.exists()
-        and suffix in SUPPORTED_PATCH_SUFFIXES
-    ):
-        if not ai_findings:
-            ai_findings = [{"text": t, "category": "🤖 AI-funn", "context": ""} for t in texts_to_remove]
-        ai_texts = replacement_texts(ai_findings)
-        replacements = {text: "[ANONYMISERT]" for text in ai_texts}
-        out = downloads / f"{stem}-ai-anonymisert{suffix}"
-        counter = 1
-        while out.exists():
-            out = downloads / f"{stem}-ai-anonymisert-{counter}{suffix}"
-            counter += 1
-        try:
-            patch_file(
-                app_state.last_path,
-                replacements,
-                out,
-                strip_annotations=strip_annotations,
-            )
-            LOGGER.info("ollama/anonymize-findings patch: wrote %s (%d replacements)", out, len(texts_to_remove))
-            return jsonify({"ok": True, "path": str(out)})
-        except Exception as exc:
-            LOGGER.warning("patch_file feilet, faller tilbake til .txt: %s", exc)
-
-    # Fallback: teksterstatning i originalstreng → .txt
-    text = getattr(app_state.last_result, "original_text", "") or ""
-    if not text.strip():
-        return jsonify({"error": "Originaltekst ikke tilgjengelig. Re-skann filen."})
-    result_text = text
-    for t_str in texts_to_remove:
-        result_text = result_text.replace(t_str, "[ANONYMISERT]")
-    out = downloads / f"{stem}-ai-anonymisert.txt"
-    counter = 1
-    while out.exists():
-        out = downloads / f"{stem}-ai-anonymisert-{counter}.txt"
-        counter += 1
-    out.write_text(result_text, encoding="utf-8")
-    LOGGER.info("ollama/anonymize-findings txt: wrote %s (%d replacements)", out, len(texts_to_remove))
-    return jsonify({"ok": True, "path": str(out)})
-
-
-@flask_app.route("/ollama/deep-scan/status", methods=["GET"])
-def ollama_deep_scan_status_endpoint():
-    """Hent status / fremdrift / funn for pågående dybdeskann."""
-    from xlent_scanner.deep_scanner import get_deep_scan_status  # noqa: PLC0415
-    return jsonify(get_deep_scan_status())
-
-
-@flask_app.route("/ollama/deep-scan/status/<job_id>", methods=["GET"])
-def ollama_deep_scan_status_for_job_endpoint(job_id: str):
-    """Hent status / fremdrift / funn for en konkret dybdeskann-jobb."""
-    from xlent_scanner.deep_scanner import get_deep_scan_status  # noqa: PLC0415
-    status = get_deep_scan_status(job_id)
-    if not status:
-        return jsonify({"ok": False, "error": "Ukjent job_id."}), 404
-    status["ok"] = True
-    return jsonify(status)
-
-
-@flask_app.route("/ollama/deep-scan/cancel", methods=["POST"])
-def ollama_deep_scan_cancel_endpoint():
-    """Avbryt pågående dybdeskann."""
-    from xlent_scanner.deep_scanner import cancel_deep_scan  # noqa: PLC0415
-    cancel_deep_scan()
-    return jsonify({"ok": True})
-
-
-@flask_app.route("/ollama/deep-scan/cancel/<job_id>", methods=["POST"])
-def ollama_deep_scan_cancel_for_job_endpoint(job_id: str):
-    """Avbryt en konkret dybdeskann-jobb."""
-    from xlent_scanner.deep_scanner import cancel_deep_scan, get_deep_scan_status  # noqa: PLC0415
-    if not get_deep_scan_status(job_id):
-        return jsonify({"ok": False, "error": "Ukjent job_id."}), 404
-    cancel_deep_scan(job_id)
-    return jsonify({"ok": True, "job_id": job_id})
+flask_app.register_blueprint(create_ollama_blueprint(
+    patch_file_fn=lambda *args, **kwargs: patch_file(*args, **kwargs),
+))
 
 
 def _start_flask(port: int, host: str = "127.0.0.1") -> None:
@@ -2398,8 +1292,7 @@ def main() -> None:
     # ── CLI-modus ──────────────────────────────────────────────────────────
     if "--scan" in sys.argv:
         _cli_scan()
-        return  # _cli_scan kaller sys.exit, men for type-checker:
-        return  # noqa: unreachable
+        return
 
     # ── WEB-modus (lokal nettleser, uten desktop-vindu) ────────────────────
     if "--web" in sys.argv:
