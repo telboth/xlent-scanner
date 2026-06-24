@@ -389,22 +389,20 @@ def extract_text(path: Path, ocr: bool = False) -> str:
     raise ValueError(f"Filtype ikke støttet: {suffix}")
 
 
-def scan_text(text: str, language: str = "auto", source_name: str = "Innlimt tekst") -> ScanResult:
-    """Skann ren tekst direkte (uten filekstraksjon). Brukes for utklippstavle/paste."""
-    if not text.strip():
-        return ScanResult(
-            file_name=source_name, file_size=0, text_length=0, text_preview="",
-            error="Ingen tekst å skanne.",
-        )
-    lang = resolve_language(language, text)
+def _run_detectors(
+    text: str,
+    lang: str,
+    ignore_xlent: bool = False,
+) -> tuple[list[Finding], bool]:
+    """Kjør alle detektorer og returner funn samt om skannen ble degradert."""
     findings: list[Finding] = []
-    _detector_errors: list[str] = []
+    detector_errors: list[str] = []
 
     def _run(fn, *args):
         try:
             findings.extend(fn(*args))
-        except BaseException as _e:
-            _detector_errors.append(f"{fn.__name__}: {type(_e).__name__}: {_e}")
+        except Exception as exc:
+            detector_errors.append(f"{fn.__name__}: {type(exc).__name__}: {exc}")
 
     _run(detect_keywords, text)
     _run(detect_secrets, text)
@@ -432,14 +430,30 @@ def scan_text(text: str, language: str = "auto", source_name: str = "Innlimt tek
     _run(detect_custom_patterns, text)
     _run(detect_names, text, lang)
 
+    if ignore_xlent:
+        findings = filter_findings(findings, _get_ignore_list())
+
     findings = mark_whitelist_findings(findings)
     _run(detect_blacklist, text)
 
     ner_err = get_load_error(lang)
     if ner_err:
         findings.append(Finding(category="⚠ NER ikke tilgjengelig", text=ner_err, context=""))
-    for det_err in _detector_errors:
+    for det_err in detector_errors:
         findings.append(Finding(category="⚠ Detektor-feil", text=det_err, context=""))
+
+    return findings, bool(ner_err or detector_errors)
+
+
+def scan_text(text: str, language: str = "auto", source_name: str = "Innlimt tekst") -> ScanResult:
+    """Skann ren tekst direkte (uten filekstraksjon). Brukes for utklippstavle/paste."""
+    if not text.strip():
+        return ScanResult(
+            file_name=source_name, file_size=0, text_length=0, text_preview="",
+            error="Ingen tekst å skanne.", scan_status="failed",
+        )
+    lang = resolve_language(language, text)
+    findings, degraded = _run_detectors(text, lang)
 
     result = ScanResult(
         file_name=source_name,
@@ -449,6 +463,7 @@ def scan_text(text: str, language: str = "auto", source_name: str = "Innlimt tek
         findings=findings,
         original_text=text,
         language=lang,
+        scan_status="partial" if degraded else "success",
     )
     return assess(result)
 
@@ -578,6 +593,7 @@ def scan_file(
         return ScanResult(
             file_name=p.name, file_size=0, text_length=0, text_preview="",
             error=f"Fil ikke funnet: {p}",
+            scan_status="failed",
         )
     suffix = p.suffix.lower()
     if suffix not in SUPPORTED_SUFFIXES:
@@ -585,6 +601,7 @@ def scan_file(
             file_name=p.name, file_size=p.stat().st_size,
             text_length=0, text_preview="",
             error=f"Filtype ikke støttet: {suffix}",
+            scan_status="failed",
         )
     try:
         try:
@@ -609,6 +626,7 @@ def scan_file(
             file_name=p.name, file_size=p.stat().st_size,
             text_length=0, text_preview="",
             error=friendly,
+            scan_status="failed",
         )
 
     preview = text
@@ -635,61 +653,7 @@ def scan_file(
 
     lang = resolve_language(language, text)
 
-    findings: list[Finding] = []
-    _detector_errors: list[str] = []
-
-    def _run(fn, *args):
-        try:
-            findings.extend(fn(*args))
-        except BaseException as _e:   # fanger også SystemExit / KeyboardInterrupt
-            _detector_errors.append(f"{fn.__name__}: {type(_e).__name__}: {_e}")
-
-    _run(detect_keywords, text)
-    _run(detect_secrets, text)
-    _run(find_emails, text)
-    _run(detect_urls, text)
-    if lang in ("nb", "en", "da"):
-        _run(detect_no_specific, text)
-    if lang in ("sv", "en"):
-        _run(detect_sv_specific, text)
-    if lang == "da":
-        _run(detect_da_specific, text)
-    if lang in ("en", "de", "fr", "es"):
-        _run(detect_en_specific, text)
-    if lang == "de":
-        _run(detect_de_specific, text)
-    if lang == "fr":
-        _run(detect_fr_specific, text)
-    if lang == "es":
-        _run(detect_es_specific, text)
-    _run(detect_iban, text)
-    _run(detect_creditcards, text)
-    _run(detect_financials, text)
-    _run(detect_clients, text)
-    _run(detect_extra, text)
-    _run(detect_custom_patterns, text)
-    _run(detect_names, text, lang)
-
-    if ignore_xlent:
-        findings = filter_findings(findings, _get_ignore_list())
-
-    findings = mark_whitelist_findings(findings)
-    _run(detect_blacklist, text)
-
-    ner_err = get_load_error(lang)
-    if ner_err:
-        findings.append(Finding(
-            category="⚠ NER ikke tilgjengelig",
-            text=ner_err,
-            context="",
-        ))
-
-    for det_err in _detector_errors:
-        findings.append(Finding(
-            category="⚠ Detektor-feil",
-            text=det_err,
-            context="",
-        ))
+    findings, degraded = _run_detectors(text, lang, ignore_xlent=ignore_xlent)
 
     result = ScanResult(
         file_name=p.name,
@@ -701,5 +665,6 @@ def scan_file(
         language=lang,
         warning=warning,
         warning_code=warning_code,
+        scan_status="partial" if warning_code or degraded else "success",
     )
     return assess(result)

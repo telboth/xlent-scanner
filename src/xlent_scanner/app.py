@@ -29,7 +29,6 @@ import uuid
 import warnings
 import webbrowser
 import zipfile
-from dataclasses import asdict
 from pathlib import Path
 
 # Docling gir UserWarning for bilder i PPTX-filer som mangler innebygd bildedata.
@@ -45,72 +44,45 @@ import webview
 from flask import Flask, jsonify, request
 
 from xlent_scanner import __version__
-from xlent_scanner.anonymize import anonymize_text, build_replacements
+from xlent_scanner.ai_findings import findings_from_payload, replacement_texts
+from xlent_scanner.anonymize import build_replacements
+from xlent_scanner.app_state import app_state
 from xlent_scanner.blacklist import (
-    blacklist_path_str,
     get_blacklist_entries,
-    save_blacklist_entries,
 )
 from xlent_scanner.paths import app_data_dir
 from xlent_scanner.ignore import (
     get_ignore_toml_text,
-    ignore_path_str,
-    save_ignore_toml_text,
 )
-from xlent_scanner.models import Finding, ScanResult
+from xlent_scanner.models import ScanResult
 from xlent_scanner.patch import SUPPORTED_PATCH_SUFFIXES, patch_file
 from xlent_scanner.report import generate_html
-from xlent_scanner.history import add_history_entry, load_history, clear_history
-from xlent_scanner.microsoft_graph import (
-    GraphConfigError,
-    GraphRequestError,
-    assign_sensitivity_label,
-    graph_status,
-    policy_warning_for_tags,
-    read_document_tags,
-    read_document_tags_for_local_path,
-    resolve_local_drive_item,
-    scan_metadata_fields,
-    set_retention_label,
-    suggested_label_for_risk,
-    update_sharepoint_fields,
-)
+from xlent_scanner.routes.background import background_bp
+from xlent_scanner.routes.diagnostics import create_diagnostics_blueprint
+from xlent_scanner.routes.microsoft import create_microsoft_blueprint
+from xlent_scanner.routes.reports import reports_bp, write_text_pdf
+from xlent_scanner.routes.scanning import scanning_bp
+from xlent_scanner.routes.settings import settings_bp
+from xlent_scanner.history import add_history_entry
 from xlent_scanner.scanner import (
     DEFAULT_FOLDER_MAX_DEPTH,
     DEFAULT_FOLDER_MAX_FILES,
     build_folder_scan_plan,
-    reset_ignore_cache,
     scan_file,
     scan_folder,
     scan_text,
 )
-from xlent_scanner.update_check import check_for_update, fetch_platform_install_script
 from xlent_scanner.whitelist import (
-    add_to_whitelist,
     get_whitelist_entries,
-    save_whitelist_entries,
-    whitelist_path_str,
 )
 
-_last_result = None
-_last_path: Path | None = None
-_last_tmp_path: Path | None = None   # temp-fil fra forrige upload – ryddes opp ved neste upload
-_last_ai_findings: list[dict] = []   # AI-dybdeskann-funn for sist skannede fil (vises i rapport)
-_last_ai_findings_file: dict = {"name": ""}   # filnavnet AI-funnene tilhører
-_api_scan_results: dict[str, dict] = {}  # Separat state for eksternt API; påvirker ikke GUI-state.
-_api_scan_lock = threading.Lock()
-_folder_scan_results: dict[str, ScanResult] = {}
-_folder_scan_lock = threading.Lock()
 _FOLDER_SCAN_MAX_RESULTS = 10000
-_folder_jobs: dict[str, dict] = {}
-_folder_jobs_lock = threading.Lock()
-_last_folder_job_id: str = ""
-
-_window: webview.Window | None = None
-_initial_file: str | None = None     # fil sendt via Windows kontekstmeny (sys.argv[1])
 flask_app = Flask(__name__, static_folder=None)
+flask_app.register_blueprint(settings_bp)
+flask_app.register_blueprint(background_bp)
+flask_app.register_blueprint(scanning_bp)
+flask_app.register_blueprint(reports_bp)
 _web_dir = Path(__file__).parent / "web"
-_port: int = 0
 _API_SCAN_TTL_SECONDS = 60 * 60
 _API_MAX_SCAN_RESULTS = 50
 _API_DEFAULT_PORT = 51291
@@ -123,132 +95,6 @@ _NO_CACHE = {
     "Pragma": "no-cache",
     "Expires": "0",
 }
-
-_AI_FINANCIAL_MARKERS = (
-    "budsjett",
-    "finans",
-    "financial",
-    "monetary",
-    "pengebel",
-    "penning",
-    "money",
-    "cost",
-    "amount",
-    "price",
-    "total",
-    "budget",
-    "revenue",
-    "fee",
-    "rate",
-    "invoice",
-)
-
-
-def _ai_category_is_financial(category: str) -> bool:
-    cat = category.replace("🤖", "").strip().casefold()
-    return any(marker in cat for marker in _AI_FINANCIAL_MARKERS)
-
-
-def _append_unique(values: list[str], seen: set[str], value: str) -> None:
-    value = str(value or "").strip()
-    if not value:
-        return
-    key = value.casefold()
-    if key not in seen:
-        seen.add(key)
-        values.append(value)
-
-
-def _financial_values_from_ai_snippet(text: str) -> list[str]:
-    """Utled konkrete tallceller fra AI-funn som beskriver en finansiell tabellrad.
-
-    LLM-er returnerer noen ganger hele Markdown-tabellrader, mens DOCX-kilden har
-    de samme verdiene som separate Word-tabellceller. Da matcher ikke hele raden.
-    """
-    if "|" not in text:
-        return []
-    values: list[str] = []
-    seen: set[str] = set()
-
-    try:
-        from xlent_scanner.deep_scanner import (  # noqa: PLC0415
-            _find_tabular_financial_values,
-            _looks_like_financial_amount_cell,
-        )
-        for finding in _find_tabular_financial_values(text):
-            _append_unique(values, seen, str(finding.get("text") or ""))
-        for line in text.splitlines():
-            if "|" not in line:
-                continue
-            for cell in line.strip().strip("|").split("|"):
-                cell = cell.strip()
-                if _looks_like_financial_amount_cell(cell):
-                    _append_unique(values, seen, cell)
-    except Exception as exc:
-        LOGGER.warning("Klarte ikke å utlede finansielle AI-tabellverdier: %s", exc)
-    return values
-
-
-def _ai_findings_from_payload(data: dict) -> list[dict]:
-    findings: list[dict] = []
-    seen: set[tuple[str, str, str]] = set()
-
-    for raw in data.get("ai_findings") or []:
-        if not isinstance(raw, dict):
-            continue
-        text = str(raw.get("text") or "").strip()
-        if not text:
-            continue
-        category = str(raw.get("category") or "🤖 AI-funn").strip()
-        context = str(raw.get("context") or "").strip()
-        key = (text.casefold(), category.casefold(), context.casefold())
-        if key in seen:
-            continue
-        seen.add(key)
-        findings.append({"text": text, "category": category, "context": context})
-
-    # Bakoverkompatibel fallback for eldre frontend-kall.
-    for text in data.get("ai_texts") or []:
-        text = str(text or "").strip()
-        if not text:
-            continue
-        key = (text.casefold(), "🤖 ai-funn", "")
-        if key in seen:
-            continue
-        seen.add(key)
-        findings.append({"text": text, "category": "🤖 AI-funn", "context": ""})
-
-    return findings
-
-
-def _ai_replacement_texts(ai_findings: list[dict]) -> list[str]:
-    values: list[str] = []
-    seen: set[str] = set()
-    for finding in ai_findings:
-        text = str(finding.get("text") or "").strip()
-        category = str(finding.get("category") or "")
-        context = str(finding.get("context") or "").strip()
-        _append_unique(values, seen, text)
-        if _ai_category_is_financial(category):
-            for source in (text, context, f"{context}\n{text}" if context else text):
-                for value in _financial_values_from_ai_snippet(source):
-                    _append_unique(values, seen, value)
-    return values
-
-
-def _ai_findings_as_model_findings(ai_findings: list[dict]) -> list[Finding]:
-    return [
-        Finding(
-            category=str(f.get("category") or "🤖 AI-funn"),
-            text=str(f.get("text") or ""),
-            context=str(f.get("context") or ""),
-            severity="gul",
-            raw_text=str(f.get("text") or ""),
-        )
-        for f in ai_findings
-        if str(f.get("text") or "").strip()
-    ]
-
 
 def _setup_logging() -> tuple[logging.Logger, Path]:
     log_dir = app_data_dir() / "logs"
@@ -298,6 +144,7 @@ def _validate_runtime_dependencies() -> None:
     """Feil tidlig hvis obligatoriske runtime-avhengigheter mangler."""
     try:
         import fitz  # type: ignore[import-untyped]  # pymupdf
+        _ = fitz
     except Exception as exc:
         raise RuntimeError(
             "Mangler obligatorisk avhengighet: pymupdf (fitz). "
@@ -318,7 +165,7 @@ def index():
     html = idx.read_text("utf-8")
     # Injiser port slik at JS kan bruke absolutte URL-er
     from datetime import datetime  # noqa: PLC0415
-    html = html.replace("__API_BASE__", f"http://127.0.0.1:{_port}")
+    html = html.replace("__API_BASE__", f"http://127.0.0.1:{app_state.port}")
     html = html.replace("__APP_VERSION__", __version__)
     html = html.replace("__APP_STARTED__", datetime.now().strftime("%d.%m.%Y %H:%M"))
     html = html.replace('"__LOG_PATH__"', json.dumps(str(LOG_PATH)))
@@ -552,76 +399,6 @@ def _mac_app_bundle_path() -> Path:
     return Path("/Applications/XLENTScanner.app")
 
 
-def _clear_ai_findings() -> None:
-    """Fjern AI-funn fra forrige GUI-scan.
-
-    AI-funn er avledet state og må ikke overleve inn i neste dokument eller
-    rapport, selv om filnavnet tilfeldigvis er likt.
-    """
-    global _last_ai_findings
-    _last_ai_findings = []
-    _last_ai_findings_file["name"] = ""
-
-
-def _microsoft_error_response(exc: Exception, status: int = 400):
-    code = "graph_error"
-    if isinstance(exc, GraphConfigError):
-        code = "graph_not_configured"
-    elif isinstance(exc, GraphRequestError):
-        status = 502
-    return jsonify({"ok": False, "error": str(exc), "error_code": code}), status
-
-
-def _microsoft_graph_access_error():
-    expected = os.environ.get("XLENT_SCANNER_API_KEY", "").strip()
-    if expected:
-        provided = request.headers.get("X-API-Key", "").strip()
-        auth = request.headers.get("Authorization", "").strip()
-        if auth.lower().startswith("bearer "):
-            provided = auth[7:].strip()
-        if not secrets.compare_digest(provided, expected):
-            return jsonify({
-                "ok": False,
-                "error": "Ugyldig eller manglende API-nøkkel.",
-                "error_code": "unauthorized",
-            }), 401
-        return None
-
-    remote = (request.remote_addr or "").strip().lower()
-    host = (request.host or "").split(":", 1)[0].strip().lower()
-    if remote not in {"127.0.0.1", "::1", "localhost"} and host not in {"127.0.0.1", "::1", "localhost"}:
-        return jsonify({
-            "ok": False,
-            "error": "Microsoft 365-endepunkter krever XLENT_SCANNER_API_KEY ved nettverkstilgang.",
-            "error_code": "api_key_required",
-        }), 403
-    return None
-
-
-def _attach_microsoft_tags_to_last_result(tags: dict) -> None:
-    if _last_result is None:
-        return
-    _last_result.microsoft_tags = tags
-    warning = policy_warning_for_tags(tags)
-    if warning:
-        _last_result.policy_warning = warning
-        _last_result.policy_warning_level = "rød"
-    else:
-        _last_result.policy_warning = None
-        _last_result.policy_warning_level = None
-
-
-def _scan_metadata_for_result(result: ScanResult, suggested_label: str | None = None, status: str = "Scanned") -> tuple[dict, dict]:
-    suggestion = suggested_label_for_risk(result.risk_level)
-    fields = scan_metadata_fields(
-        result.risk_level,
-        len([f for f in result.findings if not f.category.startswith("⚠")]),
-        suggested_label or suggestion["name"],
-        status,
-    )
-    return fields, suggestion
-
-
 def _install_mac_quick_action() -> Path:
     if sys.platform != "darwin":
         raise RuntimeError("Finder Quick Action kan bare installeres på macOS.")
@@ -851,141 +628,6 @@ mkdir -p "${LOG_DIR}"
     return service_path
 
 
-@flask_app.route("/scan", methods=["POST"])
-def scan():
-    global _last_result, _last_path
-    try:
-        data = request.get_json(force=True)
-        file_path = data.get("file_path", "")
-        ignore_xlent = bool(data.get("ignore_xlent", False))
-        language = data.get("language", "auto")
-        ocr = bool(data.get("ocr", False))
-        LOGGER.info("scan request path=%s lang=%s ignore_xlent=%s ocr=%s", file_path, language, ignore_xlent, ocr)
-        result = scan_file(file_path, ignore_xlent=ignore_xlent, language=language, ocr=ocr)
-        _last_result = result
-        _last_path = Path(file_path) if file_path else None
-        _clear_ai_findings()
-        add_history_entry(
-            file_name=result.file_name,
-            risk_level=result.risk_level,
-            finding_count=len(result.findings),
-            file_size=result.file_size,
-            source="file",
-        )
-        LOGGER.info("scan result path=%s error=%s findings=%s", file_path, bool(result.error), len(result.findings))
-        return jsonify(asdict(result))
-    except Exception as exc:
-        LOGGER.error("scan endpoint failed: %s", traceback.format_exc())
-        return jsonify({
-            "file_name": "",
-            "file_size": 0,
-            "text_length": 0,
-            "text_preview": "",
-            "findings": [],
-            "risk_level": "grønn",
-            "risk_summary": "",
-            "recommended_action": "",
-            "language": "auto",
-            "warning": None,
-            "warning_code": None,
-            "original_text": "",
-            "error": f"Klarte ikke å lese fil: {exc}",
-        })
-
-
-@flask_app.route("/scan-upload", methods=["POST"])
-def scan_upload():
-    """Mottar fil som multipart-upload (brukes av drag-drop fallback)."""
-    global _last_result, _last_path, _last_tmp_path
-    try:
-        f = request.files.get("file")
-        if not f:
-            return jsonify({"error": "Ingen fil mottatt."})
-        ignore_xlent = request.form.get("ignore_xlent", "false").lower() == "true"
-        language = request.form.get("language", "auto")
-        ocr = request.form.get("ocr", "false").lower() == "true"
-        original_name = f.filename or "ukjent"
-        suffix = Path(original_name).suffix.lower()
-        LOGGER.info("scan-upload request name=%s suffix=%s lang=%s ignore_xlent=%s ocr=%s", original_name, suffix, language, ignore_xlent, ocr)
-
-        # Rydd opp forrige temp-fil (fra tidligere drag-drop/upload)
-        if _last_tmp_path and _last_tmp_path.exists():
-            try:
-                _last_tmp_path.unlink()
-            except OSError:
-                pass
-        _last_tmp_path = None
-
-        # Lagre til midlertidig fil med riktig suffiks
-        fd, tmp = tempfile.mkstemp(suffix=suffix, prefix="xlent-drop-")
-        tmp_path = Path(tmp)
-        os.close(fd)
-        f.save(str(tmp_path))
-        result = scan_file(tmp_path, ignore_xlent=ignore_xlent, language=language, ocr=ocr)
-        result.file_name = original_name   # vis originalt filnavn, ikke temp-sti
-        _last_result = result
-        _last_path = tmp_path              # brukes av /patch hvis aktuelt
-        _last_tmp_path = tmp_path          # huskes for opprydding ved neste upload
-        _clear_ai_findings()
-        add_history_entry(
-            file_name=result.file_name,
-            risk_level=result.risk_level,
-            finding_count=len(result.findings),
-            file_size=result.file_size,
-            source="file",
-        )
-        LOGGER.info("scan-upload result name=%s error=%s findings=%s", original_name, bool(result.error), len(result.findings))
-        return jsonify(asdict(result))
-    except Exception as exc:
-        LOGGER.error("scan-upload endpoint failed: %s", traceback.format_exc())
-        try:
-            tmp_path.unlink(missing_ok=True)  # type: ignore[name-defined]
-        except Exception:
-            pass
-        return jsonify({
-            "file_name": "",
-            "file_size": 0,
-            "text_length": 0,
-            "text_preview": "",
-            "findings": [],
-            "risk_level": "grønn",
-            "risk_summary": "",
-            "recommended_action": "",
-            "language": "auto",
-            "warning": None,
-            "warning_code": None,
-            "original_text": "",
-            "error": f"Klarte ikke å lese fil: {exc}",
-        })
-
-
-@flask_app.route("/scan-text", methods=["POST"])
-def scan_text_endpoint():
-    """Skann tekst limt inn direkte (uten fil)."""
-    global _last_result, _last_path
-    try:
-        data = request.get_json(force=True)
-        text = data.get("text", "")
-        language = data.get("language", "auto")
-        LOGGER.info("scan-text request len=%d lang=%s", len(text), language)
-        result = scan_text(text, language=language)
-        _last_result = result
-        _last_path = None
-        _clear_ai_findings()
-        add_history_entry(
-            file_name=result.file_name,
-            risk_level=result.risk_level,
-            finding_count=len(result.findings),
-            file_size=result.file_size,
-            source="text",
-        )
-        LOGGER.info("scan-text result findings=%d", len(result.findings))
-        return jsonify(asdict(result))
-    except Exception as exc:
-        LOGGER.error("scan-text endpoint failed: %s", traceback.format_exc())
-        return jsonify({"error": f"Klarte ikke å skanne tekst: {exc}"})
-
-
 def _folder_scan_options(data: dict) -> dict:
     def _int(name: str, default: int, minimum: int, maximum: int) -> int:
         try:
@@ -1025,11 +667,11 @@ def _folder_finding_summary(result: ScanResult, limit: int = 8) -> list[dict]:
 
 def _remember_folder_result(result: ScanResult) -> str:
     report_id = uuid.uuid4().hex
-    with _folder_scan_lock:
-        _folder_scan_results[report_id] = result
-        while len(_folder_scan_results) > _FOLDER_SCAN_MAX_RESULTS:
-            oldest = next(iter(_folder_scan_results))
-            _folder_scan_results.pop(oldest, None)
+    with app_state.folder_scan_lock:
+        app_state.folder_scan_results[report_id] = result
+        while len(app_state.folder_scan_results) > _FOLDER_SCAN_MAX_RESULTS:
+            oldest = next(iter(app_state.folder_scan_results))
+            app_state.folder_scan_results.pop(oldest, None)
     return report_id
 
 
@@ -1040,6 +682,7 @@ def _folder_result_row(result: ScanResult, report_id: str | None = None) -> dict
         "relative_path": result.relative_path or result.file_name,
         "report_id": report_id,
         "risk_level": result.risk_level,
+        "scan_status": result.scan_status,
         "finding_count": len(result.findings),
         "findings_summary": _folder_finding_summary(result),
         "error": result.error,
@@ -1051,8 +694,8 @@ def _folder_result_row(result: ScanResult, report_id: str | None = None) -> dict
 
 
 def _folder_job_snapshot(job_id: str) -> dict | None:
-    with _folder_jobs_lock:
-        job = _folder_jobs.get(job_id)
+    with app_state.folder_jobs_lock:
+        job = app_state.folder_jobs.get(job_id)
         if not job:
             return None
         return {
@@ -1074,11 +717,11 @@ def _folder_job_snapshot(job_id: str) -> dict | None:
 
 
 def _folder_job_from_request(data: dict | None = None) -> tuple[str, dict]:
-    job_id = str((data or {}).get("job_id") or _last_folder_job_id or "")
+    job_id = str((data or {}).get("job_id") or app_state.last_folder_job_id or "")
     if not job_id:
         raise ValueError("Ingen mappeskann tilgjengelig.")
-    with _folder_jobs_lock:
-        job = _folder_jobs.get(job_id)
+    with app_state.folder_jobs_lock:
+        job = app_state.folder_jobs.get(job_id)
         if not job:
             raise ValueError("Ukjent mappeskann-jobb.")
         return job_id, {
@@ -1088,8 +731,8 @@ def _folder_job_from_request(data: dict | None = None) -> tuple[str, dict]:
 
 
 def _folder_result_for_report_id(report_id: str) -> ScanResult:
-    with _folder_scan_lock:
-        result = _folder_scan_results.get(report_id)
+    with app_state.folder_scan_lock:
+        result = app_state.folder_scan_results.get(report_id)
     if result is None:
         raise ValueError("Ukjent filrapport.")
     return result
@@ -1102,6 +745,7 @@ def _folder_export_rows(job: dict) -> list[dict]:
             "relative_path": row.get("relative_path", ""),
             "file_name": row.get("file_name", ""),
             "risk_level": row.get("risk_level", ""),
+            "scan_status": row.get("scan_status", "success"),
             "finding_count": row.get("finding_count", 0),
             "file_size": row.get("file_size", 0),
             "text_length": row.get("text_length", 0),
@@ -1177,8 +821,8 @@ def _run_folder_scan_job(
 ) -> None:
     try:
         plan = build_folder_scan_plan(folder_path, **opts)
-        with _folder_jobs_lock:
-            job = _folder_jobs[job_id]
+        with app_state.folder_jobs_lock:
+            job = app_state.folder_jobs[job_id]
             job.update({
                 "status": "running",
                 "folder": plan["folder"],
@@ -1191,9 +835,9 @@ def _run_folder_scan_job(
             })
         root = Path(folder_path)
         for file_path in plan["files"]:
-            with _folder_jobs_lock:
-                if _folder_jobs[job_id].get("cancel_requested"):
-                    _folder_jobs[job_id]["status"] = "cancelled"
+            with app_state.folder_jobs_lock:
+                if app_state.folder_jobs[job_id].get("cancel_requested"):
+                    app_state.folder_jobs[job_id]["status"] = "cancelled"
                     return
             result = scan_file(file_path, ignore_xlent=ignore_xlent, language=language)
             result.relative_path = str(Path(file_path).relative_to(root))
@@ -1206,21 +850,21 @@ def _run_folder_scan_job(
                 file_size=result.file_size,
                 source="batch",
             )
-            with _folder_jobs_lock:
-                job = _folder_jobs[job_id]
+            with app_state.folder_jobs_lock:
+                job = app_state.folder_jobs[job_id]
                 job["files"].append(row)
                 job["completed"] = len(job["files"])
-        with _folder_jobs_lock:
-            if not _folder_jobs[job_id].get("cancel_requested"):
-                _folder_jobs[job_id]["status"] = "completed"
+        with app_state.folder_jobs_lock:
+            if not app_state.folder_jobs[job_id].get("cancel_requested"):
+                app_state.folder_jobs[job_id]["status"] = "completed"
             else:
-                _folder_jobs[job_id]["status"] = "cancelled"
+                app_state.folder_jobs[job_id]["status"] = "cancelled"
     except Exception as exc:
         LOGGER.error("folder scan job failed: %s", traceback.format_exc())
-        with _folder_jobs_lock:
-            if job_id in _folder_jobs:
-                _folder_jobs[job_id]["status"] = "error"
-                _folder_jobs[job_id]["error"] = str(exc)
+        with app_state.folder_jobs_lock:
+            if job_id in app_state.folder_jobs:
+                app_state.folder_jobs[job_id]["status"] = "error"
+                app_state.folder_jobs[job_id]["error"] = str(exc)
 
 
 @flask_app.route("/scan-folder/preview", methods=["POST"])
@@ -1289,7 +933,6 @@ def scan_folder_endpoint():
 @flask_app.route("/scan-folder/start", methods=["POST"])
 def scan_folder_start_endpoint():
     """Start mappeskann som bakgrunnsjobb med progress."""
-    global _last_folder_job_id
     try:
         data = request.get_json(force=True)
         folder_path = data.get("folder_path", "")
@@ -1297,8 +940,8 @@ def scan_folder_start_endpoint():
         language = data.get("language", "auto")
         opts = _folder_scan_options(data)
         job_id = uuid.uuid4().hex
-        with _folder_jobs_lock:
-            _folder_jobs[job_id] = {
+        with app_state.folder_jobs_lock:
+            app_state.folder_jobs[job_id] = {
                 "status": "queued",
                 "folder": folder_path,
                 "recursive": opts["recursive"],
@@ -1312,7 +955,7 @@ def scan_folder_start_endpoint():
                 "error": "",
                 "files": [],
             }
-            _last_folder_job_id = job_id
+            app_state.last_folder_job_id = job_id
         thread = threading.Thread(
             target=_run_folder_scan_job,
             args=(job_id, folder_path, ignore_xlent, language, opts),
@@ -1336,8 +979,8 @@ def scan_folder_status_endpoint(job_id: str):
 
 @flask_app.route("/scan-folder/cancel/<job_id>", methods=["POST"])
 def scan_folder_cancel_endpoint(job_id: str):
-    with _folder_jobs_lock:
-        job = _folder_jobs.get(job_id)
+    with app_state.folder_jobs_lock:
+        job = app_state.folder_jobs.get(job_id)
         if not job:
             return jsonify({"ok": False, "error": "Ukjent mappeskann-jobb."}), 404
         job["cancel_requested"] = True
@@ -1382,7 +1025,10 @@ def folder_export_csv_endpoint():
         job_id, job = _folder_job_from_request(data)
         rows = _folder_export_rows(job)
         buf = _io.StringIO()
-        fieldnames = ["relative_path", "risk_level", "finding_count", "file_size", "text_length", "error", "warning", "top_findings"]
+        fieldnames = [
+            "relative_path", "risk_level", "scan_status", "finding_count",
+            "file_size", "text_length", "error", "warning", "top_findings",
+        ]
         writer = _csv.DictWriter(buf, fieldnames=fieldnames, extrasaction="ignore")
         writer.writeheader()
         for row in rows:
@@ -1437,7 +1083,7 @@ def folder_audit_pdf_endpoint():
         while out.exists():
             out = _downloads_dir() / f"xlent-folder-audit-{job_id[:8]}-{counter}.pdf"
             counter += 1
-        _write_text_pdf("\n".join(lines), out, title="XLENT mappeskann-rapport")
+        write_text_pdf("\n".join(lines), out, title="XLENT mappeskann-rapport")
         return jsonify({"ok": True, "path": str(out)})
     except Exception as exc:
         LOGGER.error("folder-audit/pdf failed: %s", traceback.format_exc())
@@ -1527,257 +1173,27 @@ def folder_redact_endpoint():
 
 @flask_app.route("/folder-report/<report_id>", methods=["GET"])
 def folder_report(report_id: str):
-    with _folder_scan_lock:
-        result = _folder_scan_results.get(report_id)
+    with app_state.folder_scan_lock:
+        result = app_state.folder_scan_results.get(report_id)
     if result is None:
         return "Ingen rapport tilgjengelig for denne filen.", 404
     html = generate_html(
         result,
-        api_base=f"http://127.0.0.1:{_port}",
+        api_base=f"http://127.0.0.1:{app_state.port}",
         ai_findings=[],
     )
     return html, 200, {"Content-Type": "text/html; charset=utf-8"}
 
 
-@flask_app.route("/diagnostics", methods=["GET"])
-def diagnostics():
-    return jsonify({
-        "ok": True,
-        "log_path": str(LOG_PATH),
-        "version": __version__,
-    })
-
-
-@flask_app.route("/microsoft/graph/status", methods=["GET"])
-def microsoft_graph_status_endpoint():
-    access_error = _microsoft_graph_access_error()
-    if access_error:
-        return access_error
-    return jsonify({"ok": True, **graph_status()})
-
-
-@flask_app.route("/microsoft/graph/tags", methods=["POST"])
-def microsoft_graph_tags_endpoint():
-    access_error = _microsoft_graph_access_error()
-    if access_error:
-        return access_error
-    try:
-        data = request.get_json(force=True) or {}
-        drive_id = str(data.get("drive_id") or "").strip()
-        item_id = str(data.get("item_id") or "").strip()
-        tags = read_document_tags(drive_id, item_id)
-        _attach_microsoft_tags_to_last_result(tags)
-        suggestion = suggested_label_for_risk(_last_result.risk_level if _last_result else "grønn")
-        return jsonify({
-            "ok": True,
-            "tags": tags,
-            "policy_warning": tags.get("policy_warning") or "",
-            "suggested_label": suggestion,
-        })
-    except (GraphConfigError, GraphRequestError, ValueError) as exc:
-        return _microsoft_error_response(exc)
-    except Exception as exc:
-        LOGGER.error("microsoft/graph/tags failed: %s", traceback.format_exc())
-        return _microsoft_error_response(exc, 500)
-
-
-@flask_app.route("/microsoft/graph/resolve-local-file", methods=["POST"])
-def microsoft_graph_resolve_local_file_endpoint():
-    access_error = _microsoft_graph_access_error()
-    if access_error:
-        return access_error
-    try:
-        data = request.get_json(force=True) or {}
-        local_path = str(data.get("local_path") or "").strip()
-        if not local_path and _last_path is not None:
-            local_path = str(_last_path)
-        if not local_path:
-            return jsonify({"ok": False, "error": "Ingen lokal filsti oppgitt.", "error_code": "missing_local_path"}), 400
-        resolved = resolve_local_drive_item(
-            local_path,
-            drive_id=str(data.get("drive_id") or "").strip() or None,
-            sync_root=str(data.get("sync_root") or "").strip() or None,
-        )
-        return jsonify({"ok": True, "resolved": resolved})
-    except (GraphConfigError, GraphRequestError, ValueError) as exc:
-        return _microsoft_error_response(exc)
-    except Exception as exc:
-        LOGGER.error("microsoft/graph/resolve-local-file failed: %s", traceback.format_exc())
-        return _microsoft_error_response(exc, 500)
-
-
-@flask_app.route("/microsoft/graph/tags-for-local-file", methods=["POST"])
-def microsoft_graph_tags_for_local_file_endpoint():
-    access_error = _microsoft_graph_access_error()
-    if access_error:
-        return access_error
-    try:
-        data = request.get_json(force=True) or {}
-        local_path = str(data.get("local_path") or "").strip()
-        if not local_path and _last_path is not None:
-            local_path = str(_last_path)
-        if not local_path:
-            return jsonify({"ok": False, "error": "Ingen lokal filsti oppgitt.", "error_code": "missing_local_path"}), 400
-        tags = read_document_tags_for_local_path(
-            local_path,
-            drive_id=str(data.get("drive_id") or "").strip() or None,
-            sync_root=str(data.get("sync_root") or "").strip() or None,
-        )
-        _attach_microsoft_tags_to_last_result(tags)
-        suggestion = suggested_label_for_risk(_last_result.risk_level if _last_result else "grønn")
-        return jsonify({
-            "ok": True,
-            "tags": tags,
-            "resolved": tags.get("resolved", {}),
-            "policy_warning": tags.get("policy_warning") or "",
-            "suggested_label": suggestion,
-        })
-    except (GraphConfigError, GraphRequestError, ValueError) as exc:
-        return _microsoft_error_response(exc)
-    except Exception as exc:
-        LOGGER.error("microsoft/graph/tags-for-local-file failed: %s", traceback.format_exc())
-        return _microsoft_error_response(exc, 500)
-
-
-@flask_app.route("/microsoft/graph/assign-sensitivity", methods=["POST"])
-def microsoft_graph_assign_sensitivity_endpoint():
-    access_error = _microsoft_graph_access_error()
-    if access_error:
-        return access_error
-    try:
-        data = request.get_json(force=True) or {}
-        result = assign_sensitivity_label(
-            str(data.get("drive_id") or "").strip(),
-            str(data.get("item_id") or "").strip(),
-            str(data.get("sensitivity_label_id") or "").strip(),
-            str(data.get("assignment_method") or "standard").strip(),
-            str(data.get("justification_text") or "Set by XLENT Scanner").strip(),
-        )
-        return jsonify({"ok": True, "result": result})
-    except (GraphConfigError, GraphRequestError, ValueError) as exc:
-        return _microsoft_error_response(exc)
-    except Exception as exc:
-        LOGGER.error("microsoft/graph/assign-sensitivity failed: %s", traceback.format_exc())
-        return _microsoft_error_response(exc, 500)
-
-
-@flask_app.route("/microsoft/graph/set-retention", methods=["POST"])
-def microsoft_graph_set_retention_endpoint():
-    access_error = _microsoft_graph_access_error()
-    if access_error:
-        return access_error
-    try:
-        data = request.get_json(force=True) or {}
-        result = set_retention_label(
-            str(data.get("drive_id") or "").strip(),
-            str(data.get("item_id") or "").strip(),
-            str(data.get("retention_label_name") or "").strip(),
-        )
-        return jsonify({"ok": True, "result": result})
-    except (GraphConfigError, GraphRequestError, ValueError) as exc:
-        return _microsoft_error_response(exc)
-    except Exception as exc:
-        LOGGER.error("microsoft/graph/set-retention failed: %s", traceback.format_exc())
-        return _microsoft_error_response(exc, 500)
-
-
-@flask_app.route("/microsoft/graph/write-scan-metadata", methods=["POST"])
-def microsoft_graph_write_scan_metadata_endpoint():
-    access_error = _microsoft_graph_access_error()
-    if access_error:
-        return access_error
-    try:
-        if _last_result is None:
-            return jsonify({"ok": False, "error": "Ingen scan tilgjengelig.", "error_code": "missing_scan"}), 400
-        data = request.get_json(force=True) or {}
-        fields, suggestion = _scan_metadata_for_result(
-            _last_result,
-            suggested_label=str(data.get("suggested_label") or "").strip() or None,
-            status=str(data.get("status") or "Scanned"),
-        )
-        extra_fields = data.get("fields")
-        if isinstance(extra_fields, dict):
-            fields.update(extra_fields)
-        result = update_sharepoint_fields(
-            str(data.get("drive_id") or "").strip(),
-            str(data.get("item_id") or "").strip(),
-            fields,
-        )
-        return jsonify({"ok": True, "fields": fields, "result": result})
-    except (GraphConfigError, GraphRequestError, ValueError) as exc:
-        return _microsoft_error_response(exc)
-    except Exception as exc:
-        LOGGER.error("microsoft/graph/write-scan-metadata failed: %s", traceback.format_exc())
-        return _microsoft_error_response(exc, 500)
-
-
-@flask_app.route("/microsoft/graph/write-folder-metadata", methods=["POST"])
-def microsoft_graph_write_folder_metadata_endpoint():
-    access_error = _microsoft_graph_access_error()
-    if access_error:
-        return access_error
-    try:
-        data = request.get_json(force=True) or {}
-        job_id, job = _folder_job_from_request(data)
-        report_ids = {str(v) for v in data.get("report_ids") or [] if str(v)}
-        drive_id = str(data.get("drive_id") or "").strip() or None
-        sync_root = str(data.get("sync_root") or "").strip() or None
-        status_value = str(data.get("status") or "Scanned")
-        extra_fields = data.get("fields") if isinstance(data.get("fields"), dict) else {}
-
-        written: list[dict] = []
-        skipped: list[dict] = []
-        errors: list[dict] = []
-
-        for row in job.get("files", []):
-            report_id = str(row.get("report_id") or "")
-            if report_ids and report_id not in report_ids:
-                continue
-            try:
-                result = _folder_result_for_report_id(report_id)
-                if result.error:
-                    skipped.append({"report_id": report_id, "file": result.relative_path or result.file_name, "reason": result.error})
-                    continue
-                source_path = str(result.source_path or "").strip()
-                if not source_path:
-                    skipped.append({"report_id": report_id, "file": result.relative_path or result.file_name, "reason": "Mangler lokal filsti."})
-                    continue
-                resolved = resolve_local_drive_item(source_path, drive_id=drive_id, sync_root=sync_root)
-                fields, suggestion = _scan_metadata_for_result(result, status=status_value)
-                fields.update(extra_fields)
-                update_result = update_sharepoint_fields(resolved["drive_id"], resolved["item_id"], fields)
-                written.append({
-                    "report_id": report_id,
-                    "file": result.relative_path or result.file_name,
-                    "drive_id": resolved["drive_id"],
-                    "item_id": resolved["item_id"],
-                    "suggested_label": suggestion["name"],
-                    "fields": fields,
-                    "result": update_result,
-                })
-            except Exception as exc:
-                errors.append({"report_id": report_id, "file": row.get("relative_path") or row.get("file_name") or "", "error": str(exc)})
-
-        return jsonify({
-            "ok": bool(written) and not errors,
-            "job_id": job_id,
-            "written": written,
-            "skipped": skipped,
-            "errors": errors,
-            "written_count": len(written),
-            "error_count": len(errors),
-            "skipped_count": len(skipped),
-        })
-    except (GraphConfigError, GraphRequestError, ValueError) as exc:
-        return _microsoft_error_response(exc)
-    except Exception as exc:
-        LOGGER.error("microsoft/graph/write-folder-metadata failed: %s", traceback.format_exc())
-        return _microsoft_error_response(exc, 500)
+flask_app.register_blueprint(create_microsoft_blueprint(
+    folder_job_from_request=_folder_job_from_request,
+    folder_result_for_report_id=_folder_result_for_report_id,
+))
 
 
 # ── Stabilt API-lag for eksterne frontender / Power Apps ─────────────────────
 # Disse endepunktene er additive og bruker separat scan-state. De skal ikke sette
-# _last_result/_last_path, siden det ville påvirket eksisterende desktop/web-GUI.
+# app_state.last_result/app_state.last_path, siden det ville påvirket desktop/web-GUI.
 
 def _api_max_file_bytes() -> int:
     raw = os.environ.get("XLENT_SCANNER_API_MAX_FILE_MB", "25").strip()
@@ -1848,22 +1264,22 @@ def _api_language(value) -> str:
 
 def _api_cleanup_locked(now: float) -> None:
     expired = [
-        scan_id for scan_id, entry in _api_scan_results.items()
+        scan_id for scan_id, entry in app_state.api_scan_results.items()
         if now - float(entry.get("created_at", 0)) > _API_SCAN_TTL_SECONDS
     ]
     for scan_id in expired:
         _api_delete_scan_locked(scan_id)
 
-    while len(_api_scan_results) > _API_MAX_SCAN_RESULTS:
+    while len(app_state.api_scan_results) > _API_MAX_SCAN_RESULTS:
         oldest = min(
-            _api_scan_results,
-            key=lambda sid: float(_api_scan_results[sid].get("created_at", 0)),
+            app_state.api_scan_results,
+            key=lambda sid: float(app_state.api_scan_results[sid].get("created_at", 0)),
         )
         _api_delete_scan_locked(oldest)
 
 
 def _api_delete_scan_locked(scan_id: str) -> None:
-    entry = _api_scan_results.pop(scan_id, None)
+    entry = app_state.api_scan_results.pop(scan_id, None)
     if not entry:
         return
     path = entry.get("path")
@@ -1877,9 +1293,9 @@ def _api_delete_scan_locked(scan_id: str) -> None:
 def _api_store_scan_result(result, path: Path | None = None, owns_path: bool = False) -> str:
     scan_id = str(uuid.uuid4())
     now = time.time()
-    with _api_scan_lock:
+    with app_state.api_scan_lock:
         _api_cleanup_locked(now)
-        _api_scan_results[scan_id] = {
+        app_state.api_scan_results[scan_id] = {
             "result": result,
             "path": path,
             "owns_path": owns_path,
@@ -1890,19 +1306,20 @@ def _api_store_scan_result(result, path: Path | None = None, owns_path: bool = F
 
 def _api_get_scan(scan_id: str) -> dict | None:
     now = time.time()
-    with _api_scan_lock:
+    with app_state.api_scan_lock:
         _api_cleanup_locked(now)
-        return _api_scan_results.get(scan_id)
+        return app_state.api_scan_results.get(scan_id)
 
 
 def _api_result_payload(result, scan_id: str, include_preview: bool = False) -> dict:
     payload = {
-        "ok": not bool(result.error),
+        "ok": result.scan_status != "failed",
         "scan_id": scan_id,
         "file_name": result.file_name,
         "file_size": result.file_size,
         "text_length": result.text_length,
         "risk_level": result.risk_level,
+        "scan_status": result.scan_status,
         "risk_summary": result.risk_summary,
         "recommended_action": result.recommended_action,
         "language": result.language,
@@ -1972,6 +1389,7 @@ def _api_openapi_spec() -> dict:
             "file_size": {"type": "integer"},
             "text_length": {"type": "integer"},
             "risk_level": {"type": "string", "enum": ["grønn", "gul", "rød", "svart"]},
+            "scan_status": {"type": "string", "enum": ["success", "partial", "failed"]},
             "risk_summary": {"type": "string"},
             "recommended_action": {"type": "string"},
             "language": {"type": "string"},
@@ -1983,7 +1401,7 @@ def _api_openapi_spec() -> dict:
             "findings": {"type": "array", "items": finding_schema},
             "text_preview": {"type": "string"},
         },
-        "required": ["ok", "scan_id", "file_name", "findings"],
+        "required": ["ok", "scan_id", "file_name", "scan_status", "findings"],
     }
     graph_item_request_schema = {
         "type": "object",
@@ -2547,7 +1965,7 @@ def api_deep_scan_cancel(job_id: str):
 @flask_app.route("/startup-file", methods=["GET"])
 def startup_file():
     """Returnerer filen som ble sendt via OS-kontekstmeny/Finder (sys.argv)."""
-    return jsonify({"path": _initial_file})
+    return jsonify({"path": app_state.initial_file})
 
 
 @flask_app.route("/logo.svg")
@@ -2556,851 +1974,6 @@ def logo_svg():
     if not svg_path.exists():
         return "", 404
     return svg_path.read_text("utf-8"), 200, {"Content-Type": "image/svg+xml"}
-
-
-@flask_app.route("/add-to-whitelist", methods=["POST"])
-def add_to_whitelist_endpoint():
-    data = request.get_json(force=True)
-    text = data.get("text", "")
-    if not text:
-        return jsonify({"error": "Ingen tekst oppgitt."})
-    add_to_whitelist(text)
-    return jsonify({"ok": True})
-
-
-@flask_app.route("/report/ai-findings", methods=["POST"])
-def set_ai_findings():
-    """Lagrer AI-dybdeskann-funn for sist skannede fil slik at de kan
-    inkluderes i rapporten. Knyttes til filnavn for å unngå utdaterte funn."""
-    global _last_ai_findings
-    data = request.get_json(force=True) or {}
-    findings = data.get("findings") or []
-    file_name = data.get("file_name") or ""
-    if isinstance(findings, list):
-        _last_ai_findings = [
-            {"category": str(f.get("category", "")), "text": str(f.get("text", "")),
-             "context": str(f.get("context", ""))}
-            for f in findings if isinstance(f, dict)
-        ]
-        _last_ai_findings_file["name"] = file_name
-    return jsonify({"ok": True, "count": len(_last_ai_findings)})
-
-
-def _ai_findings_for_report() -> list[dict]:
-    """Returnerer AI-funn kun hvis de tilhører sist skannede fil."""
-    if _last_result is None:
-        return []
-    if _last_ai_findings_file.get("name") and _last_result.file_name != _last_ai_findings_file["name"]:
-        return []
-    return _last_ai_findings
-
-
-@flask_app.route("/report")
-def report():
-    if _last_result is None:
-        return "Ingen rapport tilgjengelig.", 404
-    html = generate_html(
-        _last_result,
-        api_base=f"http://127.0.0.1:{_port}",
-        ai_findings=_ai_findings_for_report(),
-    )
-    return html, 200, {"Content-Type": "text/html; charset=utf-8"}
-
-
-@flask_app.route("/open-report", methods=["POST"])
-def open_report():
-    if _last_result is None:
-        return jsonify({"error": "Ingen rapport tilgjengelig ennå."})
-    try:
-        url = f"http://127.0.0.1:{_port}/report"
-        webbrowser.open(url)
-        return jsonify({"ok": True})
-    except Exception as exc:
-        return jsonify({"error": str(exc)})
-
-
-def _write_text_pdf(text: str, out_path: Path, title: str = "") -> None:
-    """Skriver ren tekst til en enkel, lesbar PDF (A4, ordbrytning) via pymupdf."""
-    import fitz  # noqa: PLC0415
-
-    doc = fitz.open()
-    margin, width, height = 54, 595, 842
-    max_width = width - 2 * margin
-    fontsize, line_h = 10, 14
-    fontname = "helv"
-
-    def _new_page():
-        return doc.new_page(width=width, height=height), margin
-
-    page, y = _new_page()
-    if title:
-        page.insert_text((margin, y), title[:90], fontsize=14, fontname="hebo", color=(0.1, 0.2, 0.5))
-        y += 22
-
-    # Enkel ordbryting per linje basert på estimert tegnbredde
-    char_w = fontsize * 0.5
-    max_chars = max(20, int(max_width / char_w))
-    for raw_line in text.split("\n"):
-        if not raw_line.strip():
-            y += line_h // 2
-            continue
-        words, cur = raw_line.split(" "), ""
-        for w in words:
-            test = (cur + " " + w).strip()
-            if len(test) > max_chars:
-                page.insert_text((margin, y), cur, fontsize=fontsize, fontname=fontname, color=(0.1, 0.1, 0.1))
-                y += line_h
-                cur = w
-                if y > height - margin:
-                    page, y = _new_page()
-            else:
-                cur = test
-        if cur:
-            page.insert_text((margin, y), cur, fontsize=fontsize, fontname=fontname, color=(0.1, 0.1, 0.1))
-            y += line_h
-            if y > height - margin:
-                page, y = _new_page()
-
-    doc.save(str(out_path), garbage=4, deflate=True)
-    doc.close()
-
-
-@flask_app.route("/report/pdf", methods=["GET"])
-def report_pdf():
-    """Generer og last ned PDF-rapport."""
-    if _last_result is None:
-        return "Ingen rapport tilgjengelig.", 404
-    try:
-        import fitz  # noqa: PLC0415
-        from datetime import datetime  # noqa: PLC0415
-
-        RISK_COLORS = {
-            "grønn": (0.18, 0.69, 0.31),
-            "gul":   (0.85, 0.60, 0.15),
-            "rød":   (0.87, 0.22, 0.22),
-            "svart": (0.61, 0.15, 0.69),
-        }
-        SEV_COLORS = RISK_COLORS
-
-        doc = fitz.open()
-
-        def _new_page():
-            p = doc.new_page(width=595, height=842)
-            return p, 54
-
-        page, y = _new_page()
-
-        def _text(pg, yp, txt, size=10, color=(0.85, 0.88, 0.93), bold=False):
-            fn = "hebo" if bold else "helv"   # hebo = Helvetica-Bold (base-14)
-            rc = pg.insert_text((54, yp), txt, fontsize=size, fontname=fn, color=color)
-            return yp + size + 4
-
-        # Header
-        y = _text(page, y, "XLENT Compliance-scanner", 18, (0.31, 0.56, 1.0), bold=True)
-        y = _text(page, y, f"Fil: {_last_result.file_name}", 11)
-        y = _text(page, y, f"Dato: {datetime.now().strftime('%d.%m.%Y  %H:%M')}", 9, (0.55, 0.62, 0.72))
-        y += 6
-
-        # Risk level
-        rc_color = RISK_COLORS.get(_last_result.risk_level, (0.85, 0.88, 0.93))
-        y = _text(page, y, f"Risikonivå: {_last_result.risk_level.upper()}  –  {_last_result.risk_summary}", 12, rc_color, bold=True)
-        y = _text(page, y, _last_result.recommended_action, 9, (0.72, 0.77, 0.85))
-        y += 10
-
-        # Divider
-        page.draw_line((54, y), (541, y), color=(0.22, 0.31, 0.44), width=0.5)
-        y += 8
-
-        # Findings
-        if not _last_result.findings:
-            y = _text(page, y, "Ingen sensitive funn oppdaget.", 10, (0.18, 0.69, 0.31))
-        else:
-            y = _text(page, y, f"Funn ({len(_last_result.findings)})", 11, (0.85, 0.88, 0.93), bold=True)
-            y += 4
-            for f in _last_result.findings:
-                if y > 800:
-                    page, y = _new_page()
-                    y = _text(page, y, "(fortsetter…)", 8, (0.55, 0.62, 0.72))
-                    y += 4
-                sev_c = SEV_COLORS.get(f.severity, (0.72, 0.77, 0.85))
-                line = f"[{f.category}]  {f.text[:120]}"
-                y = _text(page, y, line, 9, sev_c)
-                if f.context:
-                    ctx_line = f"    {f.context[:140]}"
-                    y = _text(page, y, ctx_line, 7.5, (0.50, 0.57, 0.68))
-                y += 1
-
-        # AI-dybdeskann-funn (egen seksjon)
-        from xlent_scanner.report import ai_severity  # noqa: PLC0415
-        ai_findings = _ai_findings_for_report()
-        if ai_findings:
-            if y > 770:
-                page, y = _new_page()
-            y += 8
-            page.draw_line((54, y), (541, y), color=(0.22, 0.31, 0.44), width=0.5)
-            y += 8
-            y = _text(page, y, f"AI-dybdeskann-funn ({len(ai_findings)})", 11, (0.85, 0.88, 0.93), bold=True)
-            y += 4
-            for f in ai_findings:
-                if y > 800:
-                    page, y = _new_page()
-                cat = str(f.get("category", ""))
-                sev_c = SEV_COLORS.get(ai_severity(cat), (0.72, 0.77, 0.85))
-                y = _text(page, y, f"[{cat}]  {str(f.get('text',''))[:120]}", 9, sev_c)
-                ctx = str(f.get("context", ""))
-                if ctx:
-                    y = _text(page, y, f"    {ctx[:140]}", 7.5, (0.50, 0.57, 0.68))
-                y += 1
-
-        pdf_bytes = doc.tobytes()
-        doc.close()
-
-        stem = Path(_last_result.file_name).stem
-        filename = f"{stem}-rapport.pdf"
-        return pdf_bytes, 200, {
-            "Content-Type": "application/pdf",
-            "Content-Disposition": f'attachment; filename="{filename}"',
-        }
-    except Exception as exc:
-        LOGGER.error("report/pdf failed: %s", traceback.format_exc())
-        return f"PDF-generering feilet: {exc}", 500
-
-
-@flask_app.route("/anonymize", methods=["POST"])
-def anonymize():
-    if _last_result is None:
-        return jsonify({"error": "Ingen rapport tilgjengelig."})
-    if not _last_result.original_text:
-        return jsonify({"error": "Originaltekst ikke tilgjengelig. Re-skann filen."})
-    data = request.get_json(force=True)
-    indices = data.get("indices", [])
-    selected = [
-        _last_result.findings[i]
-        for i in indices
-        if isinstance(i, int) and 0 <= i < len(_last_result.findings)
-    ]
-    selected.extend(_ai_findings_as_model_findings(_ai_findings_from_payload(data)))
-    cleaned = anonymize_text(_last_result.original_text, selected)
-    fmt = (data.get("format") or "md").lower()
-    if fmt not in ("md", "pdf"):
-        fmt = "md"
-
-    stem = Path(_last_result.file_name).stem
-    downloads = Path.home() / "Downloads"
-    if not downloads.exists():
-        downloads = Path.home() / "Desktop"
-    out = downloads / f"{stem}-anonymisert.{fmt}"
-    counter = 1
-    while out.exists():
-        out = downloads / f"{stem}-anonymisert-{counter}.{fmt}"
-        counter += 1
-
-    if fmt == "pdf":
-        try:
-            _write_text_pdf(cleaned, out, title=f"{stem} – anonymisert")
-        except Exception as exc:
-            LOGGER.error("anonymize pdf failed: %s", traceback.format_exc())
-            return jsonify({
-                "error": "PDF-generering feilet. Se loggfil for tekniske detaljer.",
-                "error_code": "pdfGenerateFailed",
-            })
-    else:
-        out.write_text(cleaned, encoding="utf-8")
-    return jsonify({"ok": True, "path": str(out)})
-
-
-@flask_app.route("/redaction/preview", methods=["POST"])
-def redaction_preview():
-    if _last_result is None:
-        return jsonify({"ok": False, "error": "Ingen rapport tilgjengelig."})
-    data = request.get_json(force=True)
-    indices = data.get("indices", [])
-    selected = [
-        _last_result.findings[i]
-        for i in indices
-        if isinstance(i, int) and 0 <= i < len(_last_result.findings)
-    ]
-    ai_findings = _ai_findings_from_payload(data)
-    selected.extend(_ai_findings_as_model_findings(ai_findings))
-
-    replacements = build_replacements(selected)
-    for text in _ai_replacement_texts(ai_findings):
-        replacements.setdefault(text, "[ANONYMISERT]")
-
-    preview = [
-        {"original": old, "replacement": new}
-        for old, new in sorted(replacements.items(), key=lambda item: item[0].casefold())
-    ]
-    skipped = [
-        {
-            "category": f.category,
-            "text": f.text,
-            "reason": "Kan ikke anonymiseres sikkert direkte.",
-        }
-        for f in selected
-        if (f.raw_text or f.text) not in replacements and not f.category.startswith("🤖")
-    ]
-    return jsonify({
-        "ok": True,
-        "selected_count": len(selected),
-        "replacement_count": len(preview),
-        "preview": preview,
-        "skipped": skipped,
-        "pdf_caveat": bool(_last_path and _last_path.suffix.lower() == ".pdf"),
-    })
-
-
-@flask_app.route("/patch", methods=["POST"])
-def patch():
-    if _last_result is None or _last_path is None:
-        return jsonify({"error": "Ingen skannet fil tilgjengelig."})
-    suffix = _last_path.suffix.lower()
-    if suffix not in SUPPORTED_PATCH_SUFFIXES:
-        return jsonify({"error": f"In-place anonymisering støttes ikke for {suffix}."})
-
-    data = request.get_json(force=True)
-    indices = data.get("indices", [])
-    strip_annotations = bool(data.get("strip_annotations", False))
-    selected = [
-        _last_result.findings[i]
-        for i in indices
-        if isinstance(i, int) and 0 <= i < len(_last_result.findings)
-    ]
-    ai_findings = _ai_findings_from_payload(data)
-    selected.extend(_ai_findings_as_model_findings(ai_findings))
-    replacements = build_replacements(selected)
-    for text in _ai_replacement_texts(ai_findings):
-        replacements.setdefault(text, "[ANONYMISERT]")
-    if not replacements and not strip_annotations:
-        return jsonify({"error": "Ingen av de valgte funnene kan anonymiseres direkte."})
-
-    stem = _last_path.stem
-    downloads = Path.home() / "Downloads"
-    if not downloads.exists():
-        downloads = Path.home() / "Desktop"
-    out = downloads / f"{stem}-anonymisert{suffix}"
-    counter = 1
-    while out.exists():
-        out = downloads / f"{stem}-anonymisert-{counter}{suffix}"
-        counter += 1
-
-    try:
-        patch_file(_last_path, replacements, out, strip_annotations=strip_annotations)
-    except Exception as exc:
-        LOGGER.error("patch failed suffix=%s path=%s: %s", suffix, _last_path, traceback.format_exc())
-        if suffix == ".pdf":
-            return jsonify({
-                "error": "PDF-anonymisering feilet. Prøv PDF-rapport eller kontakt support med loggfil.",
-                "error_code": "pdfPatchFailed",
-            })
-        return jsonify({"error": str(exc)})
-
-    return jsonify({"ok": True, "path": str(out)})
-
-
-@flask_app.route("/export/json", methods=["POST"])
-def export_json():
-    if _last_result is None:
-        return jsonify({"error": "Ingen rapport tilgjengelig."})
-    import json as _json
-    data = {
-        "file_name": _last_result.file_name,
-        "scanned_at": __import__("datetime").datetime.now().isoformat(timespec="seconds"),
-        "risk_level": _last_result.risk_level,
-        "risk_summary": _last_result.risk_summary,
-        "language": _last_result.language,
-        "findings": [
-            {
-                "severity": f.severity,
-                "category": f.category,
-                "text": f.text,
-                "context": f.context,
-            }
-            for f in _last_result.findings
-        ],
-    }
-    stem = Path(_last_result.file_name).stem
-    downloads = Path.home() / "Downloads"
-    if not downloads.exists():
-        downloads = Path.home() / "Desktop"
-    out = downloads / f"{stem}-funn.json"
-    counter = 1
-    while out.exists():
-        out = downloads / f"{stem}-funn-{counter}.json"
-        counter += 1
-    out.write_text(_json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
-    return jsonify({"ok": True, "path": str(out)})
-
-
-@flask_app.route("/export/csv", methods=["POST"])
-def export_csv():
-    if _last_result is None:
-        return jsonify({"error": "Ingen rapport tilgjengelig."})
-    import csv as _csv
-    import io as _io
-    buf = _io.StringIO()
-    writer = _csv.writer(buf)
-    writer.writerow(["severity", "category", "text", "context"])
-    for f in _last_result.findings:
-        writer.writerow([f.severity, f.category, f.text, f.context])
-    stem = Path(_last_result.file_name).stem
-    downloads = Path.home() / "Downloads"
-    if not downloads.exists():
-        downloads = Path.home() / "Desktop"
-    out = downloads / f"{stem}-funn.csv"
-    counter = 1
-    while out.exists():
-        out = downloads / f"{stem}-funn-{counter}.csv"
-        counter += 1
-    # utf-8-sig gir BOM som Excel på Windows trenger for korrekt visning
-    out.write_text(buf.getvalue(), encoding="utf-8-sig")
-    return jsonify({"ok": True, "path": str(out)})
-
-
-@flask_app.route("/open-dialog", methods=["POST"])
-def open_dialog():
-    if _window is None:
-        return jsonify({"path": None})
-    result = _window.create_file_dialog(
-        webview.OPEN_DIALOG,
-        allow_multiple=False,
-        file_types=(
-            "Dokumenter (*.pdf;*.docx;*.pptx;*.xlsx;*.txt;*.md;*.html;*.csv;*.eml;*.rtf;*.odt)",
-            "Alle filer (*.*)",
-        ),
-    )
-    path = result[0] if result else None
-    return jsonify({"path": path})
-
-
-@flask_app.route("/history/get", methods=["GET"])
-def history_get():
-    """Hent persistent scan-historikk."""
-    try:
-        entries = load_history()
-        return jsonify({"ok": True, "entries": list(reversed(entries))})
-    except Exception as exc:
-        return jsonify({"ok": False, "entries": [], "error": str(exc)})
-
-
-@flask_app.route("/history/clear", methods=["POST"])
-def history_clear():
-    """Slett all scan-historikk."""
-    try:
-        clear_history()
-        return jsonify({"ok": True})
-    except Exception as exc:
-        return jsonify({"ok": False, "error": str(exc)})
-
-
-@flask_app.route("/open-folder-dialog", methods=["POST"])
-def open_folder_dialog():
-    """Åpne mappe-velger-dialog."""
-    if _window is None:
-        return jsonify({"path": None})
-    result = _window.create_file_dialog(
-        webview.FOLDER_DIALOG,
-        allow_multiple=False,
-    )
-    path = result[0] if result else None
-    return jsonify({"path": path})
-
-
-@flask_app.route("/update-check", methods=["POST"])
-def update_check():
-    data = request.get_json(silent=True) or {}
-    force = bool(data.get("force", False))
-    return jsonify(check_for_update(current_version=__version__, force=force))
-
-
-@flask_app.route("/updates/install-script/run", methods=["POST"])
-def update_install_script_run():
-    """Last ned og start plattformens installasjonsscript fra latest GitHub release."""
-    try:
-        script_info = fetch_platform_install_script()
-        script_path = _download_update_script(
-            script_info["script_url"],
-            script_info["script_name"],
-        )
-        proc = _launch_update_script(script_path)
-        LOGGER.info(
-            "update install script started name=%s version=%s path=%s pid=%s",
-            script_info["script_name"],
-            script_info["latest_version"],
-            script_path,
-            proc.pid,
-        )
-        return jsonify({
-            "ok": True,
-            "latest_version": script_info["latest_version"],
-            "release_url": script_info["release_url"],
-            "script_name": script_info["script_name"],
-            "script_path": str(script_path),
-            "pid": proc.pid,
-        })
-    except Exception as exc:
-        LOGGER.error("updates/install-script/run failed: %s", traceback.format_exc())
-        return jsonify({"ok": False, "error": str(exc)})
-
-
-@flask_app.route("/web-mode/start", methods=["POST"])
-def web_mode_start():
-    """Start web-modus i separat prosess fra desktop-GUI."""
-    try:
-        proc = _launch_web_mode_process()
-        return jsonify({"ok": True, "pid": proc.pid})
-    except Exception as exc:
-        LOGGER.error("web-mode/start failed: %s", traceback.format_exc())
-        return jsonify({"ok": False, "error": str(exc)})
-
-
-@flask_app.route("/mac/quick-action/install", methods=["POST"])
-def mac_quick_action_install():
-    try:
-        service_path = _install_mac_quick_action()
-        LOGGER.info("mac quick action installed path=%s", service_path)
-        return jsonify({"ok": True, "path": str(service_path)})
-    except Exception as exc:
-        LOGGER.error("mac quick action install failed: %s", traceback.format_exc())
-        return jsonify({"ok": False, "error": str(exc)})
-
-
-@flask_app.route("/logs/get", methods=["GET"])
-def logs_get():
-    try:
-        max_bytes = int(request.args.get("max_bytes", "50000"))
-        max_bytes = max(1000, min(max_bytes, 500000))
-        if not LOG_PATH.exists():
-            return jsonify({"ok": True, "path": str(LOG_PATH), "text": ""})
-        data = LOG_PATH.read_bytes()
-        text = data[-max_bytes:].decode("utf-8", errors="replace")
-        return jsonify({"ok": True, "path": str(LOG_PATH), "text": text})
-    except Exception as exc:
-        LOGGER.error("logs/get failed: %s", traceback.format_exc())
-        return jsonify({"ok": False, "error": str(exc)})
-
-
-@flask_app.route("/logs/open", methods=["POST"])
-def logs_open():
-    try:
-        _open_path(LOG_PATH)
-        return jsonify({"ok": True, "path": str(LOG_PATH)})
-    except Exception as exc:
-        LOGGER.error("logs/open failed: %s", traceback.format_exc())
-        return jsonify({"ok": False, "error": str(exc)})
-
-
-@flask_app.route("/diagnostics/health", methods=["GET"])
-def diagnostics_health():
-    try:
-        return jsonify(_health_check())
-    except Exception as exc:
-        LOGGER.error("diagnostics/health failed: %s", traceback.format_exc())
-        return jsonify({"ok": False, "error": str(exc), "checks": []})
-
-
-@flask_app.route("/diagnostics/export", methods=["POST"])
-def diagnostics_export():
-    try:
-        out = _write_debug_package()
-        LOGGER.info("diagnostics package exported path=%s", out)
-        return jsonify({"ok": True, "path": str(out)})
-    except Exception as exc:
-        LOGGER.error("diagnostics/export failed: %s", traceback.format_exc())
-        return jsonify({"ok": False, "error": str(exc)})
-
-
-@flask_app.route("/whitelist/get", methods=["POST"])
-def whitelist_get():
-    return jsonify({
-        "ok": True,
-        "path": whitelist_path_str(),
-        "texts": get_whitelist_entries(),
-    })
-
-
-@flask_app.route("/whitelist/save", methods=["POST"])
-def whitelist_save():
-    data = request.get_json(force=True)
-    texts = data.get("texts", [])
-    if not isinstance(texts, list):
-        return jsonify({"ok": False, "error": "Ugyldig format for whitelist."})
-    save_whitelist_entries([str(t) for t in texts])
-    return jsonify({
-        "ok": True,
-        "path": whitelist_path_str(),
-        "texts": get_whitelist_entries(),
-    })
-
-
-@flask_app.route("/blacklist/get", methods=["POST"])
-def blacklist_get():
-    return jsonify({
-        "ok": True,
-        "path": blacklist_path_str(),
-        "texts": get_blacklist_entries(),
-    })
-
-
-@flask_app.route("/blacklist/save", methods=["POST"])
-def blacklist_save():
-    data = request.get_json(force=True)
-    texts = data.get("texts", [])
-    if not isinstance(texts, list):
-        return jsonify({"ok": False, "error": "Ugyldig format for blacklist."})
-    save_blacklist_entries([str(t) for t in texts])
-    return jsonify({
-        "ok": True,
-        "path": blacklist_path_str(),
-        "texts": get_blacklist_entries(),
-    })
-
-
-# ── Egendefinerte regex-mønstre ─────────────────────────────────────────
-
-@flask_app.route("/custom-patterns/get", methods=["POST"])
-def custom_patterns_get():
-    from xlent_scanner.detectors.custom_patterns import (  # noqa: PLC0415
-        custom_patterns_path_str,
-        get_custom_patterns_text,
-    )
-    try:
-        return jsonify({
-            "ok": True,
-            "path": custom_patterns_path_str(),
-            "content": get_custom_patterns_text(),
-        })
-    except Exception as exc:
-        return jsonify({"ok": False, "error": str(exc)})
-
-
-@flask_app.route("/custom-patterns/save", methods=["POST"])
-def custom_patterns_save():
-    from xlent_scanner.detectors.custom_patterns import (  # noqa: PLC0415
-        custom_patterns_path_str,
-        get_custom_patterns_text,
-        save_custom_patterns_text,
-        validate_custom_patterns_text,
-    )
-    data = request.get_json(force=True)
-    content = data.get("content", "")
-    if not isinstance(content, str):
-        return jsonify({"ok": False, "error": "Ugyldig format for custom_patterns.toml."})
-    try:
-        patterns = validate_custom_patterns_text(content)
-        save_custom_patterns_text(content)
-        LOGGER.info("custom-patterns lagret: %d mønstre", len(patterns))
-        return jsonify({
-            "ok": True,
-            "path": custom_patterns_path_str(),
-            "content": get_custom_patterns_text(),
-            "pattern_count": len(patterns),
-        })
-    except ValueError as exc:
-        return jsonify({"ok": False, "error": str(exc)})
-    except Exception as exc:
-        LOGGER.error("custom-patterns save failed: %s", traceback.format_exc())
-        return jsonify({"ok": False, "error": str(exc)})
-
-
-@flask_app.route("/custom-patterns/test", methods=["POST"])
-def custom_patterns_test():
-    import re  # noqa: PLC0415
-
-    data = request.get_json(force=True) or {}
-    regex = str(data.get("regex") or "")
-    sample = str(data.get("sample") or "")
-    ignore_case = bool(data.get("ignore_case", True))
-    if not regex:
-        return jsonify({"ok": False, "error": "Regex mangler."})
-    try:
-        flags = re.IGNORECASE if ignore_case else 0
-        pattern = re.compile(regex, flags)
-        matches = []
-        for idx, match in enumerate(pattern.finditer(sample)):
-            if idx >= 20:
-                break
-            matches.append({
-                "text": match.group(0),
-                "start": match.start(),
-                "end": match.end(),
-            })
-        return jsonify({"ok": True, "matches": matches, "match_count": len(matches)})
-    except re.error as exc:
-        return jsonify({"ok": False, "error": f"Ugyldig regex: {exc}"})
-
-
-# ── Utklippstavle-vakt ──────────────────────────────────────────────────
-
-@flask_app.route("/clipboard-guard/status", methods=["GET"])
-def clipboard_guard_status():
-    from xlent_scanner.clipboard_guard import guard  # noqa: PLC0415
-    return jsonify({"ok": True, **guard.status()})
-
-
-@flask_app.route("/clipboard-guard/start", methods=["POST"])
-def clipboard_guard_start():
-    from xlent_scanner.clipboard_guard import guard  # noqa: PLC0415
-    started = guard.start()
-    LOGGER.info("clipboard-guard start (started=%s)", started)
-    return jsonify({"ok": True, "started": started, **guard.status()})
-
-
-@flask_app.route("/clipboard-guard/stop", methods=["POST"])
-def clipboard_guard_stop():
-    from xlent_scanner.clipboard_guard import guard  # noqa: PLC0415
-    stopped = guard.stop()
-    LOGGER.info("clipboard-guard stop (stopped=%s)", stopped)
-    return jsonify({"ok": True, "stopped": stopped})
-
-
-# ── Overvåket mappe ─────────────────────────────────────────────────────
-
-@flask_app.route("/folder-watch/status", methods=["GET"])
-def folder_watch_status():
-    from xlent_scanner.folder_watch import watcher  # noqa: PLC0415
-    return jsonify({"ok": True, **watcher.status()})
-
-
-@flask_app.route("/folder-watch/start", methods=["POST"])
-def folder_watch_start():
-    from xlent_scanner.folder_watch import watcher  # noqa: PLC0415
-    data = request.get_json(force=True)
-    folder = str(data.get("folder") or "").strip()
-    if not folder:
-        return jsonify({"ok": False, "error": "Ingen mappe oppgitt."})
-    result = watcher.start(
-        folder,
-        ignore_xlent=bool(data.get("ignore_xlent", False)),
-        language=str(data.get("language") or "auto"),
-    )
-    LOGGER.info("folder-watch start folder=%s ok=%s", folder, result.get("ok"))
-    if not result.get("ok"):
-        return jsonify(result)
-    return jsonify({**result, **watcher.status()})
-
-
-@flask_app.route("/folder-watch/stop", methods=["POST"])
-def folder_watch_stop():
-    from xlent_scanner.folder_watch import watcher  # noqa: PLC0415
-    data = request.get_json(silent=True) or {}
-    folder = str(data.get("folder") or "").strip() or None
-    stopped = watcher.stop(folder)
-    LOGGER.info("folder-watch stop (stopped=%s)", stopped)
-    return jsonify({"ok": True, "stopped": stopped})
-
-
-@flask_app.route("/settings/export", methods=["POST"])
-def settings_export():
-    """Eksporter lokale brukerinnstillinger uten dokument- eller scan-data."""
-    from xlent_scanner.detectors.custom_patterns import get_custom_patterns_text  # noqa: PLC0415
-
-    data = request.get_json(silent=True) or {}
-    browser_settings = data.get("browser_settings")
-    if not isinstance(browser_settings, dict):
-        browser_settings = {}
-    return jsonify({
-        "ok": True,
-        "format": "xlent-scanner-settings",
-        "format_version": 1,
-        "app_version": __version__,
-        "exported_at": int(time.time()),
-        "browser_settings": browser_settings,
-        "whitelist": get_whitelist_entries(),
-        "blacklist": get_blacklist_entries(),
-        "ignore_toml": get_ignore_toml_text(),
-        "custom_patterns_toml": get_custom_patterns_text(),
-    })
-
-
-@flask_app.route("/settings/import", methods=["POST"])
-def settings_import():
-    """Importer lokale brukerinnstillinger. Validerer ignore.toml før lagring."""
-    from xlent_scanner.detectors.custom_patterns import (  # noqa: PLC0415
-        get_custom_patterns_text,
-        save_custom_patterns_text,
-    )
-
-    try:
-        data = request.get_json(force=True)
-        if not isinstance(data, dict) or data.get("format") != "xlent-scanner-settings":
-            return jsonify({"ok": False, "error": "Ugyldig innstillingsfil."})
-
-        whitelist = data.get("whitelist", [])
-        if whitelist is not None:
-            if not isinstance(whitelist, list):
-                return jsonify({"ok": False, "error": "whitelist må være en liste."})
-            save_whitelist_entries([str(t) for t in whitelist])
-
-        blacklist = data.get("blacklist", [])
-        if blacklist is not None:
-            if not isinstance(blacklist, list):
-                return jsonify({"ok": False, "error": "blacklist må være en liste."})
-            save_blacklist_entries([str(t) for t in blacklist])
-
-        ignore_toml = data.get("ignore_toml")
-        if ignore_toml is not None:
-            if not isinstance(ignore_toml, str):
-                return jsonify({"ok": False, "error": "ignore_toml må være tekst."})
-            save_ignore_toml_text(ignore_toml)
-            reset_ignore_cache()
-
-        custom_patterns_toml = data.get("custom_patterns_toml")
-        if custom_patterns_toml is not None:
-            if not isinstance(custom_patterns_toml, str):
-                return jsonify({"ok": False, "error": "custom_patterns_toml må være tekst."})
-            save_custom_patterns_text(custom_patterns_toml)
-
-        browser_settings = data.get("browser_settings")
-        if not isinstance(browser_settings, dict):
-            browser_settings = {}
-
-        return jsonify({
-            "ok": True,
-            "browser_settings": browser_settings,
-            "whitelist": get_whitelist_entries(),
-            "blacklist": get_blacklist_entries(),
-            "ignore_toml": get_ignore_toml_text(),
-            "custom_patterns_toml": get_custom_patterns_text(),
-        })
-    except Exception as exc:
-        return jsonify({"ok": False, "error": str(exc)})
-
-
-
-@flask_app.route("/ignore/get", methods=["POST"])
-def ignore_get():
-    try:
-        return jsonify({
-            "ok": True,
-            "path": ignore_path_str(),
-            "content": get_ignore_toml_text(),
-        })
-    except Exception as exc:
-        return jsonify({"ok": False, "error": str(exc)})
-
-
-@flask_app.route("/models/status", methods=["GET"])
-def models_status_endpoint():
-    """Returnerer installasjonsstatus for alle spaCy-modeller."""
-    from xlent_scanner.model_manager import models_status  # noqa: PLC0415
-    return jsonify(models_status())
-
-
-@flask_app.route("/models/download", methods=["POST"])
-def models_download_endpoint():
-    """Starter nedlasting av en spaCy-modell i bakgrunnstråd."""
-    from xlent_scanner.model_manager import (  # noqa: PLC0415
-        _MODEL_VERSIONS,
-        download_model_async,
-    )
-    data = request.get_json(force=True)
-    model = (data.get("model") or "").strip()
-    if not model or model not in _MODEL_VERSIONS:
-        return jsonify({"ok": False, "error": f"Ukjent modell: {model!r}"})
-    started = download_model_async(model)
-    LOGGER.info("models/download model=%s started=%s", model, started)
-    return jsonify({"ok": True, "model": model, "started": started})
 
 
 # ── Ollama / dybdeskann ─────────────────────────────────────────────────
@@ -3455,13 +2028,13 @@ def ollama_model_pull_status_endpoint():
 @flask_app.route("/ollama/last-file-info", methods=["GET"])
 def ollama_last_file_info():
     """Returnerer info om sist skannede fil for Dybdeskann-fanen."""
-    if _last_result is None or getattr(_last_result, "error", None):
+    if app_state.last_result is None or getattr(app_state.last_result, "error", None):
         return jsonify({"available": False})
-    text = getattr(_last_result, "original_text", "") or ""
+    text = getattr(app_state.last_result, "original_text", "") or ""
     return jsonify({
         "available": bool(text.strip()),
-        "file_name": _last_result.file_name or "",
-        "text_length": _last_result.text_length or 0,
+        "file_name": app_state.last_result.file_name or "",
+        "text_length": app_state.last_result.text_length or 0,
     })
 
 
@@ -3469,9 +2042,9 @@ def ollama_last_file_info():
 def ollama_deep_scan_endpoint():
     """Start dybdeskanning med Ollama på sist skannede fil."""
     from xlent_scanner.deep_scanner import start_deep_scan  # noqa: PLC0415
-    if _last_result is None:
+    if app_state.last_result is None:
         return jsonify({"ok": False, "error": "Ingen fil er skannet ennå."})
-    text = getattr(_last_result, "original_text", "") or ""
+    text = getattr(app_state.last_result, "original_text", "") or ""
     if not text.strip():
         return jsonify({"ok": False, "error": "Ingen tekst å analysere i sist skannede fil."})
     data  = request.get_json(force=True)
@@ -3479,7 +2052,7 @@ def ollama_deep_scan_endpoint():
     if not model:
         return jsonify({"ok": False, "error": "Ingen Ollama-modell oppgitt."})
     categories = data.get("categories") or None
-    lang = getattr(_last_result, "language", "nb") or "nb"
+    lang = getattr(app_state.last_result, "language", "nb") or "nb"
     min_confidence = (data.get("min_confidence") or "medium").strip().lower()
     if min_confidence not in ("high", "medium", "low"):
         min_confidence = "medium"
@@ -3495,44 +2068,57 @@ def ollama_anonymize_findings():
     Produserer samme filformat som kilden (docx→docx, pptx→pptx, xlsx→xlsx, pdf→pdf).
     Faller tilbake til .txt hvis formatet ikke støttes eller kildefilen mangler.
     """
-    if _last_result is None:
+    if app_state.last_result is None:
         return jsonify({"error": "Ingen fil skannet."})
     data = request.get_json(force=True) or {}
     texts_to_remove = [str(t).strip() for t in (data.get("texts") or []) if t and str(t).strip()]
-    ai_findings = _ai_findings_from_payload(data)
-    for text in _ai_replacement_texts(ai_findings):
+    ai_findings = findings_from_payload(data)
+    for text in replacement_texts(ai_findings):
         if text not in texts_to_remove:
             texts_to_remove.append(text)
     strip_annotations = bool(data.get("strip_annotations", False))
     if not texts_to_remove:
         return jsonify({"error": "Ingen tekst valgt for anonymisering."})
 
-    stem = Path(_last_result.file_name).stem if _last_result.file_name else "dokument"
-    suffix = _last_path.suffix.lower() if _last_path else ""
+    stem = (
+        Path(app_state.last_result.file_name).stem
+        if app_state.last_result.file_name
+        else "dokument"
+    )
+    suffix = app_state.last_path.suffix.lower() if app_state.last_path else ""
     downloads = Path.home() / "Downloads"
     if not downloads.exists():
         downloads = Path.home() / "Desktop"
 
     # Bruk patch_file for støttede filformater når kildefilen er tilgjengelig
-    if _last_path and _last_path.exists() and suffix in SUPPORTED_PATCH_SUFFIXES:
+    if (
+        app_state.last_path
+        and app_state.last_path.exists()
+        and suffix in SUPPORTED_PATCH_SUFFIXES
+    ):
         if not ai_findings:
             ai_findings = [{"text": t, "category": "🤖 AI-funn", "context": ""} for t in texts_to_remove]
-        replacement_texts = _ai_replacement_texts(ai_findings)
-        replacements = {t: "[ANONYMISERT]" for t in replacement_texts}
+        ai_texts = replacement_texts(ai_findings)
+        replacements = {text: "[ANONYMISERT]" for text in ai_texts}
         out = downloads / f"{stem}-ai-anonymisert{suffix}"
         counter = 1
         while out.exists():
             out = downloads / f"{stem}-ai-anonymisert-{counter}{suffix}"
             counter += 1
         try:
-            patch_file(_last_path, replacements, out, strip_annotations=strip_annotations)
+            patch_file(
+                app_state.last_path,
+                replacements,
+                out,
+                strip_annotations=strip_annotations,
+            )
             LOGGER.info("ollama/anonymize-findings patch: wrote %s (%d replacements)", out, len(texts_to_remove))
             return jsonify({"ok": True, "path": str(out)})
         except Exception as exc:
             LOGGER.warning("patch_file feilet, faller tilbake til .txt: %s", exc)
 
     # Fallback: teksterstatning i originalstreng → .txt
-    text = getattr(_last_result, "original_text", "") or ""
+    text = getattr(app_state.last_result, "original_text", "") or ""
     if not text.strip():
         return jsonify({"error": "Originaltekst ikke tilgjengelig. Re-skann filen."})
     result_text = text
@@ -3584,24 +2170,6 @@ def ollama_deep_scan_cancel_for_job_endpoint(job_id: str):
     return jsonify({"ok": True, "job_id": job_id})
 
 
-@flask_app.route("/ignore/save", methods=["POST"])
-def ignore_save():
-    data = request.get_json(force=True)
-    content = data.get("content", "")
-    if not isinstance(content, str):
-        return jsonify({"ok": False, "error": "Ugyldig format for ignore.toml."})
-    try:
-        save_ignore_toml_text(content)
-        reset_ignore_cache()
-        return jsonify({
-            "ok": True,
-            "path": ignore_path_str(),
-            "content": get_ignore_toml_text(),
-        })
-    except Exception as exc:
-        return jsonify({"ok": False, "error": str(exc)})
-
-
 def _start_flask(port: int, host: str = "127.0.0.1") -> None:
     import logging
     logging.getLogger("werkzeug").setLevel(logging.ERROR)
@@ -3630,12 +2198,23 @@ def _launch_web_mode_process() -> subprocess.Popen:
     return subprocess.Popen(cmd, **kwargs)
 
 
+flask_app.register_blueprint(create_diagnostics_blueprint(
+    log_path=LOG_PATH,
+    health_check=_health_check,
+    write_debug_package=_write_debug_package,
+    download_update_script=_download_update_script,
+    launch_update_script=_launch_update_script,
+    launch_web_mode_process=_launch_web_mode_process,
+    install_mac_quick_action=_install_mac_quick_action,
+    open_path=_open_path,
+))
+
+
 def _run_web_mode() -> None:
     """Kjør lokal web-modus (Flask + standard nettleser), uten PyWebView."""
-    global _port
     _validate_runtime_dependencies()
-    _port = _free_port()
-    url = f"http://127.0.0.1:{_port}"
+    app_state.port = _free_port()
+    url = f"http://127.0.0.1:{app_state.port}"
     LOGGER.info("Starting WEB mode on %s", url)
 
     def _open_browser() -> None:
@@ -3646,7 +2225,7 @@ def _run_web_mode() -> None:
             LOGGER.warning("Could not open browser automatically for %s", url)
 
     threading.Thread(target=_open_browser, daemon=True, name="web-mode-browser").start()
-    _start_flask(_port)
+    _start_flask(app_state.port)
 
 
 def _arg_value(name: str, default: str) -> str:
@@ -3684,17 +2263,21 @@ def _format_startup_file_args(paths: list[str]) -> str:
 
 def _run_api_mode() -> None:
     """Kjør bare lokal API-server for eksterne frontender, uten GUI."""
-    global _port
     _validate_runtime_dependencies()
     raw_port = _arg_value("--port", str(_API_DEFAULT_PORT))
     host = _arg_value("--host", _API_DEFAULT_HOST).strip() or _API_DEFAULT_HOST
     try:
-        _port = int(raw_port)
+        app_state.port = int(raw_port)
     except ValueError:
         raise RuntimeError(f"Ugyldig port: {raw_port!r}") from None
     _validate_api_bind(host)
-    LOGGER.info("Starting API mode on http://%s:%s api_key_configured=%s", host, _port, _api_key_configured())
-    _start_flask(_port, host=host)
+    LOGGER.info(
+        "Starting API mode on http://%s:%s api_key_configured=%s",
+        host,
+        app_state.port,
+        _api_key_configured(),
+    )
+    _start_flask(app_state.port, host=host)
 
 
 def _wait_for_flask(port: int, timeout: float = 10.0) -> None:
@@ -3749,7 +2332,11 @@ def _cli_scan() -> None:
             )
             print(f"   {sev_icon} [{f.category}] {f.text}")
 
-    exit_code = {"grønn": 0, "gul": 1, "rød": 2, "svart": 3}.get(result.risk_level, 0)
+    exit_code = (
+        4
+        if result.scan_status == "failed"
+        else {"grønn": 0, "gul": 1, "rød": 2, "svart": 3}.get(result.risk_level, 0)
+    )
     sys.exit(exit_code)
 
 
@@ -3789,10 +2376,10 @@ def _ipc_start_server() -> None:
                 conn, addr = srv.accept()
                 try:
                     data = conn.recv(4096).decode("utf-8").strip()
-                    if data and _window:
+                    if data and app_state.window:
                         LOGGER.info("IPC: mottok filsti: %s", data)
                         path_js = json.dumps(data)
-                        _window.evaluate_js(
+                        app_state.window.evaluate_js(
                             f"(function(){{"
                             f"  document.querySelector('[data-tab=\"scanner\"]')?.click();"
                             f"  scanPath({path_js});"
@@ -3808,8 +2395,6 @@ def _ipc_start_server() -> None:
 
 
 def main() -> None:
-    global _window, _port, _initial_file
-
     # ── CLI-modus ──────────────────────────────────────────────────────────
     if "--scan" in sys.argv:
         _cli_scan()
@@ -3829,10 +2414,10 @@ def main() -> None:
     # ── Fil fra OS/Finder/Windows-kontekstmeny ─────────────────────────────
     startup_file = _startup_file_from_argv(sys.argv)
     if startup_file:
-        _initial_file = startup_file
-        LOGGER.info("Startup file from argv: %s", _initial_file)
+        app_state.initial_file = startup_file
+        LOGGER.info("Startup file from argv: %s", app_state.initial_file)
         # Enkel-instans: hvis en instans allerede kjører, send filen dit
-        _ipc_send_and_exit(_initial_file)
+        _ipc_send_and_exit(app_state.initial_file)
         # Kommer hit: vi er første instans
 
     LOGGER.info("App starting version=%s", __version__)
@@ -3848,32 +2433,32 @@ def main() -> None:
     # Start IPC-server (enkel-instans-støtte for kontekstmeny-åpning)
     _ipc_start_server()
 
-    _port = _free_port()
-    t = threading.Thread(target=_start_flask, args=(_port,), daemon=True)
+    app_state.port = _free_port()
+    t = threading.Thread(target=_start_flask, args=(app_state.port,), daemon=True)
     t.start()
-    _wait_for_flask(_port)
-    LOGGER.info("Flask is reachable on 127.0.0.1:%s", _port)
+    _wait_for_flask(app_state.port)
+    LOGGER.info("Flask is reachable on 127.0.0.1:%s", app_state.port)
 
     webview_cache = tempfile.mkdtemp(prefix="xlent-scanner-wv-")
-    fresh_url = f"http://127.0.0.1:{_port}/?_v={int(time.time())}"
+    fresh_url = f"http://127.0.0.1:{app_state.port}/?_v={int(time.time())}"
 
     # Etter at vinduet er synlig, tving en reload til en URL med unikt tidsstempel.
     # Dette sikrer at WebView2 alltid gjør en ekte HTTP-forespørsel mot Flask
     # og aldri viser en cachet side – uavhengig av WebView2 sin interne cache-konfigurasjon.
     def _force_fresh_load():
-        if _window.events.shown.wait(timeout=10):
-            _window.load_url(fresh_url)
+        if app_state.window.events.shown.wait(timeout=10):
+            app_state.window.load_url(fresh_url)
 
-    _window = webview.create_window(
+    app_state.window = webview.create_window(
         title="XLENT Compliance-scanner",
-        url=f"http://127.0.0.1:{_port}",
+        url=f"http://127.0.0.1:{app_state.port}",
         width=900,
         height=700,
         min_size=(700, 500),
         background_color="#eef2f6",
     )
     threading.Thread(target=_force_fresh_load, daemon=True).start()
-    LOGGER.info("Window created. API base: http://127.0.0.1:%s", _port)
+    LOGGER.info("Window created. API base: http://127.0.0.1:%s", app_state.port)
     webview.start(debug=False, storage_path=webview_cache)
 
 

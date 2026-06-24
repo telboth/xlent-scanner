@@ -35,9 +35,9 @@ def _fake_result() -> ScanResult:
 def test_api_scan_text_uses_separate_state_and_omits_original_text(monkeypatch):
     monkeypatch.delenv("XLENT_SCANNER_API_KEY", raising=False)
     monkeypatch.setattr(app_module, "scan_text", lambda *args, **kwargs: _fake_result())
-    app_module._api_scan_results.clear()
+    app_module.app_state.api_scan_results.clear()
     sentinel = object()
-    app_module._last_result = sentinel
+    app_module.app_state.last_result = sentinel
 
     client = app_module.flask_app.test_client()
     response = client.post("/api/scan-text", json={"text": "test", "language": "nb"})
@@ -50,13 +50,13 @@ def test_api_scan_text_uses_separate_state_and_omits_original_text(monkeypatch):
     assert "text_preview" not in data
     assert "FULL_SECRET_NOT_RETURNED" not in str(data)
     assert "RAW_SECRET_NOT_RETURNED" not in str(data)
-    assert app_module._last_result is sentinel
+    assert app_module.app_state.last_result is sentinel
 
 
 def test_api_scan_text_requires_key_when_configured(monkeypatch):
     monkeypatch.setenv("XLENT_SCANNER_API_KEY", "secret-key")
     monkeypatch.setattr(app_module, "scan_text", lambda *args, **kwargs: _fake_result())
-    app_module._api_scan_results.clear()
+    app_module.app_state.api_scan_results.clear()
     client = app_module.flask_app.test_client()
 
     missing_key = client.post("/api/scan-text", json={"text": "test"})
@@ -74,7 +74,7 @@ def test_api_scan_text_requires_key_when_configured(monkeypatch):
 def test_api_scan_file_accepts_base64_and_omits_original_text(monkeypatch):
     monkeypatch.delenv("XLENT_SCANNER_API_KEY", raising=False)
     monkeypatch.setattr(app_module, "scan_file", lambda *args, **kwargs: _fake_result())
-    app_module._api_scan_results.clear()
+    app_module.app_state.api_scan_results.clear()
     client = app_module.flask_app.test_client()
 
     response = client.post(
@@ -232,8 +232,8 @@ def test_patch_docx_expands_financial_ai_table_finding_to_cells(tmp_path: Path, 
             cell.text = value
     doc.save(source)
 
-    app_module._last_path = source
-    app_module._last_result = ScanResult(
+    app_module.app_state.last_path = source
+    app_module.app_state.last_result = ScanResult(
         file_name="budget.docx",
         file_size=source.stat().st_size,
         text_length=0,

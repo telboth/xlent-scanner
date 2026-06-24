@@ -1,6 +1,6 @@
 # XLENT Compliance-scanner
 
-> **v1.5.3** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
+> **v1.5.4** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
 
 Alt kjøres 100 % lokalt — ingen dokumenter, tekst eller funn sendes over internett.
 
@@ -422,6 +422,13 @@ src/xlent_scanner/
 ---
 
 ## Endringslogg
+
+### v1.5.4
+- Skiller teknisk skannstatus (`success`, `partial`, `failed`) fra dokumentets risikonivå, og CLI returnerer nå exit-kode 4 ved tekniske skannfeil.
+- Samler detektorpipelinen for tekst- og filskanning, og lar `KeyboardInterrupt` og `SystemExit` propagere normalt.
+- Sikrer modellinstallasjon mot katalogtraversering og symbolske lenker, og gjør samtidige modellnedlastinger atomiske.
+- Retter restart av mappeovervåkning slik at gammel tråd stoppes før ny overvåkning starter.
+- Deler Flask-applikasjonen i Blueprints og samler muterbar apptilstand i eksplisitt `AppState`.
 
 ### v1.5.3
 - Gjorde AI-dybdeskann raskere med balansert chunking (`1600` ord, `60` ord overlapp), eksplisitt `num_ctx=8192` og kortere `num_predict=512`.

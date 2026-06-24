@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 
 
 LEVELS = ("grønn", "gul", "rød", "svart")
+SCAN_STATUSES = ("success", "partial", "failed")
 
 
 @dataclass
@@ -34,3 +35,4 @@ class ScanResult:
     microsoft_tags: dict = field(default_factory=dict)
     policy_warning: str | None = None
     policy_warning_level: str | None = None
+    scan_status: str = "success"      # success / partial / failed

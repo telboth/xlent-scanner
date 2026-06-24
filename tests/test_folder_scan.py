@@ -158,8 +158,8 @@ def test_scan_folder_start_endpoint_tracks_background_progress(monkeypatch, tmp_
         )
 
     monkeypatch.setattr(app_module, "scan_file", fake_scan_file)
-    with app_module._folder_jobs_lock:
-        app_module._folder_jobs.clear()
+    with app_module.app_state.folder_jobs_lock:
+        app_module.app_state.folder_jobs.clear()
     client = app_module.flask_app.test_client()
 
     started = client.post("/scan-folder/start", json={"folder_path": str(tmp_path), "recursive": True}).get_json()
@@ -193,8 +193,8 @@ def test_folder_export_and_audit_endpoints_write_files(monkeypatch, tmp_path: Pa
     )
     row = app_module._folder_result_row(result, report_id="report-1")
     job_id = "job-export"
-    with app_module._folder_jobs_lock:
-        app_module._folder_jobs[job_id] = {
+    with app_module.app_state.folder_jobs_lock:
+        app_module.app_state.folder_jobs[job_id] = {
             "status": "completed",
             "folder": str(tmp_path),
             "recursive": True,
@@ -230,8 +230,8 @@ def test_folder_redact_endpoint_patches_selected_files(monkeypatch, tmp_path: Pa
         findings=[Finding(category="hemmelighet", text="secret", context="secret", severity="rød")],
         risk_level="rød",
     )
-    with app_module._folder_scan_lock:
-        app_module._folder_scan_results["report-redact"] = result
+    with app_module.app_state.folder_scan_lock:
+        app_module.app_state.folder_scan_results["report-redact"] = result
     monkeypatch.setattr(app_module, "_downloads_dir", lambda: tmp_path)
 
     calls = []
@@ -269,8 +269,8 @@ def test_folder_csv_export_escapes_excel_formula_cells(monkeypatch, tmp_path: Pa
         "warning": "",
         "findings_summary": [{"category": "test", "text": "+cmd", "severity": "gul", "context": ""}],
     }
-    with app_module._folder_jobs_lock:
-        app_module._folder_jobs["job-formula"] = {
+    with app_module.app_state.folder_jobs_lock:
+        app_module.app_state.folder_jobs["job-formula"] = {
             "status": "completed",
             "folder": str(tmp_path),
             "recursive": False,

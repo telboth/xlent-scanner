@@ -25,9 +25,10 @@ def test_platform_install_script_asset_is_selected_by_exact_name(monkeypatch) ->
 
 def test_update_install_script_backend_runs_without_shell_eval() -> None:
     app = Path("src/xlent_scanner/app.py").read_text(encoding="utf-8")
+    diagnostics = Path("src/xlent_scanner/routes/diagnostics.py").read_text(encoding="utf-8")
 
-    assert '@flask_app.route("/updates/install-script/run", methods=["POST"])' in app
-    assert "fetch_platform_install_script()" in app
+    assert '@bp.post("/updates/install-script/run")' in diagnostics
+    assert "fetch_platform_install_script()" in diagnostics
     assert 'name not in {"install_windows.ps1", "install_macos.sh"}' in app
     assert 'parsed.scheme != "https" or not parsed.netloc.endswith("github.com")' in app
     assert '"powershell.exe",' in app
@@ -36,3 +37,4 @@ def test_update_install_script_backend_runs_without_shell_eval() -> None:
     assert '"osascript",' in app
     assert 'tell application "Terminal" to do script' in app
     assert "shell=True" not in app
+    assert "shell=True" not in diagnostics
