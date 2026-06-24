@@ -71,6 +71,7 @@ class FolderWatcher:
 
     def __init__(self, notifier: Callable[[str, str], Any] | None = None) -> None:
         self._lock = threading.Lock()
+        self._lifecycle_lock = threading.Lock()
         self._thread: threading.Thread | None = None
         self._stop_event = threading.Event()
         self._folder: Path | None = None
@@ -87,30 +88,48 @@ class FolderWatcher:
         p = Path(folder)
         if not p.is_dir():
             return {"ok": False, "error": f"Ikke en mappe: {folder}"}
-        with self._lock:
-            if self._thread is not None and self._thread.is_alive():
-                # Bytt mappe: stopp gammel tråd først
-                self._stop_event.set()
-                self._thread.join(timeout=2 * _POLL_SECONDS)
-            self._stop_event = threading.Event()
-            self._folder = p
-            self._ignore_xlent = bool(ignore_xlent)
-            self._language = language or "auto"
-            self._started_at = time.time()
-            self._scanned_count = 0
-            self._results = []
-            self._thread = threading.Thread(
-                target=self._run, daemon=True, name="folder-watch",
+        with self._lifecycle_lock:
+            with self._lock:
+                old_thread = self._thread
+                old_stop_event = self._stop_event
+
+            if old_thread is not None and old_thread.is_alive():
+                old_stop_event.set()
+                old_thread.join(timeout=2 * _POLL_SECONDS)
+                if old_thread.is_alive():
+                    return {
+                        "ok": False,
+                        "error": "Forrige mappeovervåking stoppet ikke innen tidsfristen.",
+                    }
+
+            stop_event = threading.Event()
+            ignore = bool(ignore_xlent)
+            selected_language = language or "auto"
+            thread = threading.Thread(
+                target=self._run,
+                args=(p, stop_event, ignore, selected_language),
+                daemon=True,
+                name="folder-watch",
             )
-            self._thread.start()
+            with self._lock:
+                self._stop_event = stop_event
+                self._folder = p
+                self._ignore_xlent = ignore
+                self._language = selected_language
+                self._started_at = time.time()
+                self._scanned_count = 0
+                self._results = []
+                self._thread = thread
+                thread.start()
         LOGGER.info("Mappeovervåking startet: %s", p)
         return {"ok": True, "folder": str(p)}
 
     def stop(self) -> bool:
-        with self._lock:
-            if self._thread is None or not self._thread.is_alive():
-                return False
-            self._stop_event.set()
+        with self._lifecycle_lock:
+            with self._lock:
+                if self._thread is None or not self._thread.is_alive():
+                    return False
+                self._stop_event.set()
         LOGGER.info("Mappeovervåking stoppet")
         return True
 
@@ -127,11 +146,20 @@ class FolderWatcher:
 
     # — intern —
 
-    def _scan_one(self, path_str: str) -> None:
+    def _scan_one(
+        self,
+        path_str: str,
+        ignore_xlent: bool | None = None,
+        language: str | None = None,
+    ) -> None:
         from xlent_scanner.history import add_history_entry  # noqa: PLC0415
         from xlent_scanner.scanner import scan_file  # noqa: PLC0415
 
-        result = scan_file(path_str, ignore_xlent=self._ignore_xlent, language=self._language)
+        result = scan_file(
+            path_str,
+            ignore_xlent=self._ignore_xlent if ignore_xlent is None else ignore_xlent,
+            language=self._language if language is None else language,
+        )
         entry = {
             "file_name": result.file_name,
             "path": path_str,
@@ -171,15 +199,18 @@ class FolderWatcher:
                 result.file_name, result.risk_level, entry["finding_count"],
             )
 
-    def _run(self) -> None:
-        folder = self._folder
-        if folder is None:
-            return
+    def _run(
+        self,
+        folder: Path,
+        stop_event: threading.Event,
+        ignore_xlent: bool,
+        language: str,
+    ) -> None:
         # Baseline: eksisterende filer skannes ikke — kun det som kommer til
         previous = snapshot_folder(folder)
         pending: dict[str, tuple[float, int]] = {}
 
-        while not self._stop_event.wait(_POLL_SECONDS):
+        while not stop_event.wait(_POLL_SECONDS):
             try:
                 current = snapshot_folder(folder)
                 fresh = changed_paths(previous, current)
@@ -202,10 +233,14 @@ class FolderWatcher:
                 previous = current
 
                 for path in ready:
-                    if self._stop_event.is_set():
+                    if stop_event.is_set():
                         return
                     try:
-                        self._scan_one(path)
+                        self._scan_one(
+                            path,
+                            ignore_xlent=ignore_xlent,
+                            language=language,
+                        )
                     except Exception as exc:  # noqa: BLE001
                         LOGGER.warning("Mappeovervåking: skann feilet for %s: %s", path, exc)
             except Exception as exc:  # noqa: BLE001 — vakten skal aldri dø

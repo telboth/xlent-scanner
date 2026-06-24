@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import os
 import shutil
+import stat
 import tempfile
 import threading
 import urllib.error
@@ -43,6 +44,7 @@ _BASE_URL = "https://github.com/explosion/spacy-models/releases/download"
 
 _progress_lock = threading.Lock()
 _progress: dict[str, str] = {}
+_active_downloads: set[str] = set()
 
 
 # ── Hjelpefunksjoner ──────────────────────────────────────────────────────────
@@ -56,6 +58,25 @@ def _models_dir() -> Path:
 def _set_progress(model_name: str, msg: str) -> None:
     with _progress_lock:
         _progress[model_name] = msg
+
+
+def _safe_archive_target(root: Path, relative_path: str) -> Path:
+    """Returner sikker destinasjon for et arkivmedlem under root."""
+    relative = Path(relative_path)
+    if relative.is_absolute():
+        raise RuntimeError(f"Ugyldig absolutt sti i modellarkiv: {relative_path}")
+    root_resolved = root.resolve()
+    target = (root / relative).resolve()
+    try:
+        target.relative_to(root_resolved)
+    except ValueError as exc:
+        raise RuntimeError(f"Ugyldig sti i modellarkiv: {relative_path}") from exc
+    return target
+
+
+def _zipinfo_is_symlink(info: zipfile.ZipInfo) -> bool:
+    mode = (info.external_attr >> 16) & 0o170000
+    return mode == stat.S_IFLNK
 
 
 # ── Offentlig API ─────────────────────────────────────────────────────────────
@@ -104,20 +125,29 @@ def download_model_async(model_name: str) -> bool:
 
     Returnerer False hvis nedlasting allerede pågår, True ellers.
     """
-    with _progress_lock:
-        current = _progress.get(model_name, "")
-    # Ikke start en ny nedlasting om en allerede pågår
-    if current and not current.startswith("error") and current not in ("done", ""):
+    if model_name not in _MODEL_VERSIONS:
+        _set_progress(model_name, f"error:Ukjent modell: {model_name}")
         return False
 
-    _set_progress(model_name, "Forbereder nedlasting…")
-    t = threading.Thread(
-        target=_download_model,
-        args=(model_name,),
-        daemon=True,
-        name=f"model-dl-{model_name}",
-    )
-    t.start()
+    with _progress_lock:
+        if model_name in _active_downloads:
+            return False
+        _active_downloads.add(model_name)
+        _progress[model_name] = "Forbereder nedlasting…"
+
+    try:
+        t = threading.Thread(
+            target=_download_model,
+            args=(model_name,),
+            daemon=True,
+            name=f"model-dl-{model_name}",
+        )
+        t.start()
+    except Exception:
+        with _progress_lock:
+            _active_downloads.discard(model_name)
+            _progress[model_name] = "error:Klarte ikke å starte nedlasting"
+        raise
     return True
 
 
@@ -136,6 +166,7 @@ def _download_model(model_name: str) -> None:
     )
     dest = _models_dir() / model_name
     dest_tmp = dest.parent / (dest.name + "_installing")
+    dest_backup = dest.parent / (dest.name + "_previous")
 
     try:
         size_mb = _MODEL_SIZE_MB.get(model_name, 0)
@@ -200,8 +231,8 @@ def _download_model(model_name: str) -> None:
                 # Vi vil ha innholdet under nb_core_news_sm/{version}/ direkte i dest/
 
                 prefix: str | None = None
-                for name in zf.namelist():
-                    parts = name.split("/")
+                for info in zf.infolist():
+                    parts = info.filename.split("/")
                     if (
                         len(parts) >= 2
                         and parts[0] == model_name
@@ -220,18 +251,21 @@ def _download_model(model_name: str) -> None:
                     return
 
                 extracted = 0
-                for member in zf.namelist():
+                for info in zf.infolist():
+                    member = info.filename
                     if not member.startswith(prefix) or member == prefix:
                         continue
                     rel = member[len(prefix):]
                     if not rel:
                         continue
-                    target = dest_tmp / rel
-                    if member.endswith("/"):
+                    if _zipinfo_is_symlink(info):
+                        raise RuntimeError(f"Symbolsk lenke er ikke tillatt i modellarkiv: {rel}")
+                    target = _safe_archive_target(dest_tmp, rel)
+                    if info.is_dir():
                         target.mkdir(parents=True, exist_ok=True)
                     else:
                         target.parent.mkdir(parents=True, exist_ok=True)
-                        with zf.open(member) as src:
+                        with zf.open(info) as src:
                             target.write_bytes(src.read())
                         extracted += 1
 
@@ -239,6 +273,15 @@ def _download_model(model_name: str) -> None:
                     shutil.rmtree(dest_tmp, ignore_errors=True)
                     _set_progress(model_name, "error:Ingen filer ble pakket ut")
                     return
+                missing = [
+                    name for name in ("config.cfg", "meta.json")
+                    if not (dest_tmp / name).is_file()
+                ]
+                if missing:
+                    raise RuntimeError(
+                        "Modellarkivet mangler obligatoriske filer: "
+                        + ", ".join(missing)
+                    )
 
         except zipfile.BadZipFile:
             shutil.rmtree(dest_tmp, ignore_errors=True)
@@ -252,9 +295,21 @@ def _download_model(model_name: str) -> None:
             tmp.unlink(missing_ok=True)
 
         # ── Steg 3: Atomisk bytte ─────────────────────────────────────
+        if dest_backup.exists():
+            if dest.exists():
+                shutil.rmtree(dest_backup, ignore_errors=True)
+            else:
+                dest_backup.rename(dest)
         if dest.exists():
-            shutil.rmtree(dest)
-        dest_tmp.rename(dest)
+            dest.rename(dest_backup)
+        try:
+            dest_tmp.rename(dest)
+        except Exception:
+            if dest_backup.exists() and not dest.exists():
+                dest_backup.rename(dest)
+            raise
+        if dest_backup.exists():
+            shutil.rmtree(dest_backup, ignore_errors=True)
 
         # ── Steg 4: Tøm NER-cache ─────────────────────────────────────
         # Lazy import for å unngå sirkulær avhengighet
@@ -270,3 +325,6 @@ def _download_model(model_name: str) -> None:
         if dest_tmp.exists():
             shutil.rmtree(dest_tmp, ignore_errors=True)
         _set_progress(model_name, f"error:{exc}")
+    finally:
+        with _progress_lock:
+            _active_downloads.discard(model_name)

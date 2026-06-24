@@ -148,6 +148,27 @@ def test_folder_watch_manager_supports_multiple_folders(tmp_path: Path):
     manager.stop()
 
 
+def test_folder_watcher_restarts_after_old_thread_has_stopped(tmp_path: Path):
+    first = tmp_path / "first"
+    second = tmp_path / "second"
+    first.mkdir()
+    second.mkdir()
+    watcher = folder_watch.FolderWatcher()
+
+    assert watcher.start(str(first))["ok"] is True
+    old_thread = watcher._thread
+    old_stop_event = watcher._stop_event
+
+    assert watcher.start(str(second))["ok"] is True
+
+    assert old_thread is not None
+    assert old_stop_event.is_set()
+    assert not old_thread.is_alive()
+    assert watcher._stop_event is not old_stop_event
+    assert watcher.status()["folder"] == str(second)
+    watcher.stop()
+
+
 def test_scan_file_passes_ocr_flag_to_extract_text(monkeypatch, tmp_path: Path):
     doc = tmp_path / "scan.pdf"
     doc.write_bytes(b"%PDF-1.4")
@@ -182,7 +203,7 @@ def test_api_scan_file_accepts_ocr_flag(monkeypatch):
         )
 
     monkeypatch.setattr(app_module, "scan_file", fake_scan_file)
-    app_module._api_scan_results.clear()
+    app_module.app_state.api_scan_results.clear()
     client = app_module.flask_app.test_client()
 
     response = client.post(

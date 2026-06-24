@@ -4,6 +4,7 @@ import zipfile
 from pathlib import Path
 
 from xlent_scanner import app as app_module
+from xlent_scanner.routes import scanning as scanning_routes
 from xlent_scanner.models import Finding, ScanResult
 
 
@@ -38,8 +39,8 @@ def _scan_result() -> ScanResult:
 
 
 def test_redaction_preview_uses_same_replacement_logic():
-    app_module._last_result = _scan_result()
-    app_module._last_path = Path("test.docx")
+    app_module.app_state.last_result = _scan_result()
+    app_module.app_state.last_path = Path("test.docx")
     client = app_module.flask_app.test_client()
 
     response = client.post("/redaction/preview", json={"indices": [0]})
@@ -108,7 +109,7 @@ def test_diagnostics_health_reports_macos_quick_action_details(monkeypatch, tmp_
 
 
 def test_diagnostics_export_writes_package_without_document_text(monkeypatch, tmp_path):
-    app_module._last_result = _scan_result()
+    app_module.app_state.last_result = _scan_result()
     monkeypatch.setattr(app_module, "app_data_dir", lambda: tmp_path)
     monkeypatch.setattr(app_module, "_downloads_dir", lambda: tmp_path)
     monkeypatch.setattr(app_module, "get_whitelist_entries", lambda: ["safe@example.com"])
@@ -138,10 +139,12 @@ def test_diagnostics_export_writes_package_without_document_text(monkeypatch, tm
 
 
 def test_scan_text_clears_previous_ai_findings(monkeypatch):
-    app_module._last_ai_findings = [{"category": "🤖 Fødselsnummer", "text": "01019750023", "context": ""}]
-    app_module._last_ai_findings_file["name"] = "old.docx"
+    app_module.app_state.last_ai_findings = [
+        {"category": "🤖 Fødselsnummer", "text": "01019750023", "context": ""}
+    ]
+    app_module.app_state.last_ai_findings_file_name = "old.docx"
     monkeypatch.setattr(
-        app_module,
+        scanning_routes,
         "scan_text",
         lambda text, language="auto": ScanResult(
             file_name="Power Apps tekst",
@@ -161,5 +164,5 @@ def test_scan_text_clears_previous_ai_findings(monkeypatch):
     response = client.post("/scan-text", json={"text": "Kun ufarlig tekst", "language": "nb"})
 
     assert response.status_code == 200
-    assert app_module._last_ai_findings == []
-    assert app_module._last_ai_findings_file["name"] == ""
+    assert app_module.app_state.last_ai_findings == []
+    assert app_module.app_state.last_ai_findings_file_name == ""

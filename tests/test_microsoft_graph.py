@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from xlent_scanner import app as app_module
 from xlent_scanner import microsoft_graph as graph
+from xlent_scanner.routes import microsoft as microsoft_routes
 from xlent_scanner.models import Finding, ScanResult
 
 
@@ -97,10 +98,14 @@ def test_microsoft_tags_endpoint_attaches_red_warning_to_last_result(monkeypatch
         "retention": {"name": "Retain 7 years"},
         "policy_warning": "Microsoft 365-label tilsier konfidensielt dokument.",
     }
-    monkeypatch.setattr(app_module, "read_document_tags", lambda drive_id, item_id: tags)
     monkeypatch.setattr(
-        app_module,
-        "_last_result",
+        microsoft_routes,
+        "read_document_tags",
+        lambda drive_id, item_id: tags,
+    )
+    monkeypatch.setattr(
+        app_module.app_state,
+        "last_result",
         ScanResult(file_name="doc.docx", file_size=1, text_length=1, text_preview=""),
     )
 
@@ -113,8 +118,8 @@ def test_microsoft_tags_endpoint_attaches_red_warning_to_last_result(monkeypatch
     data = response.get_json()
     assert data["ok"] is True
     assert data["policy_warning"]
-    assert app_module._last_result.microsoft_tags is tags
-    assert app_module._last_result.policy_warning_level == "rød"
+    assert app_module.app_state.last_result.microsoft_tags is tags
+    assert app_module.app_state.last_result.policy_warning_level == "rød"
 
 
 def test_tags_for_local_file_endpoint_resolves_last_path_and_attaches_tags(monkeypatch, tmp_path):
@@ -126,11 +131,15 @@ def test_tags_for_local_file_endpoint_resolves_last_path_and_attaches_tags(monke
         "policy_warning": "Microsoft 365-label tilsier konfidensielt dokument.",
         "resolved": {"drive_id": "drive", "item_id": "item", "sync_root": str(tmp_path)},
     }
-    monkeypatch.setattr(app_module, "read_document_tags_for_local_path", lambda *args, **kwargs: tags)
-    monkeypatch.setattr(app_module, "_last_path", source)
     monkeypatch.setattr(
-        app_module,
-        "_last_result",
+        microsoft_routes,
+        "read_document_tags_for_local_path",
+        lambda *args, **kwargs: tags,
+    )
+    monkeypatch.setattr(app_module.app_state, "last_path", source)
+    monkeypatch.setattr(
+        app_module.app_state,
+        "last_result",
         ScanResult(file_name="doc.docx", file_size=1, text_length=1, text_preview="", risk_level="gul"),
     )
 
@@ -143,7 +152,7 @@ def test_tags_for_local_file_endpoint_resolves_last_path_and_attaches_tags(monke
     data = response.get_json()
     assert data["ok"] is True
     assert data["resolved"]["item_id"] == "item"
-    assert app_module._last_result.policy_warning_level == "rød"
+    assert app_module.app_state.last_result.policy_warning_level == "rød"
 
 
 def test_write_scan_metadata_endpoint_uses_last_result(monkeypatch):
@@ -155,18 +164,18 @@ def test_write_scan_metadata_endpoint_uses_last_result(monkeypatch):
         captured["fields"] = fields
         return {"_status": 200}
 
-    monkeypatch.setattr(app_module, "update_sharepoint_fields", fake_update)
+    monkeypatch.setattr(microsoft_routes, "update_sharepoint_fields", fake_update)
     monkeypatch.setattr(
-        app_module,
-        "_last_result",
-            ScanResult(
-                file_name="doc.docx",
-                file_size=1,
-                text_length=1,
-                text_preview="",
-                risk_level="gul",
-                findings=[Finding(category="e-post", text="a@b.no", severity="gul")],
-            ),
+        app_module.app_state,
+        "last_result",
+        ScanResult(
+            file_name="doc.docx",
+            file_size=1,
+            text_length=1,
+            text_preview="",
+            risk_level="gul",
+            findings=[Finding(category="e-post", text="a@b.no", severity="gul")],
+        ),
     )
 
     response = app_module.flask_app.test_client().post(
@@ -200,16 +209,16 @@ def test_write_folder_metadata_maps_each_result_and_writes_fields(monkeypatch, t
         risk_level="rød",
     )
     row = app_module._folder_result_row(result, report_id="report-root")
-    with app_module._folder_scan_lock:
-        app_module._folder_scan_results["report-root"] = result
-    with app_module._folder_jobs_lock:
-        app_module._folder_jobs["job-m365"] = {
+    with app_module.app_state.folder_scan_lock:
+        app_module.app_state.folder_scan_results["report-root"] = result
+    with app_module.app_state.folder_jobs_lock:
+        app_module.app_state.folder_jobs["job-m365"] = {
             "status": "completed",
             "folder": str(tmp_path),
             "files": [row],
         }
     monkeypatch.setattr(
-        app_module,
+        microsoft_routes,
         "resolve_local_drive_item",
         lambda path, drive_id=None, sync_root=None: {"drive_id": drive_id, "item_id": "item-root"},
     )
@@ -221,7 +230,7 @@ def test_write_folder_metadata_maps_each_result_and_writes_fields(monkeypatch, t
         captured["fields"] = fields
         return {"_status": 200}
 
-    monkeypatch.setattr(app_module, "update_sharepoint_fields", fake_update)
+    monkeypatch.setattr(microsoft_routes, "update_sharepoint_fields", fake_update)
 
     response = app_module.flask_app.test_client().post(
         "/microsoft/graph/write-folder-metadata",
