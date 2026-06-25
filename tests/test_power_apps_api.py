@@ -214,7 +214,10 @@ def test_openapi_json_and_swagger_docs_are_available():
 
 
 def test_patch_docx_expands_financial_ai_table_finding_to_cells(tmp_path: Path, monkeypatch):
+    from xlent_scanner import redaction_audit
+
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
+    monkeypatch.setattr(redaction_audit, "app_data_dir", lambda: tmp_path)
     downloads = tmp_path / "Downloads"
     downloads.mkdir()
 
@@ -267,6 +270,7 @@ def test_patch_docx_expands_financial_ai_table_finding_to_cells(tmp_path: Path, 
     assert response.status_code == 200
     data = response.get_json()
     assert data["ok"] is True
+    assert app_module.app_state.last_anonymized_path == Path(data["path"])
     patched = Document(data["path"])
     bread_cells = [cell.text for cell in patched.tables[0].rows[1].cells]
     milk_cells = [cell.text for cell in patched.tables[0].rows[2].cells]

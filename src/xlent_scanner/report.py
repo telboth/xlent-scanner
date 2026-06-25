@@ -14,6 +14,7 @@ from types import SimpleNamespace
 from jinja2 import Environment, select_autoescape
 
 from xlent_scanner.models import ScanResult
+from xlent_scanner.risk import assessment_for_level
 
 _LEVEL_ORDER = {"grønn": 0, "gul": 1, "rød": 2, "svart": 3}
 
@@ -46,12 +47,12 @@ _TEMPLATE = _JINJA_ENV.from_string("""<!DOCTYPE html>
   .header { display: flex; align-items: flex-start; gap: 24px;
             border-bottom: 1px solid var(--border); padding-bottom: 24px; margin-bottom: 24px; }
   .traffic-light { width: 72px; height: 72px; border-radius: 50%; flex-shrink: 0;
-                   background: var(--{{ result.risk_level }}); display: flex;
+                   background: var(--{{ assessment.risk_level }}); display: flex;
                    align-items: center; justify-content: center; font-size: 28px; }
   .header-text h1 { font-size: 22px; margin-bottom: 4px; }
   .header-text .meta { color: var(--muted); font-size: 13px; margin-bottom: 8px; }
   .verdict { font-size: 16px; font-weight: 600;
-             color: var(--{{ result.risk_level }}); margin-bottom: 6px; }
+             color: var(--{{ assessment.risk_level }}); margin-bottom: 6px; }
   .action { font-size: 13px; color: var(--text); max-width: 680px; line-height: 1.5; }
   .stats { display: flex; gap: 16px; margin-bottom: 24px; flex-wrap: wrap; }
   .stat { background: var(--panel); border: 1px solid var(--border);
@@ -113,6 +114,9 @@ _TEMPLATE = _JINJA_ENV.from_string("""<!DOCTYPE html>
   .m365-tags { background: var(--panel); border: 1px solid var(--border);
                border-radius: 6px; padding: 9px 12px; margin-bottom: 16px;
                font-size: 12px; color: var(--muted); line-height: 1.5; }
+  .audit { background: var(--panel); border: 1px solid var(--border);
+           border-radius: 6px; padding: 10px 12px; margin-bottom: 16px;
+           font-size: 12px; color: var(--muted); line-height: 1.6; }
   footer { margin-top: 32px; color: var(--muted); font-size: 12px;
            border-top: 1px solid var(--border); padding-top: 16px; }
 </style>
@@ -125,12 +129,12 @@ _TEMPLATE = _JINJA_ENV.from_string("""<!DOCTYPE html>
 </div>
 
 <div class="header">
-  <div class="traffic-light">{{ ICONS[result.risk_level] }}</div>
+  <div class="traffic-light">{{ ICONS[assessment.risk_level] }}</div>
   <div class="header-text">
     <h1>{{ result.file_name }}</h1>
     <div class="meta">Skannet {{ timestamp }} &middot; {{ "%.1f"|format(result.file_size/1024) }} KB &middot; {{ result.text_length }} tegn lest{% if result.language %} &middot; {{ LANG_LABELS.get(result.language, result.language) }}{% endif %}{% if has_ai_findings %} &middot; inkl. AI-dybdeskann{% endif %}</div>
-    <div class="verdict">{{ LABELS[result.risk_level] }} &mdash; {{ result.risk_summary }}</div>
-    <div class="action">{{ result.recommended_action }}</div>
+    <div class="verdict">{{ LABELS[assessment.risk_level] }} &mdash; {{ assessment.risk_summary }}</div>
+    <div class="action">{{ assessment.recommended_action }}</div>
   </div>
 </div>
 
@@ -155,6 +159,42 @@ _TEMPLATE = _JINJA_ENV.from_string("""<!DOCTYPE html>
   {% set retention = result.microsoft_tags.get("retention", {}) %}
   {% if retention.get("name") or retention.get("displayName") %} · Retention: {{ retention.get("name") or retention.get("displayName") }}{% endif %}
 </div>
+{% endif %}
+
+<div class="audit">
+  <strong>Revisjonsspor:</strong>
+  Regelbasert scanner{% if has_ai_findings %} + AI-dybdeskann{% endif %}.
+  {% if audit_metadata.get("model") %} Modell: {{ audit_metadata.get("model") }}.{% endif %}
+  {% if audit_metadata.get("categories") %} Kategorier: {{ audit_metadata.get("categories")|join(", ") }}.{% endif %}
+  {% if audit_metadata.get("min_confidence") %} Minimum konfidens: {{ audit_metadata.get("min_confidence") }}.{% endif %}
+  Samlet risiko er beregnet fra {{ merged_findings|length }} flettede funn.
+  {% if redaction_audit %}
+  <br><strong>Siste anonymisering:</strong>
+  {{ redaction_audit.get("output_file") }} via {{ redaction_audit.get("method") }}.
+  {{ redaction_audit.get("selected_count", 0) }} funn valgt.
+  {% set verification = redaction_audit.get("verification", {}) %}
+  Kontrollskann:
+  {% if verification.get("passed") %}bestått{% else %}krever kontroll{% endif %}
+  ({{ verification.get("removed_count", 0) }} fjernet,
+  {{ verification.get("finding_count", 0) }} gjenværende).
+  {% endif %}
+</div>
+
+{% if redaction_audit and redaction_audit.get("selected_findings") %}
+<h2>Faktisk anonymiserte funn ({{ redaction_audit.get("selected_findings")|length }})</h2>
+<table>
+  <thead><tr><th>Kategori</th><th>Kilde</th><th>Konfidens</th><th>Verdi</th></tr></thead>
+  <tbody>
+  {% for item in redaction_audit.get("selected_findings") %}
+    <tr>
+      <td>{{ item.get("category") }}</td>
+      <td>{{ item.get("engine") }}</td>
+      <td>{{ item.get("confidence") or "—" }}</td>
+      <td><strong>{{ item.get("text") }}</strong></td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
 {% endif %}
 
 {# Stats over alle funn (regular + AI, ekskl. grønne) #}
@@ -202,7 +242,7 @@ _TEMPLATE = _JINJA_ENV.from_string("""<!DOCTYPE html>
   <thead>
     <tr>
       {% if api_base %}<th style="width:32px" title="Anonymiser valgt funn"></th>{% endif %}
-      <th>Alvor</th><th>Kategori</th><th>Verdi</th><th>Kontekst</th>
+      <th>Alvor</th><th>Kategori</th><th>Kilde</th><th>Konfidens</th><th>Verdi</th><th>Kontekst</th>
       {% if api_base %}<th style="width:110px"></th>{% endif %}
     </tr>
   </thead>
@@ -222,6 +262,8 @@ _TEMPLATE = _JINJA_ENV.from_string("""<!DOCTYPE html>
       {{ f.category }}
       {% if f.is_ai %}<span class="ai-badge">🔬</span>{% endif %}
     </td>
+    <td>{{ f.engine }}</td>
+    <td>{{ f.confidence or "—" }}</td>
     <td><strong>{{ f.text }}</strong></td>
     <td><span class="ctx">{{ f.context }}</span></td>
     {% if api_base %}
@@ -334,6 +376,7 @@ def ai_severity(category: str) -> str:
 def _build_merged_findings(
     result: ScanResult,
     ai_findings: list[dict] | None,
+    audit_metadata: dict | None = None,
 ) -> tuple[list[SimpleNamespace], bool]:
     """Bygger én flettet og deduplisert funnliste (regelbasert + AI).
 
@@ -348,6 +391,8 @@ def _build_merged_findings(
     from xlent_scanner.whitelist import load_whitelist  # noqa: PLC0415
 
     wl = load_whitelist()
+    audit_metadata = audit_metadata or {}
+    model = str(audit_metadata.get("model") or "").strip()
     existing_texts: set[str] = set()
     merged: list[SimpleNamespace] = []
 
@@ -362,6 +407,8 @@ def _build_merged_findings(
             finding_index=idx,
             is_ai=False,
             whitelisted=(f.severity == "grønn"),
+            engine="Regelbasert",
+            confidence="deterministisk",
         ))
 
     # ── AI-funn: whitelist, dedup, merge ─────────────────────────────────
@@ -393,6 +440,8 @@ def _build_merged_findings(
             finding_index=None,
             is_ai=True,
             whitelisted=is_wl,
+            engine=f"AI ({model})" if model else "AI",
+            confidence=str(f.get("confidence") or ""),
         ))
 
     # Sorter: svart→rød→gul→grønn
@@ -400,17 +449,52 @@ def _build_merged_findings(
     return merged, has_ai
 
 
+def combined_assessment(
+    result: ScanResult,
+    ai_findings: list[dict] | None = None,
+    audit_metadata: dict | None = None,
+) -> SimpleNamespace:
+    merged, _ = _build_merged_findings(result, ai_findings, audit_metadata)
+    overall = result.risk_level if result.risk_level in _LEVEL_ORDER else "grønn"
+    policy_level = str(result.policy_warning_level or "")
+    if policy_level in _LEVEL_ORDER and _LEVEL_ORDER[policy_level] > _LEVEL_ORDER[overall]:
+        overall = policy_level
+    for finding in merged:
+        if finding.severity == "grønn":
+            continue
+        if _LEVEL_ORDER.get(finding.severity, 1) > _LEVEL_ORDER[overall]:
+            overall = finding.severity
+    summary, action = assessment_for_level(overall)
+    return SimpleNamespace(
+        risk_level=overall,
+        risk_summary=summary,
+        recommended_action=action,
+        finding_count=len(merged),
+    )
+
+
 def generate_html(
     result: ScanResult,
     api_base: str = "",
     ai_findings: list[dict] | None = None,
+    audit_metadata: dict | None = None,
+    redaction_audit: dict | None = None,
 ) -> str:
-    merged_findings, has_ai_findings = _build_merged_findings(result, ai_findings)
+    audit_metadata = audit_metadata or {}
+    merged_findings, has_ai_findings = _build_merged_findings(
+        result,
+        ai_findings,
+        audit_metadata,
+    )
+    assessment = combined_assessment(result, ai_findings, audit_metadata)
     file_suffix = Path(result.file_name).suffix.lstrip(".").lower()
     return _TEMPLATE.render(
         result=result,
+        assessment=assessment,
         merged_findings=merged_findings,
         has_ai_findings=has_ai_findings,
+        audit_metadata=audit_metadata,
+        redaction_audit=redaction_audit,
         timestamp=datetime.now().strftime("%d.%m.%Y %H:%M"),
         ICONS=_ICONS,
         LABELS=_LABELS,

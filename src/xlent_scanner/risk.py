@@ -1,7 +1,7 @@
 """Risk engine: beregner alvorlighetsgrad per funn og samlet vurdering."""
 from __future__ import annotations
 
-from xlent_scanner.models import Finding, ScanResult
+from xlent_scanner.models import ScanResult
 
 # Alvorlighetsgrad per kategori-prefiks (case-insensitive startswith-match)
 _SEVERITY_MAP: list[tuple[str, str]] = [
@@ -103,6 +103,11 @@ _SUMMARIES: dict[str, str] = {
     "rød":   "Sensitive funn — ikke del uten redigering",
     "svart": "Kritisk sensitiv informasjon — ikke del",
 }
+
+
+def assessment_for_level(level: str) -> tuple[str, str]:
+    normalized = level if level in _LEVEL_ORDER else "gul"
+    return _SUMMARIES[normalized], _ACTIONS[normalized]
 
 
 def _category_severity(category: str) -> str:

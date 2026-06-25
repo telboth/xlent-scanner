@@ -656,8 +656,11 @@ def test_ai_deep_scan_updates_main_risk_and_redaction_controls():
 
     assert 'id="ai-redacted-doc-btn"' in html
     assert 'data-i18n="downloadRedactedDoc"' in html
+    assert 'id="ai-open-anonymized-btn"' in html
+    assert 'data-i18n="openAnonymizedFile"' in html
     assert "function _downloadRedactedDocAfterAi" in html
     assert 'document.getElementById("ai-redacted-doc-btn").addEventListener("click", _downloadRedactedDocAfterAi);' in html
+    assert 'document.getElementById("ai-open-anonymized-btn").addEventListener("click"' in html
     assert 'id="result-risk-dot"' in html
     assert 'id="result-risk-title"' in html
     assert 'id="result-action-box"' in html
@@ -668,24 +671,61 @@ def test_ai_deep_scan_updates_main_risk_and_redaction_controls():
 
     assert "const summary = level === \"grønn\" ? t(\"aiRiskGreenSummary\") : t(\"aiRiskSummary\");" in html
     assert "let level = \"grønn\";" in html
-    assert "(lastResult?.findings || []).forEach((f, idx) => {" in html
+    assert "(lastResult?.findings || []).forEach(f => {" in html
 
-    for key in ["downloadRedactedDoc", "aiRiskGreenSummary", "aiRiskGreenAction", "aiRiskSummary", "aiRiskAction"]:
+    for key in ["downloadRedactedDoc", "openAnonymizedFile", "aiRiskGreenSummary", "aiRiskGreenAction", "aiRiskSummary", "aiRiskAction"]:
         assert html.count(f"{key}:") == 6
 
 
-def test_ai_deep_scan_disables_rule_based_person_names_for_redaction():
+def test_anonymized_file_button_tracks_last_generated_output():
+    html = HTML.read_text(encoding="utf-8")
+
+    assert html.count('class="ctrl-btn open-anonymized-btn"') == 3
+    assert "function _setLastAnonymizedPath(path)" in html
+    assert "function _openAnonymizedFile" in html
+    assert '_setLastAnonymizedPath(d.path);' in html
+    assert 'fetch(`${API}/open-anonymized-file`' in html
+    assert 'btn.disabled = !_lastAnonymizedPath;' in html
+
+
+def test_redaction_history_and_automatic_verification_are_wired():
+    html = HTML.read_text(encoding="utf-8")
+
+    assert 'id="redaction-history-section"' in html
+    assert 'id="redaction-history-list"' in html
+    assert 'id="btn-clear-redaction-history"' in html
+    assert "function loadRedactionHistory()" in html
+    assert "function renderRedactionHistory()" in html
+    assert "function _verificationSummary(verification)" in html
+    assert 'redaction/history/verify' in html
+    assert 'reveal-anonymized-file' in html
+    assert "loadRedactionHistory();" in html
+
+    for key in [
+        "redactionHistoryTitle",
+        "redactionHistoryClear",
+        "redactionHistoryOpen",
+        "redactionHistoryReveal",
+        "redactionHistoryVerify",
+        "verificationPassed",
+        "verificationReview",
+        "verificationRemoved",
+        "verificationRemaining",
+    ]:
+        assert html.count(f"{key}:") == 6
+
+
+def test_ai_deep_scan_preserves_rule_based_person_names_and_risk():
     html = HTML.read_text(encoding="utf-8")
 
     assert "let _aiDeepScanCompleted = false;" in html
     assert "_aiDeepScanCompleted = true;" in html
-    assert "function _isPersonNameFinding" in html
-    assert "function _regularNameIgnoredByAi" in html
-    assert "function _applyAiNameOverrideToRegularRows" in html
-    assert ".filter(idx => !_regularNameIgnoredByAi(idx));" in html
+    assert "function _regularNameIgnoredByAi" not in html
+    assert "function _applyAiNameOverrideToRegularRows" not in html
+    assert "_regularNameIgnoredByAi(idx)" not in html
     assert 'document.querySelectorAll(".g-cb:not(:disabled), .g-ai-cb")' in html
-    assert "ai-name-override-note" in html
-    assert html.count("aiNamesOverride:") == 6
+    assert "ai-name-override-note" not in html
+    assert "aiNamesOverride:" not in html
 
 
 def test_about_hardware_requirement_is_16gb_in_all_languages():

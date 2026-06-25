@@ -1,6 +1,6 @@
 """Tester for risk-klassifisering og HTML-rapport (inkl. AI-dybdeskann-funn)."""
 from xlent_scanner.risk import _category_severity
-from xlent_scanner.report import generate_html, ai_severity
+from xlent_scanner.report import combined_assessment, generate_html, ai_severity
 from xlent_scanner.models import ScanResult, Finding
 
 
@@ -78,6 +78,75 @@ class TestReport:
         assert "badge-svart" in html
         # AI-badge (🔬) vises i kategoriraden
         assert "ai-badge" in html
+
+    def test_ai_finding_raises_combined_backend_risk(self):
+        result = ScanResult(
+            file_name="clean.txt",
+            file_size=10,
+            text_length=10,
+            text_preview="clean",
+            risk_level="grønn",
+            risk_summary="Ingen funn",
+        )
+        ai_findings = [{
+            "category": "🤖 Medisinsk",
+            "text": "Metformin",
+            "context": "Pasienten bruker Metformin",
+            "confidence": "high",
+        }]
+
+        assessment = combined_assessment(result, ai_findings)
+        html = generate_html(result, ai_findings=ai_findings)
+
+        assert assessment.risk_level == "rød"
+        assert "RØD" in html
+        assert "background: var(--rød)" in html
+
+    def test_report_renders_audit_engine_confidence_and_model(self):
+        html = generate_html(
+            _result_with_findings(),
+            ai_findings=[{
+                "category": "🤖 Personnavn",
+                "text": "Ola Nordmann",
+                "context": "",
+                "confidence": "high",
+            }],
+            audit_metadata={
+                "model": "llama3.2:3b",
+                "categories": ["navn", "adresse"],
+                "min_confidence": "medium",
+            },
+        )
+
+        assert "Revisjonsspor" in html
+        assert "AI (llama3.2:3b)" in html
+        assert "high" in html
+        assert "navn, adresse" in html
+
+    def test_report_renders_findings_actually_anonymized(self):
+        html = generate_html(
+            _result_with_findings(),
+            redaction_audit={
+                "output_file": "test-anonymisert.txt",
+                "method": "patch_txt",
+                "selected_count": 1,
+                "selected_findings": [{
+                    "category": "e-post",
+                    "text": "a@b.no",
+                    "engine": "rule",
+                    "confidence": "deterministisk",
+                }],
+                "verification": {
+                    "passed": True,
+                    "removed_count": 1,
+                    "finding_count": 0,
+                },
+            },
+        )
+
+        assert "Faktisk anonymiserte funn" in html
+        assert "test-anonymisert.txt" in html
+        assert "Kontrollskann" in html
 
     def test_ai_finding_whitelist_filtered(self):
         """AI-funn som finnes i whitelisten skal vises som grønn (hvitelistet)."""
