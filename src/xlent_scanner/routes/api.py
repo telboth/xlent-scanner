@@ -398,7 +398,7 @@ def api_deep_scan():
         job_id = start_deep_scan(
             text,
             model,
-            getattr(result, "language", "nb") or "nb",
+            getattr(result, "language", "en") or "en",
             categories=categories,
             min_confidence=min_confidence,
         )

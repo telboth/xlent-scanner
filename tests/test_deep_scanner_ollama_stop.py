@@ -1,5 +1,7 @@
 import time
 
+import pytest
+
 from xlent_scanner import deep_scanner
 
 
@@ -127,6 +129,53 @@ def test_deep_scan_ollama_call_uses_balanced_speed_options(monkeypatch):
             180,
         )
     ]
+
+
+@pytest.mark.parametrize(
+    ("language", "language_marker", "financial_marker"),
+    [
+        ("nb", "personvernekspert", "finansielle tall"),
+        ("sv", "integritetsexpert", "finansiella tal"),
+        ("da", "databeskyttelse", "finansielle tal"),
+        ("de", "Datenschutzexperte", "Finanzzahlen"),
+        ("fr", "protection des données", "chiffres financiers"),
+        ("es", "experto en privacidad", "cifras financieras"),
+        ("en", "privacy expert", "financial figures"),
+    ],
+)
+def test_system_instruction_matches_document_language(
+    language,
+    language_marker,
+    financial_marker,
+):
+    instruction = deep_scanner._system_instruction(language)
+
+    assert language_marker in instruction
+    assert financial_marker in instruction
+
+
+def test_unknown_system_instruction_language_falls_back_to_english():
+    assert deep_scanner._system_instruction("unknown") == (
+        deep_scanner._system_instruction("en")
+    )
+
+
+def test_localized_ollama_call_uses_selected_system_language(monkeypatch):
+    captured = {}
+
+    def fake_post(path, data, timeout=180):
+        captured.update(data)
+        return {"response": '{"findings":[]}'}
+
+    monkeypatch.setattr(deep_scanner, "_post", fake_post)
+
+    deep_scanner._call_ollama_localized(
+        "llama3.2:3b",
+        "Analysiere diesen Text.",
+        "de",
+    )
+
+    assert captured["system"] == deep_scanner._system_instruction("de")
 
 
 def test_deep_scan_ignores_email_domain_case_insensitive(monkeypatch):
@@ -632,6 +681,36 @@ def test_medical_prompt_is_focused_and_requires_exact_source_text():
     assert "exact source substrings" in prompt
     assert "Personal name" not in prompt
     assert "Monetary amount" not in prompt
+
+
+@pytest.mark.parametrize(
+    ("language", "marker", "response_marker"),
+    [
+        ("nb", "Finn alle uttrykkelige sykdommer", "Svar KUN"),
+        ("sv", "Hitta varje uttrycklig sjukdom", "Svara ENDAST"),
+        ("da", "Find alle udtrykkelige sygdomme", "Svar KUN"),
+        ("de", "Finde jede ausdrücklich genannte Krankheit", "Antworte NUR"),
+        ("fr", "Trouvez chaque maladie", "Répondez UNIQUEMENT"),
+        ("es", "Encuentra cada enfermedad", "Responde ÚNICAMENTE"),
+        ("en", "Find every explicit disease", "Respond ONLY"),
+    ],
+)
+def test_medical_prompt_matches_document_language(
+    language,
+    marker,
+    response_marker,
+):
+    prompt = deep_scanner._build_medical_prompt("Test text", language)
+
+    assert marker in prompt
+    assert response_marker in prompt
+
+
+def test_unknown_medical_prompt_language_falls_back_to_english():
+    prompt = deep_scanner._build_medical_prompt("Test text", "unknown")
+
+    assert "Find every explicit disease" in prompt
+    assert "Respond ONLY" in prompt
 
 
 def test_medical_filter_accepts_exact_high_confidence_source_finding():

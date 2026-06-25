@@ -98,7 +98,7 @@ def ollama_deep_scan_endpoint():
     job_id = start_deep_scan(
         text,
         model,
-        getattr(app_state.last_result, "language", "nb") or "nb",
+        getattr(app_state.last_result, "language", "en") or "en",
         categories=categories,
         min_confidence=min_confidence,
     )
