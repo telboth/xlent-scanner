@@ -1,6 +1,6 @@
 # XLENT Compliance-scanner
 
-> **v1.5.5** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
+> **v1.5.6** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
 
 Alt kjøres 100 % lokalt — ingen dokumenter, tekst eller funn sendes over internett.
 
@@ -422,6 +422,12 @@ src/xlent_scanner/
 ---
 
 ## Endringslogg
+
+### v1.5.6
+- Tilpasser Ollamas systeminstruksjon og medisinske instruksjon til dokumentets språk for norsk, svensk, dansk, engelsk, tysk, fransk og spansk.
+- Bruker engelsk instruksjon når dokumentets språk er ukjent, ugyldig eller for uklart til sikker språkdeteksjon.
+- Utvider systeminstruksjonen slik at modellen eksplisitt leter etter personnavn, fysiske adresser og budsjett-/finansielle tall.
+- Legger til regresjonstester for språkvalg og engelsk fallback i AI-dybdeskann.
 
 ### v1.5.5
 - Øker AI-dybdeskannens outputgrense fra 512 til 1024 tokens og varsler i loggen dersom Ollama fortsatt avkorter svaret.

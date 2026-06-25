@@ -43,10 +43,10 @@ def detect_language(text: str) -> str:
     """Detekter dokumentspråk. Returnerer én av kodene i SUPPORTED.
 
     Bruker de første 3000 tegnene for hastighet.
-    Faller tilbake til 'nb' ved feil eller for kort tekst.
+    Faller tilbake til 'en' ved feil eller for kort/uklar tekst.
     """
     if len(text.strip()) < _MIN_DETECT_CHARS:
-        return "nb"
+        return "en"
     try:
         from langdetect import detect, DetectorFactory  # type: ignore
         DetectorFactory.seed = 0   # deterministisk resultat
@@ -58,11 +58,11 @@ def detect_language(text: str) -> str:
             return lang
         return "en"
     except Exception:
-        return "nb"
+        return "en"
 
 
 def resolve_language(requested: str, text: str) -> str:
     """Løs opp 'auto' → detektert dokumentspråk; valider andre koder."""
     if requested == "auto":
         return detect_language(text)
-    return requested if requested in SUPPORTED else "nb"
+    return requested if requested in SUPPORTED else "en"

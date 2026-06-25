@@ -5,6 +5,7 @@ GDPR-sensitive personopplysninger som regel-baserte detektorer kan misse.
 """
 from __future__ import annotations
 
+import contextvars
 import json
 import logging
 import os
@@ -262,12 +263,88 @@ def stop_ollama_model(model: str) -> dict[str, Any]:
 
 # ── Prompt-builder (dynamisk basert på valgte kategorier) ───────────────
 
-_SYS = (
-    "Du er en personvernekspert med svært høy presisjon. "
-    "Rapporter KUN funn du er helt sikker på. "
-    "Gi hvert funn en konfidens: \"high\" (helt sikkert), \"medium\" (sannsynlig) eller \"low\" (usikkert). "
-    "Svar ALLTID med gyldig JSON, aldri med annen tekst."
-)
+_SYSTEM_INSTRUCTIONS = {
+    "nb": (
+        "Du er en personvernekspert med svært høy presisjon. "
+        "Let systematisk etter personnavn, fysiske adresser og budsjettall "
+        "eller andre finansielle tall, i tillegg til kategoriene brukeren har valgt. "
+        "Rapporter kun funn som faktisk står i kildeteksten, og unngå antakelser. "
+        "Gi hvert funn konfidens «high», «medium» eller «low». "
+        "Svar alltid med gyldig JSON og aldri med annen tekst."
+    ),
+    "sv": (
+        "Du är en integritetsexpert med mycket hög precision. "
+        "Sök systematiskt efter personnamn, fysiska adresser och budgettal "
+        "eller andra finansiella tal, utöver de kategorier som användaren har valt. "
+        "Rapportera endast fynd som faktiskt finns i källtexten och undvik antaganden. "
+        "Ge varje fynd konfidensen «high», «medium» eller «low». "
+        "Svara alltid med giltig JSON och aldrig med annan text."
+    ),
+    "da": (
+        "Du er en ekspert i databeskyttelse med meget høj præcision. "
+        "Søg systematisk efter personnavne, fysiske adresser og budgettal "
+        "eller andre finansielle tal ud over de kategorier, brugeren har valgt. "
+        "Rapportér kun fund, der faktisk står i kildeteksten, og undgå antagelser. "
+        "Giv hvert fund konfidensen «high», «medium» eller «low». "
+        "Svar altid med gyldig JSON og aldrig med anden tekst."
+    ),
+    "de": (
+        "Du bist ein Datenschutzexperte mit sehr hoher Präzision. "
+        "Suche systematisch nach Personennamen, physischen Adressen sowie "
+        "Budgetzahlen oder anderen Finanzzahlen, zusätzlich zu den vom Benutzer "
+        "ausgewählten Kategorien. Melde nur Funde, die tatsächlich im Quelltext "
+        "stehen, und vermeide Annahmen. Weise jedem Fund die Konfidenz «high», "
+        "«medium» oder «low» zu. Antworte immer mit gültigem JSON und niemals "
+        "mit anderem Text."
+    ),
+    "fr": (
+        "Vous êtes un expert de la protection des données d'une très grande précision. "
+        "Recherchez systématiquement les noms de personnes, les adresses physiques, "
+        "les chiffres budgétaires et les autres chiffres financiers, en plus des "
+        "catégories choisies par l'utilisateur. Signalez uniquement les éléments "
+        "réellement présents dans le texte source et évitez toute supposition. "
+        "Attribuez à chaque élément une confiance «high», «medium» ou «low». "
+        "Répondez toujours avec un JSON valide et aucun autre texte."
+    ),
+    "es": (
+        "Eres un experto en privacidad con una precisión muy alta. "
+        "Busca sistemáticamente nombres de personas, direcciones físicas y cifras "
+        "presupuestarias u otras cifras financieras, además de las categorías "
+        "seleccionadas por el usuario. Informa solo de hallazgos que aparezcan "
+        "realmente en el texto fuente y evita suposiciones. Asigna a cada hallazgo "
+        "una confianza «high», «medium» o «low». Responde siempre con JSON válido "
+        "y nunca con otro texto."
+    ),
+    "en": (
+        "You are a privacy expert with very high precision. "
+        "Systematically look for personal names, physical addresses, and budget "
+        "figures or other financial figures, in addition to the categories selected "
+        "by the user. Report only findings that actually appear in the source text "
+        "and avoid assumptions. Assign each finding a confidence of «high», "
+        "«medium», or «low». Always respond with valid JSON and no other text."
+    ),
+}
+_SYS = _SYSTEM_INSTRUCTIONS["en"]
+_PROMPT_LANGUAGE = contextvars.ContextVar("xlent_prompt_language", default="en")
+
+
+def _instruction_language(lang: str | None) -> str:
+    """Returner støttet instruksjonsspråk; ukjent språk bruker engelsk."""
+    normalized = str(lang or "").strip().lower()
+    return normalized if normalized in _SYSTEM_INSTRUCTIONS else "en"
+
+
+def _system_instruction(lang: str | None) -> str:
+    return _SYSTEM_INSTRUCTIONS[_instruction_language(lang)]
+
+
+def _call_ollama_localized(model: str, prompt: str, lang: str | None) -> list[dict]:
+    """Velg systeminstruksjon uten å endre det testbare to-argumentskallet."""
+    token = _PROMPT_LANGUAGE.set(_instruction_language(lang))
+    try:
+        return _call_ollama(model, prompt)
+    finally:
+        _PROMPT_LANGUAGE.reset(token)
 
 # Regler med ✅/❌ eksempler – mer effektivt enn rene tekstlige eksklusjoner
 _RULES_NB = """\
@@ -475,36 +552,106 @@ def _build_prompt(categories: list[str], chunk: str, lang: str = "nb") -> str:
 
 def _build_medical_prompt(chunk: str, lang: str = "nb") -> str:
     """Kort, fokusert prompt som hindrer at medisinske funn drukner i andre regler."""
-    if lang == "sv":
-        instruction = (
+    localized = {
+        "nb": (
+            "Finn alle uttrykkelige sykdommer, diagnoser, symptomer, behandlinger "
+            "og legemidler som gjelder en person. Førsteperson (jeg/min) regnes "
+            "som en person. Rapporter eksakt kildetekst, ikke omskrivinger.",
+            "Medisinsk informasjon",
+            "Svar KUN med gyldig JSON på denne formen:",
+            "eksakt tekst",
+            "kort eksakt kontekst",
+            "Ingen funn",
+            "Tekst",
+        ),
+        "sv": (
             "Hitta varje uttrycklig sjukdom, diagnos, symptom, behandling eller "
             "läkemedel som gäller en person. Första person (jag/min) räknas som "
-            "en person. Rapportera exakt källtext, inte omskrivningar."
-        )
-        category = "Medicinsk information"
-    elif lang == "en":
-        instruction = (
+            "en person. Rapportera exakt källtext, inte omskrivningar.",
+            "Medicinsk information",
+            "Svara ENDAST med giltig JSON i detta format:",
+            "exakt text",
+            "kort exakt kontext",
+            "Inga fynd",
+            "Text",
+        ),
+        "da": (
+            "Find alle udtrykkelige sygdomme, diagnoser, symptomer, behandlinger "
+            "og lægemidler, der gælder en person. Første person (jeg/min) regnes "
+            "som en person. Rapportér den nøjagtige kildetekst, ikke omskrivninger.",
+            "Medicinsk information",
+            "Svar KUN med gyldig JSON i dette format:",
+            "nøjagtig tekst",
+            "kort nøjagtig kontekst",
+            "Ingen fund",
+            "Tekst",
+        ),
+        "de": (
+            "Finde jede ausdrücklich genannte Krankheit, Diagnose, jedes Symptom, "
+            "jede Behandlung und jedes Medikament, das sich auf eine Person bezieht. "
+            "Aussagen in der ersten Person (ich/mein) gelten als personenbezogen. "
+            "Melde exakte Quelltextstellen und keine Umschreibungen.",
+            "Medizinische Information",
+            "Antworte NUR mit gültigem JSON in diesem Format:",
+            "exakter Text",
+            "kurzer exakter Kontext",
+            "Keine Funde",
+            "Text",
+        ),
+        "fr": (
+            "Trouvez chaque maladie, diagnostic, symptôme, traitement ou médicament "
+            "explicitement mentionné et concernant une personne. Les déclarations "
+            "à la première personne (je/mon) concernent une personne. Signalez les "
+            "extraits exacts du texte source, sans paraphrase.",
+            "Information médicale",
+            "Répondez UNIQUEMENT avec un JSON valide sous cette forme :",
+            "texte exact",
+            "contexte exact et court",
+            "Aucun résultat",
+            "Texte",
+        ),
+        "es": (
+            "Encuentra cada enfermedad, diagnóstico, síntoma, tratamiento o "
+            "medicamento mencionado explícitamente que corresponda a una persona. "
+            "Las afirmaciones en primera persona (yo/mi) cuentan como personales. "
+            "Informa fragmentos exactos del texto fuente, sin paráfrasis.",
+            "Información médica",
+            "Responde ÚNICAMENTE con JSON válido en este formato:",
+            "texto exacto",
+            "contexto exacto y breve",
+            "Sin hallazgos",
+            "Texto",
+        ),
+        "en": (
             "Find every explicit disease, diagnosis, symptom, treatment, drug, "
             "or medication that applies to a person. First-person statements "
             "(I/my) count as applying to a person. Report exact source substrings, "
-            "not paraphrases. Include prescribed and over-the-counter medication."
-        )
-        category = "Medical information"
-    else:
-        instruction = (
-            "Finn alle uttrykkelige sykdommer, diagnoser, symptomer, behandlinger "
-            "og legemidler som gjelder en person. Førsteperson (jeg/min) regnes "
-            "som en person. Rapporter eksakt kildetekst, ikke omskrivinger."
-        )
-        category = "Medisinsk informasjon"
+            "not paraphrases. Include prescribed and over-the-counter medication.",
+            "Medical information",
+            "Respond ONLY with valid JSON in this format:",
+            "exact text",
+            "short exact context",
+            "No findings",
+            "Text",
+        ),
+    }
+    (
+        instruction,
+        category,
+        response_instruction,
+        text_placeholder,
+        context_placeholder,
+        no_findings,
+        text_label,
+    ) = localized[_instruction_language(lang)]
 
     return (
         f"{instruction}\n"
-        "Svar KUN med gyldig JSON på denne formen:\n"
-        f'{{"findings":[{{"category":"{category}","text":"eksakt tekst",'
-        '"context":"kort eksakt kontekst","confidence":"high"}}]}\n'
-        'Ingen funn → {"findings":[]}\n\n'
-        f"Text:\n{chunk}"
+        f"{response_instruction}\n"
+        f'{{"findings":[{{"category":"{category}","text":"{text_placeholder}",'
+        f'"context":"{context_placeholder}","confidence":"high"}}]}}\n'
+        f'{no_findings} → {{"findings":[]}}\n\n'
+        f"{text_label}:\n{chunk}"
     )
 
 
@@ -551,7 +698,7 @@ def _call_ollama(model: str, prompt: str) -> list[dict]:
         result = _post("/api/generate", {
             "model":   model,
             "prompt":  prompt,
-            "system":  _SYS,
+            "system":  _system_instruction(_PROMPT_LANGUAGE.get()),
             "stream":  False,
             "format":  "json",
             "options": {
@@ -1058,10 +1205,20 @@ def _run_deep_scan(
         ]
         if standard_categories:
             findings.extend(
-                _call_ollama(model, _build_prompt(standard_categories, chunk, lang))
+                _call_ollama_localized(
+                    model,
+                    _build_prompt(standard_categories, chunk, lang),
+                    lang,
+                )
             )
         if "medisinsk" in categories:
-            findings.extend(_call_ollama(model, _build_medical_prompt(chunk, lang)))
+            findings.extend(
+                _call_ollama_localized(
+                    model,
+                    _build_medical_prompt(chunk, lang),
+                    lang,
+                )
+            )
         findings = _filter_llm_findings_to_source(findings, chunk)
         findings = _filter_llm_findings_by_category_precision(findings, source=chunk)
         all_raw.extend(findings)
@@ -1241,7 +1398,7 @@ def _run_deep_scan(
 # ── Offentlige API-er ───────────────────────────────────────────────────
 
 def start_deep_scan(
-    text: str, model: str, lang: str = "nb", categories: list[str] | None = None,
+    text: str, model: str, lang: str = "en", categories: list[str] | None = None,
     min_confidence: str = "medium",
 ) -> str:
     """Start dybdeskanning i bakgrunn. Returnerer job_id."""
