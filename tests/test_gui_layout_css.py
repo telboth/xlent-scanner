@@ -677,15 +677,32 @@ def test_ai_deep_scan_updates_main_risk_and_redaction_controls():
         assert html.count(f"{key}:") == 6
 
 
-def test_anonymized_file_button_tracks_last_generated_output():
+def test_anonymized_file_button_saves_then_opens_without_prior_save():
     html = HTML.read_text(encoding="utf-8")
 
     assert html.count('class="ctrl-btn open-anonymized-btn"') == 3
     assert "function _setLastAnonymizedPath(path)" in html
     assert "function _openAnonymizedFile" in html
+    assert "function _saveAndOpenAnonymized" in html
     assert '_setLastAnonymizedPath(d.path);' in html
     assert 'fetch(`${API}/open-anonymized-file`' in html
-    assert 'btn.disabled = !_lastAnonymizedPath;' in html
+    assert 'id="g-open-anonymized" disabled' not in html
+    assert 'id="ai-open-anonymized-btn" data-i18n="openAnonymizedFile" disabled' not in html
+    assert 'await postAnon(' in html
+    assert 'if (saved?.ok) await _openAnonymizedFile(msgId);' in html
+
+
+def test_secondary_redaction_and_export_actions_are_collapsed():
+    html = HTML.read_text(encoding="utf-8")
+
+    assert '<details class="advanced-actions" id="advanced-actions">' in html
+    assert "<summary>${t(\"moreOptions\")}</summary>" in html
+    assert 'id="g-preview"' in html
+    assert 'id="g-anon"' in html
+    assert 'id="g-anon-pdf"' in html
+    assert 'id="btn-exp-json"' in html
+    assert 'id="btn-exp-csv"' in html
+    assert html.count("moreOptions:") == 6
 
 
 def test_redaction_history_and_automatic_verification_are_wired():

@@ -462,6 +462,21 @@
     }
     .ctrl-btn-outline-accent:hover { background: rgba(67,160,71,.12); border-color: #5fbd63; }
     .anon-msg { font-size: 12px; margin-left: 2px; flex: 1; }
+    .advanced-actions {
+      width: 100%; margin-top: 4px; border: 1px solid var(--border);
+      border-radius: 6px; background: var(--panel2);
+    }
+    .advanced-actions summary {
+      cursor: pointer; color: var(--muted); font-size: 12px;
+      padding: 6px 10px; user-select: none;
+    }
+    .advanced-actions[open] summary {
+      border-bottom: 1px solid var(--border);
+    }
+    .advanced-actions-body {
+      display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
+      padding: 8px 10px;
+    }
 
     /* PDF caveat */
     .pdf-caveat {
@@ -866,7 +881,7 @@
           <span class="ctrl-sep"></span>
           <button class="ctrl-btn ctrl-btn-outline-accent" id="ai-anon-btn" data-i18n="saveAnon">Anonymiser valgte</button>
           <button class="ctrl-btn ctrl-btn-outline-primary" id="ai-redacted-doc-btn" data-i18n="downloadRedactedDoc">Last ned redacted dokument</button>
-          <button class="ctrl-btn open-anonymized-btn" id="ai-open-anonymized-btn" data-i18n="openAnonymizedFile" disabled>Åpne anonymisert fil</button>
+          <button class="ctrl-btn open-anonymized-btn" id="ai-open-anonymized-btn" data-i18n="openAnonymizedFile">Åpne anonymisert fil</button>
           <span class="anon-msg" id="ai-anon-msg"></span>
         </div>
       </div>
@@ -1672,6 +1687,7 @@
         saveAnon:     "Lagre anonymisert",
         downloadRedactedDoc:"Last ned redacted dokument",
         openAnonymizedFile:"Åpne anonymisert fil",
+        moreOptions:"Flere valg",
         redactionHistoryTitle:"Anonymiserte filer",
         redactionHistoryClear:"Tøm historikk",
         redactionHistoryOpen:"Åpne",
@@ -2038,6 +2054,7 @@
         saveAnon:     "Spara anonymiserad",
         downloadRedactedDoc:"Ladda ned redacted dokument",
         openAnonymizedFile:"Öppna anonymiserad fil",
+        moreOptions:"Fler alternativ",
         redactionHistoryTitle:"Anonymiserade filer",
         redactionHistoryClear:"Rensa historik",
         redactionHistoryOpen:"Öppna",
@@ -2394,6 +2411,7 @@
         saveAnon:     "Save redacted",
         downloadRedactedDoc:"Download redacted document",
         openAnonymizedFile:"Open redacted file",
+        moreOptions:"More options",
         redactionHistoryTitle:"Redacted files",
         redactionHistoryClear:"Clear history",
         redactionHistoryOpen:"Open",
@@ -2762,6 +2780,7 @@
         saveAnon:            "Anonymisiert speichern",
         downloadRedactedDoc: "Redacted Dokument herunterladen",
         openAnonymizedFile:   "Anonymisierte Datei öffnen",
+        moreOptions:          "Weitere Optionen",
         redactionHistoryTitle: "Anonymisierte Dateien",
         redactionHistoryClear: "Verlauf löschen",
         redactionHistoryOpen:  "Öffnen",
@@ -3124,6 +3143,7 @@
         saveAnon:            "Enregistrer anonymisé",
         downloadRedactedDoc: "Télécharger le document redacted",
         openAnonymizedFile:   "Ouvrir le fichier anonymisé",
+        moreOptions:          "Plus d’options",
         redactionHistoryTitle: "Fichiers anonymisés",
         redactionHistoryClear: "Effacer l’historique",
         redactionHistoryOpen:  "Ouvrir",
@@ -3486,6 +3506,7 @@
         saveAnon:            "Guardar anonimizado",
         downloadRedactedDoc: "Descargar documento redacted",
         openAnonymizedFile:   "Abrir archivo anonimizado",
+        moreOptions:          "Más opciones",
         redactionHistoryTitle: "Archivos anonimizados",
         redactionHistoryClear: "Borrar historial",
         redactionHistoryOpen:  "Abrir",
@@ -4934,10 +4955,17 @@
           <button id="btn-open-report" class="ctrl-btn">${t("openReport")}</button>
           <button id="btn-download-pdf" class="ctrl-btn">${t("downloadPdf")}</button>
           ${lastScan ? `<button id="btn-rescan" class="ctrl-btn">${t("rescan")}</button>` : ""}
-          <span class="ctrl-sep"></span>
-          <button id="btn-exp-json" class="ctrl-btn">${t("exportJson")}</button>
-          <button id="btn-exp-csv"  class="ctrl-btn">${t("exportCsv")}</button>
           <span class="anon-msg" id="exp-msg"></span>
+          <details class="advanced-actions" id="advanced-actions">
+            <summary>${t("moreOptions")}</summary>
+            <div class="advanced-actions-body">
+              <button class="ctrl-btn" id="g-preview">${t("previewRedaction")}</button>
+              <button class="ctrl-btn ctrl-btn-outline-primary" id="g-anon">${t("genMd")}</button>
+              <button class="ctrl-btn ctrl-btn-outline-primary" id="g-anon-pdf">${t("genPdf")}</button>
+              <button id="btn-exp-json" class="ctrl-btn">${t("exportJson")}</button>
+              <button id="btn-exp-csv" class="ctrl-btn">${t("exportCsv")}</button>
+            </div>
+          </details>
         </div>
 
       `;
@@ -5007,10 +5035,7 @@
           ${canPatch
             ? `<button class="ctrl-btn ctrl-btn-outline-accent" id="g-patch">${t("saveAnon")} .${ext}</button>`
             : ""}
-          <button class="ctrl-btn" id="g-preview">${t("previewRedaction")}</button>
-          <button class="ctrl-btn ctrl-btn-outline-primary" id="g-anon">${t("genMd")}</button>
-          <button class="ctrl-btn ctrl-btn-outline-primary" id="g-anon-pdf">${t("genPdf")}</button>
-          <button class="ctrl-btn open-anonymized-btn" id="g-open-anonymized" disabled>${t("openAnonymizedFile")}</button>
+          <button class="ctrl-btn open-anonymized-btn" id="g-open-anonymized">${t("openAnonymizedFile")}</button>
           <span class="anon-msg" id="g-anon-msg"></span>
         </div>`;
 
@@ -5120,8 +5145,7 @@
       document.getElementById("g-preview")?.addEventListener("click", previewRedaction);
       document.getElementById("g-anon")?.addEventListener("click", () => postAnon("anonymize", "md"));
       document.getElementById("g-anon-pdf")?.addEventListener("click", () => postAnon("anonymize", "pdf"));
-      document.getElementById("g-open-anonymized")?.addEventListener("click", () => _openAnonymizedFile("g-anon-msg"));
-      _setLastAnonymizedPath(_lastAnonymizedPath);
+      document.getElementById("g-open-anonymized")?.addEventListener("click", () => _saveAndOpenAnonymized("g-anon-msg"));
       updateRedactionReport(ext);
     }
 
@@ -5143,10 +5167,7 @@
           ${canPatch
             ? `<button class="ctrl-btn ctrl-btn-outline-accent" id="g-patch">${t("saveAnon")} .${ext}</button>`
             : ""}
-          <button class="ctrl-btn" id="g-preview">${t("previewRedaction")}</button>
-          <button class="ctrl-btn ctrl-btn-outline-primary" id="g-anon">${t("genMd")}</button>
-          <button class="ctrl-btn ctrl-btn-outline-primary" id="g-anon-pdf">${t("genPdf")}</button>
-          <button class="ctrl-btn open-anonymized-btn" id="g-open-anonymized" disabled>${t("openAnonymizedFile")}</button>
+          <button class="ctrl-btn open-anonymized-btn" id="g-open-anonymized">${t("openAnonymizedFile")}</button>
           <span class="anon-msg" id="g-anon-msg"></span>
         </div>
         <div class="redaction-report" id="redaction-report"></div>
@@ -5285,10 +5306,10 @@
     ══════════════════════════════════════════════════════════════════ */
     async function postAnon(endpoint, format, msgId = "g-anon-msg") {
       const msg = document.getElementById(msgId);
-      if (!msg) return;
+      if (!msg) return null;
       const body = _redactionPayload(format);
       if (!body.indices.length && !body.ai_texts.length && !(endpoint === "patch" && body.strip_annotations)) {
-        msg.style.color="#ffb84d"; msg.textContent=t("selectOne"); return;
+        msg.style.color="#ffb84d"; msg.textContent=t("selectOne"); return null;
       }
       msg.style.color="var(--muted)"; msg.textContent=t("processing");
       try {
@@ -5306,19 +5327,22 @@
             ` <button class="ctrl-btn" id="btn-rescan-redacted" style="font-size:11px;padding:2px 8px;">${escapeHtml(t("rescanRedacted"))}</button>`;
           document.getElementById("btn-rescan-redacted")?.addEventListener("click", () => scanPath(d.path));
           loadRedactionHistory();
+          return d;
         }
         else {
           const err = d.error_code && I18N[uiLang][d.error_code] ? t(d.error_code) : d.error;
           msg.style.color="#f44336"; msg.textContent=`${t("errPrefix")} ${err}`;
+          return d;
         }
-      } catch(e)  { msg.style.color="#f44336"; msg.textContent=`${t("netErr")} ${e}`; }
+      } catch(e)  {
+        msg.style.color="#f44336";
+        msg.textContent=`${t("netErr")} ${e}`;
+        return null;
+      }
     }
 
     function _setLastAnonymizedPath(path) {
       _lastAnonymizedPath = String(path || "");
-      document.querySelectorAll(".open-anonymized-btn").forEach(btn => {
-        btn.disabled = !_lastAnonymizedPath;
-      });
     }
 
     function _verificationSummary(verification) {
@@ -5346,6 +5370,22 @@
           msg.textContent = `${t("netErr")} ${String(e)}`;
         }
       }
+    }
+
+    async function _saveAndOpenAnonymized(msgId = "g-anon-msg") {
+      if (msgId === "ai-anon-msg") {
+        _ensureRedactionControlsForAiFindings();
+        _syncMainAiSelectionFromAiPanel();
+        updateRedactionReport(_currentResultExt());
+      }
+      const ext = _currentResultExt();
+      const canPatch = PATCH_EXT.has(ext);
+      const saved = await postAnon(
+        canPatch ? "patch" : "anonymize",
+        canPatch ? undefined : "md",
+        msgId,
+      );
+      if (saved?.ok) await _openAnonymizedFile(msgId);
     }
 
     async function postExport(endpoint) {
@@ -6899,7 +6939,7 @@
     document.getElementById("ai-cancel-btn").addEventListener("click", _cancelAiScan);
     document.getElementById("ai-anon-btn").addEventListener("click",   _anonymizeAi);
     document.getElementById("ai-redacted-doc-btn").addEventListener("click", _downloadRedactedDocAfterAi);
-    document.getElementById("ai-open-anonymized-btn").addEventListener("click", () => _openAnonymizedFile("ai-anon-msg"));
+    document.getElementById("ai-open-anonymized-btn").addEventListener("click", () => _saveAndOpenAnonymized("ai-anon-msg"));
     document.getElementById("btn-clear-result").addEventListener("click", clearResult);
     document.getElementById("btn-copy-findings").addEventListener("click", _copyFindings);
 
