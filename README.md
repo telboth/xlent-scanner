@@ -1,6 +1,6 @@
 # XLENT Compliance-scanner
 
-> **v1.5.7** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
+> **v1.5.8** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
 
 Alt kjøres 100 % lokalt — ingen dokumenter, tekst eller funn sendes over internett.
 
@@ -422,6 +422,11 @@ src/xlent_scanner/
 ---
 
 ## Endringslogg
+
+### v1.5.8
+- Gjør «Åpne anonymisert fil» tilgjengelig direkte etter skann og lar knappen lagre, kontrollskanne og åpne filen i én handling.
+- Bruker originalformatet for DOCX, PDF, PPTX og XLSX når filen lagres via åpne-knappen, med Markdown som fallback for øvrige dokumenttyper.
+- Samler forhåndsvisning, Markdown-/PDF-generering og JSON-/CSV-eksport under en lukket «Flere valg»-ekspander for et enklere visuelt grensesnitt.
 
 ### v1.5.7
 - Beregner samlet risikonivå i backend fra både regelbaserte funn, AI-dypscan og policyvarsler, slik at HTML-, PDF- og eksporterte rapporter viser samme status som GUI-et.
