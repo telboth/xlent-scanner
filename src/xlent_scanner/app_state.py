@@ -19,6 +19,8 @@ class AppState:
     last_tmp_path: Path | None = None
     last_ai_findings: list[dict] = field(default_factory=list)
     last_ai_findings_file_name: str = ""
+    last_ai_scan_metadata: dict[str, Any] = field(default_factory=dict)
+    last_anonymized_path: Path | None = None
 
     api_scan_results: dict[str, dict] = field(default_factory=dict)
     api_scan_lock: threading.Lock = field(default_factory=threading.Lock)
@@ -36,6 +38,10 @@ class AppState:
     def clear_ai_findings(self) -> None:
         self.last_ai_findings.clear()
         self.last_ai_findings_file_name = ""
+        self.last_ai_scan_metadata.clear()
+
+    def clear_anonymized_file(self) -> None:
+        self.last_anonymized_path = None
 
     @property
     def folder_jobs(self) -> dict[str, dict]:

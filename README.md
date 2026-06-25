@@ -1,6 +1,6 @@
 # XLENT Compliance-scanner
 
-> **v1.5.6** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
+> **v1.5.7** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
 
 Alt kjøres 100 % lokalt — ingen dokumenter, tekst eller funn sendes over internett.
 
@@ -422,6 +422,15 @@ src/xlent_scanner/
 ---
 
 ## Endringslogg
+
+### v1.5.7
+- Beregner samlet risikonivå i backend fra både regelbaserte funn, AI-dypscan og policyvarsler, slik at HTML-, PDF- og eksporterte rapporter viser samme status som GUI-et.
+- Kjører automatisk kontrollskann etter anonymisering og rapporterer fjernede funn, gjenværende funn og bestått/krever kontroll.
+- Lagrer historikk for anonymiserte filer med handlinger for å åpne filen, vise den i mappe og kjøre kontrollskann på nytt.
+- Utvider revisjonssporet med deteksjonsmotor, AI-modell, konfidens, valgte kategorier og hvilke funn som faktisk ble anonymisert.
+- Avviser finansielle AI-funn uten et faktisk tall eller beløp, inkludert falske funn som «opprinnelige budsjetter».
+- Beholder regelbaserte personnavnfunn og samlet gult risikonivå når AI-dypscan ikke finner ytterligere data.
+- Legger til knappen «Åpne anonymisert fil» ved anonymiseringskontrollene.
 
 ### v1.5.6
 - Tilpasser Ollamas systeminstruksjon og medisinske instruksjon til dokumentets språk for norsk, svensk, dansk, engelsk, tysk, fransk og spansk.

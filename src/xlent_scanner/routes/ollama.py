@@ -2,14 +2,20 @@
 from __future__ import annotations
 
 import logging
+from datetime import datetime
 from pathlib import Path
 from typing import Callable
 
 from flask import Blueprint, jsonify, request
 
-from xlent_scanner.ai_findings import findings_from_payload, replacement_texts
+from xlent_scanner.ai_findings import (
+    as_model_findings,
+    findings_from_payload,
+    replacement_texts,
+)
 from xlent_scanner.app_state import app_state
 from xlent_scanner.patch import SUPPORTED_PATCH_SUFFIXES
+from xlent_scanner.redaction_audit import record_redaction
 
 LOGGER = logging.getLogger("xlent_scanner")
 _patch_file: Callable
@@ -95,6 +101,13 @@ def ollama_deep_scan_endpoint():
     min_confidence = (data.get("min_confidence") or "medium").strip().lower()
     if min_confidence not in ("high", "medium", "low"):
         min_confidence = "medium"
+    app_state.last_ai_scan_metadata = {
+        "model": model,
+        "categories": list(categories or []),
+        "min_confidence": min_confidence,
+        "language": getattr(app_state.last_result, "language", "en") or "en",
+        "started_at": datetime.now().isoformat(timespec="seconds"),
+    }
     job_id = start_deep_scan(
         text,
         model,
@@ -128,6 +141,11 @@ def ollama_anonymize_findings():
     strip_annotations = bool(data.get("strip_annotations", False))
     if not texts_to_remove:
         return jsonify({"error": "Ingen tekst valgt for anonymisering."})
+    if not ai_findings:
+        ai_findings = [
+            {"text": text, "category": "🤖 AI-funn", "context": ""}
+            for text in texts_to_remove
+        ]
 
     stem = (
         Path(app_state.last_result.file_name).stem
@@ -144,11 +162,6 @@ def ollama_anonymize_findings():
         and app_state.last_path.exists()
         and suffix in SUPPORTED_PATCH_SUFFIXES
     ):
-        if not ai_findings:
-            ai_findings = [
-                {"text": text, "category": "🤖 AI-funn", "context": ""}
-                for text in texts_to_remove
-            ]
         replacements = {
             text: "[ANONYMISERT]"
             for text in replacement_texts(ai_findings)
@@ -166,7 +179,22 @@ def ollama_anonymize_findings():
                 out,
                 len(texts_to_remove),
             )
-            return jsonify({"ok": True, "path": str(out)})
+            selected = as_model_findings(ai_findings)
+            audit = record_redaction(
+                out,
+                app_state.last_result,
+                selected,
+                ai_findings=ai_findings,
+                method=f"ai_patch_{suffix.lstrip('.')}",
+                ai_metadata=app_state.last_ai_scan_metadata,
+            )
+            app_state.last_anonymized_path = out
+            return jsonify({
+                "ok": True,
+                "path": str(out),
+                "verification": audit["verification"],
+                "history_entry": audit,
+            })
         except Exception as exc:
             LOGGER.warning("patch_file feilet, faller tilbake til .txt: %s", exc)
 
@@ -183,7 +211,22 @@ def ollama_anonymize_findings():
         out,
         len(texts_to_remove),
     )
-    return jsonify({"ok": True, "path": str(out)})
+    selected = as_model_findings(ai_findings)
+    audit = record_redaction(
+        out,
+        app_state.last_result,
+        selected,
+        ai_findings=ai_findings,
+        method="ai_text",
+        ai_metadata=app_state.last_ai_scan_metadata,
+    )
+    app_state.last_anonymized_path = out
+    return jsonify({
+        "ok": True,
+        "path": str(out),
+        "verification": audit["verification"],
+        "history_entry": audit,
+    })
 
 
 def _unique_output(directory: Path, stem: str, suffix: str) -> Path:

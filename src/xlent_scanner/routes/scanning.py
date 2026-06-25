@@ -41,6 +41,7 @@ def _remember_result(result, path: Path | None) -> None:
     app_state.last_result = result
     app_state.last_path = path
     app_state.clear_ai_findings()
+    app_state.clear_anonymized_file()
     add_history_entry(
         file_name=result.file_name,
         risk_level=result.risk_level,

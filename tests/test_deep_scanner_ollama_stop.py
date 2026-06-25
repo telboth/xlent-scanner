@@ -768,6 +768,38 @@ def test_medical_filter_accepts_common_medication_terms():
     }
 
 
+def test_financial_filter_rejects_budget_words_without_amount():
+    findings = [{
+        "category": "Budsjettall",
+        "text": "opprinnelige budsjetter",
+        "context": "Sammenlignet med opprinnelige budsjetter.",
+        "confidence": "high",
+    }]
+
+    assert deep_scanner._filter_llm_findings_by_category_precision(
+        findings,
+        source="Sammenlignet med opprinnelige budsjetter.",
+    ) == []
+
+
+def test_financial_filter_keeps_and_normalizes_actual_amount():
+    findings = [{
+        "category": "Financial figures",
+        "text": "The original budget was NOK 1 250 000.",
+        "context": "",
+        "confidence": "high",
+    }]
+
+    filtered = deep_scanner._filter_llm_findings_by_category_precision(findings)
+
+    assert filtered == [{
+        "category": "Budsjettall",
+        "text": "NOK 1 250 000",
+        "context": "",
+        "confidence": "high",
+    }]
+
+
 def test_deep_scan_keeps_medical_findings_from_english_test_text(monkeypatch):
     text = (
         "I never had a serious illness like Malaria, but the Malaria medication "

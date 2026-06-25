@@ -20,7 +20,20 @@ from xlent_scanner.ai_findings import (
 from xlent_scanner.anonymize import anonymize_text, build_replacements
 from xlent_scanner.app_state import app_state
 from xlent_scanner.patch import SUPPORTED_PATCH_SUFFIXES, patch_file
-from xlent_scanner.report import generate_html
+from xlent_scanner.redaction_audit import (
+    clear_redaction_history,
+    latest_redaction_for_source,
+    load_redaction_history,
+    record_redaction,
+    redaction_history_entry,
+    refresh_redaction_verification,
+)
+from xlent_scanner.report import (
+    _build_merged_findings,
+    combined_assessment,
+    generate_html,
+)
+from xlent_scanner.utils import open_path, reveal_path
 from xlent_scanner.whitelist import add_to_whitelist
 
 LOGGER = logging.getLogger("xlent_scanner")
@@ -41,6 +54,34 @@ def ai_findings_for_report() -> list[dict]:
     ):
         return []
     return app_state.last_ai_findings
+
+
+def _audit_metadata() -> dict:
+    return dict(app_state.last_ai_scan_metadata)
+
+
+def _latest_redaction() -> dict | None:
+    if app_state.last_result is None:
+        return None
+    return latest_redaction_for_source(app_state.last_result.file_name)
+
+
+def _record_output(
+    output: Path,
+    selected: list,
+    ai_findings: list[dict],
+    *,
+    method: str,
+) -> dict:
+    app_state.last_anonymized_path = output
+    return record_redaction(
+        output,
+        app_state.last_result,
+        selected,
+        ai_findings=ai_findings,
+        method=method,
+        ai_metadata=_audit_metadata(),
+    )
 
 
 def write_text_pdf(text: str, out_path: Path, title: str = "") -> None:
@@ -123,11 +164,23 @@ def set_ai_findings():
                 "category": str(finding.get("category", "")),
                 "text": str(finding.get("text", "")),
                 "context": str(finding.get("context", "")),
+                "confidence": str(finding.get("confidence", "")),
+                "severity": str(finding.get("severity", "")),
             }
             for finding in findings
             if isinstance(finding, dict)
         ]
         app_state.last_ai_findings_file_name = str(data.get("file_name") or "")
+        metadata = data.get("metadata") or {}
+        if isinstance(metadata, dict):
+            app_state.last_ai_scan_metadata.update({
+                "model": str(metadata.get("model") or app_state.last_ai_scan_metadata.get("model") or ""),
+                "categories": list(metadata.get("categories") or app_state.last_ai_scan_metadata.get("categories") or []),
+                "min_confidence": str(metadata.get("min_confidence") or app_state.last_ai_scan_metadata.get("min_confidence") or ""),
+                "language": str(metadata.get("language") or app_state.last_ai_scan_metadata.get("language") or ""),
+                "finding_count": len(app_state.last_ai_findings),
+                "completed_at": datetime.now().isoformat(timespec="seconds"),
+            })
     return jsonify({"ok": True, "count": len(app_state.last_ai_findings)})
 
 
@@ -139,6 +192,8 @@ def report():
         app_state.last_result,
         api_base=f"http://127.0.0.1:{app_state.port}",
         ai_findings=ai_findings_for_report(),
+        audit_metadata=_audit_metadata(),
+        redaction_audit=_latest_redaction(),
     )
     return rendered, 200, {"Content-Type": "text/html; charset=utf-8"}
 
@@ -160,8 +215,6 @@ def report_pdf():
         return "Ingen rapport tilgjengelig.", 404
     try:
         import fitz  # noqa: PLC0415
-        from xlent_scanner.report import ai_severity  # noqa: PLC0415
-
         colors = {
             "grønn": (0.18, 0.69, 0.31),
             "gul": (0.85, 0.60, 0.15),
@@ -169,6 +222,11 @@ def report_pdf():
             "svart": (0.61, 0.15, 0.69),
         }
         result = app_state.last_result
+        ai_findings = ai_findings_for_report()
+        metadata = _audit_metadata()
+        last_redaction = _latest_redaction()
+        assessment = combined_assessment(result, ai_findings, metadata)
+        merged_findings, _ = _build_merged_findings(result, ai_findings, metadata)
         doc = fitz.open()
 
         def new_page():
@@ -189,52 +247,65 @@ def report_pdf():
         y = add_text(page, y, f"Fil: {result.file_name}", 11)
         y = add_text(page, y, f"Dato: {datetime.now().strftime('%d.%m.%Y  %H:%M')}", 9)
         y += 6
-        risk_color = colors.get(result.risk_level, (0.85, 0.88, 0.93))
+        risk_color = colors.get(assessment.risk_level, (0.85, 0.88, 0.93))
         y = add_text(
             page,
             y,
-            f"Risikonivå: {result.risk_level.upper()}  –  {result.risk_summary}",
+            f"Risikonivå: {assessment.risk_level.upper()}  –  {assessment.risk_summary}",
             12,
             risk_color,
             True,
         )
-        y = add_text(page, y, result.recommended_action, 9, (0.72, 0.77, 0.85))
+        y = add_text(page, y, assessment.recommended_action, 9, (0.72, 0.77, 0.85))
         y += 18
 
-        if not result.findings:
+        if not merged_findings:
             y = add_text(page, y, "Ingen sensitive funn oppdaget.", 10, colors["grønn"])
         else:
-            y = add_text(page, y, f"Funn ({len(result.findings)})", 11, bold=True)
-            for finding in result.findings:
+            y = add_text(page, y, f"Funn ({len(merged_findings)})", 11, bold=True)
+            for finding in merged_findings:
                 if y > 800:
                     page, y = new_page()
                 y = add_text(
                     page,
                     y,
-                    f"[{finding.category}]  {finding.text[:120]}",
+                    f"[{finding.category}] [{finding.engine}]  {finding.text[:100]}",
                     9,
                     colors.get(finding.severity, (0.72, 0.77, 0.85)),
                 )
                 if finding.context:
                     y = add_text(page, y, f"    {finding.context[:140]}", 7.5, (0.5, 0.57, 0.68))
 
-        ai_findings = ai_findings_for_report()
+        y += 12
+        y = add_text(page, y, "Revisjonsspor", 11, bold=True)
+        engine_text = "Regelbasert scanner"
         if ai_findings:
-            if y > 770:
-                page, y = new_page()
-            y += 12
-            y = add_text(page, y, f"AI-dybdeskann-funn ({len(ai_findings)})", 11, bold=True)
-            for finding in ai_findings:
-                if y > 800:
-                    page, y = new_page()
-                category = str(finding.get("category", ""))
-                y = add_text(
-                    page,
-                    y,
-                    f"[{category}]  {str(finding.get('text', ''))[:120]}",
-                    9,
-                    colors.get(ai_severity(category), (0.72, 0.77, 0.85)),
-                )
+            engine_text += " + AI-dybdeskann"
+        y = add_text(page, y, engine_text, 8.5, (0.5, 0.57, 0.68))
+        if metadata.get("model"):
+            y = add_text(page, y, f"AI-modell: {metadata['model']}", 8.5, (0.5, 0.57, 0.68))
+        if metadata.get("categories"):
+            y = add_text(
+                page,
+                y,
+                f"Kategorier: {', '.join(metadata['categories'])}",
+                8.5,
+                (0.5, 0.57, 0.68),
+            )
+        if last_redaction:
+            verification = last_redaction.get("verification") or {}
+            y = add_text(
+                page,
+                y,
+                (
+                    f"Siste anonymisering: {last_redaction.get('output_file', '')}; "
+                    f"{last_redaction.get('selected_count', 0)} valgt; "
+                    f"{verification.get('removed_count', 0)} fjernet; "
+                    f"{verification.get('finding_count', 0)} gjenværende"
+                ),
+                8.5,
+                (0.5, 0.57, 0.68),
+            )
 
         pdf_bytes = doc.tobytes()
         doc.close()
@@ -268,7 +339,7 @@ def anonymize():
     if not app_state.last_result.original_text:
         return jsonify({"error": "Originaltekst ikke tilgjengelig. Re-skann filen."})
     data = request.get_json(force=True)
-    selected, _ai_findings = _selected_findings(data)
+    selected, ai_findings = _selected_findings(data)
     cleaned = anonymize_text(app_state.last_result.original_text, selected)
     output_format = (data.get("format") or "md").lower()
     if output_format not in {"md", "pdf"}:
@@ -286,7 +357,18 @@ def anonymize():
             })
     else:
         output.write_text(cleaned, encoding="utf-8")
-    return jsonify({"ok": True, "path": str(output)})
+    audit = _record_output(
+        output,
+        selected,
+        ai_findings,
+        method=f"text_{output_format}",
+    )
+    return jsonify({
+        "ok": True,
+        "path": str(output),
+        "verification": audit["verification"],
+        "history_entry": audit,
+    })
 
 
 def _unique_output(stem: str, suffix: str) -> Path:
@@ -345,7 +427,8 @@ def patch():
     if suffix not in SUPPORTED_PATCH_SUFFIXES:
         return jsonify({"error": f"In-place anonymisering støttes ikke for {suffix}."})
     data = request.get_json(force=True)
-    _selected, replacements = _replacement_map(data)
+    selected, replacements = _replacement_map(data)
+    ai_findings = findings_from_payload(data)
     strip_annotations = bool(data.get("strip_annotations", False))
     if not replacements and not strip_annotations:
         return jsonify({"error": "Ingen av de valgte funnene kan anonymiseres direkte."})
@@ -365,7 +448,73 @@ def patch():
                 "error_code": "pdfPatchFailed",
             })
         return jsonify({"error": str(exc)})
-    return jsonify({"ok": True, "path": str(output)})
+    audit = _record_output(
+        output,
+        selected,
+        ai_findings,
+        method=f"patch_{suffix.lstrip('.')}",
+    )
+    return jsonify({
+        "ok": True,
+        "path": str(output),
+        "verification": audit["verification"],
+        "history_entry": audit,
+    })
+
+
+@reports_bp.post("/open-anonymized-file")
+def open_anonymized_file():
+    data = request.get_json(silent=True) or {}
+    entry_id = str(data.get("id") or "")
+    entry = redaction_history_entry(entry_id) if entry_id else None
+    path = Path(str(entry.get("path"))) if entry else app_state.last_anonymized_path
+    if path is None:
+        return jsonify({"ok": False, "error": "Ingen anonymisert fil er opprettet."})
+    if not path.is_file():
+        return jsonify({"ok": False, "error": "Den anonymiserte filen finnes ikke lenger."})
+    try:
+        open_path(path)
+    except Exception as exc:
+        LOGGER.error("open anonymized file failed: %s", traceback.format_exc())
+        return jsonify({"ok": False, "error": str(exc)})
+    return jsonify({"ok": True, "path": str(path)})
+
+
+@reports_bp.post("/reveal-anonymized-file")
+def reveal_anonymized_file():
+    data = request.get_json(silent=True) or {}
+    entry = redaction_history_entry(str(data.get("id") or ""))
+    path = Path(str(entry.get("path"))) if entry else app_state.last_anonymized_path
+    if path is None or not path.is_file():
+        return jsonify({"ok": False, "error": "Den anonymiserte filen finnes ikke lenger."})
+    try:
+        reveal_path(path)
+    except Exception as exc:
+        return jsonify({"ok": False, "error": str(exc)})
+    return jsonify({"ok": True, "path": str(path)})
+
+
+@reports_bp.get("/redaction/history")
+def redaction_history_get():
+    return jsonify({
+        "ok": True,
+        "entries": list(reversed(load_redaction_history())),
+    })
+
+
+@reports_bp.post("/redaction/history/clear")
+def redaction_history_clear():
+    clear_redaction_history()
+    return jsonify({"ok": True})
+
+
+@reports_bp.post("/redaction/history/verify")
+def redaction_history_verify():
+    data = request.get_json(force=True) or {}
+    entry = refresh_redaction_verification(str(data.get("id") or ""))
+    if entry is None:
+        return jsonify({"ok": False, "error": "Ukjent historikkoppføring."}), 404
+    return jsonify({"ok": True, "entry": entry})
 
 
 @reports_bp.post("/export/json")
@@ -373,21 +522,29 @@ def export_json():
     if app_state.last_result is None:
         return jsonify({"error": "Ingen rapport tilgjengelig."})
     result = app_state.last_result
+    ai_findings = ai_findings_for_report()
+    metadata = _audit_metadata()
+    assessment = combined_assessment(result, ai_findings, metadata)
+    merged, _ = _build_merged_findings(result, ai_findings, metadata)
     data = {
         "file_name": result.file_name,
         "scanned_at": datetime.now().isoformat(timespec="seconds"),
-        "risk_level": result.risk_level,
+        "risk_level": assessment.risk_level,
         "scan_status": result.scan_status,
-        "risk_summary": result.risk_summary,
+        "risk_summary": assessment.risk_summary,
         "language": result.language,
+        "audit_metadata": metadata,
+        "last_redaction": _latest_redaction(),
         "findings": [
             {
                 "severity": finding.severity,
                 "category": finding.category,
                 "text": finding.text,
                 "context": finding.context,
+                "engine": finding.engine,
+                "confidence": finding.confidence,
             }
-            for finding in result.findings
+            for finding in merged
         ],
     }
     output = _unique_output(f"{Path(result.file_name).stem}-funn", ".json")
@@ -401,11 +558,18 @@ def export_csv():
         return jsonify({"error": "Ingen rapport tilgjengelig."})
     buffer = io.StringIO()
     writer = csv.writer(buffer)
-    writer.writerow(["severity", "category", "text", "context"])
-    for finding in app_state.last_result.findings:
+    merged, _ = _build_merged_findings(
+        app_state.last_result,
+        ai_findings_for_report(),
+        _audit_metadata(),
+    )
+    writer.writerow(["severity", "category", "engine", "confidence", "text", "context"])
+    for finding in merged:
         writer.writerow([
             finding.severity,
             finding.category,
+            finding.engine,
+            finding.confidence,
             finding.text,
             finding.context,
         ])

@@ -892,6 +892,59 @@ def _is_medical_category(category: str) -> bool:
     return key in _MEDICAL_CATEGORIES or any(key.startswith(prefix) for prefix in _MEDICAL_CATEGORIES)
 
 
+_FINANCIAL_CATEGORY_MARKERS = (
+    "budsjett",
+    "budget",
+    "financial",
+    "finansi",
+    "monetary",
+    "pengebel",
+    "beløp",
+    "belopp",
+    "amount",
+    "cost",
+    "price",
+    "montant",
+    "presupuesto",
+)
+
+
+def _is_financial_category(category: str) -> bool:
+    key = _category_key(category)
+    return any(marker in key for marker in _FINANCIAL_CATEGORY_MARKERS)
+
+
+_CURRENCY_AMOUNT_IN_TEXT_RE = re.compile(
+    r"(?<!\w)(?:"
+    r"(?:NOK|SEK|DKK|EUR|USD|GBP|CHF|kr|£|€|\$)\s*"
+    r"-?\d{1,9}(?:[ .,\u00a0]\d{3})*(?:[.,]\d{1,2})?"
+    r"|"
+    r"-?\d{1,9}(?:[ .,\u00a0]\d{3})*(?:[.,]\d{1,2})?\s*"
+    r"(?:NOK|SEK|DKK|EUR|USD|GBP|CHF|kr|£|€|\$)"
+    r")(?!\w)",
+    re.IGNORECASE,
+)
+
+
+def _valid_financial_text(value: str, context: str = "") -> str | None:
+    """Returner et faktisk beløp; avvis rene budsjettord uten tall."""
+    text = " ".join(str(value or "").strip().split())
+    if not text:
+        return None
+
+    currency_match = _CURRENCY_AMOUNT_IN_TEXT_RE.search(text)
+    if currency_match:
+        return currency_match.group(0).strip()
+
+    if (
+        _looks_like_financial_amount_cell(text)
+        and not _DATE_LIKE_RE.match(text)
+        and _FINANCIAL_HEADER_RE.search(f"{text} {context}")
+    ):
+        return text
+    return None
+
+
 _MEDICAL_CONTEXT_RE = re.compile(
     r"\b("
     r"diagnose|diagnosis|sykdom|sjukdom|disease|lidelse|condition|"
@@ -983,6 +1036,17 @@ def _filter_llm_findings_by_category_precision(
                 f["category"] = "IBAN"
             else:
                 f["category"] = "Kontonummer"
+        elif _is_financial_category(cat):
+            financial_text = _valid_financial_text(
+                raw_text,
+                str(f.get("context") or ""),
+            )
+            if not financial_text:
+                removed += 1
+                continue
+            f = dict(f)
+            f["text"] = financial_text
+            f["category"] = "Budsjettall"
         elif _is_address_category(cat):
             if not _looks_like_physical_address(raw_text):
                 removed += 1

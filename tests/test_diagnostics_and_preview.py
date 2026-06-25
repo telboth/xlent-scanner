@@ -4,6 +4,7 @@ import zipfile
 from pathlib import Path
 
 from xlent_scanner import app as app_module
+from xlent_scanner.routes import reports as reports_routes
 from xlent_scanner.routes import scanning as scanning_routes
 from xlent_scanner.models import Finding, ScanResult
 
@@ -143,6 +144,7 @@ def test_scan_text_clears_previous_ai_findings(monkeypatch):
         {"category": "🤖 Fødselsnummer", "text": "01019750023", "context": ""}
     ]
     app_module.app_state.last_ai_findings_file_name = "old.docx"
+    app_module.app_state.last_anonymized_path = Path("old-anonymized.docx")
     monkeypatch.setattr(
         scanning_routes,
         "scan_text",
@@ -166,3 +168,66 @@ def test_scan_text_clears_previous_ai_findings(monkeypatch):
     assert response.status_code == 200
     assert app_module.app_state.last_ai_findings == []
     assert app_module.app_state.last_ai_findings_file_name == ""
+    assert app_module.app_state.last_anonymized_path is None
+
+
+def test_open_anonymized_file_opens_last_generated_file(monkeypatch, tmp_path):
+    output = tmp_path / "test-anonymisert.docx"
+    output.write_bytes(b"test")
+    opened: list[Path] = []
+    app_module.app_state.last_anonymized_path = output
+    monkeypatch.setattr(reports_routes, "open_path", opened.append)
+    client = app_module.flask_app.test_client()
+
+    response = client.post("/open-anonymized-file")
+
+    assert response.status_code == 200
+    assert response.get_json() == {"ok": True, "path": str(output)}
+    assert opened == [output]
+
+
+def test_open_anonymized_file_requires_existing_output(tmp_path):
+    app_module.app_state.last_anonymized_path = tmp_path / "missing.docx"
+    client = app_module.flask_app.test_client()
+
+    response = client.post("/open-anonymized-file")
+
+    assert response.status_code == 200
+    assert response.get_json()["ok"] is False
+
+
+def test_redaction_history_endpoints(monkeypatch, tmp_path):
+    from xlent_scanner import redaction_audit
+
+    output = tmp_path / "test-anonymisert.docx"
+    output.write_bytes(b"test")
+    monkeypatch.setattr(redaction_audit, "app_data_dir", lambda: tmp_path)
+    monkeypatch.setattr(
+        redaction_audit,
+        "verify_redacted_file",
+        lambda *args, **kwargs: {
+            "status": "passed",
+            "passed": True,
+            "risk_level": "grønn",
+            "finding_count": 0,
+            "removed_count": 1,
+        },
+    )
+    entry = redaction_audit.record_redaction(
+        output,
+        _scan_result(),
+        [_scan_result().findings[0]],
+        method="patch_docx",
+    )
+    client = app_module.flask_app.test_client()
+
+    history = client.get("/redaction/history").get_json()
+    verify = client.post(
+        "/redaction/history/verify",
+        json={"id": entry["id"]},
+    ).get_json()
+
+    assert history["ok"] is True
+    assert history["entries"][0]["id"] == entry["id"]
+    assert verify["ok"] is True
+    assert verify["entry"]["verification"]["passed"] is True

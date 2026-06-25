@@ -510,6 +510,7 @@
     }
     .wl-btn:hover { border-color: var(--ok); color: var(--ok); }
     .wl-btn:disabled { opacity: .5; cursor: default; }
+    .ctrl-btn:disabled { opacity: .45; cursor: default; }
 
     /* Toolbar row (report + rescan + export) */
     .toolbar-row {
@@ -524,7 +525,7 @@
     }
 
     /* History */
-    #history-section { display: none; }
+    #history-section, #redaction-history-section { display: none; }
     .history-list { list-style: none; padding: 0; margin: 0; }
     .history-item {
       display: flex; align-items: center; gap: 8px; font-size: 12px;
@@ -865,12 +866,22 @@
           <span class="ctrl-sep"></span>
           <button class="ctrl-btn ctrl-btn-outline-accent" id="ai-anon-btn" data-i18n="saveAnon">Anonymiser valgte</button>
           <button class="ctrl-btn ctrl-btn-outline-primary" id="ai-redacted-doc-btn" data-i18n="downloadRedactedDoc">Last ned redacted dokument</button>
+          <button class="ctrl-btn open-anonymized-btn" id="ai-open-anonymized-btn" data-i18n="openAnonymizedFile" disabled>Åpne anonymisert fil</button>
           <span class="anon-msg" id="ai-anon-msg"></span>
         </div>
       </div>
 
       <!-- Ekstrahert tekst -->
       <div id="text-preview-section" style="display:none; margin-top:10px;"></div>
+
+      <!-- Historikk for anonymiserte filer -->
+      <div id="redaction-history-section">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+          <div class="section-heading" style="margin:0; flex:1;" data-i18n="redactionHistoryTitle">Anonymiserte filer</div>
+          <button class="ctrl-btn" id="btn-clear-redaction-history" style="font-size:11px; padding:2px 8px;" data-i18n="redactionHistoryClear">Tøm historikk</button>
+        </div>
+        <ul class="history-list" id="redaction-history-list"></ul>
+      </div>
 
       <!-- Skannehistorikk -->
       <div id="history-section">
@@ -1660,7 +1671,16 @@
         selNone:      "Fjern alle",
         saveAnon:     "Lagre anonymisert",
         downloadRedactedDoc:"Last ned redacted dokument",
-        aiNamesOverride:"Regelbasert navnefunn brukes ikke etter AI-dypscann.",
+        openAnonymizedFile:"Åpne anonymisert fil",
+        redactionHistoryTitle:"Anonymiserte filer",
+        redactionHistoryClear:"Tøm historikk",
+        redactionHistoryOpen:"Åpne",
+        redactionHistoryReveal:"Vis i mappe",
+        redactionHistoryVerify:"Kontrollskann",
+        verificationPassed:"Kontroll bestått",
+        verificationReview:"Krever kontroll",
+        verificationRemoved:"fjernet",
+        verificationRemaining:"gjenværende",
         genMd:        "Generer .md-fil",
         genPdf:       "Generer PDF",
         selectOne:    "Velg minst ett funn.",
@@ -2017,7 +2037,16 @@
         selNone:      "Ta bort alla",
         saveAnon:     "Spara anonymiserad",
         downloadRedactedDoc:"Ladda ned redacted dokument",
-        aiNamesOverride:"Regelbaserade namnfynd används inte efter AI-djupskanning.",
+        openAnonymizedFile:"Öppna anonymiserad fil",
+        redactionHistoryTitle:"Anonymiserade filer",
+        redactionHistoryClear:"Rensa historik",
+        redactionHistoryOpen:"Öppna",
+        redactionHistoryReveal:"Visa i mapp",
+        redactionHistoryVerify:"Kontrollskanna",
+        verificationPassed:"Kontroll godkänd",
+        verificationReview:"Kräver kontroll",
+        verificationRemoved:"borttagna",
+        verificationRemaining:"återstående",
         genMd:        "Generera .md-fil",
         genPdf:       "Generera PDF",
         selectOne:    "Välj minst ett fynd.",
@@ -2364,7 +2393,16 @@
         selNone:      "Deselect all",
         saveAnon:     "Save redacted",
         downloadRedactedDoc:"Download redacted document",
-        aiNamesOverride:"Rule-based name findings are not used after AI deep scan.",
+        openAnonymizedFile:"Open redacted file",
+        redactionHistoryTitle:"Redacted files",
+        redactionHistoryClear:"Clear history",
+        redactionHistoryOpen:"Open",
+        redactionHistoryReveal:"Show in folder",
+        redactionHistoryVerify:"Check scan",
+        verificationPassed:"Check passed",
+        verificationReview:"Needs review",
+        verificationRemoved:"removed",
+        verificationRemaining:"remaining",
         genMd:        "Generate .md file",
         genPdf:       "Generate PDF",
         selectOne:    "Select at least one finding.",
@@ -2723,7 +2761,16 @@
         genPdf:              "PDF erstellen",
         saveAnon:            "Anonymisiert speichern",
         downloadRedactedDoc: "Redacted Dokument herunterladen",
-        aiNamesOverride:     "Regelbasierte Namenstreffer werden nach dem KI-Tiefenscan nicht verwendet.",
+        openAnonymizedFile:   "Anonymisierte Datei öffnen",
+        redactionHistoryTitle: "Anonymisierte Dateien",
+        redactionHistoryClear: "Verlauf löschen",
+        redactionHistoryOpen:  "Öffnen",
+        redactionHistoryReveal:"Im Ordner anzeigen",
+        redactionHistoryVerify:"Kontrollscan",
+        verificationPassed:    "Kontrolle bestanden",
+        verificationReview:    "Prüfung erforderlich",
+        verificationRemoved:   "entfernt",
+        verificationRemaining: "verbleibend",
         selAll:              "Alle auswählen",
         selNone:             "Alle abwählen",
         selectOne:           "Mindestens einen Treffer auswählen.",
@@ -3076,7 +3123,16 @@
         genPdf:              "Générer un PDF",
         saveAnon:            "Enregistrer anonymisé",
         downloadRedactedDoc: "Télécharger le document redacted",
-        aiNamesOverride:     "Les noms détectés par règles ne sont pas utilisés après l'analyse approfondie IA.",
+        openAnonymizedFile:   "Ouvrir le fichier anonymisé",
+        redactionHistoryTitle: "Fichiers anonymisés",
+        redactionHistoryClear: "Effacer l’historique",
+        redactionHistoryOpen:  "Ouvrir",
+        redactionHistoryReveal:"Afficher dans le dossier",
+        redactionHistoryVerify:"Analyse de contrôle",
+        verificationPassed:    "Contrôle réussi",
+        verificationReview:    "À vérifier",
+        verificationRemoved:   "supprimés",
+        verificationRemaining: "restants",
         selAll:              "Tout sélectionner",
         selNone:             "Tout désélectionner",
         selectOne:           "Sélectionnez au moins un résultat.",
@@ -3429,7 +3485,16 @@
         genPdf:              "Generar PDF",
         saveAnon:            "Guardar anonimizado",
         downloadRedactedDoc: "Descargar documento redacted",
-        aiNamesOverride:     "Los nombres detectados por reglas no se usan después del escaneo profundo con IA.",
+        openAnonymizedFile:   "Abrir archivo anonimizado",
+        redactionHistoryTitle: "Archivos anonimizados",
+        redactionHistoryClear: "Borrar historial",
+        redactionHistoryOpen:  "Abrir",
+        redactionHistoryReveal:"Mostrar en carpeta",
+        redactionHistoryVerify:"Escaneo de control",
+        verificationPassed:    "Control superado",
+        verificationReview:    "Requiere revisión",
+        verificationRemoved:   "eliminados",
+        verificationRemaining: "restantes",
         selAll:              "Seleccionar todo",
         selNone:             "Deseleccionar todo",
         selectOne:           "Seleccione al menos un resultado.",
@@ -3812,7 +3877,10 @@
     /* ── State ─────────────────────────────────────────────────────── */
     let lastResult  = null;   // last ScanResult JSON
     let lastScan    = null;   // { type:"path"|"upload", path?:string, file?:File, name?:string }
+    let _lastAnonymizedPath = "";
     let scanHistory = [];     // [ { fileName, timestamp, riskLevel, rescanFn } ]
+    let redactionHistory = [];
+    let _aiScanMetadata = {};
     let lastUpdateCheck = null;
     let ignorePath = "";
     let whitelistPath = "";
@@ -3871,6 +3939,7 @@
 
       // Re-render history (button labels)
       renderHistory();
+      renderRedactionHistory();
       renderUpdateBanner();
       renderIgnorePath();
       renderWhitelistPath();
@@ -4708,6 +4777,7 @@
       document.getElementById("ai-anon-bar").style.display = "none";
       _aiFindingsData = [];
       _aiDeepScanCompleted = false;
+      _setLastAnonymizedPath("");
       document.getElementById("text-preview-section").style.display = "none";
       const rescanBtn = document.getElementById("ai-rescan-btn");
       if (rescanBtn) rescanBtn.style.display = "none";
@@ -4722,8 +4792,7 @@
       const el = document.getElementById("severity-summary");
       if (!el) return;
       const counts = { svart:0, rød:0, gul:0, grønn:0 };
-      (lastResult?.findings || []).forEach((f, idx) => {
-        if (_regularNameIgnoredByAi(idx)) return;
+      (lastResult?.findings || []).forEach(f => {
         if (counts[f.severity] !== undefined && !f.category.startsWith("⚠")) counts[f.severity]++;
       });
       (_aiFindingsData || []).forEach(f => {
@@ -4798,6 +4867,7 @@
       lastResult = r;
       _aiFindingsData = [];
       _aiDeepScanCompleted = false;
+      _setLastAnonymizedPath("");
       resultEl.classList.add("show");
       document.getElementById("result-header").style.display = "flex";
       document.getElementById("btn-copy-findings").style.display = "";
@@ -4940,6 +5010,7 @@
           <button class="ctrl-btn" id="g-preview">${t("previewRedaction")}</button>
           <button class="ctrl-btn ctrl-btn-outline-primary" id="g-anon">${t("genMd")}</button>
           <button class="ctrl-btn ctrl-btn-outline-primary" id="g-anon-pdf">${t("genPdf")}</button>
+          <button class="ctrl-btn open-anonymized-btn" id="g-open-anonymized" disabled>${t("openAnonymizedFile")}</button>
           <span class="anon-msg" id="g-anon-msg"></span>
         </div>`;
 
@@ -4985,8 +5056,7 @@
 
     function _redactionPayload(format) {
       const indices = [...document.querySelectorAll(".g-cb:checked")]
-        .map(cb => +cb.value)
-        .filter(idx => !_regularNameIgnoredByAi(idx));
+        .map(cb => +cb.value);
       const aiRows = [...document.querySelectorAll(".g-ai-cb:checked")];
       const aiTexts = aiRows.map(cb => (cb.dataset.aiText || "").trim()).filter(Boolean);
       const aiTextsUnique = [...new Set(aiTexts)];
@@ -5031,45 +5101,6 @@
       return (lastResult?.file_name || "").split(".").pop().toLowerCase();
     }
 
-    function _isPersonNameFinding(f) {
-      const c = String(f?.category || "").replace(/^🤖\s*/u, "").toLowerCase();
-      return c.startsWith("navn (person)") ||
-             c.startsWith("personnavn") ||
-             c.startsWith("namn (person)") ||
-             c.startsWith("personnamn") ||
-             c.startsWith("personal name") ||
-             c.startsWith("person name") ||
-             c.startsWith("name (person)") ||
-             c.startsWith("nom (personne)") ||
-             c.startsWith("nombre (persona)");
-    }
-
-    function _regularNameIgnoredByAi(idx) {
-      return _aiDeepScanCompleted && _isPersonNameFinding(lastResult?.findings?.[idx]);
-    }
-
-    function _applyAiNameOverrideToRegularRows() {
-      document.querySelectorAll(".g-cb").forEach(cb => {
-        const idx = Number(cb.value);
-        const ignored = Number.isInteger(idx) && _regularNameIgnoredByAi(idx);
-        cb.disabled = ignored;
-        if (ignored) cb.checked = false;
-        const row = cb.closest(".finding-row");
-        if (row) {
-          row.classList.toggle("ai-name-overridden", ignored);
-          let note = row.querySelector(".ai-name-override-note");
-          if (ignored && !note) {
-            note = document.createElement("div");
-            note.className = "ctx ai-name-override-note";
-            note.textContent = t("aiNamesOverride");
-            row.querySelector(".finding-body")?.appendChild(note);
-          } else if (!ignored && note) {
-            note.remove();
-          }
-        }
-      });
-    }
-
     function _syncMainAiSelectionFromAiPanel() {
       const panelByIndex = new Map([...document.querySelectorAll(".ai-cb")]
         .map(cb => [Number(cb.value), cb.checked]));
@@ -5089,6 +5120,8 @@
       document.getElementById("g-preview")?.addEventListener("click", previewRedaction);
       document.getElementById("g-anon")?.addEventListener("click", () => postAnon("anonymize", "md"));
       document.getElementById("g-anon-pdf")?.addEventListener("click", () => postAnon("anonymize", "pdf"));
+      document.getElementById("g-open-anonymized")?.addEventListener("click", () => _openAnonymizedFile("g-anon-msg"));
+      _setLastAnonymizedPath(_lastAnonymizedPath);
       updateRedactionReport(ext);
     }
 
@@ -5113,6 +5146,7 @@
           <button class="ctrl-btn" id="g-preview">${t("previewRedaction")}</button>
           <button class="ctrl-btn ctrl-btn-outline-primary" id="g-anon">${t("genMd")}</button>
           <button class="ctrl-btn ctrl-btn-outline-primary" id="g-anon-pdf">${t("genPdf")}</button>
+          <button class="ctrl-btn open-anonymized-btn" id="g-open-anonymized" disabled>${t("openAnonymizedFile")}</button>
           <span class="anon-msg" id="g-anon-msg"></span>
         </div>
         <div class="redaction-report" id="redaction-report"></div>
@@ -5123,8 +5157,7 @@
 
     function _highestRiskIncludingAi() {
       let level = "grønn";
-      (lastResult?.findings || []).forEach((f, idx) => {
-        if (_regularNameIgnoredByAi(idx)) return;
+      (lastResult?.findings || []).forEach(f => {
         const sev = f?.severity || "grønn";
         if ((SEV_ORDER[sev] || 0) > (SEV_ORDER[level] || 0)) level = sev;
       });
@@ -5264,17 +5297,55 @@
           body: JSON.stringify(body),
         })).json();
         if (d.ok) {
+          _setLastAnonymizedPath(d.path);
+          const verification = _verificationSummary(d.verification);
           msg.style.color="#4caf50";
           msg.innerHTML =
             `${escapeHtml(t("saved"))} ${escapeHtml(d.path)}` +
+            `${verification ? ` · ${escapeHtml(verification)}` : ""}` +
             ` <button class="ctrl-btn" id="btn-rescan-redacted" style="font-size:11px;padding:2px 8px;">${escapeHtml(t("rescanRedacted"))}</button>`;
           document.getElementById("btn-rescan-redacted")?.addEventListener("click", () => scanPath(d.path));
+          loadRedactionHistory();
         }
         else {
           const err = d.error_code && I18N[uiLang][d.error_code] ? t(d.error_code) : d.error;
           msg.style.color="#f44336"; msg.textContent=`${t("errPrefix")} ${err}`;
         }
       } catch(e)  { msg.style.color="#f44336"; msg.textContent=`${t("netErr")} ${e}`; }
+    }
+
+    function _setLastAnonymizedPath(path) {
+      _lastAnonymizedPath = String(path || "");
+      document.querySelectorAll(".open-anonymized-btn").forEach(btn => {
+        btn.disabled = !_lastAnonymizedPath;
+      });
+    }
+
+    function _verificationSummary(verification) {
+      if (!verification) return "";
+      const label = verification.passed ? t("verificationPassed") : t("verificationReview");
+      const removed = Number(verification.removed_count || 0);
+      const remaining = Number(verification.finding_count || 0);
+      return `${label}: ${removed} ${t("verificationRemoved")}, ${remaining} ${t("verificationRemaining")}`;
+    }
+
+    async function _openAnonymizedFile(msgId = "g-anon-msg") {
+      const msg = document.getElementById(msgId);
+      if (!_lastAnonymizedPath) return;
+      try {
+        const d = await (await fetch(`${API}/open-anonymized-file`, {
+          method: "POST",
+        })).json();
+        if (!d.ok && msg) {
+          msg.style.color = "#f44336";
+          msg.textContent = `${t("errPrefix")} ${d.error || ""}`;
+        }
+      } catch (e) {
+        if (msg) {
+          msg.style.color = "#f44336";
+          msg.textContent = `${t("netErr")} ${String(e)}`;
+        }
+      }
     }
 
     async function postExport(endpoint) {
@@ -5305,6 +5376,74 @@
         const mm  = d.getMinutes().toString().padStart(2,"0");
         return `${day}.${mo} ${hh}:${mm}`;
       } catch { return isoStr || ""; }
+    }
+
+    async function loadRedactionHistory() {
+      try {
+        const d = await (await fetch(`${API}/redaction/history`)).json();
+        redactionHistory = d.ok && Array.isArray(d.entries) ? d.entries : [];
+        renderRedactionHistory();
+      } catch (_) {
+        redactionHistory = [];
+        renderRedactionHistory();
+      }
+    }
+
+    function _redactionHistoryAction(endpoint, entryId) {
+      return fetch(`${API}/${endpoint}`, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({id: entryId}),
+      }).then(response => response.json());
+    }
+
+    function renderRedactionHistory() {
+      const section = document.getElementById("redaction-history-section");
+      const list = document.getElementById("redaction-history-list");
+      if (!redactionHistory.length) {
+        section.style.display = "none";
+        list.innerHTML = "";
+        return;
+      }
+      section.style.display = "";
+      list.innerHTML = redactionHistory.slice(0, 20).map(entry => {
+        const verification = entry.verification || {};
+        const level = verification.risk_level || (verification.passed ? "grønn" : "gul");
+        const status = verification.passed ? t("verificationPassed") : t("verificationReview");
+        return `<li class="history-item">
+          <span>${LEVEL_ICON[level] || "•"}</span>
+          <span class="h-name" title="${escapeHtml(entry.path || "")}">
+            ${escapeHtml(entry.output_file || entry.path || "")}
+            <span class="h-source">${escapeHtml(entry.method || "")}</span>
+          </span>
+          <span class="h-time">${_fmtHistTime(entry.created_at)}</span>
+          <span class="h-badge" style="color:${LEVEL_COLOR[level] || "#8a96a8"}">
+            ${escapeHtml(status)} · ${Number(verification.removed_count || 0)}/${Number(entry.selected_count || 0)}
+          </span>
+          <button class="h-rescan rh-open" data-rid="${escapeHtml(entry.id || "")}">${escapeHtml(t("redactionHistoryOpen"))}</button>
+          <button class="h-rescan rh-reveal" data-rid="${escapeHtml(entry.id || "")}">${escapeHtml(t("redactionHistoryReveal"))}</button>
+          <button class="h-rescan rh-verify" data-rid="${escapeHtml(entry.id || "")}">${escapeHtml(t("redactionHistoryVerify"))}</button>
+        </li>`;
+      }).join("");
+      list.querySelectorAll(".rh-open").forEach(btn =>
+        btn.addEventListener("click", () => _redactionHistoryAction("open-anonymized-file", btn.dataset.rid))
+      );
+      list.querySelectorAll(".rh-reveal").forEach(btn =>
+        btn.addEventListener("click", () => _redactionHistoryAction("reveal-anonymized-file", btn.dataset.rid))
+      );
+      list.querySelectorAll(".rh-verify").forEach(btn =>
+        btn.addEventListener("click", async () => {
+          btn.disabled = true;
+          await _redactionHistoryAction("redaction/history/verify", btn.dataset.rid);
+          await loadRedactionHistory();
+        })
+      );
+    }
+
+    async function clearRedactionHistoryAction() {
+      await fetch(`${API}/redaction/history/clear`, {method: "POST"});
+      redactionHistory = [];
+      renderRedactionHistory();
     }
 
     // Holds rescanFns keyed by fileName so persistent history entries can still re-scan
@@ -5364,6 +5503,7 @@
     }
 
     document.getElementById("btn-clear-history").addEventListener("click", clearHistoryAction);
+    document.getElementById("btn-clear-redaction-history").addEventListener("click", clearRedactionHistoryAction);
 
     /* ══════════════════════════════════════════════════════════════════
        SCANNING
@@ -6434,6 +6574,12 @@
 
       const minConf = document.getElementById("ai-conf-select")?.value || "medium";
       const cats = _getAiCategories();
+      _aiScanMetadata = {
+        model,
+        categories: cats,
+        min_confidence: minConf,
+        language: lastResult?.language || "en",
+      };
       try {
         const r = await (await fetch(`${API}/ollama/deep-scan`, {
           method: "POST",
@@ -6498,10 +6644,14 @@
             _aiDeepScanCompleted = true;
             _renderAiFindings(_aiFindingsData);
             // Persistér AI-funn server-side slik at de inkluderes i rapporten
-            fetch(`${API}/report/ai-findings`, {
+            await fetch(`${API}/report/ai-findings`, {
               method: "POST", headers: {"Content-Type": "application/json"},
-              body: JSON.stringify({ findings: _aiFindingsData, file_name: lastResult?.file_name || "" }),
-            }).catch(()=>{});
+              body: JSON.stringify({
+                findings: _aiFindingsData,
+                file_name: lastResult?.file_name || "",
+                metadata: _aiScanMetadata,
+              }),
+            });
             // Vis "ferdig"-melding med antall funn
             const n = _aiFindingsData.length;
             const doneMsg = `${t("deepScanDone")} – ${n} ${t("metaFindings")}`;
@@ -6529,7 +6679,6 @@
     function _injectAiFindingsIntoMainList(findings) {
       // Fjern evt. tidligere injiserte AI-rader
       resultEl.querySelectorAll(".ai-injected-finding, .ai-injected-sep").forEach(el => el.remove());
-      _applyAiNameOverrideToRegularRows();
 
       if (!findings.length) {
         renderSeveritySummary();
@@ -6574,7 +6723,6 @@
         renderSeveritySummary();
         _ensureRedactionControlsForAiFindings();
         _updateRiskHeaderForAiFindings();
-        _applyAiNameOverrideToRegularRows();
         updateRedactionReport(_currentResultExt());
         return;
       }
@@ -6645,7 +6793,6 @@
       renderSeveritySummary();
       _ensureRedactionControlsForAiFindings();
       _updateRiskHeaderForAiFindings();
-      _applyAiNameOverrideToRegularRows();
       updateRedactionReport(_currentResultExt());
     }
 
@@ -6729,7 +6876,13 @@
             strip_annotations: document.getElementById("stripAnnotations")?.checked === true,
           }),
         })).json();
-        if (d.ok) { msg.style.color="#4caf50"; msg.textContent=`${t("saved")} ${d.path}`; }
+        if (d.ok) {
+          _setLastAnonymizedPath(d.path);
+          const verification = _verificationSummary(d.verification);
+          msg.style.color="#4caf50";
+          msg.textContent=`${t("saved")} ${d.path}${verification ? ` · ${verification}` : ""}`;
+          loadRedactionHistory();
+        }
         else      { msg.style.color="#f44336"; msg.textContent=`${t("errPrefix")} ${d.error}`; }
       } catch (e) { msg.style.color="#f44336"; msg.textContent=`${t("netErr")} ${e}`; }
     }
@@ -6738,7 +6891,6 @@
       const ext = _currentResultExt();
       _ensureRedactionControlsForAiFindings();
       _syncMainAiSelectionFromAiPanel();
-      _applyAiNameOverrideToRegularRows();
       updateRedactionReport(ext);
       if (PATCH_EXT.has(ext)) await postAnon("patch", undefined, "ai-anon-msg");
       else await postAnon("anonymize", "md", "ai-anon-msg");
@@ -6747,6 +6899,7 @@
     document.getElementById("ai-cancel-btn").addEventListener("click", _cancelAiScan);
     document.getElementById("ai-anon-btn").addEventListener("click",   _anonymizeAi);
     document.getElementById("ai-redacted-doc-btn").addEventListener("click", _downloadRedactedDocAfterAi);
+    document.getElementById("ai-open-anonymized-btn").addEventListener("click", () => _openAnonymizedFile("ai-anon-msg"));
     document.getElementById("btn-clear-result").addEventListener("click", clearResult);
     document.getElementById("btn-copy-findings").addEventListener("click", _copyFindings);
 
@@ -7259,6 +7412,7 @@
     loadNerStatus();
     loadOllamaSettingsStatus();
     loadHistoryFromApi();
+    loadRedactionHistory();
     startBackgroundStatusPolling();
     _loadAiModels();   // Pre-last Ollama-modeller ved oppstart så AI-toggle er klar umiddelbart
 

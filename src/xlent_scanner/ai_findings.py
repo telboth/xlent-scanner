@@ -102,12 +102,20 @@ def replacement_texts(ai_findings: list[dict]) -> list[str]:
 
 
 def as_model_findings(ai_findings: list[dict]) -> list[Finding]:
+    from xlent_scanner.risk import _category_severity  # noqa: PLC0415
+
     return [
         Finding(
             category=str(finding.get("category") or "🤖 AI-funn"),
             text=str(finding.get("text") or ""),
             context=str(finding.get("context") or ""),
-            severity="gul",
+            severity=(
+                "grønn"
+                if str(finding.get("severity") or "") == "grønn"
+                else _category_severity(
+                    str(finding.get("category") or "AI-funn").replace("🤖", "").strip()
+                )
+            ),
             raw_text=str(finding.get("text") or ""),
         )
         for finding in ai_findings

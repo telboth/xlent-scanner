@@ -63,6 +63,7 @@ from xlent_scanner.scanner import (
     scan_folder,
     scan_text,
 )
+from xlent_scanner.utils import open_path
 from xlent_scanner.whitelist import (
     get_whitelist_entries,
 )
@@ -166,15 +167,6 @@ def index():
     html = html.replace('"__LOG_PATH__"', json.dumps(str(LOG_PATH)))
     html = html.replace('"__APP_PLATFORM__"', json.dumps(sys.platform))
     return html, 200, {"Content-Type": "text/html; charset=utf-8", **_NO_CACHE}
-
-
-def _open_path(path: Path) -> None:
-    if sys.platform.startswith("win"):
-        os.startfile(str(path))  # type: ignore[attr-defined]
-    elif sys.platform == "darwin":
-        subprocess.Popen(["open", str(path)])
-    else:
-        subprocess.Popen(["xdg-open", str(path)])
 
 
 def _downloads_dir() -> Path:
@@ -625,7 +617,7 @@ mkdir -p "${LOG_DIR}"
 
 flask_app.register_blueprint(create_folders_blueprint(
     downloads_dir=lambda: _downloads_dir(),
-    open_path=lambda path: _open_path(path),
+    open_path=lambda path: open_path(path),
     scan_file_fn=lambda *args, **kwargs: scan_file(*args, **kwargs),
     scan_folder_fn=lambda *args, **kwargs: scan_folder(*args, **kwargs),
     patch_file_fn=lambda *args, **kwargs: patch_file(*args, **kwargs),
@@ -1100,7 +1092,7 @@ flask_app.register_blueprint(create_diagnostics_blueprint(
     launch_update_script=_launch_update_script,
     launch_web_mode_process=_launch_web_mode_process,
     install_mac_quick_action=_install_mac_quick_action,
-    open_path=_open_path,
+    open_path=open_path,
 ))
 
 
