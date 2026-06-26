@@ -518,6 +518,19 @@
       font-size: 10px; font-weight: 600; text-transform: uppercase; margin-right: 5px;
     }
     .ctx { color: var(--muted); font-style: italic; font-size: 11px; margin-top: 2px; }
+    .finding-reason {
+      margin-top: 4px; color: var(--muted); font-size: 11px;
+    }
+    .finding-reason summary {
+      cursor: pointer; user-select: none; display: inline-block;
+      color: var(--accent); font-style: normal;
+    }
+    .finding-reason-body {
+      margin-top: 4px; padding: 6px 8px; border: 1px solid var(--border);
+      border-radius: 4px; background: color-mix(in srgb, var(--panel2) 78%, var(--bg));
+      line-height: 1.45;
+    }
+    .finding-reason-body div { margin: 1px 0; }
     .wl-btn {
       flex-shrink: 0; padding: 2px 7px; border-radius: 4px;
       border: 1px solid var(--border); background: transparent;
@@ -628,6 +641,31 @@
       font-size: 11px; text-transform: uppercase; letter-spacing: .06em;
       color: var(--muted); margin-bottom: 12px; font-weight: 600;
     }
+    .settings-expander > .settings-section-title {
+      cursor: pointer; list-style: none; margin-bottom: 0; user-select: none;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .settings-expander > .settings-section-title::-webkit-details-marker { display: none; }
+    .settings-expander > .settings-section-title::after {
+      content: "▸"; color: var(--muted); font-size: 12px; transition: transform .12s ease;
+    }
+    .settings-expander[open] > .settings-section-title { margin-bottom: 12px; }
+    .settings-expander[open] > .settings-section-title::after { transform: rotate(90deg); }
+    .settings-expander:focus-within {
+      border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+    }
+    .settings-search-wrap {
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 8px; padding: 12px 16px; margin-bottom: 14px;
+    }
+    .settings-search-input {
+      width: 100%; background: var(--panel2); color: var(--text);
+      border: 1px solid var(--border); border-radius: 6px;
+      padding: 8px 10px; font-size: 13px;
+    }
+    .settings-search-input::placeholder { color: var(--muted); }
+    .settings-search-count { font-size: 11px; color: var(--muted); margin-top: 6px; }
+    .settings-section.settings-search-hidden { display: none; }
     .settings-row {
       display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 13px;
     }
@@ -1377,9 +1415,16 @@
     <!-- ── Settings panel ────────────────────────────────────────── -->
     <div id="panel-settings" class="tab-panel">
 
+      <div class="settings-search-wrap">
+        <input id="settings-search" class="settings-search-input" type="search"
+          data-i18n-placeholder="settingsSearchPlaceholder"
+          placeholder="Søk i innstillinger…" autocomplete="off">
+        <div id="settings-search-count" class="settings-search-count"></div>
+      </div>
+
       <!-- Tema -->
-      <div class="settings-section">
-        <div class="settings-section-title" data-i18n="settingsThemeTitle">Utseende</div>
+      <details class="settings-section settings-expander" data-settings-key="theme">
+        <summary class="settings-section-title" data-i18n="settingsThemeTitle">Utseende</summary>
         <div class="settings-row">
           <label for="themeSelect" data-i18n="themeLabel">Tema:</label>
           <select id="themeSelect">
@@ -1388,11 +1433,11 @@
           </select>
         </div>
         <div class="settings-note" data-i18n="themeNote">Lys modus bruker en grå header slik at XLENT-logoen fortsatt er synlig.</div>
-      </div>
+      </details>
 
       <!-- Dokumentspråk -->
-      <div class="settings-section">
-        <div class="settings-section-title" data-i18n="settingsDocLangTitle">Dokumentspråk</div>
+      <details class="settings-section settings-expander" data-settings-key="document-language">
+        <summary class="settings-section-title" data-i18n="settingsDocLangTitle">Dokumentspråk</summary>
         <div class="settings-row">
           <label for="langSelect" data-i18n="docLangLabel">Dokumentspråk:</label>
           <select id="langSelect">
@@ -1406,31 +1451,31 @@
           </select>
         </div>
         <div class="settings-note" data-i18n="settingsDocLangNote">Auto-detektering bestemmer dokumentspråket automatisk og velger riktige mønstre.</div>
-      </div>
+      </details>
 
       <!-- Redaction -->
-      <div class="settings-section">
-        <div class="settings-section-title" data-i18n="settingsRedactionTitle">Redaction</div>
+      <details class="settings-section settings-expander" data-settings-key="redaction">
+        <summary class="settings-section-title" data-i18n="settingsRedactionTitle">Redaction</summary>
         <div class="settings-row">
           <input type="checkbox" id="stripAnnotations" />
           <label for="stripAnnotations" data-i18n="stripAnnotationsLabel">Fjern kommentarer og speaker notes ved anonymisering</label>
         </div>
         <div class="settings-note" data-i18n="stripAnnotationsNote">Gjelder støttede originalformater: DOCX-kommentarer, PPTX speaker notes/kommentarer, XLSX-kommentarer og PDF-annotasjoner.</div>
-      </div>
+      </details>
 
       <!-- API docs -->
-      <div class="settings-section" id="section-api-docs">
-        <div class="settings-section-title" data-i18n="settingsApiTitle">API-dokumentasjon</div>
+      <details class="settings-section settings-expander" id="section-api-docs" data-settings-key="api-docs">
+        <summary class="settings-section-title" data-i18n="settingsApiTitle">API-dokumentasjon</summary>
         <div class="settings-note" data-i18n="settingsApiNote">Det stabile lokale API-et kan nås på samme lokale port som appen. Bruk Swagger for å teste endepunkter, eller hent OpenAPI JSON direkte.</div>
         <div class="settings-row" style="margin-top:10px; gap:10px;">
           <a href="/api/docs" target="_blank" class="ctrl-btn" style="text-decoration:none;" data-i18n="apiDocsOpen">Åpne Swagger</a>
           <a href="/api/openapi.json" target="_blank" class="ctrl-btn" style="text-decoration:none;" data-i18n="apiOpenapiJson">OpenAPI JSON</a>
         </div>
-      </div>
+      </details>
 
       <!-- Microsoft 365 / Graph -->
-      <div class="settings-section" id="section-m365">
-        <div class="settings-section-title" data-i18n="settingsM365Title">Microsoft 365 dokumentmerking</div>
+      <details class="settings-section settings-expander" id="section-m365" data-settings-key="m365">
+        <summary class="settings-section-title" data-i18n="settingsM365Title">Microsoft 365 dokumentmerking</summary>
         <div class="settings-note" data-i18n="settingsM365Note">Valgfritt tillegg for SharePoint/OneDrive. Token lagres ikke i appen; sett XLENT_GRAPH_TOKEN eller MICROSOFT_GRAPH_TOKEN i miljøet før oppstart.</div>
         <div class="settings-row" style="margin-top:10px;">
           <label for="m365-drive-id" data-i18n="m365DriveId">Drive ID:</label>
@@ -1468,11 +1513,11 @@
           <button id="btn-m365-write-metadata" class="ctrl-btn ctrl-btn-outline-primary" data-i18n="m365WriteMetadata" data-i18n-title="m365WriteMetadataTooltip" title="Skriver scan-resultat og foreslått klassifisering til Microsoft 365/SharePoint metadata når Graph-tilgang er konfigurert.">Skriv scan-metadata</button>
         </div>
         <div class="settings-note" id="m365-msg" style="margin-top:6px;"></div>
-      </div>
+      </details>
 
       <!-- Navnemodeller (NER) -->
-      <div class="settings-section" id="section-ner-models">
-        <div class="settings-section-title" data-i18n="settingsNerTitle">Navnemodeller (NER)</div>
+      <details class="settings-section settings-expander" id="section-ner-models" data-settings-key="ner-models">
+        <summary class="settings-section-title" data-i18n="settingsNerTitle">Navnemodeller (NER)</summary>
         <div class="settings-note" data-i18n="settingsNerNote">Navnegjenkjenning krever spaCy-modeller som lastes ned én gang og lagres lokalt på maskinen. Nedlastingen krever internettforbindelse.</div>
         <div id="ner-models-list" style="margin-top:10px;"></div>
         <div class="settings-row" style="margin-top:10px;">
@@ -1480,15 +1525,16 @@
           <button id="btn-refresh-models" class="ctrl-btn" data-i18n="nerRefresh">↻ Oppdater</button>
         </div>
         <div class="settings-note" id="ner-models-msg" style="margin-top:6px;"></div>
-      </div>
+      </details>
 
       <!-- Ollama / AI-dybdeskann -->
-      <div class="settings-section" id="section-ollama">
-        <div class="settings-section-title" data-i18n="settingsOllamaTitle">AI-dybdeskann (Ollama)</div>
+      <details class="settings-section settings-expander" id="section-ollama" data-settings-key="ollama">
+        <summary class="settings-section-title" data-i18n="settingsOllamaTitle">AI-dybdeskann (Ollama)</summary>
         <div class="settings-note" data-i18n="settingsOllamaNote">Dybdeskanning bruker en lokal Ollama-modell for å oppdage personopplysninger som regel-baserte detektorer kan misse. Krever at Ollama er installert på maskinen.</div>
         <div class="settings-row" style="margin-top:10px; align-items:center; gap:10px;">
           <span id="ollama-settings-status" style="font-size:13px;"></span>
           <button id="btn-refresh-ollama" class="ctrl-btn" data-i18n="ollamaRefresh">↻ Sjekk status</button>
+          <button id="btn-test-ollama-hardware" class="ctrl-btn" data-i18n="ollamaHardwareTest">Test GPU/Ollama</button>
           <button id="btn-pull-ollama-model" class="ctrl-btn ctrl-btn-outline-primary" data-i18n="ollamaPullRecommended">Last ned anbefalt modell</button>
           <button id="btn-stop-ollama-model" class="ctrl-btn" data-i18n="ollamaStopModel" disabled>Stopp aktiv AI-modell</button>
         </div>
@@ -1499,14 +1545,15 @@
         </div>
         <div class="settings-note" data-i18n="ollamaStopNote">Dette frigjør minne/CPU/GPU brukt av modellen. Modellen lastes inn igjen automatisk ved neste dybdeskann.</div>
         <div class="settings-note" id="ollama-stop-msg"></div>
+        <div class="settings-note" id="ollama-hardware-test-msg"></div>
         <div class="settings-note" id="ollama-pull-msg"></div>
         <div id="ollama-models-list" style="margin-top:8px;"></div>
         <div id="ollama-instructions" style="display:none; margin-top:10px;" class="ds-ollama-instructions"></div>
-      </div>
+      </details>
 
       <!-- Filtrering -->
-      <div class="settings-section">
-        <div class="settings-section-title" data-i18n="settingsFilterTitle">Filtrering</div>
+      <details class="settings-section settings-expander" data-settings-key="filtering">
+        <summary class="settings-section-title" data-i18n="settingsFilterTitle">Filtrering</summary>
         <div class="settings-row">
           <input type="checkbox" id="ignoreXlent" checked />
           <label for="ignoreXlent" data-i18n="ignoreLabel">Ignorer XLENT-interne (ansattes navn og @xlent.no / @xlent.se)</label>
@@ -1518,10 +1565,10 @@
           <button id="btn-ignore-save" class="ctrl-btn ctrl-btn-outline-primary" data-i18n="ignoreSave">Lagre ignore.toml</button>
         </div>
         <div class="settings-note" id="ignore-msg"></div>
-      </div>
+      </details>
 
-      <div class="settings-section">
-        <div class="settings-section-title" data-i18n="settingsWhitelistTitle">Hviteliste</div>
+      <details class="settings-section settings-expander" data-settings-key="whitelist">
+        <summary class="settings-section-title" data-i18n="settingsWhitelistTitle">Hviteliste</summary>
         <div class="settings-note" data-i18n="whitelistPersonalNote">Denne hvitelisten er personlig og bygges opp av den enkelte bruker.</div>
         <div class="settings-note" id="whitelist-path"></div>
         <textarea id="whitelist-editor" class="settings-textarea" spellcheck="false"></textarea>
@@ -1530,10 +1577,10 @@
           <button id="btn-whitelist-save" class="ctrl-btn ctrl-btn-outline-primary" data-i18n="whitelistSave">Lagre hviteliste</button>
         </div>
         <div class="settings-note" id="whitelist-msg"></div>
-      </div>
+      </details>
 
-      <div class="settings-section">
-        <div class="settings-section-title" data-i18n="settingsBlacklistTitle">Blacklist</div>
+      <details class="settings-section settings-expander" data-settings-key="blacklist">
+        <summary class="settings-section-title" data-i18n="settingsBlacklistTitle">Blacklist</summary>
         <div class="settings-note" data-i18n="blacklistNote">Ord og uttrykk her flagges alltid og fjernes ved redaction. Ett element per linje.</div>
         <div class="settings-note" id="blacklist-path"></div>
         <textarea id="blacklist-editor" class="settings-textarea" spellcheck="false"></textarea>
@@ -1542,10 +1589,10 @@
           <button id="btn-blacklist-save" class="ctrl-btn ctrl-btn-outline-primary" data-i18n="blacklistSave">Lagre blacklist</button>
         </div>
         <div class="settings-note" id="blacklist-msg"></div>
-      </div>
+      </details>
 
-      <div class="settings-section">
-        <div class="settings-section-title" data-i18n="settingsCustomPatternsTitle">Egendefinerte mønstre</div>
+      <details class="settings-section settings-expander" data-settings-key="custom-patterns">
+        <summary class="settings-section-title" data-i18n="settingsCustomPatternsTitle">Egendefinerte mønstre</summary>
         <div class="settings-note" data-i18n="customPatternsNote">Egne regex-mønstre (prosjektkoder, interne ID-er) med valgfri alvorlighetsgrad. Tips: bruk enkle fnutter rundt regex-en, da slipper du å doble backslash-er.</div>
         <div class="settings-row" style="align-items:flex-end;gap:8px;flex-wrap:wrap;margin-top:8px;">
           <label><span data-i18n="customPatternName">Navn</span><br><input id="custom-pattern-name" type="text" placeholder="Prosjektkode"></label>
@@ -1572,20 +1619,20 @@
           <button id="btn-custom-patterns-save" class="ctrl-btn ctrl-btn-outline-primary" data-i18n="customPatternsSave">Lagre mønstre</button>
         </div>
         <div class="settings-note" id="custom-patterns-msg"></div>
-      </div>
+      </details>
 
-      <div class="settings-section">
-        <div class="settings-section-title" data-i18n="settingsClipGuardTitle">Utklippstavle-vakt</div>
+      <details class="settings-section settings-expander" data-settings-key="clipboard-guard">
+        <summary class="settings-section-title" data-i18n="settingsClipGuardTitle">Utklippstavle-vakt</summary>
         <div class="settings-note" data-i18n="clipGuardNote">Overvåker utklippstavlen lokalt og varsler hvis du kopierer rødt/svart innhold — før du rekker å lime det inn i et AI-verktøy. Innholdet forlater aldri maskinen og lagres ikke.</div>
         <div class="settings-row" style="margin-top:8px;">
           <input type="checkbox" id="clipguard-toggle" />
           <label for="clipguard-toggle" data-i18n="clipGuardToggle">Aktiver utklippstavle-vakt</label>
         </div>
         <div class="settings-note" id="clipguard-msg"></div>
-      </div>
+      </details>
 
-      <div class="settings-section">
-        <div class="settings-section-title" data-i18n="settingsWatchTitle">Overvåket mappe</div>
+      <details class="settings-section settings-expander" data-settings-key="folder-watch">
+        <summary class="settings-section-title" data-i18n="settingsWatchTitle">Overvåket mappe</summary>
         <div class="settings-note" data-i18n="watchNote">Skanner automatisk nye og endrede filer i en valgt mappe (f.eks. Nedlastinger) og varsler ved røde/svarte funn.</div>
         <div class="settings-row" style="margin-top:8px;">
           <button id="btn-watch-choose" class="ctrl-btn" data-i18n="watchChoose">Velg mappe…</button>
@@ -1596,10 +1643,10 @@
           <label for="watch-toggle" data-i18n="watchToggle">Aktiver mappeovervåking</label>
         </div>
         <div class="settings-note" id="watch-msg"></div>
-      </div>
+      </details>
 
-      <div class="settings-section">
-        <div class="settings-section-title" data-i18n="settingsProfileTitle">Innstillingsprofil</div>
+      <details class="settings-section settings-expander" data-settings-key="settings-profile">
+        <summary class="settings-section-title" data-i18n="settingsProfileTitle">Innstillingsprofil</summary>
         <div class="settings-note" data-i18n="settingsProfileNote">Eksporterer og importerer tema, dokumentspråk, hviteliste, blacklist, ignore.toml og egendefinerte mønstre. Scan-historikk og dokumentinnhold tas ikke med.</div>
         <div class="settings-row" style="margin-top:8px;">
           <button id="btn-export-settings" class="ctrl-btn" data-i18n="settingsExport">Eksporter innstillinger</button>
@@ -1607,10 +1654,10 @@
           <input type="file" id="settings-import-file" accept="application/json,.json" style="display:none" />
         </div>
         <div class="settings-note" id="settings-profile-msg"></div>
-      </div>
+      </details>
 
-      <div class="settings-section">
-        <div class="settings-section-title" data-i18n="settingsUpdateTitle">Oppdateringer</div>
+      <details class="settings-section settings-expander" data-settings-key="updates">
+        <summary class="settings-section-title" data-i18n="settingsUpdateTitle">Oppdateringer</summary>
         <div class="settings-row">
           <button id="btn-check-updates" class="ctrl-btn" data-i18n="updateCheckNow">Se etter oppdateringer nå</button>
           <button id="btn-run-install-script" class="ctrl-btn ctrl-btn-outline-primary" data-i18n="updateRunScript" data-i18n-title="updateRunScriptTooltip" title="Laster ned riktig installasjonsscript for operativsystemet og starter installasjon lokalt. Kan trigge sikkerhetsdialoger i Windows eller macOS.">Last ned og kjør installasjonsscript</button>
@@ -1619,19 +1666,19 @@
         <div class="settings-note" id="update-check-msg"></div>
         <div class="settings-note" id="update-install-script-msg"></div>
         <div class="settings-note" id="web-mode-msg"></div>
-      </div>
+      </details>
 
-      <div class="settings-section" id="section-mac-quick-action" style="display:none;">
-        <div class="settings-section-title" data-i18n="settingsMacTitle">macOS Finder-hurtighandling</div>
+      <details class="settings-section settings-expander" id="section-mac-quick-action" data-settings-key="mac-quick-action" style="display:none;">
+        <summary class="settings-section-title" data-i18n="settingsMacTitle">macOS Finder-hurtighandling</summary>
         <div class="settings-note" data-i18n="settingsMacNote">Installerer høyreklikk-valget «Skann med XLENT» i Finder for denne brukeren.</div>
         <div class="settings-row" style="margin-top:8px;">
           <button id="btn-install-mac-quick-action" class="ctrl-btn ctrl-btn-outline-primary" data-i18n="installMacQuickAction">Installer Finder-hurtighandling</button>
         </div>
         <div class="settings-note" id="mac-quick-action-msg"></div>
-      </div>
+      </details>
 
-      <div class="settings-section">
-        <div class="settings-section-title" data-i18n="settingsLogsTitle">Feilsøking</div>
+      <details class="settings-section settings-expander" data-settings-key="logs">
+        <summary class="settings-section-title" data-i18n="settingsLogsTitle">Feilsøking</summary>
         <div class="settings-note" id="log-path-display"></div>
         <div class="settings-row" style="margin-top:8px;">
           <button id="btn-load-log" class="ctrl-btn" data-i18n="loadLog">Vis logg</button>
@@ -1642,7 +1689,7 @@
         <textarea id="log-viewer" class="settings-textarea" spellcheck="false" readonly style="display:none;min-height:180px;margin-top:8px;"></textarea>
         <div class="settings-note" id="log-msg"></div>
         <div class="settings-note" id="health-msg"></div>
-      </div>
+      </details>
 
       <div class="settings-note" data-i18n="settingsPersistNote">Innstillinger lagres automatisk i nettleseren.</div>
     </div>
@@ -1711,6 +1758,24 @@
         wlAdd:        "+ Hviteliste",
         wlAdded:      "✓ Lagt til",
         wlErr:        "Feil!",
+        whyFlagged:   "Hvorfor flagget?",
+        whySource:    "Kilde",
+        whyCategory:  "Kategori",
+        whySeverity:  "Alvorlighet",
+        whyConfidence:"Konfidens",
+        whyContext:   "Kontekst",
+        whyExplanation:"Forklaring",
+        whyRuleEngine:"Regelbasert detektor",
+        whyNerEngine: "NER/navnemodell",
+        whyAiEngine:  "AI-dypscan",
+        whySystemEngine:"Systemstatus",
+        whyRuleExplanation:"Teksten matcher en lokal detektor for denne kategorien.",
+        whyNerExplanation:"Navnemodellen vurderte teksten som et personnavn i kontekst.",
+        whyAiExplanation:"AI-dypscan returnerte dette som et kildeverifisert funn i valgt kategori.",
+        whySystemExplanation:"Dette er en status- eller kvalitetsadvarsel fra skanneren.",
+        whySecretExplanation:"Teksten matcher et mønster for token, nøkkel, passord eller annen hemmelighet.",
+        whyWhitelistExplanation:"Funnets tekst finnes i hvitelisten og vises derfor som godkjent/grønn.",
+        whyNoContext: "Ingen kontekst lagret.",
         exportJson:   "Eksporter JSON",
         exportCsv:    "Eksporter CSV",
         historyTitle: "Siste skanninger",
@@ -1728,6 +1793,8 @@
         themeNote:           "Lys modus bruker en grå header slik at XLENT-logoen fortsatt er synlig.",
         settingsDocLangTitle:"Dokumentspråk",
         settingsDocLangNote: "Auto-detektering bestemmer dokumentspråket automatisk og velger riktige mønstre.",
+        settingsSearchPlaceholder:"Søk i innstillinger…",
+        settingsSearchCount:"{n} seksjoner matcher.",
         settingsRedactionTitle: "Redaction",
         stripAnnotationsLabel: "Fjern kommentarer og speaker notes ved anonymisering",
         stripAnnotationsNote: "Gjelder støttede originalformater: DOCX-kommentarer, PPTX speaker notes/kommentarer, XLSX-kommentarer og PDF-annotasjoner.",
@@ -1783,7 +1850,12 @@
         ollamaHardwareGpu:     "GPU",
         ollamaHardwareHybrid:  "GPU/CPU hybrid",
         ollamaHardwareCpu:     "CPU / ingen aktiv GPU-bruk",
+        ollamaHardwareInactive:"Ingen aktiv modell – GPU ikke testet",
         ollamaHardwareUnknown: "Ukjent CPU/GPU-status",
+        ollamaHardwareTest:    "Test GPU/Ollama",
+        ollamaHardwareTesting: "Tester valgt modell:",
+        ollamaHardwareTestDone:"Test fullført:",
+        ollamaHardwareTestFailed:"Kunne ikke teste GPU/Ollama:",
         ollamaPullRecommended:"Last ned anbefalt modell",
         ollamaPullStarting:  "Starter modellnedlasting:",
         ollamaPullFailed:    "Kunne ikke laste ned modell:",
@@ -2078,6 +2150,24 @@
         wlAdd:        "+ Vitlista",
         wlAdded:      "✓ Tillagd",
         wlErr:        "Fel!",
+        whyFlagged:   "Varför flaggat?",
+        whySource:    "Källa",
+        whyCategory:  "Kategori",
+        whySeverity:  "Allvarlighet",
+        whyConfidence:"Konfidens",
+        whyContext:   "Kontext",
+        whyExplanation:"Förklaring",
+        whyRuleEngine:"Regelbaserad detektor",
+        whyNerEngine: "NER/namnmodell",
+        whyAiEngine:  "AI-djupskanning",
+        whySystemEngine:"Systemstatus",
+        whyRuleExplanation:"Texten matchar en lokal detektor för denna kategori.",
+        whyNerExplanation:"Namnmodellen bedömde texten som ett personnamn i kontext.",
+        whyAiExplanation:"AI-djupskanning returnerade detta som ett källverifierat fynd i vald kategori.",
+        whySystemExplanation:"Detta är en status- eller kvalitetsvarning från skannern.",
+        whySecretExplanation:"Texten matchar ett mönster för token, nyckel, lösenord eller annan hemlighet.",
+        whyWhitelistExplanation:"Fyndets text finns i vitlistan och visas därför som godkänd/grön.",
+        whyNoContext: "Ingen kontext sparad.",
         exportJson:   "Exportera JSON",
         exportCsv:    "Exportera CSV",
         historyTitle: "Senaste skanningar",
@@ -2095,6 +2185,8 @@
         themeNote:           "Ljust läge använder en grå header så att XLENT-logotypen fortfarande syns.",
         settingsDocLangTitle:"Dokumentspråk",
         settingsDocLangNote: "Automatisk identifiering väljer dokumentspråk och rätt mönster.",
+        settingsSearchPlaceholder:"Sök i inställningar…",
+        settingsSearchCount:"{n} sektioner matchar.",
         settingsRedactionTitle: "Redigering",
         stripAnnotationsLabel: "Ta bort kommentarer och speaker notes vid redigering",
         stripAnnotationsNote: "Gäller stödda originalformat: DOCX-kommentarer, PPTX speaker notes/kommentarer, XLSX-kommentarer och PDF-annoteringar.",
@@ -2150,7 +2242,12 @@
         ollamaHardwareGpu:     "GPU",
         ollamaHardwareHybrid:  "GPU/CPU-hybrid",
         ollamaHardwareCpu:     "CPU / ingen aktiv GPU-användning",
+        ollamaHardwareInactive:"Ingen aktiv modell – GPU inte testad",
         ollamaHardwareUnknown: "Okänd CPU/GPU-status",
+        ollamaHardwareTest:    "Testa GPU/Ollama",
+        ollamaHardwareTesting: "Testar vald modell:",
+        ollamaHardwareTestDone:"Test slutfört:",
+        ollamaHardwareTestFailed:"Kunde inte testa GPU/Ollama:",
         ollamaPullRecommended:"Ladda ned rekommenderad modell",
         ollamaPullStarting:  "Startar modellnedladdning:",
         ollamaPullFailed:    "Kunde inte ladda ned modell:",
@@ -2435,6 +2532,24 @@
         wlAdd:        "+ Whitelist",
         wlAdded:      "✓ Added",
         wlErr:        "Error!",
+        whyFlagged:   "Why flagged?",
+        whySource:    "Source",
+        whyCategory:  "Category",
+        whySeverity:  "Severity",
+        whyConfidence:"Confidence",
+        whyContext:   "Context",
+        whyExplanation:"Explanation",
+        whyRuleEngine:"Rule-based detector",
+        whyNerEngine: "NER/name model",
+        whyAiEngine:  "AI deep scan",
+        whySystemEngine:"System status",
+        whyRuleExplanation:"The text matches a local detector for this category.",
+        whyNerExplanation:"The name model classified the text as a personal name in context.",
+        whyAiExplanation:"AI deep scan returned this as a source-verified finding in the selected category.",
+        whySystemExplanation:"This is a scanner status or quality warning.",
+        whySecretExplanation:"The text matches a pattern for a token, key, password, or other secret.",
+        whyWhitelistExplanation:"The finding text is in the whitelist and is therefore shown as approved/green.",
+        whyNoContext: "No context stored.",
         exportJson:   "Export JSON",
         exportCsv:    "Export CSV",
         historyTitle: "Recent scans",
@@ -2452,6 +2567,8 @@
         themeNote:           "Light mode uses a grey header so the white XLENT logo remains visible.",
         settingsDocLangTitle:"Document language",
         settingsDocLangNote: "Auto-detection determines the document language and selects the right detection patterns.",
+        settingsSearchPlaceholder:"Search settings…",
+        settingsSearchCount:"{n} sections match.",
         settingsRedactionTitle: "Redaction",
         stripAnnotationsLabel: "Remove comments and speaker notes during redaction",
         stripAnnotationsNote: "Applies to supported original formats: DOCX comments, PPTX speaker notes/comments, XLSX comments and PDF annotations.",
@@ -2507,7 +2624,12 @@
         ollamaHardwareGpu:     "GPU",
         ollamaHardwareHybrid:  "GPU/CPU hybrid",
         ollamaHardwareCpu:     "CPU / no active GPU use",
+        ollamaHardwareInactive:"No active model – GPU not checked",
         ollamaHardwareUnknown: "Unknown CPU/GPU status",
+        ollamaHardwareTest:    "Test GPU/Ollama",
+        ollamaHardwareTesting: "Testing selected model:",
+        ollamaHardwareTestDone:"Test complete:",
+        ollamaHardwareTestFailed:"Could not test GPU/Ollama:",
         ollamaPullRecommended:"Download recommended model",
         ollamaPullStarting:  "Starting model download:",
         ollamaPullFailed:    "Could not download model:",
@@ -2800,12 +2922,32 @@
         wlAdd:               "+ Whitelist",
         wlAdded:             "✓ Hinzugefügt",
         wlErr:               "Fehler!",
+        whyFlagged:          "Warum markiert?",
+        whySource:           "Quelle",
+        whyCategory:         "Kategorie",
+        whySeverity:         "Schweregrad",
+        whyConfidence:       "Konfidenz",
+        whyContext:          "Kontext",
+        whyExplanation:      "Erklärung",
+        whyRuleEngine:       "Regelbasierter Detektor",
+        whyNerEngine:        "NER/Namensmodell",
+        whyAiEngine:         "KI-Tiefenscan",
+        whySystemEngine:     "Systemstatus",
+        whyRuleExplanation:  "Der Text passt zu einem lokalen Detektor für diese Kategorie.",
+        whyNerExplanation:   "Das Namensmodell hat den Text im Kontext als Personennamen bewertet.",
+        whyAiExplanation:    "Der KI-Tiefenscan hat dies als quellenverifizierten Treffer in der gewählten Kategorie zurückgegeben.",
+        whySystemExplanation:"Dies ist eine Status- oder Qualitätswarnung des Scanners.",
+        whySecretExplanation:"Der Text passt zu einem Muster für Token, Schlüssel, Passwort oder anderes Secret.",
+        whyWhitelistExplanation:"Der Treffertext steht in der Whitelist und wird deshalb als freigegeben/grün angezeigt.",
+        whyNoContext:        "Kein Kontext gespeichert.",
         pdfCaveat:           "PDF-Direktbearbeitung: Text wird in Suchschichten ersetzt.",
         warnNoText:          "Im Dokument wurde kein Text gefunden. Die Datei kann bildbasiert oder gescannt sein. Inhalte in Bildern können ohne OCR nicht zuverlässig geprüft werden.",
         warnLittleText:      "Im Dokument wurde nur sehr wenig Text gefunden. Wenn die Datei aus gescannten Bildern besteht, können sensible Informationen für den Scanner unsichtbar sein.",
         docLangAuto:         "Automatisch erkennen",
         settingsDocLangTitle:"Dokumentsprache",
         settingsDocLangNote: "Automatische Erkennung bestimmt die Dokumentsprache und wählt die passenden Muster.",
+        settingsSearchPlaceholder:"Einstellungen durchsuchen…",
+        settingsSearchCount:"{n} Bereiche passen.",
         settingsRedactionTitle: "Redaktion",
         stripAnnotationsLabel: "Kommentare und Sprechernotizen bei der Redaktion entfernen",
         stripAnnotationsNote: "Gilt für unterstützte Originalformate: DOCX-Kommentare, PPTX-Sprechernotizen/Kommentare, XLSX-Kommentare und PDF-Anmerkungen.",
@@ -2942,7 +3084,12 @@
         ollamaHardwareGpu:     "GPU",
         ollamaHardwareHybrid:  "GPU/CPU-Hybrid",
         ollamaHardwareCpu:     "CPU / keine aktive GPU-Nutzung",
+        ollamaHardwareInactive:"Kein aktives Modell – GPU nicht geprüft",
         ollamaHardwareUnknown: "CPU/GPU-Status unbekannt",
+        ollamaHardwareTest:    "GPU/Ollama testen",
+        ollamaHardwareTesting: "Teste gewähltes Modell:",
+        ollamaHardwareTestDone:"Test abgeschlossen:",
+        ollamaHardwareTestFailed:"GPU/Ollama konnte nicht getestet werden:",
         ollamaPullRecommended:"Empfohlenes Modell herunterladen",
         ollamaPullStarting:  "Modelldownload wird gestartet:",
         ollamaPullFailed:    "Modell konnte nicht heruntergeladen werden:",
@@ -3163,12 +3310,32 @@
         wlAdd:               "+ Liste blanche",
         wlAdded:             "✓ Ajouté",
         wlErr:               "Erreur !",
+        whyFlagged:          "Pourquoi signalé ?",
+        whySource:           "Source",
+        whyCategory:         "Catégorie",
+        whySeverity:         "Gravité",
+        whyConfidence:       "Confiance",
+        whyContext:          "Contexte",
+        whyExplanation:      "Explication",
+        whyRuleEngine:       "Détecteur à règles",
+        whyNerEngine:        "NER/modèle de noms",
+        whyAiEngine:         "Analyse IA approfondie",
+        whySystemEngine:     "Statut système",
+        whyRuleExplanation:  "Le texte correspond à un détecteur local pour cette catégorie.",
+        whyNerExplanation:   "Le modèle de noms a classé le texte comme nom de personne dans le contexte.",
+        whyAiExplanation:    "L’analyse IA a retourné ceci comme résultat vérifié dans la source pour la catégorie choisie.",
+        whySystemExplanation:"Il s’agit d’un avertissement de statut ou de qualité du scanner.",
+        whySecretExplanation:"Le texte correspond à un motif de jeton, clé, mot de passe ou autre secret.",
+        whyWhitelistExplanation:"Le texte du résultat figure dans la liste blanche et s’affiche donc comme approuvé/vert.",
+        whyNoContext:        "Aucun contexte enregistré.",
         pdfCaveat:           "Édition PDF directe : le texte est remplacé dans les calques de recherche.",
         warnNoText:          "Aucun texte n’a été trouvé dans le document. Le fichier peut être basé sur des images ou scanné. Le contenu des images ne peut pas être vérifié de manière fiable sans OCR.",
         warnLittleText:      "Très peu de texte a été trouvé dans le document. Si le fichier est composé d’images scannées, des informations sensibles peuvent être invisibles pour le scanner.",
         docLangAuto:         "Détection automatique",
         settingsDocLangTitle:"Langue du document",
         settingsDocLangNote: "La détection automatique détermine la langue du document et choisit les bons modèles.",
+        settingsSearchPlaceholder:"Rechercher dans les paramètres…",
+        settingsSearchCount:"{n} sections correspondent.",
         settingsRedactionTitle: "Biffage",
         stripAnnotationsLabel: "Supprimer les commentaires et notes de présentation lors du biffage",
         stripAnnotationsNote: "S’applique aux formats originaux pris en charge : commentaires DOCX, notes/commentaires PPTX, commentaires XLSX et annotations PDF.",
@@ -3305,7 +3472,12 @@
         ollamaHardwareGpu:     "GPU",
         ollamaHardwareHybrid:  "Hybride GPU/CPU",
         ollamaHardwareCpu:     "CPU / aucune utilisation GPU active",
+        ollamaHardwareInactive:"Aucun modèle actif – GPU non vérifié",
         ollamaHardwareUnknown: "Statut CPU/GPU inconnu",
+        ollamaHardwareTest:    "Tester GPU/Ollama",
+        ollamaHardwareTesting: "Test du modèle sélectionné :",
+        ollamaHardwareTestDone:"Test terminé :",
+        ollamaHardwareTestFailed:"Impossible de tester GPU/Ollama :",
         ollamaPullRecommended:"Télécharger le modèle recommandé",
         ollamaPullStarting:  "Démarrage du téléchargement du modèle :",
         ollamaPullFailed:    "Impossible de télécharger le modèle :",
@@ -3526,12 +3698,32 @@
         wlAdd:               "+ Lista blanca",
         wlAdded:             "✓ Añadido",
         wlErr:               "¡Error!",
+        whyFlagged:          "¿Por qué se marcó?",
+        whySource:           "Fuente",
+        whyCategory:         "Categoría",
+        whySeverity:         "Severidad",
+        whyConfidence:       "Confianza",
+        whyContext:          "Contexto",
+        whyExplanation:      "Explicación",
+        whyRuleEngine:       "Detector basado en reglas",
+        whyNerEngine:        "NER/modelo de nombres",
+        whyAiEngine:         "Escaneo profundo con IA",
+        whySystemEngine:     "Estado del sistema",
+        whyRuleExplanation:  "El texto coincide con un detector local para esta categoría.",
+        whyNerExplanation:   "El modelo de nombres clasificó el texto como nombre de persona en contexto.",
+        whyAiExplanation:    "El escaneo con IA devolvió esto como hallazgo verificado en la fuente para la categoría elegida.",
+        whySystemExplanation:"Es una advertencia de estado o calidad del scanner.",
+        whySecretExplanation:"El texto coincide con un patrón de token, clave, contraseña u otro secreto.",
+        whyWhitelistExplanation:"El texto del hallazgo está en la lista blanca y por eso se muestra como aprobado/verde.",
+        whyNoContext:        "No hay contexto guardado.",
         pdfCaveat:           "Edición directa de PDF: el texto se reemplaza en capas de búsqueda.",
         warnNoText:          "No se encontró texto en el documento. El archivo puede estar basado en imágenes o escaneado. El contenido de las imágenes no puede comprobarse de forma fiable sin OCR.",
         warnLittleText:      "Se encontró muy poco texto en el documento. Si el archivo consta de imágenes escaneadas, la información sensible puede ser invisible para el escáner.",
         docLangAuto:         "Detección automática",
         settingsDocLangTitle:"Idioma del documento",
         settingsDocLangNote: "La detección automática determina el idioma del documento y elige los patrones correctos.",
+        settingsSearchPlaceholder:"Buscar en configuración…",
+        settingsSearchCount:"{n} secciones coinciden.",
         settingsRedactionTitle: "Redacción",
         stripAnnotationsLabel: "Eliminar comentarios y notas del presentador durante la redacción",
         stripAnnotationsNote: "Se aplica a formatos originales compatibles: comentarios DOCX, notas/comentarios PPTX, comentarios XLSX y anotaciones PDF.",
@@ -3668,7 +3860,12 @@
         ollamaHardwareGpu:     "GPU",
         ollamaHardwareHybrid:  "Híbrido GPU/CPU",
         ollamaHardwareCpu:     "CPU / sin uso activo de GPU",
+        ollamaHardwareInactive:"Ningún modelo activo – GPU no comprobada",
         ollamaHardwareUnknown: "Estado CPU/GPU desconocido",
+        ollamaHardwareTest:    "Probar GPU/Ollama",
+        ollamaHardwareTesting: "Probando modelo seleccionado:",
+        ollamaHardwareTestDone:"Prueba completada:",
+        ollamaHardwareTestFailed:"No se pudo probar GPU/Ollama:",
         ollamaPullRecommended:"Descargar modelo recomendado",
         ollamaPullStarting:  "Iniciando descarga del modelo:",
         ollamaPullFailed:    "No se pudo descargar el modelo:",
@@ -4884,6 +5081,44 @@
       return `<div class="m365-tags">${parts.join(" &middot; ")}</div>`;
     }
 
+    function _findingEngineLabel(f, isAi = false) {
+      if (isAi) return t("whyAiEngine");
+      const c = String(f?.category || "").toLowerCase();
+      if (c.startsWith("⚠")) return t("whySystemEngine");
+      if (c.startsWith("navn")) return t("whyNerEngine");
+      return t("whyRuleEngine");
+    }
+
+    function _findingExplanation(f, isAi = false) {
+      if (isAi) return t("whyAiExplanation");
+      const c = String(f?.category || "").toLowerCase();
+      if (c.startsWith("⚠")) return t("whySystemExplanation");
+      if (String(f?.severity || "") === "grønn") return t("whyWhitelistExplanation");
+      if (c.startsWith("navn")) return t("whyNerExplanation");
+      if (["openai","anthropic","github","jwt","bearer","aws","private key","azure storage","passord","høy-entropi"].some(p => c.includes(p))) {
+        return t("whySecretExplanation");
+      }
+      return t("whyRuleExplanation");
+    }
+
+    function _findingReasonHtml(f, { isAi = false } = {}) {
+      const severity = isAi ? _aiSev(f) : (f?.severity || "");
+      const confidence = isAi ? (f?.confidence || "") : "";
+      const context = f?.context || "";
+      const rows = [
+        `<div><strong>${escapeHtml(t("whySource"))}:</strong> ${escapeHtml(_findingEngineLabel(f, isAi))}</div>`,
+        `<div><strong>${escapeHtml(t("whyCategory"))}:</strong> ${escapeHtml(f?.category || "")}</div>`,
+      ];
+      if (severity) rows.push(`<div><strong>${escapeHtml(t("whySeverity"))}:</strong> ${escapeHtml(severity)}</div>`);
+      if (confidence) rows.push(`<div><strong>${escapeHtml(t("whyConfidence"))}:</strong> ${escapeHtml(confidence)}</div>`);
+      rows.push(`<div><strong>${escapeHtml(t("whyContext"))}:</strong> ${context ? escapeHtml(context) : escapeHtml(t("whyNoContext"))}</div>`);
+      rows.push(`<div><strong>${escapeHtml(t("whyExplanation"))}:</strong> ${escapeHtml(_findingExplanation(f, isAi))}</div>`);
+      return `<details class="finding-reason">
+        <summary>${escapeHtml(t("whyFlagged"))}</summary>
+        <div class="finding-reason-body">${rows.join("")}</div>
+      </details>`;
+    }
+
     function renderResult(r) {
       lastResult = r;
       _aiFindingsData = [];
@@ -5062,6 +5297,7 @@
                   <strong>${escapeHtml(f.text)}</strong>
                 </div>
                 ${f.context ? `<div class="ctx">${escapeHtml(f.context)}</div>` : ""}
+                ${_findingReasonHtml(f)}
               </div>
               ${wlBtn}
             </div>
@@ -6068,9 +6304,85 @@
       const settingsTab = document.querySelector('[data-tab="settings"]');
       if (settingsTab) settingsTab.click();
       setTimeout(() => {
-        document.getElementById("section-ner-models")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        const nerSection = document.getElementById("section-ner-models");
+        if (nerSection) nerSection.open = true;
+        nerSection?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 60);
     });
+
+    function _settingsSections() {
+      return [...document.querySelectorAll("#panel-settings details.settings-expander")];
+    }
+
+    function _settingsOpenKeys() {
+      try {
+        const raw = sessionStorage.getItem("xlent_settings_open_sections") || "[]";
+        const keys = JSON.parse(raw);
+        return new Set(Array.isArray(keys) ? keys : []);
+      } catch (_) {
+        return new Set();
+      }
+    }
+
+    function _saveSettingsOpenState() {
+      const keys = _settingsSections()
+        .filter(section => section.open)
+        .map(section => section.dataset.settingsKey || "")
+        .filter(Boolean);
+      try { sessionStorage.setItem("xlent_settings_open_sections", JSON.stringify(keys)); } catch (_) {}
+    }
+
+    function _restoreSettingsOpenState() {
+      const openKeys = _settingsOpenKeys();
+      _settingsSections().forEach(section => {
+        const key = section.dataset.settingsKey || "";
+        section.open = key ? openKeys.has(key) : false;
+      });
+    }
+
+    function _settingsSearchHaystack(section) {
+      const parts = [
+        section.dataset.settingsKey || "",
+        section.querySelector("summary")?.textContent || "",
+        section.textContent || "",
+      ];
+      return parts.join(" ").toLowerCase();
+    }
+
+    function applySettingsSearch() {
+      const input = document.getElementById("settings-search");
+      const count = document.getElementById("settings-search-count");
+      const query = (input?.value || "").trim().toLowerCase();
+      const sections = _settingsSections();
+      if (!query) {
+        sections.forEach(section => section.classList.remove("settings-search-hidden"));
+        _restoreSettingsOpenState();
+        if (count) count.textContent = "";
+        return;
+      }
+      let matches = 0;
+      sections.forEach(section => {
+        const hit = _settingsSearchHaystack(section).includes(query);
+        section.classList.toggle("settings-search-hidden", !hit);
+        if (hit) {
+          section.open = true;
+          matches += 1;
+        }
+      });
+      if (count) count.textContent = t("settingsSearchCount").replace("{n}", String(matches));
+    }
+
+    function initSettingsExpanders() {
+      _restoreSettingsOpenState();
+      _settingsSections().forEach(section => {
+        section.addEventListener("toggle", () => {
+          const search = document.getElementById("settings-search");
+          if (!search || !search.value.trim()) _saveSettingsOpenState();
+        });
+      });
+      const input = document.getElementById("settings-search");
+      if (input) input.addEventListener("input", applySettingsSearch);
+    }
 
     // Last NER-status når innstillinger-tabben åpnes
     document.querySelectorAll(".tab-btn").forEach(btn => {
@@ -6136,6 +6448,7 @@
       if (mode === "gpu") value = t("ollamaHardwareGpu");
       else if (mode === "hybrid") value = t("ollamaHardwareHybrid");
       else if (mode === "cpu") value = t("ollamaHardwareCpu");
+      else if (mode === "inactive") value = t("ollamaHardwareInactive");
       const total = Number(info?.total_mb || 0);
       const vram = Number(info?.vram_mb || 0);
       const mem = total > 0 ? ` (${vram}/${total} MB VRAM)` : "";
@@ -6150,7 +6463,8 @@
       try {
         const info = await (await fetch(`${API}/ollama/hardware-info`)).json();
         el.textContent = _ollamaHardwareText(info);
-        el.style.color = info.gpu ? "var(--ok)" : "var(--muted)";
+        const mode = String(info?.mode || "").toLowerCase();
+        el.style.color = mode === "unknown" ? "var(--danger)" : (info.gpu ? "var(--ok)" : "var(--muted)");
       } catch (e) {
         el.textContent = t("ollamaHardwareUnknown");
         el.style.color = "var(--danger)";
@@ -6166,6 +6480,13 @@
 
     function setOllamaPullMessage(msg, color = "var(--muted)") {
       const el = document.getElementById("ollama-pull-msg");
+      if (!el) return;
+      el.textContent = msg;
+      el.style.color = color;
+    }
+
+    function setOllamaHardwareTestMessage(msg, color = "var(--muted)") {
+      const el = document.getElementById("ollama-hardware-test-msg");
       if (!el) return;
       el.textContent = msg;
       el.style.color = color;
@@ -6282,7 +6603,41 @@
       }
     }
 
+    async function testOllamaHardware() {
+      const model = _selectedOllamaModel();
+      if (!model) {
+        setOllamaHardwareTestMessage(t("ollamaNoSelectedModel"), "#ffb84d");
+        return;
+      }
+      const btn = document.getElementById("btn-test-ollama-hardware");
+      if (btn) btn.disabled = true;
+      setOllamaHardwareTestMessage(`${t("ollamaHardwareTesting")} ${model}`, "var(--muted)");
+      try {
+        const d = await (await fetch(`${API}/ollama/hardware-test`, {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify({model}),
+        })).json();
+        const hwEl = document.getElementById("ollama-hardware-info");
+        if (hwEl) {
+          hwEl.textContent = _ollamaHardwareText(d);
+          const mode = String(d?.mode || "").toLowerCase();
+          hwEl.style.color = mode === "unknown" ? "var(--danger)" : (d.gpu ? "var(--ok)" : "var(--muted)");
+        }
+        if (d.ok) {
+          setOllamaHardwareTestMessage(`${t("ollamaHardwareTestDone")} ${_ollamaHardwareText(d)}`, d.gpu ? "var(--ok)" : "var(--muted)");
+        } else {
+          setOllamaHardwareTestMessage(`${t("ollamaHardwareTestFailed")} ${d.error || ""}`, "#f44336");
+        }
+      } catch (e) {
+        setOllamaHardwareTestMessage(`${t("ollamaHardwareTestFailed")} ${String(e)}`, "#f44336");
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+
     document.getElementById("btn-refresh-ollama").addEventListener("click", loadOllamaSettingsStatus);
+    document.getElementById("btn-test-ollama-hardware").addEventListener("click", testOllamaHardware);
     document.getElementById("btn-pull-ollama-model").addEventListener("click", pullRecommendedOllamaModel);
     document.getElementById("btn-stop-ollama-model").addEventListener("click", stopActiveOllamaModel);
     document.getElementById("ollama-settings-model-select").addEventListener("change", e => _rememberOllamaModel(e.target.value));
@@ -6796,6 +7151,7 @@
                 <strong>${escapeHtml(f.text||"")}</strong>
               </div>
               ${f.context ? `<div class="ctx">${escapeHtml(f.context)}</div>` : ""}
+              ${_findingReasonHtml(f, { isAi: true })}
             </div>
             ${wlBtn}
           </div>`;
@@ -6872,6 +7228,7 @@
                 <strong>${escapeHtml(f.text||"")}</strong>
               </div>
               ${f.context ? `<div class="ctx">${escapeHtml(f.context)}</div>` : ""}
+              ${_findingReasonHtml(f, { isAi: true })}
             </div>
           </div>`;
       }).join("");
@@ -7426,6 +7783,7 @@
     document.querySelectorAll("[data-i18n-title]").forEach(el => {
       el.title = t(el.dataset.i18nTitle);
     });
+    initSettingsExpanders();
     setIgnoreMessage(t("ignoreHint"), "var(--muted)", "hint");
     renderIgnorePath();
     loadIgnoreEditor();

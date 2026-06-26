@@ -38,6 +38,90 @@ def test_stop_ollama_model_requires_model_name():
     assert "error" in result
 
 
+@pytest.mark.parametrize(
+    ("payload", "expected"),
+    [
+        ({"models": []}, {"mode": "inactive", "gpu": False, "active": False}),
+        (
+            {"models": [{"size": 2_000_000_000, "size_vram": 0}]},
+            {"mode": "cpu", "gpu": False, "active": True},
+        ),
+        (
+            {"models": [{"size": 2_000_000_000, "size_vram": 700_000_000}]},
+            {"mode": "hybrid", "gpu": True, "active": True},
+        ),
+        (
+            {"models": [{"size": 2_000_000_000, "size_vram": 1_900_000_000}]},
+            {"mode": "gpu", "gpu": True, "active": True},
+        ),
+    ],
+)
+def test_ollama_hardware_info_distinguishes_inactive_cpu_and_gpu(
+    monkeypatch,
+    payload,
+    expected,
+):
+    monkeypatch.setattr(deep_scanner, "_get", lambda path, timeout=3: payload)
+
+    result = deep_scanner.ollama_hardware_info()
+
+    assert {key: result[key] for key in expected} == expected
+
+
+def test_ollama_hardware_info_reports_unknown_on_status_error(monkeypatch):
+    def fail_get(path, timeout=3):
+        raise TimeoutError("not reachable")
+
+    monkeypatch.setattr(deep_scanner, "_get", fail_get)
+
+    result = deep_scanner.ollama_hardware_info()
+
+    assert result["mode"] == "unknown"
+    assert result["gpu"] is False
+    assert result["active"] is False
+    assert "not reachable" in result["error"]
+
+
+def test_test_ollama_hardware_preloads_model_and_reports_status(monkeypatch):
+    calls = []
+
+    def fake_post(path, data, timeout=180):
+        calls.append((path, data, timeout))
+        return {"done": True}
+
+    monkeypatch.setattr(deep_scanner, "_post", fake_post)
+    monkeypatch.setattr(
+        deep_scanner,
+        "_get",
+        lambda path, timeout=3: {"models": [{"size": 2_000_000_000, "size_vram": 1_900_000_000}]},
+    )
+
+    result = deep_scanner.test_ollama_hardware("llama3.2:3b")
+
+    assert result["ok"] is True
+    assert result["model"] == "llama3.2:3b"
+    assert result["mode"] == "gpu"
+    assert calls == [
+        (
+            "/api/generate",
+            {
+                "model": "llama3.2:3b",
+                "prompt": "",
+                "stream": False,
+                "keep_alive": "5m",
+            },
+            60,
+        )
+    ]
+
+
+def test_test_ollama_hardware_requires_model_name():
+    result = deep_scanner.test_ollama_hardware("")
+
+    assert result["ok"] is False
+    assert "error" in result
+
+
 def test_deep_scan_status_is_isolated_per_job(monkeypatch):
     monkeypatch.setattr(deep_scanner, "_call_ollama", lambda model, prompt: [])
     deep_scanner._jobs.clear()

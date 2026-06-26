@@ -205,7 +205,7 @@ def ollama_hardware_info() -> dict[str, Any]:
     """Sjekk om Ollama bruker GPU eller CPU via /api/ps.
 
     Returnerer:
-        mode: "gpu" | "hybrid" | "cpu"
+        mode: "gpu" | "hybrid" | "cpu" | "inactive" | "unknown"
         gpu:  True/False
         vram_mb:  VRAM i bruk (MB)
         total_mb: Modellstørrelse (MB)
@@ -214,7 +214,7 @@ def ollama_hardware_info() -> dict[str, Any]:
         data = _get("/api/ps", timeout=3)
         models = data.get("models") or []
         if not models:
-            return {"mode": "cpu", "gpu": False, "vram_mb": 0, "total_mb": 0}
+            return {"mode": "inactive", "gpu": False, "vram_mb": 0, "total_mb": 0, "active": False}
         m = models[0]
         size      = int(m.get("size", 0) or 0)
         size_vram = int(m.get("size_vram", 0) or 0)
@@ -229,9 +229,9 @@ def ollama_hardware_info() -> dict[str, Any]:
         else:
             mode = "hybrid"
             gpu  = True
-        return {"mode": mode, "gpu": gpu, "vram_mb": vram_mb, "total_mb": total_mb}
-    except Exception:
-        return {"mode": "cpu", "gpu": False, "vram_mb": 0, "total_mb": 0}
+        return {"mode": mode, "gpu": gpu, "vram_mb": vram_mb, "total_mb": total_mb, "active": True}
+    except Exception as exc:
+        return {"mode": "unknown", "gpu": False, "vram_mb": 0, "total_mb": 0, "active": False, "error": str(exc)}
 
 
 def stop_ollama_model(model: str) -> dict[str, Any]:
@@ -259,6 +259,34 @@ def stop_ollama_model(model: str) -> dict[str, Any]:
     except Exception as exc:
         LOGGER.warning("Ollama model unload failed for %s: %s", model, exc)
         return {"ok": False, "model": model, "error": str(exc)}
+
+
+def test_ollama_hardware(model: str) -> dict[str, Any]:
+    """Preload valgt Ollama-modell og returner faktisk CPU/GPU-status."""
+    model = (model or "").strip()
+    if not model:
+        return {"ok": False, "error": "Ingen Ollama-modell oppgitt."}
+
+    try:
+        _post(
+            "/api/generate",
+            {
+                "model": model,
+                "prompt": "",
+                "stream": False,
+                "keep_alive": "5m",
+            },
+            timeout=60,
+        )
+        hardware = ollama_hardware_info()
+        LOGGER.info("Ollama hardware test model=%s mode=%s", model, hardware.get("mode"))
+        return {"ok": True, "model": model, **hardware}
+    except (urllib.error.URLError, OSError) as exc:
+        LOGGER.warning("Ollama hardware test failed, service unavailable: %s", exc)
+        return {"ok": False, "model": model, "error": "Ollama kjører ikke.", "mode": "unknown", "gpu": False, "active": False}
+    except Exception as exc:
+        LOGGER.warning("Ollama hardware test failed for %s: %s", model, exc)
+        return {"ok": False, "model": model, "error": str(exc), "mode": "unknown", "gpu": False, "active": False}
 
 
 # ── Prompt-builder (dynamisk basert på valgte kategorier) ───────────────

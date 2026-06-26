@@ -41,6 +41,17 @@ def ollama_hardware_info_endpoint():
     return jsonify(ollama_hardware_info())
 
 
+@ollama_bp.post("/ollama/hardware-test")
+def ollama_hardware_test_endpoint():
+    from xlent_scanner.deep_scanner import test_ollama_hardware
+
+    data = request.get_json(force=True) or {}
+    model = (data.get("model") or "").strip()
+    result = test_ollama_hardware(model)
+    LOGGER.info("ollama/hardware-test model=%s ok=%s mode=%s", model, result.get("ok"), result.get("mode"))
+    return jsonify(result)
+
+
 @ollama_bp.post("/ollama/model/stop")
 def ollama_model_stop_endpoint():
     from xlent_scanner.deep_scanner import stop_ollama_model

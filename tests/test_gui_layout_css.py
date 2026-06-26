@@ -167,6 +167,8 @@ def test_settings_profile_and_ollama_pull_controls_exist_for_all_languages():
     assert 'id="btn-import-settings"' in html
     assert 'id="settings-import-file"' in html
     assert 'id="btn-pull-ollama-model"' in html
+    assert 'id="btn-test-ollama-hardware"' in html
+    assert 'id="ollama-hardware-test-msg"' in html
     assert 'id="ollama-settings-model-select"' in html
     assert 'id="ollama-hardware-info"' in html
     assert 'id="stripAnnotations"' in html
@@ -180,6 +182,8 @@ def test_settings_profile_and_ollama_pull_controls_exist_for_all_languages():
     for key in [
         "settingsProfileTitle",
         "settingsProfileNote",
+        "settingsSearchPlaceholder",
+        "settingsSearchCount",
         "settingsApiTitle",
         "settingsApiNote",
         "apiDocsOpen",
@@ -212,7 +216,12 @@ def test_settings_profile_and_ollama_pull_controls_exist_for_all_languages():
         "ollamaHardwareGpu",
         "ollamaHardwareHybrid",
         "ollamaHardwareCpu",
+        "ollamaHardwareInactive",
         "ollamaHardwareUnknown",
+        "ollamaHardwareTest",
+        "ollamaHardwareTesting",
+        "ollamaHardwareTestDone",
+        "ollamaHardwareTestFailed",
     ]:
         assert html.count(f"{key}:") == 6
 
@@ -222,7 +231,9 @@ def test_ollama_settings_model_select_and_hardware_status_are_wired():
 
     assert "function _renderOllamaSettingsModelSelect" in html
     assert "function loadOllamaHardwareInfo" in html
+    assert "function testOllamaHardware" in html
     assert 'fetch(`${API}/ollama/hardware-info`)' in html
+    assert 'fetch(`${API}/ollama/hardware-test`' in html
     assert "_rememberOllamaModel(settingsModelSelect.value)" in html
     assert "_rememberOllamaModel(sel.value)" in html
 
@@ -571,6 +582,60 @@ def test_settings_panel_does_not_use_filled_primary_buttons():
     assert "ctrl-btn-primary" not in settings_panel
     assert "ctrl-btn-accent" not in settings_panel
     assert "ctrl-btn-outline-primary" in settings_panel
+
+
+def test_settings_sections_are_closed_expanders_by_default():
+    html = HTML.read_text(encoding="utf-8")
+
+    start = html.index('id="panel-settings"')
+    end = html.index('<div class="settings-note" data-i18n="settingsPersistNote"', start)
+    settings_sections = html[start:end]
+
+    assert settings_sections.count('<details class="settings-section settings-expander') == 17
+    assert settings_sections.count('<summary class="settings-section-title"') == 17
+    assert 'id="settings-search"' in html
+    assert 'data-i18n-placeholder="settingsSearchPlaceholder"' in html
+    assert "sessionStorage.getItem(\"xlent_settings_open_sections\")" in html
+    assert "sessionStorage.setItem(\"xlent_settings_open_sections\"" in html
+    assert "function applySettingsSearch" in html
+    assert '<div class="settings-section">' not in settings_sections
+    assert ".settings-expander > .settings-section-title::after" in html
+    assert ".settings-expander[open] > .settings-section-title" in html
+    assert "if (nerSection) nerSection.open = true;" in html
+
+    for line in settings_sections.splitlines():
+        if line.strip().startswith("<details "):
+            assert " open" not in line
+
+
+def test_findings_include_explain_why_details():
+    html = HTML.read_text(encoding="utf-8")
+
+    assert "function _findingReasonHtml" in html
+    assert 'class="finding-reason"' in html
+    assert "${_findingReasonHtml(f)}" in html
+    assert "${_findingReasonHtml(f, { isAi: true })}" in html
+    for key in [
+        "whyFlagged",
+        "whySource",
+        "whyCategory",
+        "whySeverity",
+        "whyConfidence",
+        "whyContext",
+        "whyExplanation",
+        "whyRuleEngine",
+        "whyNerEngine",
+        "whyAiEngine",
+        "whySystemEngine",
+        "whyRuleExplanation",
+        "whyNerExplanation",
+        "whyAiExplanation",
+        "whySystemExplanation",
+        "whySecretExplanation",
+        "whyWhitelistExplanation",
+        "whyNoContext",
+    ]:
+        assert html.count(f"{key}:") == 6
 
 
 def test_medical_ai_category_is_available_but_default_off():
