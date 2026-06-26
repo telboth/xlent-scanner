@@ -117,6 +117,22 @@ def test_update_install_script_controls_exist_for_supported_desktop_platforms():
         assert html.count(f"{key}:") == expected
 
 
+def test_top_update_check_button_is_wired():
+    html = HTML.read_text(encoding="utf-8")
+
+    assert 'id="btn-check-updates-top"' in html
+    assert 'class="ctrl-btn top-update-btn"' in html
+    assert 'data-i18n="updateCheckTop"' in html
+    assert ".top-update-btn {" in html
+    assert "margin-left: auto;" in html
+    assert 'const topUpdateCheckBtnEl = document.getElementById("btn-check-updates-top");' in html
+    assert "function setTopUpdateCheckBusy(busy)" in html
+    assert 'document.getElementById("btn-check-updates-top").addEventListener("click", () => runUpdateCheck(true));' in html
+    assert html.count("updateCheckTop:") == 6
+    assert html.count("updateCheckNow:") == 6
+    assert html.count("updateCheckFailed:") == 6
+
+
 def test_diagnostics_controls_exist_for_all_languages():
     html = HTML.read_text(encoding="utf-8")
 

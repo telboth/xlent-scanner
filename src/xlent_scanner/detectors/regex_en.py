@@ -10,6 +10,7 @@ from __future__ import annotations
 import re
 from typing import Iterator
 
+from xlent_scanner.detectors.bibliographic import has_bibliographic_context
 from xlent_scanner.models import Finding
 from xlent_scanner.utils import ctx as _ctx
 
@@ -127,6 +128,8 @@ _US_PHONE_RE = re.compile(
 
 def find_us_phone(text: str) -> Iterator[Finding]:
     for m in _US_PHONE_RE.finditer(text):
+        if has_bibliographic_context(text, m.start(), m.end()):
+            continue
         yield Finding(
             "telefonnummer",
             m.group(0).strip(),

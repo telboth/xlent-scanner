@@ -37,7 +37,7 @@ _CONFIDENTIAL_TERMS = [
     "confidential", "strictly confidential",
     "internal use only", "restricted",
     "not for distribution", "top secret",
-    "classified", "proprietary", "trade secret",
+    "proprietary", "trade secret",
     "privileged and confidential", "eyes only",
     # Felles forkortelser og avtaler
     "nda", "non-disclosure", "dpa",
@@ -57,6 +57,13 @@ _CONTEXTUAL_CONFIDENTIAL_PHRASES = [
     "sekretessbelagd",
     "sekretessbelagt",
     "under sekretess",
+    "classified document",
+    "classified information",
+    "classified material",
+    "security classified",
+    "classified as confidential",
+    "classified as secret",
+    "classified as restricted",
 ]
 
 # Ord som indikerer kildekode eller konfig som ikke bør deles

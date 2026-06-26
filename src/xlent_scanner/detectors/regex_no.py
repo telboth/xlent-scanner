@@ -13,6 +13,7 @@ from __future__ import annotations
 import re
 from typing import Iterator
 
+from xlent_scanner.detectors.bibliographic import has_bibliographic_context
 from xlent_scanner.models import Finding
 from xlent_scanner.utils import ctx as _ctx
 
@@ -222,6 +223,8 @@ _ISO_DATE_RE = re.compile(r"^(?:19|20)\d{2}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3
 
 def find_telefon(text: str) -> Iterator[Finding]:
     for m in _PHONE_RE.finditer(text):
+        if has_bibliographic_context(text, m.start(), m.end()):
+            continue
         raw = m.group(0).strip()
         if _YEAR_RANGE_RE.match(raw.replace(" ", "")):
             continue

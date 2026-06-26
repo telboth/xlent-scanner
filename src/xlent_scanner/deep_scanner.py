@@ -16,6 +16,7 @@ import urllib.error
 import urllib.request
 from typing import Any
 
+from xlent_scanner.detectors.bibliographic import has_bibliographic_context
 from xlent_scanner.detectors.ner_names import looks_like_person_name
 from xlent_scanner.jobs import JobManager
 
@@ -873,6 +874,27 @@ def _is_email_category(category: str) -> bool:
     return _category_key(category) in _EMAIL_CATEGORIES
 
 
+_PHONE_CATEGORIES = {
+    "telefon",
+    "telefonnummer",
+    "phone",
+    "phone number",
+    "telephone",
+    "telephone number",
+    "tel",
+    "mobile",
+    "mobile number",
+    "numéro de téléphone",
+    "numero de telephone",
+    "teléfono",
+    "telefono",
+}
+
+
+def _is_phone_category(category: str) -> bool:
+    return _category_key(category) in _PHONE_CATEGORIES
+
+
 _ADDRESS_CATEGORIES = {
     "adresse",
     "address",
@@ -1036,6 +1058,50 @@ def _valid_email_text(value: str) -> str | None:
     return match.group(0).strip("<>()[]{}.,;:'\"")
 
 
+_GENERIC_INTERNATIONAL_PHONE_RE = re.compile(
+    r"(?<![\w])"
+    r"(?:\+\d{1,3}|00\d{1,3})[\s().-]*"
+    r"(?:\d[\s().-]*){6,13}\d"
+    r"(?![\w])"
+)
+
+
+def _phone_has_bibliographic_context(value: str, context: str = "", source: str = "") -> bool:
+    value = " ".join(str(value or "").strip().split())
+    haystacks = [str(source or ""), str(context or "")]
+    for haystack in haystacks:
+        if not haystack:
+            continue
+        start = haystack.casefold().find(value.casefold())
+        if start >= 0 and has_bibliographic_context(haystack, start, start + len(value)):
+            return True
+
+    combined = f"{value} {context}".strip()
+    return bool(combined and has_bibliographic_context(combined, 0, len(combined), radius=0))
+
+
+def _valid_phone_text(value: str, context: str = "", source: str = "") -> str | None:
+    """Returner et plausibelt telefonnummer; avvis DOI/ISBN/ISSN-kontekst."""
+    raw = " ".join(str(value or "").strip().split())
+    if not raw:
+        return None
+    if _phone_has_bibliographic_context(raw, context, source):
+        return None
+
+    from xlent_scanner.detectors.regex_en import find_us_phone  # noqa: PLC0415
+    from xlent_scanner.detectors.regex_no import find_telefon  # noqa: PLC0415
+
+    for finder in (find_telefon, find_us_phone):
+        hits = list(finder(raw))
+        if hits:
+            return hits[0].text
+
+    match = _GENERIC_INTERNATIONAL_PHONE_RE.search(raw)
+    if match:
+        return match.group(0).strip()
+    return None
+
+
 def _filter_llm_findings_by_category_precision(
     findings: list[dict],
     source: str = "",
@@ -1053,6 +1119,18 @@ def _filter_llm_findings_by_category_precision(
             f = dict(f)
             f["text"] = email_text
             f["category"] = "E-post"
+        elif _is_phone_category(cat):
+            phone_text = _valid_phone_text(
+                raw_text,
+                str(f.get("context") or ""),
+                source,
+            )
+            if not phone_text:
+                removed += 1
+                continue
+            f = dict(f)
+            f["text"] = phone_text
+            f["category"] = "Telefonnummer"
         elif _is_bank_account_category(cat):
             bank_text = _valid_bank_account_text(raw_text)
             if not bank_text:
@@ -1159,7 +1237,15 @@ def _normalize_misclassified_phone_findings(
     result: list[dict] = []
     for f in findings:
         cat = _category_key(str(f.get("category") or ""))
-        if cat in _URL_CATEGORIES and _looks_like_us_phone(str(f.get("text") or "")):
+        raw_text = str(f.get("text") or "")
+        if (
+            cat in _URL_CATEGORIES
+            and _looks_like_us_phone(raw_text)
+            and not _phone_has_bibliographic_context(
+                raw_text,
+                str(f.get("context") or ""),
+            )
+        ):
             if include_phone:
                 f = dict(f)
                 f["category"] = "Telefonnummer"

@@ -16,6 +16,7 @@ from __future__ import annotations
 import re
 from typing import Iterator
 
+from xlent_scanner.detectors.bibliographic import has_bibliographic_context
 from xlent_scanner.models import Finding
 from xlent_scanner.utils import ctx as _ctx_base
 
@@ -35,7 +36,7 @@ _TIME_UNITS = r"time?r?|t(?:\.|imen?s?)?|h(?:\.|our)?s?|tim(?:e|mar)?|timme[rn]?
 _DAY_UNITS  = r"dag?s?|day?s?|dygn"
 
 _RATE_SLASH_RE = re.compile(
-    r"(?<!\d)"
+    r"(?<![\w./])"
     r"((?:NOK|SEK|kr)\s*)?"                                     # valgfri valuta foran
     r"(\d{2,6}(?:[., \t]\d{3})*(?:[.,]\d{1,2})?)"               # beløp (min 2 sifre)
     r"\s*(?:kr|NOK|SEK|,-)?"                                    # valgfri valuta bak
@@ -111,6 +112,8 @@ def find_financial_data(text: str) -> Iterator[Finding]:
 
     # A: rate per enhet
     for m in _RATE_SLASH_RE.finditer(text):
+        if has_bibliographic_context(text, m.start(), m.end()):
+            continue
         amount = _clean_amount(m.group(2))
         unit   = m.group("unit").lower()
         cat    = "dagspris" if re.match(_DAY_UNITS, unit, re.IGNORECASE) else "timepris"

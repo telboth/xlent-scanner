@@ -121,6 +121,7 @@
     .tab-nav {
       display: flex; background: var(--panel);
       border-bottom: 1px solid var(--border); padding: 0 20px;
+      align-items: center;
     }
     .tab-btn {
       padding: 9px 16px; font-size: 13px; font-weight: 500;
@@ -130,6 +131,11 @@
     }
     .tab-btn:hover { color: var(--text); }
     .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+    .top-update-btn {
+      margin-left: auto;
+      white-space: nowrap;
+      align-self: center;
+    }
 
     /* ── Tab panels ─────────────────────────────────────────────────── */
     .tab-panel { display: none; flex-direction: column; flex: 1; min-height: 0; overflow-y: auto; }
@@ -736,6 +742,7 @@
     <button class="tab-btn active" data-tab="scanner" data-i18n="tabScanner">🔍 Scanner</button>
     <button class="tab-btn" data-tab="about" data-i18n="tabAbout">ℹ Om programmet</button>
     <button class="tab-btn" data-tab="settings" data-i18n="tabSettings">⚙️ Innstillinger</button>
+    <button class="ctrl-btn top-update-btn" id="btn-check-updates-top" data-i18n="updateCheckTop">Se etter oppdateringer</button>
     <div class="ui-lang-sel">
       <select id="ui-lang-select" class="ui-lang-select">
         <option value="nb">🇳🇴 Norsk</option>
@@ -1958,6 +1965,7 @@
         redactionPreviewEmpty:"Ingen direkte erstatninger å forhåndsvise.",
         pdfPatchFailed:     "PDF-anonymisering feilet. Prøv PDF-rapport eller kontakt support med loggfil.",
         pdfGenerateFailed:  "PDF-generering feilet. Se loggfil for tekniske detaljer.",
+        updateCheckTop: "Se etter oppdateringer",
         updateCheckNow: "Se etter oppdateringer nå",
         updateNoUpdate: "Du har nyeste versjon.",
         updateCheckFailed: "Kunne ikke sjekke oppdateringer.",
@@ -2340,6 +2348,7 @@
         redactionPreviewEmpty:"Inga direkta ersättningar att förhandsvisa.",
         pdfPatchFailed:     "PDF-anonymisering misslyckades. Prova PDF-rapport eller kontakta support med loggfilen.",
         pdfGenerateFailed:  "PDF-generering misslyckades. Se loggfilen för tekniska detaljer.",
+        updateCheckTop: "Sök efter uppdateringar",
         updateCheckNow: "Sök efter uppdateringar nu",
         updateNoUpdate: "Du har senaste versionen.",
         updateCheckFailed: "Kunde inte kontrollera uppdateringar.",
@@ -2727,6 +2736,7 @@
         redactionPreviewEmpty:"No direct replacements to preview.",
         pdfPatchFailed:     "PDF redaction failed. Try the PDF report or contact support with the log file.",
         pdfGenerateFailed:  "PDF generation failed. See the log file for technical details.",
+        updateCheckTop: "Check for updates",
         updateCheckNow: "Check for updates now",
         updateNoUpdate: "You already have the latest version.",
         updateCheckFailed: "Could not check for updates.",
@@ -3015,6 +3025,9 @@
         updateNoUpdate:      "Sie haben die neueste Version.",
         updateChecking:      "Prüfe auf Updates…",
         updateCheckBtn:      "Auf Updates prüfen",
+        updateCheckTop:      "Auf Updates prüfen",
+        updateCheckNow:      "Jetzt auf Updates prüfen",
+        updateCheckFailed:   "Updates konnten nicht geprüft werden.",
         settingsUpdateTitle: "Updates",
         settingsProfileTitle:"Einstellungsprofil",
         settingsProfileNote: "Exportiert und importiert Design, Dokumentsprache, Whitelist, Blacklist, ignore.toml und benutzerdefinierte Muster. Scan-Verlauf und Dokumentinhalte werden nicht übernommen.",
@@ -3403,6 +3416,9 @@
         updateNoUpdate:      "Vous avez la dernière version.",
         updateChecking:      "Vérification des mises à jour…",
         updateCheckBtn:      "Vérifier les mises à jour",
+        updateCheckTop:      "Vérifier les mises à jour",
+        updateCheckNow:      "Vérifier les mises à jour maintenant",
+        updateCheckFailed:   "Impossible de vérifier les mises à jour.",
         settingsUpdateTitle: "Mises à jour",
         settingsProfileTitle:"Profil de paramètres",
         settingsProfileNote: "Exporte et importe le thème, la langue du document, la liste blanche, la blacklist, ignore.toml et les modèles personnalisés. L’historique d’analyse et le contenu des documents ne sont pas inclus.",
@@ -3791,6 +3807,9 @@
         updateNoUpdate:      "Tiene la versión más reciente.",
         updateChecking:      "Comprobando actualizaciones…",
         updateCheckBtn:      "Buscar actualizaciones",
+        updateCheckTop:      "Buscar actualizaciones",
+        updateCheckNow:      "Buscar actualizaciones ahora",
+        updateCheckFailed:   "No se pudieron comprobar las actualizaciones.",
         settingsUpdateTitle: "Actualizaciones",
         settingsProfileTitle:"Perfil de configuración",
         settingsProfileNote: "Exporta e importa tema, idioma del documento, lista blanca, blacklist, ignore.toml y patrones personalizados. No incluye historial de escaneos ni contenido de documentos.",
@@ -4049,6 +4068,7 @@
     const updateBannerDownloadBtnEl = document.getElementById("update-banner-download-btn");
     const updateBannerScriptBtnEl = document.getElementById("update-banner-script-btn");
     const updateBannerBtnEl = document.getElementById("update-banner-btn");
+    const topUpdateCheckBtnEl = document.getElementById("btn-check-updates-top");
     const updateCheckMsgEl = document.getElementById("update-check-msg");
     const updateInstallScriptMsgEl = document.getElementById("update-install-script-msg");
     const webModeMsgEl = document.getElementById("web-mode-msg");
@@ -4237,6 +4257,12 @@
       updateInstallScriptMsgEl.style.color = color;
     }
 
+    function setTopUpdateCheckBusy(busy) {
+      if (!topUpdateCheckBtnEl) return;
+      topUpdateCheckBtnEl.disabled = busy;
+      topUpdateCheckBtnEl.textContent = busy ? t("processing") : t("updateCheckTop");
+    }
+
     function canRunInstallScript() {
       return String(APP_PLATFORM || "").startsWith("win") || APP_PLATFORM === "darwin";
     }
@@ -4377,6 +4403,7 @@
 
     async function runUpdateCheck(force = false) {
       if (force) setUpdateCheckMessage(t("processing"));
+      if (force) setTopUpdateCheckBusy(true);
       try {
         const d = await (await fetch(`${API}/update-check`, {
           method: "POST",
@@ -4403,6 +4430,8 @@
         }
       } catch (e) {
         if (force) setUpdateCheckMessage(`${t("updateCheckFailed")} ${e}`, "#f44336");
+      } finally {
+        if (force) setTopUpdateCheckBusy(false);
       }
     }
 
@@ -5996,6 +6025,7 @@
       document.getElementById(id)?.addEventListener("input", saveSettings);
     });
     document.getElementById("btn-check-updates").addEventListener("click", () => runUpdateCheck(true));
+    document.getElementById("btn-check-updates-top").addEventListener("click", () => runUpdateCheck(true));
     document.getElementById("btn-run-install-script").addEventListener("click", runInstallScript);
     document.getElementById("btn-open-web-mode").addEventListener("click", startWebMode);
     document.getElementById("btn-install-mac-quick-action").addEventListener("click", installMacQuickAction);

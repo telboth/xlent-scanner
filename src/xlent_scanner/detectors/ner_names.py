@@ -65,6 +65,9 @@ _STOPWORDS: frozenset[str] = frozenset({
     "payment", "invoice", "subscription", "account", "dashboard",
     "report", "summary", "overview", "analytics", "metrics", "kpi",
     "integration", "connector", "adapter", "broker", "registry",
+    # Tekniske/akademiske noun phrases som ofte kommer fra tabeller, figurer og PDF-er
+    "probe", "interface", "outer", "diameter", "common", "format",
+    "comparison", "tool", "blåtind", "blårens",
     # Svenske ord som kan forveksles med navn
     "aktiebolag", "handelsbolag", "ekonomi", "styrelse", "direktion",
     "avdelning", "verksamhet", "tjänst", "produkt",
