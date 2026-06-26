@@ -88,6 +88,7 @@ def test_scan_category_grid_order_matches_requested_columns():
 
     assert "grid-auto-flow: column;" in html
     assert "grid-template-rows: repeat(5, auto);" in html
+    assert "manual-redaction" not in block
     values = []
     for fragment in block.split('class="scan-cat" value="')[1:]:
         values.append(fragment.split('"', 1)[0])
@@ -115,10 +116,14 @@ def test_manual_redaction_terms_are_available_in_redaction_payload():
     assert 'id="manual-redaction-terms"' in html
     assert html.count('id="manual-redaction-terms"') == 1
     grid_start = html.index('<div class="scan-cat-grid">')
-    grid_end = html.index("<!-- AI-dybdeskann toggle -->", grid_start)
-    manual_field = html.index('id="manual-redaction-terms"', grid_start)
+    grid_end = html.index("</div>", grid_start)
+    ai_toggle = html.index("<!-- AI-dybdeskann toggle -->", grid_start)
+    manual_panel = html.index('<details class="manual-redaction">', grid_end)
+    manual_field = html.index('id="manual-redaction-terms"', manual_panel)
     confidential_category = html.index('value="konfidensielt"', grid_start)
-    assert confidential_category < manual_field < grid_end
+    assert confidential_category < grid_end < manual_panel < manual_field < ai_toggle
+    assert '<details class="manual-redaction" open' not in html
+    assert ".scan-cat-grid .manual-redaction" not in html
     assert "function _manualRedactionTerms()" in html
     assert "function updateManualRedactionPreview()" in html
     assert "manual-redaction-preview" in html

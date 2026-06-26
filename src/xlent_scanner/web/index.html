@@ -471,12 +471,21 @@
     .ctrl-btn-outline-accent:hover { background: rgba(67,160,71,.12); border-color: #5fbd63; }
     .anon-msg { font-size: 12px; margin-left: 2px; flex: 1; }
     .manual-redaction {
-      margin: 8px 0; padding: 8px 11px;
+      margin: 2px 0 8px;
       border: 1px solid var(--border); border-radius: 6px;
       background: var(--panel2);
     }
-    .manual-redaction label {
-      display: block; font-size: 12px; font-weight: 600; margin-bottom: 5px;
+    .manual-redaction summary {
+      cursor: pointer; user-select: none;
+      padding: 6px 10px; font-size: 12px; font-weight: 600;
+      color: var(--muted);
+    }
+    .manual-redaction[open] summary {
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+    }
+    .manual-redaction-body {
+      padding: 8px 10px 10px;
     }
     .manual-redaction textarea {
       width: 100%; min-height: 56px; resize: vertical;
@@ -491,17 +500,6 @@
     }
     .manual-redaction-preview .manual-hit { color: var(--ok); }
     .manual-redaction-preview .manual-miss { color: var(--warn); }
-    .scan-cat-grid .manual-redaction {
-      margin: 0; padding: 7px 9px; align-self: start;
-    }
-    .scan-cat-grid .manual-redaction label {
-      font-size: 11px; margin-bottom: 4px;
-    }
-    .scan-cat-grid .manual-redaction textarea {
-      min-height: 44px; padding: 6px 8px; font-size: 11px;
-    }
-    .scan-cat-grid .manual-redaction-note,
-    .scan-cat-grid .manual-redaction-preview { font-size: 10.5px; }
     .advanced-actions {
       width: 100%; margin-top: 4px; border: 1px solid var(--border);
       border-radius: 6px; background: var(--panel2);
@@ -840,15 +838,18 @@
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="finansielt" checked> <span data-i18n="scanCatFinansielt">Finansielle nøkkeltall</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="medisinsk"> <span data-i18n="dstCatMedisinsk">Medisinsk (kun dybdeskann)</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="konfidensielt" checked> <span data-i18n="scanCatKonfidensielt">Konfidensielle ord</span></label>
-          <div class="manual-redaction">
-            <label for="manual-redaction-terms" data-i18n="manualRedactionLabel">Ord/uttrykk som også skal anonymiseres</label>
+        </div>
+        <details class="manual-redaction">
+          <summary id="manual-redaction-summary" data-i18n="manualRedactionLabel">Ord og uttrykk som skal anonymiseres</summary>
+          <div class="manual-redaction-body">
             <textarea id="manual-redaction-terms"
+              aria-labelledby="manual-redaction-summary"
               data-i18n-placeholder="manualRedactionPlaceholder"
               placeholder="Skriv ett ord eller uttrykk per linje, f.eks. et navn eller firmanavn som ikke ble funnet automatisk."></textarea>
             <div class="manual-redaction-note" data-i18n="manualRedactionNote">Disse uttrykkene brukes når du lagrer eller åpner anonymisert fil.</div>
             <div class="manual-redaction-preview" id="manual-redaction-preview"></div>
           </div>
-        </div>
+        </details>
 
         <!-- AI-dybdeskann toggle -->
         <div class="ai-toggle-row">
@@ -2020,7 +2021,7 @@
         updateCheckNow: "Se etter oppdateringer nå",
         updateNoUpdate: "Du har nyeste versjon.",
         updateCheckFailed: "Kunne ikke sjekke oppdateringer.",
-        manualRedactionLabel: "Ekstra tekst som skal anonymiseres",
+        manualRedactionLabel: "Ord og uttrykk som skal anonymiseres",
         manualRedactionPlaceholder: "Skriv ett ord eller uttrykk per linje, f.eks. et navn eller firmanavn som ikke ble funnet automatisk",
         manualRedactionNote: "Disse verdiene tas med når du forhåndsviser, lagrer eller åpner anonymisert fil.",
         manualPreviewEmpty: "Ingen ekstra uttrykk lagt inn.",
