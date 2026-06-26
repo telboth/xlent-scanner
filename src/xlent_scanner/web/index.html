@@ -272,7 +272,9 @@
       color: var(--muted); font-weight: 600;
     }
     .scan-cat-grid {
-      display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5px 14px; margin-bottom: 8px;
+      display: grid; grid-template-columns: 1fr 1fr 1fr;
+      grid-template-rows: repeat(5, auto); grid-auto-flow: column;
+      gap: 5px 14px; margin-bottom: 8px;
     }
     .folder-options {
       display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
@@ -468,6 +470,22 @@
     }
     .ctrl-btn-outline-accent:hover { background: rgba(67,160,71,.12); border-color: #5fbd63; }
     .anon-msg { font-size: 12px; margin-left: 2px; flex: 1; }
+    .manual-redaction {
+      margin: 8px 0; padding: 8px 11px;
+      border: 1px solid var(--border); border-radius: 6px;
+      background: var(--panel2);
+    }
+    .manual-redaction label {
+      display: block; font-size: 12px; font-weight: 600; margin-bottom: 5px;
+    }
+    .manual-redaction textarea {
+      width: 100%; min-height: 56px; resize: vertical;
+      background: var(--panel); color: var(--text);
+      border: 1px solid var(--border); border-radius: 5px;
+      padding: 7px 9px; font-size: 12px; font-family: inherit; line-height: 1.4;
+    }
+    .manual-redaction textarea::placeholder { color: var(--muted); }
+    .manual-redaction-note { color: var(--muted); font-size: 11px; margin-top: 4px; line-height: 1.45; }
     .advanced-actions {
       width: 100%; margin-top: 4px; border: 1px solid var(--border);
       border-radius: 6px; background: var(--panel2);
@@ -717,6 +735,8 @@
     .about-section p { font-size: 14px; line-height: 1.65; margin: 0 0 7px; }
     .about-section ul { font-size: 14px; line-height: 1.7; margin: 0; padding-left: 20px; }
     .about-section li { margin-bottom: 2px; }
+    .about-source-link { max-width: 820px; margin-top: -4px; }
+    .about-source-link a { color: var(--accent); }
     .local-badge {
       display: inline-flex; align-items: center; gap: 10px;
       background: rgba(76,175,80,.1); border: 1px solid rgba(76,175,80,.3);
@@ -733,7 +753,7 @@
     <img src="/logo.svg" class="logo" alt="XLENT" />
     <div class="title-block">
       <h1>Compliance redaction scanner</h1>
-      <div class="sub" data-i18n="subtitle">Sjekker dokumenter for sensitiv informasjon før opplasting til online AI-verktøy</div>
+      <div class="sub" data-i18n="subtitle">Sjekker og anonymiserer dokumenter for sensitiv informasjon</div>
     </div>
     <span class="app-version">v__APP_VERSION__<span class="app-updated"> · Oppdatert __APP_STARTED__</span></span>
   </header>
@@ -790,20 +810,20 @@
           </div>
         </div>
         <div class="scan-cat-grid">
+          <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="navn" checked> <span data-i18n="scanCatNavn">Navn (person)</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="epost" checked> <span data-i18n="dstCatEpost">E-post</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="telefon" checked> <span data-i18n="dstCatTelefon">Telefon</span></label>
+          <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="fodselsdato" checked> <span data-i18n="scanCatFodselsdato">Fødselsdata</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="id" checked> <span data-i18n="scanCatId">Personnummer / ID</span></label>
-          <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="fodselsdato" checked> <span data-i18n="scanCatFodselsdato">Fødselsdato</span></label>
+          <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="klient" checked> <span data-i18n="scanCatKlient">Firmanavn</span></label>
+          <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="orgnummer" checked> <span data-i18n="scanCatOrgnummer">Org.nummer</span></label>
+          <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="nettadresse" checked> <span data-i18n="dstCatNettadresse">Nettadresser / IP</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="konto" checked> <span data-i18n="scanCatKonto">Bankdetaljer</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="kredittkort" checked> <span data-i18n="scanCatKredittkort">Kredittkort</span></label>
-          <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="navn" checked> <span data-i18n="scanCatNavn">Navn (person)</span></label>
-          <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="nettadresse" checked> <span data-i18n="dstCatNettadresse">Nettadresser / IP</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="hemmeligheter" checked> <span data-i18n="scanCatHemmeligheter">API-nøkler / secrets</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="finansielt" checked> <span data-i18n="scanCatFinansielt">Finansielle nøkkeltall</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="medisinsk"> <span data-i18n="dstCatMedisinsk">Medisinsk (kun dybdeskann)</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="konfidensielt" checked> <span data-i18n="scanCatKonfidensielt">Konfidensielle ord</span></label>
-          <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="klient" checked> <span data-i18n="scanCatKlient">Firmanavn</span></label>
-          <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="orgnummer" checked> <span data-i18n="scanCatOrgnummer">Org.nummer</span></label>
         </div>
 
         <!-- AI-dybdeskann toggle -->
@@ -1417,6 +1437,10 @@
         </div>
         <p style="color:var(--muted);font-size:12px;">Escrito por thomas.elboth@xlent.no</p>
       </div>
+      <div class="about-section about-source-link">
+        <h3 data-i18n="sourceCodeTitle">Kildekode</h3>
+        <p><a href="https://github.com/telboth/xlent-scanner" target="_blank" rel="noopener" data-i18n="sourceCodeLink">Åpne prosjektet på GitHub</a></p>
+      </div>
     </div>
 
     <!-- ── Settings panel ────────────────────────────────────────── -->
@@ -1709,7 +1733,7 @@
     ══════════════════════════════════════════════════════════════════ */
     const I18N = {
       nb: {
-        subtitle:     "Sjekker dokumenter for sensitiv informasjon før opplasting til online AI-verktøy",
+        subtitle:     "Sjekker og anonymiserer dokumenter for sensitiv informasjon",
         tabScanner:   "🔍 Scanner",
         tabAbout:     "ℹ Om programmet",
         dropTitle:    "Dra og slipp et dokument her",
@@ -1969,6 +1993,11 @@
         updateCheckNow: "Se etter oppdateringer nå",
         updateNoUpdate: "Du har nyeste versjon.",
         updateCheckFailed: "Kunne ikke sjekke oppdateringer.",
+        manualRedactionLabel: "Ekstra tekst som skal anonymiseres",
+        manualRedactionPlaceholder: "Skriv ett ord eller uttrykk per linje, f.eks. et navn eller firmanavn som ikke ble funnet automatisk",
+        manualRedactionNote: "Disse verdiene tas med når du forhåndsviser, lagrer eller åpner anonymisert fil.",
+        sourceCodeTitle: "Kildekode",
+        sourceCodeLink: "Åpne prosjektet på GitHub",
         logHint: "Se logg:",
         dstCatAdresse:      "Adresse",
         dstCatEpost:        "E-post",
@@ -2043,7 +2072,7 @@
         scanCatKlient:       "Firmanavn",
         scanCatOrgnummer:    "Org.nummer",
         scanCatPassnummer:   "Passnummer",
-        scanCatFodselsdato:  "Fødselsdato",
+        scanCatFodselsdato:  "Fødselsdata",
         scanCatLonn:         "Lønn / salary",
         aiToggleLabel:       "Kjør AI-dybdeskann (Ollama)",
         aiToggleTooltip:     "Kjører en lokal AI-modell for å lete etter sensitive ord og uttrykk. Dette er en grundig prosess som også tar noe tid.",
@@ -2102,7 +2131,7 @@
         ocrRunning:          "Kjører OCR-skann…",
       },
       sv: {
-        subtitle:     "Kontrollerar dokument för känslig information innan uppladdning till online-AI-verktyg",
+        subtitle:     "Kontrollerar och anonymiserar dokument med känslig information",
         tabScanner:   "🔍 Scanner",
         tabAbout:     "ℹ Om programmet",
         dropTitle:    "Dra och släpp ett dokument här",
@@ -2352,6 +2381,11 @@
         updateCheckNow: "Sök efter uppdateringar nu",
         updateNoUpdate: "Du har senaste versionen.",
         updateCheckFailed: "Kunde inte kontrollera uppdateringar.",
+        manualRedactionLabel: "Extra text som ska anonymiseras",
+        manualRedactionPlaceholder: "Skriv ett ord eller uttryck per rad, t.ex. ett namn eller företagsnamn som inte hittades automatiskt",
+        manualRedactionNote: "Dessa värden tas med när du förhandsvisar, sparar eller öppnar anonymiserad fil.",
+        sourceCodeTitle: "Källkod",
+        sourceCodeLink: "Öppna projektet på GitHub",
         logHint: "Se logg:",
         dstCatAdresse:      "Adress",
         dstCatEpost:        "E-post",
@@ -2485,7 +2519,7 @@
         ocrRunning:          "Kör OCR-skanning…",
       },
       en: {
-        subtitle:     "Checks documents for sensitive information before uploading to online AI tools",
+        subtitle:     "Checks and anonymizes documents for sensitive information",
         tabScanner:   "🔍 Scanner",
         tabAbout:     "ℹ About",
         dropTitle:    "Drag and drop a document here",
@@ -2740,6 +2774,11 @@
         updateCheckNow: "Check for updates now",
         updateNoUpdate: "You already have the latest version.",
         updateCheckFailed: "Could not check for updates.",
+        manualRedactionLabel: "Extra text to anonymize",
+        manualRedactionPlaceholder: "Enter one word or phrase per line, for example a name or company name that was not found automatically",
+        manualRedactionNote: "These values are included when you preview, save, or open the anonymized file.",
+        sourceCodeTitle: "Source code",
+        sourceCodeLink: "Open the project on GitHub",
         logHint: "See log:",
         dstCatAdresse:      "Addresses",
         dstCatEpost:        "Email addresses",
@@ -2875,7 +2914,7 @@
 
       // ── Deutsch ────────────────────────────────────────────────────────
       de: {
-        subtitle:            "Prüft Dokumente auf sensible Informationen vor dem Hochladen in Online-KI-Tools",
+        subtitle:            "Prüft und anonymisiert Dokumente mit sensiblen Informationen",
         tabScanner:          "🔍 Scanner",
         tabAbout:            "ℹ Über das Programm",
         tabSettings:         "⚙️ Einstellungen",
@@ -3028,6 +3067,11 @@
         updateCheckTop:      "Auf Updates prüfen",
         updateCheckNow:      "Jetzt auf Updates prüfen",
         updateCheckFailed:   "Updates konnten nicht geprüft werden.",
+        manualRedactionLabel:"Zusätzlicher Text zur Anonymisierung",
+        manualRedactionPlaceholder:"Ein Wort oder einen Ausdruck pro Zeile eingeben, z. B. einen Namen oder Firmennamen, der nicht automatisch gefunden wurde",
+        manualRedactionNote: "Diese Werte werden beim Vorschau, Speichern oder Öffnen der anonymisierten Datei einbezogen.",
+        sourceCodeTitle:     "Quellcode",
+        sourceCodeLink:      "Projekt auf GitHub öffnen",
         settingsUpdateTitle: "Updates",
         settingsProfileTitle:"Einstellungsprofil",
         settingsProfileNote: "Exportiert und importiert Design, Dokumentsprache, Whitelist, Blacklist, ignore.toml und benutzerdefinierte Muster. Scan-Verlauf und Dokumentinhalte werden nicht übernommen.",
@@ -3266,7 +3310,7 @@
 
       // ── Français ───────────────────────────────────────────────────────
       fr: {
-        subtitle:            "Vérifie les documents pour des informations sensibles avant de les télécharger vers des outils IA en ligne",
+        subtitle:            "Vérifie et anonymise les documents contenant des informations sensibles",
         tabScanner:          "🔍 Scanner",
         tabAbout:            "ℹ À propos",
         tabSettings:         "⚙️ Paramètres",
@@ -3419,6 +3463,11 @@
         updateCheckTop:      "Vérifier les mises à jour",
         updateCheckNow:      "Vérifier les mises à jour maintenant",
         updateCheckFailed:   "Impossible de vérifier les mises à jour.",
+        manualRedactionLabel:"Texte supplémentaire à anonymiser",
+        manualRedactionPlaceholder:"Saisissez un mot ou une expression par ligne, par exemple un nom ou une société non détecté automatiquement",
+        manualRedactionNote: "Ces valeurs sont incluses lors de l’aperçu, de l’enregistrement ou de l’ouverture du fichier anonymisé.",
+        sourceCodeTitle:     "Code source",
+        sourceCodeLink:      "Ouvrir le projet sur GitHub",
         settingsUpdateTitle: "Mises à jour",
         settingsProfileTitle:"Profil de paramètres",
         settingsProfileNote: "Exporte et importe le thème, la langue du document, la liste blanche, la blacklist, ignore.toml et les modèles personnalisés. L’historique d’analyse et le contenu des documents ne sont pas inclus.",
@@ -3657,7 +3706,7 @@
 
       // ── Español ────────────────────────────────────────────────────────
       es: {
-        subtitle:            "Comprueba documentos en busca de información sensible antes de subirlos a herramientas de IA en línea",
+        subtitle:            "Comprueba y anonimiza documentos con información sensible",
         tabScanner:          "🔍 Escáner",
         tabAbout:            "ℹ Acerca del programa",
         tabSettings:         "⚙️ Configuración",
@@ -3810,6 +3859,11 @@
         updateCheckTop:      "Buscar actualizaciones",
         updateCheckNow:      "Buscar actualizaciones ahora",
         updateCheckFailed:   "No se pudieron comprobar las actualizaciones.",
+        manualRedactionLabel:"Texto adicional para anonimizar",
+        manualRedactionPlaceholder:"Escriba una palabra o expresión por línea, por ejemplo un nombre o empresa que no se detectó automáticamente",
+        manualRedactionNote: "Estos valores se incluyen al previsualizar, guardar o abrir el archivo anonimizado.",
+        sourceCodeTitle:     "Código fuente",
+        sourceCodeLink:      "Abrir el proyecto en GitHub",
         settingsUpdateTitle: "Actualizaciones",
         settingsProfileTitle:"Perfil de configuración",
         settingsProfileNote: "Exporta e importa tema, idioma del documento, lista blanca, blacklist, ignore.toml y patrones personalizados. No incluye historial de escaneos ni contenido de documentos.",
@@ -5281,10 +5335,6 @@
         ? sorted.filter(({f}) => _findingMatchesCat(f, selectedCats))
         : sorted;
 
-      if (!filtered.length) {
-        if (!sorted.length) return `<p class="no-findings-message" style="color:var(--ok);margin-top:6px;">${t("noFindings")}</p>`;
-        return `<p class="no-findings-message" style="color:var(--ok);margin-top:6px;">${t("noFindings")} <span style="color:var(--muted);font-size:11px">(${sorted.length - filtered.length} skjult av filter)</span></p>`;
-      }
       const sorted_use = filtered;
 
       const pdfNote = (ext === "pdf")
@@ -5302,6 +5352,16 @@
           <button class="ctrl-btn open-anonymized-btn" id="g-open-anonymized">${t("openAnonymizedFile")}</button>
           <span class="anon-msg" id="g-anon-msg"></span>
         </div>`;
+      const manualRedaction = `
+        <div class="manual-redaction">
+          <label for="manual-redaction-terms">${escapeHtml(t("manualRedactionLabel"))}</label>
+          <textarea id="manual-redaction-terms"
+            data-i18n-placeholder="manualRedactionPlaceholder"
+            placeholder="${escapeHtml(t("manualRedactionPlaceholder"))}"></textarea>
+          <div class="manual-redaction-note">${escapeHtml(t("manualRedactionNote"))}</div>
+        </div>
+        <div class="redaction-report" id="redaction-report"></div>
+        <div class="redaction-preview" id="redaction-preview"></div>`;
 
       const rows = sorted_use.map(({ f, i }) => {
         const sc    = SEV_COLOR[f.severity] || "#ffb84d";
@@ -5336,12 +5396,27 @@
       const hiddenNote = sorted.length > sorted_use.length
         ? `<span style="font-size:11px;color:var(--muted);margin-left:8px;">${sorted.length - sorted_use.length} skjult av kategorifilter</span>`
         : "";
+      if (!filtered.length) {
+        const message = !sorted.length
+          ? t("noFindings")
+          : `${t("noFindings")} (${sorted.length - filtered.length} skjult av filter)`;
+        return `
+          ${anonBar}
+          ${manualRedaction}
+          <p class="no-findings-message" style="color:var(--ok);margin-top:6px;">${escapeHtml(message)}</p>`;
+      }
       return `
         <h3 class="section-heading">${t("sectionFind")} (${sorted_use.length})${hiddenNote}</h3>
         ${anonBar}
-        <div class="redaction-report" id="redaction-report"></div>
-        <div class="redaction-preview" id="redaction-preview"></div>
+        ${manualRedaction}
         <ul class="findings-list">${rows}</ul>`;
+    }
+
+    function _manualRedactionTerms() {
+      const raw = document.getElementById("manual-redaction-terms")?.value || "";
+      return [...new Set(raw.split(/\r?\n/)
+        .map(v => v.trim())
+        .filter(v => v.length > 0))];
     }
 
     function _redactionPayload(format) {
@@ -5349,6 +5424,7 @@
         .map(cb => +cb.value);
       const aiRows = [...document.querySelectorAll(".g-ai-cb:checked")];
       const aiTexts = aiRows.map(cb => (cb.dataset.aiText || "").trim()).filter(Boolean);
+      const manualTerms = _manualRedactionTerms();
       const aiTextsUnique = [...new Set(aiTexts)];
       const aiFindings = [];
       const aiFindingKeys = new Set();
@@ -5365,17 +5441,36 @@
           context: f.context || "",
         });
       }
+      for (const text of manualTerms) {
+        const key = `egendefinert tekst\u0001${String(text || "").toLowerCase()}\u0001`;
+        if (aiFindingKeys.has(key)) continue;
+        aiFindingKeys.add(key);
+        aiFindings.push({
+          category: "Egendefinert tekst",
+          text,
+          context: "",
+        });
+      }
       const stripAnnotations = document.getElementById("stripAnnotations")?.checked === true;
       const body = { indices, ai_texts: aiTextsUnique, ai_findings: aiFindings, strip_annotations: stripAnnotations };
       if (format) body.format = format;
       return body;
     }
 
+    function _redactionPayloadHasSelection(body) {
+      return Boolean(
+        body?.indices?.length ||
+        body?.ai_texts?.length ||
+        body?.ai_findings?.length
+      );
+    }
+
     function updateRedactionReport(ext) {
       const el = document.getElementById("redaction-report");
       if (!el) return;
-      const selected = document.querySelectorAll(".g-cb:checked, .g-ai-cb:checked").length;
-      const total = document.querySelectorAll(".g-cb, .g-ai-cb").length;
+      const manualCount = _manualRedactionTerms().length;
+      const selected = document.querySelectorAll(".g-cb:checked, .g-ai-cb:checked").length + manualCount;
+      const total = document.querySelectorAll(".g-cb, .g-ai-cb").length + manualCount;
       const unsafe = [];
       if (ext === "pdf") unsafe.push("PDF");
       if (lastResult?.warning_code) unsafe.push(lastResult.warning_code);
@@ -5406,6 +5501,7 @@
       document.getElementById("g-sel-none")?.addEventListener("click", () =>
         { document.querySelectorAll(".g-cb, .g-ai-cb").forEach(cb => cb.checked = false); updateRedactionReport(ext); });
       document.querySelectorAll(".g-cb, .g-ai-cb").forEach(cb => cb.addEventListener("change", () => updateRedactionReport(ext)));
+      document.getElementById("manual-redaction-terms")?.addEventListener("input", () => updateRedactionReport(ext));
       if (canPatch) document.getElementById("g-patch")?.addEventListener("click", () => postAnon("patch"));
       document.getElementById("g-preview")?.addEventListener("click", previewRedaction);
       document.getElementById("g-anon")?.addEventListener("click", () => postAnon("anonymize", "md"));
@@ -5434,6 +5530,13 @@
             : ""}
           <button class="ctrl-btn open-anonymized-btn" id="g-open-anonymized">${t("openAnonymizedFile")}</button>
           <span class="anon-msg" id="g-anon-msg"></span>
+        </div>
+        <div class="manual-redaction">
+          <label for="manual-redaction-terms">${escapeHtml(t("manualRedactionLabel"))}</label>
+          <textarea id="manual-redaction-terms"
+            data-i18n-placeholder="manualRedactionPlaceholder"
+            placeholder="${escapeHtml(t("manualRedactionPlaceholder"))}"></textarea>
+          <div class="manual-redaction-note">${escapeHtml(t("manualRedactionNote"))}</div>
         </div>
         <div class="redaction-report" id="redaction-report"></div>
         <div class="redaction-preview" id="redaction-preview"></div>`;
@@ -5491,7 +5594,7 @@
       const box = document.getElementById("redaction-preview");
       if (!box) return;
       const body = _redactionPayload();
-      if (!body.indices.length && !body.ai_texts.length) {
+      if (!_redactionPayloadHasSelection(body)) {
         box.style.display = "block";
         box.textContent = t("redactionPreviewEmpty");
         return;
@@ -5544,10 +5647,9 @@
       document.getElementById("btn-exp-json").addEventListener("click", () => postExport("export/json"));
       document.getElementById("btn-exp-csv").addEventListener("click",  () => postExport("export/csv"));
 
-      if (!sorted.length) return;
-
       // Null-sjekk: knappene finnes bare når det er funn (ellers TypeError ved høyreklikk/startup)
       _wireRedactionControlButtons(canPatch, ext);
+      if (!sorted.length) return;
 
       document.querySelectorAll(".wl-btn").forEach(btn =>
         btn.addEventListener("click", async () => {
@@ -5573,7 +5675,7 @@
       const msg = document.getElementById(msgId);
       if (!msg) return null;
       const body = _redactionPayload(format);
-      if (!body.indices.length && !body.ai_texts.length && !(endpoint === "patch" && body.strip_annotations)) {
+      if (!_redactionPayloadHasSelection(body) && !(endpoint === "patch" && body.strip_annotations)) {
         msg.style.color="#ffb84d"; msg.textContent=t("selectOne"); return null;
       }
       msg.style.color="var(--muted)"; msg.textContent=t("processing");

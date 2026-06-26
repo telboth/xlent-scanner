@@ -384,7 +384,7 @@ def _replacement_map(data: dict) -> tuple[list, dict[str, str]]:
     selected, ai_findings = _selected_findings(data)
     replacements = build_replacements(selected)
     for text in replacement_texts(ai_findings):
-        replacements.setdefault(text, "[ANONYMISERT]")
+        replacements[text] = "[ANONYMISERT]"
     return selected, replacements
 
 

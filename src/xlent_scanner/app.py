@@ -20,6 +20,7 @@ import tempfile
 import threading
 import time
 import traceback
+import mimetypes
 import urllib.parse
 import urllib.request
 import warnings
@@ -28,7 +29,7 @@ import zipfile
 from pathlib import Path
 
 import webview
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_file
 
 from xlent_scanner import __version__
 from xlent_scanner.app_state import app_state
@@ -1045,10 +1046,23 @@ def startup_file():
 
 @flask_app.route("/logo.svg")
 def logo_svg():
-    svg_path = Path(__file__).parent / "web" / "logo.svg"
-    if not svg_path.exists():
+    logo_dir = app_data_dir() / "logo"
+    logo_dir.mkdir(parents=True, exist_ok=True)
+    candidates = [
+        logo_dir / "logo.svg",
+        logo_dir / "logo.png",
+        logo_dir / "logo.jpg",
+        logo_dir / "logo.jpeg",
+        logo_dir / "logo.webp",
+        Path(__file__).parent / "web" / "logo.svg",
+    ]
+    logo_path = next((path for path in candidates if path.is_file()), None)
+    if logo_path is None:
         return "", 404
-    return svg_path.read_text("utf-8"), 200, {"Content-Type": "image/svg+xml"}
+    mimetype = mimetypes.guess_type(str(logo_path))[0] or "image/svg+xml"
+    response = send_file(logo_path, mimetype=mimetype, max_age=0)
+    response.cache_control.no_store = True
+    return response
 
 
 flask_app.register_blueprint(create_ollama_blueprint(

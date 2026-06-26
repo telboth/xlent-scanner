@@ -76,6 +76,64 @@ def test_header_uses_redaction_scanner_title():
 
     assert "<h1>Compliance redaction scanner</h1>" in html
     assert "<h1>Compliance-scanner</h1>" not in html
+    assert "Sjekker og anonymiserer dokumenter for sensitiv informasjon" in html
+    assert "Sjekker dokumenter for sensitiv informasjon før opplasting" not in html
+
+
+def test_scan_category_grid_order_matches_requested_columns():
+    html = HTML.read_text(encoding="utf-8")
+    start = html.index('<div class="scan-cat-grid">')
+    end = html.index("</div>", start)
+    block = html[start:end]
+
+    assert "grid-auto-flow: column;" in html
+    assert "grid-template-rows: repeat(5, auto);" in html
+    values = []
+    for fragment in block.split('class="scan-cat" value="')[1:]:
+        values.append(fragment.split('"', 1)[0])
+    assert values == [
+        "navn",
+        "epost",
+        "telefon",
+        "fodselsdato",
+        "id",
+        "klient",
+        "orgnummer",
+        "nettadresse",
+        "konto",
+        "kredittkort",
+        "hemmeligheter",
+        "finansielt",
+        "medisinsk",
+        "konfidensielt",
+    ]
+
+
+def test_manual_redaction_terms_are_available_in_redaction_payload():
+    html = HTML.read_text(encoding="utf-8")
+
+    assert 'id="manual-redaction-terms"' in html
+    assert "function _manualRedactionTerms()" in html
+    assert 'category: "Egendefinert tekst"' in html
+    assert "const aiTextsUnique = [...new Set(aiTexts)];" in html
+    assert "function _redactionPayloadHasSelection(body)" in html
+    assert 'document.getElementById("manual-redaction-terms")?.addEventListener("input", () => updateRedactionReport(ext));' in html
+    for key in [
+        "manualRedactionLabel",
+        "manualRedactionPlaceholder",
+        "manualRedactionNote",
+    ]:
+        assert html.count(f"{key}:") == 6
+
+
+def test_about_page_links_to_source_code():
+    html = HTML.read_text(encoding="utf-8")
+
+    assert 'href="https://github.com/telboth/xlent-scanner"' in html
+    assert 'data-i18n="sourceCodeTitle"' in html
+    assert 'data-i18n="sourceCodeLink"' in html
+    assert html.count("sourceCodeTitle:") == 6
+    assert html.count("sourceCodeLink:") == 6
 
 
 def test_theme_translations_exist_for_all_ui_languages():

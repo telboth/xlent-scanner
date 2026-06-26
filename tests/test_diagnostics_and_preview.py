@@ -54,6 +54,45 @@ def test_redaction_preview_uses_same_replacement_logic():
     assert data["preview"] == [{"original": "person@example.com", "replacement": "<Epost 1>"}]
 
 
+def test_redaction_preview_includes_manual_redaction_terms():
+    app_module.app_state.last_result = _scan_result()
+    app_module.app_state.last_path = Path("test.docx")
+    client = app_module.flask_app.test_client()
+
+    response = client.post(
+        "/redaction/preview",
+        json={
+            "indices": [],
+            "ai_findings": [
+                {
+                    "category": "Egendefinert tekst",
+                    "text": "Acme Prosjekt",
+                    "context": "",
+                }
+            ],
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data["ok"] is True
+    assert data["preview"] == [{"original": "Acme Prosjekt", "replacement": "[ANONYMISERT]"}]
+
+
+def test_logo_route_prefers_user_logo_folder(monkeypatch, tmp_path):
+    logo_dir = tmp_path / "logo"
+    logo_dir.mkdir()
+    (logo_dir / "logo.png").write_bytes(b"png-logo")
+    monkeypatch.setattr(app_module, "app_data_dir", lambda: tmp_path)
+    client = app_module.flask_app.test_client()
+
+    response = client.get("/logo.svg")
+
+    assert response.status_code == 200
+    assert response.data == b"png-logo"
+    assert response.content_type.startswith("image/png")
+
+
 def test_diagnostics_health_returns_checks(monkeypatch, tmp_path):
     monkeypatch.setattr(app_module, "app_data_dir", lambda: tmp_path)
     monkeypatch.setattr(app_module, "_downloads_dir", lambda: tmp_path)

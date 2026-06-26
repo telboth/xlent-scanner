@@ -57,6 +57,7 @@ def financial_values_from_snippet(text: str) -> list[str]:
 def findings_from_payload(data: dict) -> list[dict]:
     findings: list[dict] = []
     seen: set[tuple[str, str, str]] = set()
+    seen_ai_finding_texts: set[str] = set()
 
     for raw in data.get("ai_findings") or []:
         if not isinstance(raw, dict):
@@ -70,11 +71,14 @@ def findings_from_payload(data: dict) -> list[dict]:
         if key in seen:
             continue
         seen.add(key)
+        seen_ai_finding_texts.add(text.casefold())
         findings.append({"text": text, "category": category, "context": context})
 
     for text in data.get("ai_texts") or []:
         text = str(text or "").strip()
         if not text:
+            continue
+        if text.casefold() in seen_ai_finding_texts:
             continue
         key = (text.casefold(), "🤖 ai-funn", "")
         if key in seen:
