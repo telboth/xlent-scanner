@@ -113,15 +113,28 @@ def test_manual_redaction_terms_are_available_in_redaction_payload():
     html = HTML.read_text(encoding="utf-8")
 
     assert 'id="manual-redaction-terms"' in html
+    assert html.count('id="manual-redaction-terms"') == 1
+    grid_start = html.index('<div class="scan-cat-grid">')
+    grid_end = html.index("<!-- AI-dybdeskann toggle -->", grid_start)
+    manual_field = html.index('id="manual-redaction-terms"', grid_start)
+    confidential_category = html.index('value="konfidensielt"', grid_start)
+    assert confidential_category < manual_field < grid_end
     assert "function _manualRedactionTerms()" in html
+    assert "function updateManualRedactionPreview()" in html
+    assert "manual-redaction-preview" in html
     assert 'category: "Egendefinert tekst"' in html
     assert "const aiTextsUnique = [...new Set(aiTexts)];" in html
     assert "function _redactionPayloadHasSelection(body)" in html
-    assert 'document.getElementById("manual-redaction-terms")?.addEventListener("input", () => updateRedactionReport(ext));' in html
+    assert 'document.getElementById("manual-redaction-terms")?.addEventListener("input", () => {' in html
+    assert "updateRedactionReport(_currentResultExt())" in html
     for key in [
         "manualRedactionLabel",
         "manualRedactionPlaceholder",
         "manualRedactionNote",
+        "manualPreviewEmpty",
+        "manualPreviewScanFirst",
+        "manualPreviewFound",
+        "manualPreviewNotFound",
     ]:
         assert html.count(f"{key}:") == 6
 
@@ -230,6 +243,7 @@ def test_redaction_preview_and_report_are_available():
         "redactionNotSelected",
         "redactionUnsafe",
         "redactionPreviewEmpty",
+        "redactionPreviewMatches",
     ]:
         assert html.count(f"{key}:") == 6
 
@@ -574,6 +588,9 @@ def test_guard_watch_custom_patterns_and_ocr_ui_are_wired():
         "restoreWatch();",
         'fd.append("ocr", "true")',
         'ocr: true',
+        'const IMAGE_EXT   = new Set(["png","jpg","jpeg","bmp","tif","tiff","webp"]);',
+        'const canOcr = (ext === "pdf" || IMAGE_EXT.has(ext)) && lastScan',
+        '.png,.jpg,.jpeg,.bmp,.tif,.tiff,.webp',
     ]:
         assert snippet in html
 
@@ -866,6 +883,8 @@ def test_redaction_history_and_automatic_verification_are_wired():
         "verificationPassed",
         "verificationReview",
         "verificationRemoved",
+        "verificationNotFound",
+        "verificationStillPresent",
         "verificationRemaining",
     ]:
         assert html.count(f"{key}:") == 6

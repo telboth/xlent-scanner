@@ -83,6 +83,8 @@ uv pip install --python "$PYTHON_EXE" "pyinstaller>=6.0.0" "pyinstaller-hooks-co
   --collect-data langdetect \
   --collect-data docx \
   --collect-data pptx \
+  --collect-all rapidocr \
+  --collect-all onnxruntime \
   --collect-all docling \
   --collect-all docling_core \
   --collect-all docling_parse \
@@ -148,7 +150,10 @@ plist_path = Path(sys.argv[1])
 with plist_path.open("rb") as f:
     plist = plistlib.load(f)
 
-supported_extensions = ["pdf", "docx", "pptx", "xlsx", "txt", "md", "html", "csv", "eml", "rtf", "odt"]
+supported_extensions = [
+    "pdf", "docx", "pptx", "xlsx", "txt", "md", "html", "csv", "eml", "rtf", "odt",
+    "png", "jpg", "jpeg", "bmp", "tif", "tiff", "webp",
+]
 supported_mime_types = [
     "application/pdf",
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -161,6 +166,11 @@ supported_mime_types = [
     "message/rfc822",
     "application/rtf",
     "application/vnd.oasis.opendocument.text",
+    "image/png",
+    "image/jpeg",
+    "image/bmp",
+    "image/tiff",
+    "image/webp",
 ]
 supported_utis = [
     "public.item",
@@ -175,6 +185,12 @@ supported_utis = [
     "public.email-message",
     "public.rtf",
     "org.oasis-open.opendocument.text",
+    "public.image",
+    "public.png",
+    "public.jpeg",
+    "com.microsoft.bmp",
+    "public.tiff",
+    "org.webmproject.webp",
     "public.content",
     "public.data",
 ]

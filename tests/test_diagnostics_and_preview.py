@@ -51,7 +51,13 @@ def test_redaction_preview_uses_same_replacement_logic():
     assert data["ok"] is True
     assert data["selected_count"] == 1
     assert data["replacement_count"] == 1
-    assert data["preview"] == [{"original": "person@example.com", "replacement": "<Epost 1>"}]
+    assert data["preview"] == [
+        {
+            "original": "person@example.com",
+            "replacement": "<Epost 1>",
+            "found_count": 1,
+        }
+    ]
 
 
 def test_redaction_preview_includes_manual_redaction_terms():
@@ -76,7 +82,13 @@ def test_redaction_preview_includes_manual_redaction_terms():
     assert response.status_code == 200
     data = response.get_json()
     assert data["ok"] is True
-    assert data["preview"] == [{"original": "Acme Prosjekt", "replacement": "[ANONYMISERT]"}]
+    assert data["preview"] == [
+        {
+            "original": "Acme Prosjekt",
+            "replacement": "[ANONYMISERT]",
+            "found_count": 0,
+        }
+    ]
 
 
 def test_logo_route_prefers_user_logo_folder(monkeypatch, tmp_path):

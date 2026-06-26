@@ -388,13 +388,26 @@ def _replacement_map(data: dict) -> tuple[list, dict[str, str]]:
     return selected, replacements
 
 
+def _source_occurrence_count(value: str) -> int:
+    if app_state.last_result is None:
+        return 0
+    source = app_state.last_result.original_text or ""
+    if not value or not source:
+        return 0
+    return source.count(value)
+
+
 @reports_bp.post("/redaction/preview")
 def redaction_preview():
     if app_state.last_result is None:
         return jsonify({"ok": False, "error": "Ingen rapport tilgjengelig."})
     selected, replacements = _replacement_map(request.get_json(force=True))
     preview = [
-        {"original": old, "replacement": new}
+        {
+            "original": old,
+            "replacement": new,
+            "found_count": _source_occurrence_count(old),
+        }
         for old, new in sorted(replacements.items(), key=lambda item: item[0].casefold())
     ]
     skipped = [

@@ -210,14 +210,28 @@ def _health_check() -> dict:
         add("python_docx", False, str(exc))
 
     try:
-        from docling.document_converter import DocumentConverter  # noqa: F401, PLC0415
-        try:
-            import rapidocr  # noqa: F401, PLC0415
-            add("ocr", True, "docling + rapidocr import ok")
-        except Exception as exc:
-            add("ocr", False, f"docling import ok, OCR engine missing: {exc}")
+        import rapidocr  # noqa: F401, PLC0415
+        import onnxruntime  # noqa: F401, PLC0415
+        image_ocr_ok = True
+        image_ocr_detail = "rapidocr + onnxruntime import ok"
     except Exception as exc:
-        add("ocr", False, f"docling missing: {exc}")
+        image_ocr_ok = False
+        image_ocr_detail = f"image OCR engine missing: {exc}"
+
+    try:
+        from docling.document_converter import DocumentConverter  # noqa: F401, PLC0415
+        docling_ok = True
+        docling_detail = "docling import ok"
+    except Exception as exc:
+        docling_ok = False
+        docling_detail = f"docling/PDF OCR unavailable: {exc}"
+
+    if image_ocr_ok and docling_ok:
+        add("ocr", True, f"{docling_detail}; {image_ocr_detail}")
+    elif image_ocr_ok:
+        add("ocr", True, f"{image_ocr_detail}; {docling_detail}")
+    else:
+        add("ocr", False, f"{image_ocr_detail}; {docling_detail}")
 
     try:
         from xlent_scanner.model_manager import models_status  # noqa: PLC0415

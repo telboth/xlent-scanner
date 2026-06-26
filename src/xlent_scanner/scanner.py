@@ -10,6 +10,7 @@ import fitz  # type: ignore[import-untyped]  # fallback PDF-parser
 
 _pdf_converter = None      # Docling DocumentConverter – lazy-initialisert ved første PDF-scan
 _pdf_converter_ocr = None  # OCR-variant (do_ocr=True) – kun initialisert på eksplisitt forespørsel
+_image_ocr_engine = None   # RapidOCR – lazy-initialisert ved første bilde-OCR
 _DOCLING_TABLE_IMAGE_DEPRECATION = (
     r"This field is deprecated\. Use `generate_page_images=True` and call "
     r"`TableItem\.get_image\(\)` to extract table images from page images\."
@@ -39,11 +40,13 @@ from xlent_scanner.whitelist import mark_whitelist_findings
 from xlent_scanner.blacklist import detect_blacklist
 from xlent_scanner.detectors.custom_patterns import detect_custom_patterns
 
+IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff", ".webp"}
+
 SUPPORTED_SUFFIXES = {
     ".pdf", ".docx", ".pptx", ".xlsx",
     ".md", ".txt", ".html",
     ".csv", ".eml", ".rtf", ".odt",
-}
+} | IMAGE_SUFFIXES
 
 DEFAULT_FOLDER_MAX_FILES = 500
 DEFAULT_FOLDER_MAX_DEPTH = 5
@@ -162,6 +165,40 @@ def _extract_text_pdf(path: Path, ocr: bool = False) -> str:
             return converter.convert(str(path)).document.export_to_markdown()
     except Exception:
         return _extract_text_pdf_fitz(path)
+
+
+def _get_image_ocr_engine():
+    """Returnerer en cached RapidOCR-motor for rene bildefiler."""
+    global _image_ocr_engine
+    if _image_ocr_engine is None:
+        try:
+            import onnxruntime  # noqa: F401, PLC0415
+            from rapidocr import RapidOCR  # noqa: PLC0415
+        except Exception as exc:
+            raise RuntimeError(
+                "OCR-motor mangler. Bildefiler krever rapidocr + onnxruntime."
+            ) from exc
+        _image_ocr_engine = RapidOCR()
+    return _image_ocr_engine
+
+
+def _extract_text_image(path: Path, ocr: bool = False) -> str:
+    """Ekstraherer tekst fra PNG/JPG/TIFF/WebP via OCR.
+
+    Uten eksplisitt OCR returnerer vi tom tekst slik at GUI kan vise samme
+    OCR-tilbud som for bildebaserte PDF-er.
+    """
+    if not ocr:
+        return ""
+    try:
+        result = _get_image_ocr_engine()(path)
+    except Exception as exc:
+        raise RuntimeError(
+            "OCR av bildefil feilet. Kontroller at full/OCR-build eller "
+            f"kildeinstallasjon har OCR-avhengigheter ({type(exc).__name__}: {exc})."
+        ) from exc
+    texts = getattr(result, "txts", None) or ()
+    return "\n".join(str(text).strip() for text in texts if str(text).strip())
 
 
 def _table_to_markdown(table) -> str:
@@ -366,6 +403,8 @@ def _extract_text_html(path: Path) -> str:
 
 def extract_text(path: Path, ocr: bool = False) -> str:
     suffix = path.suffix.lower()
+    if suffix in IMAGE_SUFFIXES:
+        return _extract_text_image(path, ocr=ocr)
     if suffix == ".pdf":
         return _extract_text_pdf(path, ocr=ocr)
     if suffix == ".docx":

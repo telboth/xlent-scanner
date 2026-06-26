@@ -93,7 +93,7 @@ def test_clipboard_guard_alerts_without_storing_clipboard_text(monkeypatch):
 def test_folder_watch_snapshot_changes_and_scan_one(monkeypatch, tmp_path: Path):
     good = tmp_path / "kunde.txt"
     tmp = tmp_path / "kunde.tmp"
-    unsupported = tmp_path / "image.png"
+    unsupported = tmp_path / "archive.zip"
     good.write_text("hello", encoding="utf-8")
     tmp.write_text("skip", encoding="utf-8")
     unsupported.write_text("skip", encoding="utf-8")
@@ -184,6 +184,40 @@ def test_scan_file_passes_ocr_flag_to_extract_text(monkeypatch, tmp_path: Path):
 
     assert result.error is None
     assert seen["ocr"] is True
+
+
+def test_image_files_are_supported_but_need_ocr_to_extract_text(tmp_path: Path):
+    image = tmp_path / "scan.png"
+    image.write_bytes(b"synthetic image bytes")
+
+    result = scanner.scan_file(image, language="nb")
+
+    assert ".png" in scanner.SUPPORTED_SUFFIXES
+    assert result.error is None
+    assert result.warning_code == "no_text_extracted"
+    assert result.scan_status == "partial"
+
+
+def test_image_file_ocr_uses_image_extractor(monkeypatch, tmp_path: Path):
+    image = tmp_path / "scan.jpg"
+    image.write_bytes(b"synthetic image bytes")
+    seen: dict[str, bool] = {}
+    extracted = (
+        "Ola Nordmann står i denne syntetiske bildefilen, og teksten er lang nok "
+        "til at OCR-testen ikke gir varsel om lite tekst."
+    )
+
+    def fake_extract_text_image(path: Path, ocr: bool = False) -> str:
+        seen["ocr"] = ocr
+        return extracted
+
+    monkeypatch.setattr(scanner, "_extract_text_image", fake_extract_text_image)
+
+    result = scanner.scan_file(image, language="nb", ocr=True)
+
+    assert result.error is None
+    assert seen["ocr"] is True
+    assert result.original_text == extracted
 
 
 def test_api_scan_file_accepts_ocr_flag(monkeypatch):

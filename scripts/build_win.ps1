@@ -1,6 +1,8 @@
 param(
     [string]$PythonExe = "",
     [string]$OutputRoot = "artifacts\windows\app",
+    [ValidateSet("slim", "full")]
+    [string]$BuildFlavor = "slim",
     [switch]$Clean
 )
 
@@ -48,6 +50,8 @@ $SpecDir = Join-Path $OutRootAbs "spec"
 $EntryScript = Join-Path $BuildDir "entrypoint_build.py"
 $AppName = "XLENTScanner"
 
+Write-Host "Build flavor: $BuildFlavor"
+
 if ($Clean -and (Test-Path $OutRootAbs)) {
     Remove-Item -LiteralPath $OutRootAbs -Recurse -Force
 }
@@ -81,12 +85,8 @@ $pyiArgs = @(
     "--collect-data", "langdetect",
     "--collect-data", "docx",
     "--collect-data", "pptx",
-
-    # Docling (PDF-parsing med layout-analyse og tabellgjenkjenning)
-    "--collect-all", "docling",
-    "--collect-all", "docling_core",
-    "--collect-all", "docling_parse",
-    "--collect-data", "docling_ibm_models",
+    "--collect-all", "rapidocr",
+    "--collect-all", "onnxruntime",
 
     # PyWebView Windows-backend (dynamisk importert – usynlig for PyInstaller)
     "--hidden-import", "webview.platforms.winforms",
@@ -131,11 +131,35 @@ $pyiArgs = @(
     "--hidden-import", "spacy.lang.de",
     "--hidden-import", "spacy.lang.fr",
     "--hidden-import", "spacy.lang.es",
-    "--hidden-import", "spacy.lang.da",
+    "--hidden-import", "spacy.lang.da"
+)
 
-    # Ekskluder pakker som ikke er i bruk
-    "--exclude-module", "torchvision",
+if ($BuildFlavor -eq "full") {
+    $pyiArgs += @(
+        # Full build: inkluder tyngre PDF/OCR-stack for offline OCR og Docling.
+        "--collect-all", "docling",
+        "--collect-all", "docling_core",
+        "--collect-all", "docling_parse",
+        "--collect-data", "docling_ibm_models",
 
+        # Docling kan trekke inn torchvision via modellpakker, men appen bruker det ikke direkte.
+        "--exclude-module", "torchvision"
+    )
+} else {
+    $pyiArgs += @(
+        # Slim build: bruk raskere fallback-PDF-parser og hold store ML/OCR-pakker ute.
+        "--exclude-module", "docling",
+        "--exclude-module", "docling_core",
+        "--exclude-module", "docling_parse",
+        "--exclude-module", "docling_ibm_models",
+        "--exclude-module", "torch",
+        "--exclude-module", "torchvision",
+        "--exclude-module", "triton",
+        "--exclude-module", "nvidia"
+    )
+}
+
+$pyiArgs += @(
     "--distpath", $DistDir,
     "--workpath", $BuildDir,
     "--specpath", $SpecDir,

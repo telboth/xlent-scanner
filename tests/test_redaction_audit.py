@@ -54,6 +54,46 @@ def test_verify_redacted_file_reports_removed_and_passed(monkeypatch, tmp_path):
     assert verification["finding_count"] == 0
 
 
+def test_verify_redacted_file_reports_selected_text_not_found_in_source(monkeypatch, tmp_path):
+    output = tmp_path / "source-anonymisert.txt"
+    output.write_text("Kontakt <Epost 1>", encoding="utf-8")
+    selected = [
+        Finding(
+            category="Egendefinert tekst",
+            text="Acme Prosjekt",
+            raw_text="Acme Prosjekt",
+            severity="gul",
+        )
+    ]
+    monkeypatch.setattr(
+        redaction_audit,
+        "scan_file",
+        lambda path, language="auto": ScanResult(
+            file_name=Path(path).name,
+            file_size=10,
+            text_length=10,
+            text_preview="Kontakt <Epost 1>",
+            original_text="Kontakt <Epost 1>",
+            findings=[],
+            risk_level="grønn",
+            scan_status="success",
+        ),
+    )
+
+    verification = redaction_audit.verify_redacted_file(
+        output,
+        selected,
+        source_text="Kontakt person@example.com",
+    )
+
+    assert verification["passed"] is True
+    assert verification["removed_count"] == 0
+    assert verification["not_found_count"] == 1
+    assert verification["not_found_findings"] == [
+        {"category": "Egendefinert tekst", "text": "Acme Prosjekt"}
+    ]
+
+
 def test_verify_redacted_file_requires_review_when_findings_remain(monkeypatch, tmp_path):
     output = tmp_path / "source-anonymisert.txt"
     output.write_text("Kontakt person@example.com", encoding="utf-8")

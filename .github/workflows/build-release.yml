@@ -126,7 +126,7 @@ jobs:
           }
 
       - name: Bygg app-bundle (PyInstaller)
-        run: .\scripts\build_win.ps1
+        run: .\scripts\build_win.ps1 -BuildFlavor slim
 
       - name: Pakk installer (.exe)
         run: .\scripts\package_win.ps1

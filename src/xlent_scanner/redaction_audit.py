@@ -121,6 +121,7 @@ def verify_redacted_file(
     selected_findings: list[Finding],
     *,
     language: str = "auto",
+    source_text: str = "",
 ) -> dict:
     checked_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
     try:
@@ -133,14 +134,18 @@ def verify_redacted_file(
             "risk_level": "gul",
             "finding_count": 0,
             "removed_count": 0,
+            "not_found_count": 0,
             "remaining_selected_count": 0,
             "remaining_findings": [],
             "removed_findings": [],
+            "not_found_findings": [],
             "error": str(exc),
         }
 
     output_text = _normalized(result.original_text)
+    source_text_normalized = _normalized(source_text)
     removed_findings: list[dict] = []
+    not_found_findings: list[dict] = []
     remaining_selected: list[dict] = []
     seen_values: set[str] = set()
     for finding in selected_findings:
@@ -152,6 +157,8 @@ def verify_redacted_file(
         summary = {"category": finding.category, "text": finding.text}
         if normalized in output_text:
             remaining_selected.append(summary)
+        elif source_text_normalized and normalized not in source_text_normalized:
+            not_found_findings.append(summary)
         else:
             removed_findings.append(summary)
 
@@ -169,6 +176,7 @@ def verify_redacted_file(
         "scan_status": result.scan_status,
         "finding_count": len(active),
         "removed_count": len(removed_findings),
+        "not_found_count": len(not_found_findings),
         "remaining_selected_count": len(remaining_selected),
         "remaining_findings": [
             {
@@ -181,6 +189,7 @@ def verify_redacted_file(
         ],
         "remaining_selected": remaining_selected,
         "removed_findings": removed_findings,
+        "not_found_findings": not_found_findings,
         "warning": result.warning,
         "error": result.error,
     }
@@ -200,6 +209,7 @@ def record_redaction(
         output_path,
         selected_findings,
         language=source_result.language or "auto",
+        source_text=source_result.original_text or "",
     )
     entry = {
         "id": uuid.uuid4().hex[:12],

@@ -7,6 +7,8 @@ def test_macos_build_enables_finder_open_with() -> None:
     assert "--argv-emulation" in script
     assert "--collect-data docx" in script
     assert "--collect-data pptx" in script
+    assert "--collect-all rapidocr" in script
+    assert "--collect-all onnxruntime" in script
     assert "--collect-all docling_parse" in script
     assert "CFBundleDocumentTypes" in script
     assert "Documents supported by XLENT Scanner" not in script
@@ -20,5 +22,10 @@ def test_macos_build_enables_finder_open_with() -> None:
     assert "CFBundleTypeMIMETypes" in script
     assert "CFBundleTypeExtensions" in script
     assert '"docx"' in script
+    assert '"png"' in script
+    assert '"jpg"' in script
+    assert '"tiff"' in script
+    assert '"image/png"' in script
+    assert '"public.image"' in script
     assert "codesign --force --deep --sign -" in script
     assert "codesign --verify --deep --strict" in script

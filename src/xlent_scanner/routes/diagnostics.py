@@ -38,7 +38,7 @@ def create_diagnostics_blueprint(
             webview.OPEN_DIALOG,
             allow_multiple=False,
             file_types=(
-                "Dokumenter (*.pdf;*.docx;*.pptx;*.xlsx;*.txt;*.md;*.html;*.csv;*.eml;*.rtf;*.odt)",
+                "Dokumenter og bilder (*.pdf;*.docx;*.pptx;*.xlsx;*.txt;*.md;*.html;*.csv;*.eml;*.rtf;*.odt;*.png;*.jpg;*.jpeg;*.bmp;*.tif;*.tiff;*.webp)",
                 "Alle filer (*.*)",
             ),
         )

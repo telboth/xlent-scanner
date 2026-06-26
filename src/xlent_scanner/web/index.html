@@ -486,6 +486,22 @@
     }
     .manual-redaction textarea::placeholder { color: var(--muted); }
     .manual-redaction-note { color: var(--muted); font-size: 11px; margin-top: 4px; line-height: 1.45; }
+    .manual-redaction-preview {
+      margin-top: 5px; font-size: 10.5px; line-height: 1.35; color: var(--muted);
+    }
+    .manual-redaction-preview .manual-hit { color: var(--ok); }
+    .manual-redaction-preview .manual-miss { color: var(--warn); }
+    .scan-cat-grid .manual-redaction {
+      margin: 0; padding: 7px 9px; align-self: start;
+    }
+    .scan-cat-grid .manual-redaction label {
+      font-size: 11px; margin-bottom: 4px;
+    }
+    .scan-cat-grid .manual-redaction textarea {
+      min-height: 44px; padding: 6px 8px; font-size: 11px;
+    }
+    .scan-cat-grid .manual-redaction-note,
+    .scan-cat-grid .manual-redaction-preview { font-size: 10.5px; }
     .advanced-actions {
       width: 100%; margin-top: 4px; border: 1px solid var(--border);
       border-radius: 6px; background: var(--panel2);
@@ -824,6 +840,14 @@
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="finansielt" checked> <span data-i18n="scanCatFinansielt">Finansielle nøkkeltall</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="medisinsk"> <span data-i18n="dstCatMedisinsk">Medisinsk (kun dybdeskann)</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="konfidensielt" checked> <span data-i18n="scanCatKonfidensielt">Konfidensielle ord</span></label>
+          <div class="manual-redaction">
+            <label for="manual-redaction-terms" data-i18n="manualRedactionLabel">Ord/uttrykk som også skal anonymiseres</label>
+            <textarea id="manual-redaction-terms"
+              data-i18n-placeholder="manualRedactionPlaceholder"
+              placeholder="Skriv ett ord eller uttrykk per linje, f.eks. et navn eller firmanavn som ikke ble funnet automatisk."></textarea>
+            <div class="manual-redaction-note" data-i18n="manualRedactionNote">Disse uttrykkene brukes når du lagrer eller åpner anonymisert fil.</div>
+            <div class="manual-redaction-preview" id="manual-redaction-preview"></div>
+          </div>
         </div>
 
         <!-- AI-dybdeskann toggle -->
@@ -871,7 +895,7 @@
       <!-- Fil-modus -->
       <div id="dropzone">
         <p class="big" data-i18n="dropTitle">Dra og slipp et dokument her</p>
-        <p class="muted" data-i18n="dropFormats">PDF · DOCX · PPTX · XLSX · TXT · MD · HTML</p>
+        <p class="muted" data-i18n="dropFormats">PDF · DOCX · PPTX · XLSX · TXT · MD · HTML · bilder</p>
         <button id="browse" data-i18n="dropBrowse">…eller velg fil</button>
       </div>
 
@@ -1737,7 +1761,7 @@
         tabScanner:   "🔍 Scanner",
         tabAbout:     "ℹ Om programmet",
         dropTitle:    "Dra og slipp et dokument her",
-        dropFormats:  "PDF · DOCX · PPTX · XLSX · TXT · MD · HTML · CSV · EML · RTF · ODT",
+        dropFormats:  "PDF · DOCX · PPTX · XLSX · TXT · MD · HTML · CSV · EML · RTF · ODT · PNG · JPG · TIFF",
         dropBrowse:   "…eller velg fil",
         ignoreLabel:  "Ignorer XLENT-interne (ansattes navn og @xlent.no / @xlent.se)",
         ignoreReload: "Last inn",
@@ -1774,6 +1798,8 @@
         verificationPassed:"Kontroll bestått",
         verificationReview:"Krever kontroll",
         verificationRemoved:"fjernet",
+        verificationNotFound:"ikke funnet",
+        verificationStillPresent:"fortsatt igjen",
         verificationRemaining:"gjenværende",
         genMd:        "Generer .md-fil",
         genPdf:       "Generer PDF",
@@ -1987,6 +2013,7 @@
         redactionNotSelected:"Ikke valgt",
         redactionUnsafe:    "Krever kontroll",
         redactionPreviewEmpty:"Ingen direkte erstatninger å forhåndsvise.",
+        redactionPreviewMatches:"Treff i kilde",
         pdfPatchFailed:     "PDF-anonymisering feilet. Prøv PDF-rapport eller kontakt support med loggfil.",
         pdfGenerateFailed:  "PDF-generering feilet. Se loggfil for tekniske detaljer.",
         updateCheckTop: "Se etter oppdateringer",
@@ -1996,6 +2023,10 @@
         manualRedactionLabel: "Ekstra tekst som skal anonymiseres",
         manualRedactionPlaceholder: "Skriv ett ord eller uttrykk per linje, f.eks. et navn eller firmanavn som ikke ble funnet automatisk",
         manualRedactionNote: "Disse verdiene tas med når du forhåndsviser, lagrer eller åpner anonymisert fil.",
+        manualPreviewEmpty: "Ingen ekstra uttrykk lagt inn.",
+        manualPreviewScanFirst: "Skann et dokument for å se om uttrykkene finnes.",
+        manualPreviewFound: "{n} eksakte treff",
+        manualPreviewNotFound: "ingen eksakte treff",
         sourceCodeTitle: "Kildekode",
         sourceCodeLink: "Åpne prosjektet på GitHub",
         logHint: "Se logg:",
@@ -2127,7 +2158,7 @@
         watchScanned:        "{n} filer skannet av mappevakt",
         historySourceWatch:  "mappevakt",
         ocrRescanBtn:        "Kjør OCR-skann",
-        ocrRescanTooltip:    "Kjører OCR for å hente tekst fra bildebaserte PDF-er. Dette kan ta tid og bør brukes når vanlig tekstuttrekk finner lite eller ingen tekst.",
+        ocrRescanTooltip:    "Kjører OCR for å hente tekst fra bildebaserte PDF-er og bildefiler. Dette kan ta tid og bør brukes når vanlig tekstuttrekk finner lite eller ingen tekst.",
         ocrRunning:          "Kjører OCR-skann…",
       },
       sv: {
@@ -2135,7 +2166,7 @@
         tabScanner:   "🔍 Scanner",
         tabAbout:     "ℹ Om programmet",
         dropTitle:    "Dra och släpp ett dokument här",
-        dropFormats:  "PDF · DOCX · PPTX · XLSX · TXT · MD · HTML · CSV · EML · RTF · ODT",
+        dropFormats:  "PDF · DOCX · PPTX · XLSX · TXT · MD · HTML · CSV · EML · RTF · ODT · PNG · JPG · TIFF",
         dropBrowse:   "…eller välj fil",
         ignoreLabel:  "Ignorera XLENT-interna (anställdas namn och @xlent.no / @xlent.se)",
         ignoreReload: "Ladda in",
@@ -2172,6 +2203,8 @@
         verificationPassed:"Kontroll godkänd",
         verificationReview:"Kräver kontroll",
         verificationRemoved:"borttagna",
+        verificationNotFound:"hittades inte",
+        verificationStillPresent:"finns kvar",
         verificationRemaining:"återstående",
         genMd:        "Generera .md-fil",
         genPdf:       "Generera PDF",
@@ -2375,6 +2408,7 @@
         redactionNotSelected:"Ej valda",
         redactionUnsafe:    "Kräver kontroll",
         redactionPreviewEmpty:"Inga direkta ersättningar att förhandsvisa.",
+        redactionPreviewMatches:"Träffar i källan",
         pdfPatchFailed:     "PDF-anonymisering misslyckades. Prova PDF-rapport eller kontakta support med loggfilen.",
         pdfGenerateFailed:  "PDF-generering misslyckades. Se loggfilen för tekniska detaljer.",
         updateCheckTop: "Sök efter uppdateringar",
@@ -2384,6 +2418,10 @@
         manualRedactionLabel: "Extra text som ska anonymiseras",
         manualRedactionPlaceholder: "Skriv ett ord eller uttryck per rad, t.ex. ett namn eller företagsnamn som inte hittades automatiskt",
         manualRedactionNote: "Dessa värden tas med när du förhandsvisar, sparar eller öppnar anonymiserad fil.",
+        manualPreviewEmpty: "Inga extra uttryck angivna.",
+        manualPreviewScanFirst: "Skanna ett dokument för att se om uttrycken finns.",
+        manualPreviewFound: "{n} exakta träffar",
+        manualPreviewNotFound: "inga exakta träffar",
         sourceCodeTitle: "Källkod",
         sourceCodeLink: "Öppna projektet på GitHub",
         logHint: "Se logg:",
@@ -2515,7 +2553,7 @@
         watchScanned:        "{n} filer skannade av mappvakt",
         historySourceWatch:  "mappvakt",
         ocrRescanBtn:        "Kör OCR-skanning",
-        ocrRescanTooltip:    "Kör OCR för att hämta text från bildbaserade PDF:er. Detta kan ta tid och bör användas när vanlig textextraktion hittar lite eller ingen text.",
+        ocrRescanTooltip:    "Kör OCR för att hämta text från bildbaserade PDF:er och bildfiler. Detta kan ta tid och bör användas när vanlig textextraktion hittar lite eller ingen text.",
         ocrRunning:          "Kör OCR-skanning…",
       },
       en: {
@@ -2523,7 +2561,7 @@
         tabScanner:   "🔍 Scanner",
         tabAbout:     "ℹ About",
         dropTitle:    "Drag and drop a document here",
-        dropFormats:  "PDF · DOCX · PPTX · XLSX · TXT · MD · HTML · CSV · EML · RTF · ODT",
+        dropFormats:  "PDF · DOCX · PPTX · XLSX · TXT · MD · HTML · CSV · EML · RTF · ODT · PNG · JPG · TIFF",
         dropBrowse:   "…or browse for file",
         ignoreLabel:  "Ignore XLENT-internal (employee names and @xlent.no / @xlent.se)",
         ignoreReload: "Reload",
@@ -2560,6 +2598,8 @@
         verificationPassed:"Check passed",
         verificationReview:"Needs review",
         verificationRemoved:"removed",
+        verificationNotFound:"not found",
+        verificationStillPresent:"still present",
         verificationRemaining:"remaining",
         genMd:        "Generate .md file",
         genPdf:       "Generate PDF",
@@ -2768,6 +2808,7 @@
         redactionNotSelected:"Not selected",
         redactionUnsafe:    "Needs review",
         redactionPreviewEmpty:"No direct replacements to preview.",
+        redactionPreviewMatches:"Source matches",
         pdfPatchFailed:     "PDF redaction failed. Try the PDF report or contact support with the log file.",
         pdfGenerateFailed:  "PDF generation failed. See the log file for technical details.",
         updateCheckTop: "Check for updates",
@@ -2777,6 +2818,10 @@
         manualRedactionLabel: "Extra text to anonymize",
         manualRedactionPlaceholder: "Enter one word or phrase per line, for example a name or company name that was not found automatically",
         manualRedactionNote: "These values are included when you preview, save, or open the anonymized file.",
+        manualPreviewEmpty: "No extra phrases entered.",
+        manualPreviewScanFirst: "Scan a document to see whether the phrases exist.",
+        manualPreviewFound: "{n} exact matches",
+        manualPreviewNotFound: "no exact matches",
         sourceCodeTitle: "Source code",
         sourceCodeLink: "Open the project on GitHub",
         logHint: "See log:",
@@ -2908,7 +2953,7 @@
         watchScanned:        "{n} files scanned by folder watch",
         historySourceWatch:  "watch",
         ocrRescanBtn:        "Run OCR scan",
-        ocrRescanTooltip:    "Runs OCR to extract text from image-based PDFs. This can take time and should be used when normal text extraction finds little or no text.",
+        ocrRescanTooltip:    "Runs OCR to extract text from image-based PDFs and image files. This can take time and should be used when normal text extraction finds little or no text.",
         ocrRunning:          "Running OCR scan…",
       },
 
@@ -2927,7 +2972,7 @@
         statusScan:          "Wird gescannt…",
         statusUp:            "Datei wird hochgeladen…",
         dropTitle:           "Datei hier ablegen",
-        dropFormats:         "PDF · DOCX · PPTX · XLSX · TXT · MD · HTML · CSV · EML · RTF · ODT",
+        dropFormats:         "PDF · DOCX · PPTX · XLSX · TXT · MD · HTML · CSV · EML · RTF · ODT · PNG · JPG · TIFF",
         dropBrowse:          "…oder Datei auswählen",
         dlgErr:              "Dialogfehler:",
         dragErr:             "Upload-Fehler:",
@@ -2960,6 +3005,8 @@
         verificationPassed:    "Kontrolle bestanden",
         verificationReview:    "Prüfung erforderlich",
         verificationRemoved:   "entfernt",
+        verificationNotFound:  "nicht gefunden",
+        verificationStillPresent:"noch vorhanden",
         verificationRemaining: "verbleibend",
         selAll:              "Alle auswählen",
         selNone:             "Alle abwählen",
@@ -3059,6 +3106,7 @@
         redactionNotSelected:"Nicht ausgewählt",
         redactionUnsafe:     "Prüfung erforderlich",
         redactionPreviewEmpty:"Keine direkten Ersetzungen für die Vorschau.",
+        redactionPreviewMatches:"Treffer in Quelle",
         pdfPatchFailed:      "PDF-Anonymisierung fehlgeschlagen. Versuchen Sie den PDF-Bericht oder kontaktieren Sie den Support mit der Logdatei.",
         pdfGenerateFailed:   "PDF-Erstellung fehlgeschlagen. Technische Details stehen in der Logdatei.",
         updateNoUpdate:      "Sie haben die neueste Version.",
@@ -3070,6 +3118,10 @@
         manualRedactionLabel:"Zusätzlicher Text zur Anonymisierung",
         manualRedactionPlaceholder:"Ein Wort oder einen Ausdruck pro Zeile eingeben, z. B. einen Namen oder Firmennamen, der nicht automatisch gefunden wurde",
         manualRedactionNote: "Diese Werte werden beim Vorschau, Speichern oder Öffnen der anonymisierten Datei einbezogen.",
+        manualPreviewEmpty:  "Keine zusätzlichen Ausdrücke eingegeben.",
+        manualPreviewScanFirst:"Scannen Sie ein Dokument, um Treffer zu sehen.",
+        manualPreviewFound:  "{n} exakte Treffer",
+        manualPreviewNotFound:"keine exakten Treffer",
         sourceCodeTitle:     "Quellcode",
         sourceCodeLink:      "Projekt auf GitHub öffnen",
         settingsUpdateTitle: "Updates",
@@ -3219,7 +3271,7 @@
         watchScanned:        "{n} Dateien durch Ordnerwächter gescannt",
         historySourceWatch:  "Ordnerwächter",
         ocrRescanBtn:        "OCR-Scan starten",
-        ocrRescanTooltip:    "Führt OCR aus, um Text aus bildbasierten PDFs zu extrahieren. Dies kann Zeit benötigen und sollte genutzt werden, wenn die normale Textextraktion wenig oder keinen Text findet.",
+        ocrRescanTooltip:    "Führt OCR aus, um Text aus bildbasierten PDFs und Bilddateien zu extrahieren. Dies kann Zeit benötigen und sollte genutzt werden, wenn die normale Textextraktion wenig oder keinen Text findet.",
         ocrRunning:          "OCR-Scan läuft…",
         dstCatEpost:         "E-Mail",
         dstCatTelefon:       "Telefon",
@@ -3323,7 +3375,7 @@
         statusScan:          "Analyse en cours…",
         statusUp:            "Téléversement en cours…",
         dropTitle:           "Déposez un fichier ici",
-        dropFormats:         "PDF · DOCX · PPTX · XLSX · TXT · MD · HTML · CSV · EML · RTF · ODT",
+        dropFormats:         "PDF · DOCX · PPTX · XLSX · TXT · MD · HTML · CSV · EML · RTF · ODT · PNG · JPG · TIFF",
         dropBrowse:          "…ou choisir un fichier",
         dlgErr:              "Erreur de dialogue :",
         dragErr:             "Erreur de téléversement :",
@@ -3356,6 +3408,8 @@
         verificationPassed:    "Contrôle réussi",
         verificationReview:    "À vérifier",
         verificationRemoved:   "supprimés",
+        verificationNotFound:  "introuvables",
+        verificationStillPresent:"encore présents",
         verificationRemaining: "restants",
         selAll:              "Tout sélectionner",
         selNone:             "Tout désélectionner",
@@ -3455,6 +3509,7 @@
         redactionNotSelected:"Non sélectionné",
         redactionUnsafe:     "À vérifier",
         redactionPreviewEmpty:"Aucun remplacement direct à prévisualiser.",
+        redactionPreviewMatches:"Occurrences source",
         pdfPatchFailed:      "L’anonymisation PDF a échoué. Essayez le rapport PDF ou contactez le support avec le fichier journal.",
         pdfGenerateFailed:   "La génération PDF a échoué. Consultez le fichier journal pour les détails techniques.",
         updateNoUpdate:      "Vous avez la dernière version.",
@@ -3466,6 +3521,10 @@
         manualRedactionLabel:"Texte supplémentaire à anonymiser",
         manualRedactionPlaceholder:"Saisissez un mot ou une expression par ligne, par exemple un nom ou une société non détecté automatiquement",
         manualRedactionNote: "Ces valeurs sont incluses lors de l’aperçu, de l’enregistrement ou de l’ouverture du fichier anonymisé.",
+        manualPreviewEmpty:  "Aucune expression supplémentaire saisie.",
+        manualPreviewScanFirst:"Scannez un document pour voir si les expressions existent.",
+        manualPreviewFound:  "{n} occurrences exactes",
+        manualPreviewNotFound:"aucune occurrence exacte",
         sourceCodeTitle:     "Code source",
         sourceCodeLink:      "Ouvrir le projet sur GitHub",
         settingsUpdateTitle: "Mises à jour",
@@ -3615,7 +3674,7 @@
         watchScanned:        "{n} fichiers analysés par la surveillance",
         historySourceWatch:  "surveillance",
         ocrRescanBtn:        "Lancer l’OCR",
-        ocrRescanTooltip:    "Lance l’OCR pour extraire le texte des PDF basés sur des images. Cela peut prendre du temps et doit être utilisé lorsque l’extraction normale trouve peu ou pas de texte.",
+        ocrRescanTooltip:    "Lance l’OCR pour extraire le texte des PDF basés sur des images et des fichiers image. Cela peut prendre du temps et doit être utilisé lorsque l’extraction normale trouve peu ou pas de texte.",
         ocrRunning:          "OCR en cours…",
         dstCatEpost:         "E-mail",
         dstCatTelefon:       "Téléphone",
@@ -3719,7 +3778,7 @@
         statusScan:          "Escaneando…",
         statusUp:            "Subiendo archivo…",
         dropTitle:           "Suelte un archivo aquí",
-        dropFormats:         "PDF · DOCX · PPTX · XLSX · TXT · MD · HTML · CSV · EML · RTF · ODT",
+        dropFormats:         "PDF · DOCX · PPTX · XLSX · TXT · MD · HTML · CSV · EML · RTF · ODT · PNG · JPG · TIFF",
         dropBrowse:          "…o seleccionar archivo",
         dlgErr:              "Error de diálogo:",
         dragErr:             "Error al subir:",
@@ -3752,6 +3811,8 @@
         verificationPassed:    "Control superado",
         verificationReview:    "Requiere revisión",
         verificationRemoved:   "eliminados",
+        verificationNotFound:  "no encontrados",
+        verificationStillPresent:"aún presentes",
         verificationRemaining: "restantes",
         selAll:              "Seleccionar todo",
         selNone:             "Deseleccionar todo",
@@ -3851,6 +3912,7 @@
         redactionNotSelected:"No seleccionado",
         redactionUnsafe:     "Requiere revisión",
         redactionPreviewEmpty:"No hay reemplazos directos para previsualizar.",
+        redactionPreviewMatches:"Coincidencias fuente",
         pdfPatchFailed:      "La anonimización de PDF falló. Pruebe el informe PDF o contacte con soporte con el archivo de registro.",
         pdfGenerateFailed:   "La generación de PDF falló. Consulte el archivo de registro para detalles técnicos.",
         updateNoUpdate:      "Tiene la versión más reciente.",
@@ -3862,6 +3924,10 @@
         manualRedactionLabel:"Texto adicional para anonimizar",
         manualRedactionPlaceholder:"Escriba una palabra o expresión por línea, por ejemplo un nombre o empresa que no se detectó automáticamente",
         manualRedactionNote: "Estos valores se incluyen al previsualizar, guardar o abrir el archivo anonimizado.",
+        manualPreviewEmpty:  "No se han introducido expresiones adicionales.",
+        manualPreviewScanFirst:"Escanee un documento para ver si existen las expresiones.",
+        manualPreviewFound:  "{n} coincidencias exactas",
+        manualPreviewNotFound:"sin coincidencias exactas",
         sourceCodeTitle:     "Código fuente",
         sourceCodeLink:      "Abrir el proyecto en GitHub",
         settingsUpdateTitle: "Actualizaciones",
@@ -4011,7 +4077,7 @@
         watchScanned:        "{n} archivos escaneados por vigilancia",
         historySourceWatch:  "vigilancia",
         ocrRescanBtn:        "Ejecutar OCR",
-        ocrRescanTooltip:    "Ejecuta OCR para extraer texto de PDF basados en imágenes. Puede tardar y debe usarse cuando la extracción normal encuentra poco o ningún texto.",
+        ocrRescanTooltip:    "Ejecuta OCR para extraer texto de PDF basados en imágenes y archivos de imagen. Puede tardar y debe usarse cuando la extracción normal encuentra poco o ningún texto.",
         ocrRunning:          "Ejecutando OCR…",
         dstCatEpost:         "Correo electrónico",
         dstCatTelefon:       "Teléfono",
@@ -4147,6 +4213,7 @@
     const SEV_COLOR   = { svart:"#9c27b0", rød:"#f44336", gul:"#ffb84d", grønn:"#4caf50" };
     const SEV_ORDER   = { svart:3, rød:2, gul:1, grønn:0 };
     const PATCH_EXT   = new Set(["docx","pptx","xlsx","pdf"]);
+    const IMAGE_EXT   = new Set(["png","jpg","jpeg","bmp","tif","tiff","webp"]);
     const LANG_LABEL  = { nb:"🇳🇴 Norsk", sv:"🇸🇪 Svenska", en:"🇬🇧 English" };
 
     function escapeHtml(s) {
@@ -5228,8 +5295,8 @@
         .sort((a, b) => (SEV_ORDER[b.f.severity]||0) - (SEV_ORDER[a.f.severity]||0));
 
       const warning = warningText(r);
-      // OCR-tilbud: bilde-PDF uten tekst kan re-skannes med OCR
-      const canOcr = ext === "pdf" && lastScan
+      // OCR-tilbud: bilde-PDF/bildefil uten tekst kan re-skannes med OCR
+      const canOcr = (ext === "pdf" || IMAGE_EXT.has(ext)) && lastScan
         && (r.warning_code === "no_text_extracted" || r.warning_code === "little_text_extracted");
       const ocrBtnHtml = canOcr
         ? ` <button id="btn-ocr-rescan" class="ctrl-btn ctrl-btn-primary"
@@ -5289,6 +5356,7 @@
       `;
 
       wireEvents(sorted, canPatch, ext);
+      updateManualRedactionPreview();
 
       // OCR re-skann av bilde-PDF (knappen finnes kun når canOcr var sann)
       document.getElementById("btn-ocr-rescan")?.addEventListener("click", () => {
@@ -5352,14 +5420,7 @@
           <button class="ctrl-btn open-anonymized-btn" id="g-open-anonymized">${t("openAnonymizedFile")}</button>
           <span class="anon-msg" id="g-anon-msg"></span>
         </div>`;
-      const manualRedaction = `
-        <div class="manual-redaction">
-          <label for="manual-redaction-terms">${escapeHtml(t("manualRedactionLabel"))}</label>
-          <textarea id="manual-redaction-terms"
-            data-i18n-placeholder="manualRedactionPlaceholder"
-            placeholder="${escapeHtml(t("manualRedactionPlaceholder"))}"></textarea>
-          <div class="manual-redaction-note">${escapeHtml(t("manualRedactionNote"))}</div>
-        </div>
+      const redactionStatus = `
         <div class="redaction-report" id="redaction-report"></div>
         <div class="redaction-preview" id="redaction-preview"></div>`;
 
@@ -5402,13 +5463,13 @@
           : `${t("noFindings")} (${sorted.length - filtered.length} skjult av filter)`;
         return `
           ${anonBar}
-          ${manualRedaction}
+          ${redactionStatus}
           <p class="no-findings-message" style="color:var(--ok);margin-top:6px;">${escapeHtml(message)}</p>`;
       }
       return `
         <h3 class="section-heading">${t("sectionFind")} (${sorted_use.length})${hiddenNote}</h3>
         ${anonBar}
-        ${manualRedaction}
+        ${redactionStatus}
         <ul class="findings-list">${rows}</ul>`;
     }
 
@@ -5417,6 +5478,45 @@
       return [...new Set(raw.split(/\r?\n/)
         .map(v => v.trim())
         .filter(v => v.length > 0))];
+    }
+
+    function _countLiteralOccurrences(source, needle) {
+      source = String(source || "");
+      needle = String(needle || "");
+      if (!source || !needle) return 0;
+      let count = 0;
+      let pos = 0;
+      while (true) {
+        const idx = source.indexOf(needle, pos);
+        if (idx === -1) break;
+        count += 1;
+        pos = idx + Math.max(needle.length, 1);
+      }
+      return count;
+    }
+
+    function updateManualRedactionPreview() {
+      const el = document.getElementById("manual-redaction-preview");
+      if (!el) return;
+      const terms = _manualRedactionTerms();
+      if (!terms.length) {
+        el.textContent = t("manualPreviewEmpty");
+        return;
+      }
+      const source = lastResult?.original_text || "";
+      if (!source) {
+        el.textContent = t("manualPreviewScanFirst");
+        return;
+      }
+      const rows = terms.map(term => {
+        const count = _countLiteralOccurrences(source, term);
+        const cls = count > 0 ? "manual-hit" : "manual-miss";
+        const label = count > 0
+          ? t("manualPreviewFound").replace("{n}", count)
+          : t("manualPreviewNotFound");
+        return `<div class="${cls}">${escapeHtml(term)}: ${escapeHtml(label)}</div>`;
+      }).join("");
+      el.innerHTML = rows;
     }
 
     function _redactionPayload(format) {
@@ -5501,7 +5601,6 @@
       document.getElementById("g-sel-none")?.addEventListener("click", () =>
         { document.querySelectorAll(".g-cb, .g-ai-cb").forEach(cb => cb.checked = false); updateRedactionReport(ext); });
       document.querySelectorAll(".g-cb, .g-ai-cb").forEach(cb => cb.addEventListener("change", () => updateRedactionReport(ext)));
-      document.getElementById("manual-redaction-terms")?.addEventListener("input", () => updateRedactionReport(ext));
       if (canPatch) document.getElementById("g-patch")?.addEventListener("click", () => postAnon("patch"));
       document.getElementById("g-preview")?.addEventListener("click", previewRedaction);
       document.getElementById("g-anon")?.addEventListener("click", () => postAnon("anonymize", "md"));
@@ -5530,13 +5629,6 @@
             : ""}
           <button class="ctrl-btn open-anonymized-btn" id="g-open-anonymized">${t("openAnonymizedFile")}</button>
           <span class="anon-msg" id="g-anon-msg"></span>
-        </div>
-        <div class="manual-redaction">
-          <label for="manual-redaction-terms">${escapeHtml(t("manualRedactionLabel"))}</label>
-          <textarea id="manual-redaction-terms"
-            data-i18n-placeholder="manualRedactionPlaceholder"
-            placeholder="${escapeHtml(t("manualRedactionPlaceholder"))}"></textarea>
-          <div class="manual-redaction-note">${escapeHtml(t("manualRedactionNote"))}</div>
         </div>
         <div class="redaction-report" id="redaction-report"></div>
         <div class="redaction-preview" id="redaction-preview"></div>`;
@@ -5612,14 +5704,14 @@
           return;
         }
         const rows = (d.preview || []).map(r =>
-          `<tr><td><code>${escapeHtml(r.original)}</code></td><td><code>${escapeHtml(r.replacement)}</code></td></tr>`
+          `<tr><td><code>${escapeHtml(r.original)}</code></td><td><code>${escapeHtml(r.replacement)}</code></td><td>${Number(r.found_count || 0)}</td></tr>`
         ).join("");
         const skipped = (d.skipped || []).map(r =>
-          `<tr><td><code>${escapeHtml(r.text || "")}</code></td><td>${escapeHtml(r.reason || "")}</td></tr>`
+          `<tr><td><code>${escapeHtml(r.text || "")}</code></td><td>${escapeHtml(r.reason || "")}</td><td>0</td></tr>`
         ).join("");
         box.style.display = "block";
         box.innerHTML = rows || skipped
-          ? `<table><thead><tr><th>Original</th><th>Redaction</th></tr></thead><tbody>${rows}${skipped}</tbody></table>`
+          ? `<table><thead><tr><th>Original</th><th>Redaction</th><th>${escapeHtml(t("redactionPreviewMatches"))}</th></tr></thead><tbody>${rows}${skipped}</tbody></table>`
           : t("redactionPreviewEmpty");
         if (msg) msg.textContent = "";
       } catch (e) {
@@ -5716,8 +5808,13 @@
       if (!verification) return "";
       const label = verification.passed ? t("verificationPassed") : t("verificationReview");
       const removed = Number(verification.removed_count || 0);
-      const remaining = Number(verification.finding_count || 0);
-      return `${label}: ${removed} ${t("verificationRemoved")}, ${remaining} ${t("verificationRemaining")}`;
+      const notFound = Number(verification.not_found_count || 0);
+      const stillPresent = Number(verification.remaining_selected_count || 0);
+      const activeRemaining = Number(verification.finding_count || 0);
+      return `${label}: ${removed} ${t("verificationRemoved")}, ` +
+        `${notFound} ${t("verificationNotFound")}, ` +
+        `${stillPresent} ${t("verificationStillPresent")}, ` +
+        `${activeRemaining} ${t("verificationRemaining")}`;
     }
 
     async function _openAnonymizedFile(msgId = "g-anon-msg") {
@@ -6019,7 +6116,7 @@
       const openBrowserFilePicker = () => {
         const input = document.createElement("input");
         input.type = "file";
-        input.accept = ".pdf,.docx,.pptx,.xlsx,.txt,.md,.html,.csv,.eml,.rtf,.odt";
+        input.accept = ".pdf,.docx,.pptx,.xlsx,.txt,.md,.html,.csv,.eml,.rtf,.odt,.png,.jpg,.jpeg,.bmp,.tif,.tiff,.webp";
         input.onchange = () => {
           const file = input.files && input.files[0];
           if (file) scanUpload(file, file.name);
@@ -6123,6 +6220,10 @@
     document.getElementById("langSelect").addEventListener("change", saveSettings);
     document.getElementById("redaction-profile").addEventListener("change", e => applyRedactionProfile(e.target.value));
     document.getElementById("stripAnnotations").addEventListener("change", saveSettings);
+    document.getElementById("manual-redaction-terms")?.addEventListener("input", () => {
+      updateManualRedactionPreview();
+      updateRedactionReport(_currentResultExt());
+    });
     ["m365-drive-id", "m365-item-id", "m365-sync-root", "m365-sensitivity-label-id", "m365-retention-label-name", "m365-map-gronn", "m365-map-gul", "m365-map-rod", "m365-map-svart"].forEach(id => {
       document.getElementById(id)?.addEventListener("input", saveSettings);
     });
@@ -7915,6 +8016,7 @@
     document.querySelectorAll("[data-i18n-title]").forEach(el => {
       el.title = t(el.dataset.i18nTitle);
     });
+    updateManualRedactionPreview();
     initSettingsExpanders();
     setIgnoreMessage(t("ignoreHint"), "var(--muted)", "hint");
     renderIgnorePath();
