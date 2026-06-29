@@ -10,6 +10,8 @@ def test_macos_build_enables_finder_open_with() -> None:
     assert "--collect-all rapidocr" in script
     assert "--collect-all onnxruntime" in script
     assert "--collect-all docling_parse" in script
+    assert "--collect-all torchvision" in script
+    assert '--exclude-module "torchvision"' not in script
     assert "CFBundleDocumentTypes" in script
     assert "Documents supported by XLENT Scanner" not in script
     assert "XLENT Scanner supported documents" in script

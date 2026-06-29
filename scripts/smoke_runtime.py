@@ -6,6 +6,7 @@ from pathlib import Path
 def main() -> None:
     import docx
     import fitz
+    from transformers import AutoProcessor
 
     import xlent_scanner
     from xlent_scanner import app as app_module
@@ -39,6 +40,8 @@ def main() -> None:
         raise RuntimeError("scanner.scan_text is not callable")
     if not callable(app_module.flask_app.test_client):
         raise RuntimeError("Flask app is not initialized")
+    if AutoProcessor is None:
+        raise RuntimeError("transformers.AutoProcessor is not available")
 
     print("runtime smoke test ok")
 

@@ -141,9 +141,7 @@ if ($BuildFlavor -eq "full") {
         "--collect-all", "docling_core",
         "--collect-all", "docling_parse",
         "--collect-data", "docling_ibm_models",
-
-        # Docling kan trekke inn torchvision via modellpakker, men appen bruker det ikke direkte.
-        "--exclude-module", "torchvision"
+        "--collect-all", "torchvision"
     )
 } else {
     $pyiArgs += @(

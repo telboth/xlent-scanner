@@ -89,6 +89,7 @@ uv pip install --python "$PYTHON_EXE" "pyinstaller>=6.0.0" "pyinstaller-hooks-co
   --collect-all docling_core \
   --collect-all docling_parse \
   --collect-data docling_ibm_models \
+  --collect-all torchvision \
   \
   --hidden-import "webview.platforms.cocoa" \
   \
@@ -126,8 +127,6 @@ uv pip install --python "$PYTHON_EXE" "pyinstaller>=6.0.0" "pyinstaller-hooks-co
   --hidden-import "spacy.lang.fr" \
   --hidden-import "spacy.lang.es" \
   --hidden-import "spacy.lang.da" \
-  \
-  --exclude-module "torchvision" \
   \
   --distpath "$DIST_DIR" \
   --workpath "$BUILD_DIR" \

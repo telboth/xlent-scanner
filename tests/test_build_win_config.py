@@ -13,9 +13,11 @@ def test_windows_build_supports_slim_and_full_flavors() -> None:
     assert '"--collect-all", "docling_core"' in script
     assert '"--collect-all", "rapidocr"' in script
     assert '"--collect-all", "onnxruntime"' in script
+    assert '"--collect-all", "torchvision"' in script
 
     assert '"--exclude-module", "docling"' in script
     assert '"--exclude-module", "torch"' in script
+    assert script.count('"--exclude-module", "torchvision"') == 1
 
 
 def test_windows_release_workflow_uses_full_build() -> None:
