@@ -647,8 +647,12 @@ def test_guard_watch_custom_patterns_and_ocr_ui_are_wired():
         "ocrRunning",
         "ocrResultNotice",
         "saveOcrPdf",
+        "saveImagePdf",
         "pdfImageCaveat",
         "pdfImagePatchUnsafe",
+        "imagePdfRedactionFailed",
+        "imagePdfMasks",
+        "imagePdfUnmatched",
         "aiToggleTooltip",
         "folderRecursiveTooltip",
         "folderRedactSelectedTooltip",
@@ -689,16 +693,18 @@ def test_ocr_rescan_shows_progress_indicator():
     assert "setOcrProgress(false);" in html[html.index("function clearResult()"):html.index("function renderSeveritySummary()")]
 
 
-def test_ocr_pdf_redaction_uses_generated_pdf_instead_of_direct_patch():
+def test_ocr_pdf_redaction_uses_image_pdf_redaction_instead_of_direct_patch():
     html = HTML.read_text(encoding="utf-8")
 
     assert "function _isOcrOrImagePdfResult" in html
     assert "const isOcrPdf = _isOcrOrImagePdfResult(ext);" in html
     assert "const canPatch = PATCH_EXT.has(ext) && !isOcrPdf;" in html
-    assert 'id="g-ocr-pdf"' in html
-    assert 'postAnon("anonymize", "pdf")' in html
-    assert 'canPatch ? undefined : (imagePdf ? "pdf" : "md")' in html
-    assert 'if (_isOcrOrImagePdfResult(ext)) await postAnon("anonymize", "pdf", "ai-anon-msg");' in html
+    assert 'id="g-image-pdf"' in html
+    assert 'postAnon("patch-image-pdf")' in html
+    assert 'const endpoint = imagePdf ? "patch-image-pdf" : (canPatch ? "patch" : "anonymize");' in html
+    assert 'if (_isOcrOrImagePdfResult(ext)) await postAnon("patch-image-pdf", undefined, "ai-anon-msg");' in html
+    assert "function _imagePdfRedactionSummary(stats)" in html
+    assert "d.image_pdf_redaction" in html
     assert 't("pdfImageCaveat")' in html
     assert 't("ocrResultNotice")' in html
 

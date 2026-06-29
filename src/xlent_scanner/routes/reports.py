@@ -19,6 +19,7 @@ from xlent_scanner.ai_findings import (
 )
 from xlent_scanner.anonymize import anonymize_text, build_replacements
 from xlent_scanner.app_state import app_state
+from xlent_scanner.image_pdf_redaction import redact_image_pdf
 from xlent_scanner.patch import SUPPORTED_PATCH_SUFFIXES, patch_file
 from xlent_scanner.redaction_audit import (
     clear_redaction_history,
@@ -493,6 +494,55 @@ def patch():
         "path": str(output),
         "verification": audit["verification"],
         "history_entry": audit,
+    })
+
+
+@reports_bp.post("/patch-image-pdf")
+def patch_image_pdf():
+    if app_state.last_result is None or app_state.last_path is None:
+        return jsonify({"error": "Ingen skannet fil tilgjengelig."})
+    if app_state.last_path.suffix.lower() != ".pdf":
+        return jsonify({"error": "Rasterbasert bilde-PDF-redaction støtter bare PDF."})
+
+    data = request.get_json(force=True)
+    selected, replacements = _replacement_map(data)
+    ai_findings = findings_from_payload(data)
+    strip_annotations = bool(data.get("strip_annotations", False))
+    if not replacements and not strip_annotations:
+        return jsonify({"error": "Ingen av de valgte funnene kan anonymiseres direkte."})
+
+    output = _unique_output(f"{app_state.last_path.stem}-anonymisert-bilde", ".pdf")
+    try:
+        stats = redact_image_pdf(
+            app_state.last_path,
+            replacements,
+            output,
+            strip_annotations=strip_annotations,
+        )
+    except Exception:
+        LOGGER.error("patch-image-pdf failed: %s", traceback.format_exc())
+        return jsonify({
+            "error": "Bilde-PDF-anonymisering feilet. Se loggfil for tekniske detaljer.",
+            "error_code": "imagePdfRedactionFailed",
+        })
+
+    audit = _record_output(
+        output,
+        selected,
+        ai_findings,
+        method="patch_image_pdf",
+    )
+    return jsonify({
+        "ok": True,
+        "path": str(output),
+        "verification": audit["verification"],
+        "history_entry": audit,
+        "image_pdf_redaction": {
+            "pages": stats.pages,
+            "redaction_count": stats.redaction_count,
+            "matched_values": stats.matched_values,
+            "unmatched_values": stats.unmatched_values,
+        },
     })
 
 

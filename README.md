@@ -1,6 +1,6 @@
 # XLENT Compliance-scanner
 
-> **v1.5.8** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
+> **v1.6.10** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
 
 Alt kjøres 100 % lokalt — ingen dokumenter, tekst eller funn sendes over internett.
 
@@ -38,6 +38,7 @@ Alt kjøres 100 % lokalt — ingen dokumenter, tekst eller funn sendes over inte
 - Anonymisering med konsistente etiketter: `<Person A>`, `<Konto 1>`, `[ANONYMISERT]`
 - Eksporter funn som **JSON** eller **CSV**
 - Generer anonymisert fil som **`.md`** eller **PDF**, eller in-place i `.docx` / `.pptx` / `.xlsx` / `.pdf`
+- For innskannede bilde-/OCR-PDF-er kan appen lage **anonymisert bilde-PDF** ved å maskere OCR-treff direkte på sidebildene
 - **HTML-rapport** og **PDF-rapport** — begge inkluderer både regelbaserte funn **og** AI-dybdeskann-funn
 - **Persistent historikk** mellom øktene
 - Valgt **språk og AI-modell huskes** mellom øktene (localStorage)
@@ -76,6 +77,18 @@ Alt kjøres 100 % lokalt — ingen dokumenter, tekst eller funn sendes over inte
 ## Filformater
 
 `.pdf` · `.docx` · `.pptx` · `.xlsx` · `.md` · `.txt` · `.html` · `.csv` · `.eml` · `.rtf` · `.odt`
+
+### Bilde-/OCR-PDF-er
+
+Vanlig PDF-anonymisering fungerer på PDF-ens tekstlag. Innskannede PDF-er har ofte ingen tekstlag; teksten ligger bare som piksler i sidebildet. For slike filer tilbyr appen en egen **Lagre anonymisert bilde-PDF**-flyt:
+
+1. PDF-siden rendres til bilde.
+2. OCR kjøres på sidebildet med koordinater.
+3. Valgte funn matches mot OCR-ord/-linjer.
+4. Treff maskeres direkte på sidebildet.
+5. En ny bildebasert PDF skrives til disk.
+
+Dette bevarer den skannede layouten langt bedre enn en OCR-tekst-PDF, men resultatet er rasterisert og normalt ikke søkbart. OCR kan også bomme på tekst eller koordinater, så den anonymiserte bilde-PDF-en må alltid kontrolleres før deling.
 
 ---
 
@@ -416,12 +429,19 @@ src/xlent_scanner/
 - GUI: [PyWebView](https://pywebview.flowrl.com/) med innebygd Flask-server
 - AI-dybdeskann: [Ollama](https://ollama.ai) REST API (`/api/generate`)
 - PDF-anonymisering og -rapport: [PyMuPDF](https://pymupdf.readthedocs.io/) (fitz)
+- Bilde-PDF-redaction: PyMuPDF-rendering + RapidOCR-koordinater + Pillow-maskering
 - Risikomotor: fire nivåer — grønn / gul / rød / svart
 - Mappeskann: `scan_folder()` bruker en delt planlegger for preview og scanning, med rekursiv modus, maksgrenser og ekskluderte mapper
 
 ---
 
 ## Endringslogg
+
+### v1.6.10
+- La til rasterbasert **anonymisert bilde-PDF** for innskannede/OCR-baserte PDF-er.
+- Maskerer valgte OCR-treff direkte på rendret sidebilde og bygger ny PDF av de maskerte sidene.
+- Endrer bilde-/OCR-PDF-flyten i GUI-et slik at «Åpne anonymisert fil» og AI-redaction bruker bilde-PDF-maskering i stedet for OCR-tekst-PDF.
+- Deklarerer Pillow som direkte avhengighet fordi bilde-PDF-redaction bruker PIL-maskering.
 
 ### v1.5.8
 - Gjør «Åpne anonymisert fil» tilgjengelig direkte etter skann og lar knappen lagre, kontrollskanne og åpne filen i én handling.

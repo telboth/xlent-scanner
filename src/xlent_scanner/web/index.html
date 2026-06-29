@@ -2057,8 +2057,11 @@
         redactionPreviewEmpty:"Ingen direkte erstatninger å forhåndsvise.",
         redactionPreviewMatches:"Treff i kilde",
         pdfPatchFailed:     "PDF-anonymisering feilet. Prøv PDF-rapport eller kontakt support med loggfil.",
-        pdfImagePatchUnsafe:"Direkte PDF-anonymisering er deaktivert for bilde-/OCR-PDF. Generer en ny anonymisert PDF fra OCR-teksten i stedet.",
+        pdfImagePatchUnsafe:"Direkte PDF-anonymisering er deaktivert for bilde-/OCR-PDF. Bruk anonymisert bilde-PDF i stedet.",
         pdfGenerateFailed:  "PDF-generering feilet. Se loggfil for tekniske detaljer.",
+        imagePdfRedactionFailed:"Bilde-PDF-anonymisering feilet. Se loggfil for tekniske detaljer.",
+        imagePdfMasks:      "masker lagt på",
+        imagePdfUnmatched:  "valgte verdier ikke funnet av OCR",
         updateCheckTop: "Se etter oppdateringer",
         updateCheckNow: "Se etter oppdateringer nå",
         updateNoUpdate: "Du har nyeste versjon.",
@@ -2209,7 +2212,8 @@
         ocrRunning:          "Kjører OCR-skann…",
         ocrResultNotice:     "Resultatet er basert på OCR. OCR kan feiltolke tegn og layout, så kontroller funn og anonymisert fil ekstra nøye.",
         saveOcrPdf:          "Lagre anonymisert OCR-PDF",
-        pdfImageCaveat:      "Dette er en bilde-/OCR-PDF. Direkte redigering av original-PDF er deaktivert fordi tekst i bildet ikke kan fjernes sikkert. Generer en ny anonymisert PDF fra OCR-teksten og kontroller resultatet.",
+        saveImagePdf:        "Lagre anonymisert bilde-PDF",
+        pdfImageCaveat:      "Dette er en bilde-/OCR-PDF. Direkte tekstlagsredigering er deaktivert. Bruk anonymisert bilde-PDF for å maskere OCR-treff direkte på sidebildet og bevare skannet layout best mulig. Kontroller alltid resultatet.",
       },
       sv: {
         subtitle:     "Kontrollerar och anonymiserar dokument med känslig information",
@@ -2463,8 +2467,11 @@
         redactionPreviewEmpty:"Inga direkta ersättningar att förhandsvisa.",
         redactionPreviewMatches:"Träffar i källan",
         pdfPatchFailed:     "PDF-anonymisering misslyckades. Prova PDF-rapport eller kontakta support med loggfilen.",
-        pdfImagePatchUnsafe:"Direkt PDF-anonymisering är inaktiverad för bild-/OCR-PDF. Generera en ny anonymiserad PDF från OCR-texten i stället.",
+        pdfImagePatchUnsafe:"Direkt PDF-anonymisering är inaktiverad för bild-/OCR-PDF. Använd anonymiserad bild-PDF i stället.",
         pdfGenerateFailed:  "PDF-generering misslyckades. Se loggfilen för tekniska detaljer.",
+        imagePdfRedactionFailed:"Bild-PDF-anonymisering misslyckades. Se loggfilen för tekniska detaljer.",
+        imagePdfMasks:      "masker lades till",
+        imagePdfUnmatched:  "valda värden hittades inte av OCR",
         updateCheckTop: "Sök efter uppdateringar",
         updateCheckNow: "Sök efter uppdateringar nu",
         updateNoUpdate: "Du har senaste versionen.",
@@ -2615,7 +2622,8 @@
         ocrRunning:          "Kör OCR-skanning…",
         ocrResultNotice:     "Resultatet bygger på OCR. OCR kan feltolka tecken och layout, så kontrollera fynd och anonymiserad fil extra noggrant.",
         saveOcrPdf:          "Spara anonymiserad OCR-PDF",
-        pdfImageCaveat:      "Detta är en bild-/OCR-PDF. Direkt redigering av original-PDF är inaktiverad eftersom text i bilden inte kan tas bort säkert. Generera en ny anonymiserad PDF från OCR-texten och kontrollera resultatet.",
+        saveImagePdf:        "Spara anonymiserad bild-PDF",
+        pdfImageCaveat:      "Detta är en bild-/OCR-PDF. Direkt textlagerredigering är inaktiverad. Använd anonymiserad bild-PDF för att maskera OCR-träffar direkt på sidbilden och bevara skannad layout så bra som möjligt. Kontrollera alltid resultatet.",
       },
       en: {
         subtitle:     "Checks and anonymizes documents for sensitive information",
@@ -2874,8 +2882,11 @@
         redactionPreviewEmpty:"No direct replacements to preview.",
         redactionPreviewMatches:"Source matches",
         pdfPatchFailed:     "PDF redaction failed. Try the PDF report or contact support with the log file.",
-        pdfImagePatchUnsafe:"Direct PDF redaction is disabled for image/OCR PDFs. Generate a new redacted PDF from the OCR text instead.",
+        pdfImagePatchUnsafe:"Direct PDF redaction is disabled for image/OCR PDFs. Use redacted image PDF instead.",
         pdfGenerateFailed:  "PDF generation failed. See the log file for technical details.",
+        imagePdfRedactionFailed:"Image-PDF redaction failed. See the log file for technical details.",
+        imagePdfMasks:      "masks applied",
+        imagePdfUnmatched:  "selected values not found by OCR",
         updateCheckTop: "Check for updates",
         updateCheckNow: "Check for updates now",
         updateNoUpdate: "You already have the latest version.",
@@ -3026,7 +3037,8 @@
         ocrRunning:          "Running OCR scan…",
         ocrResultNotice:     "This result is based on OCR. OCR can misread characters and layout, so verify findings and the redacted file carefully.",
         saveOcrPdf:          "Save redacted OCR PDF",
-        pdfImageCaveat:      "This is an image/OCR PDF. Direct editing of the original PDF is disabled because text inside the image cannot be removed safely. Generate a new redacted PDF from the OCR text and verify the result.",
+        saveImagePdf:        "Save redacted image PDF",
+        pdfImageCaveat:      "This is an image/OCR PDF. Direct text-layer editing is disabled. Use redacted image PDF to mask OCR matches directly on the page image and preserve scanned layout as closely as possible. Always verify the result.",
       },
 
       // ── Deutsch ────────────────────────────────────────────────────────
@@ -3183,8 +3195,11 @@
         redactionPreviewEmpty:"Keine direkten Ersetzungen für die Vorschau.",
         redactionPreviewMatches:"Treffer in Quelle",
         pdfPatchFailed:      "PDF-Anonymisierung fehlgeschlagen. Versuchen Sie den PDF-Bericht oder kontaktieren Sie den Support mit der Logdatei.",
-        pdfImagePatchUnsafe: "Direkte PDF-Anonymisierung ist für Bild-/OCR-PDFs deaktiviert. Erstellen Sie stattdessen eine neue anonymisierte PDF aus dem OCR-Text.",
+        pdfImagePatchUnsafe: "Direkte PDF-Anonymisierung ist für Bild-/OCR-PDFs deaktiviert. Verwenden Sie stattdessen eine anonymisierte Bild-PDF.",
         pdfGenerateFailed:   "PDF-Erstellung fehlgeschlagen. Technische Details stehen in der Logdatei.",
+        imagePdfRedactionFailed:"Bild-PDF-Anonymisierung fehlgeschlagen. Technische Details stehen in der Logdatei.",
+        imagePdfMasks:       "Masken angewendet",
+        imagePdfUnmatched:   "ausgewählte Werte nicht per OCR gefunden",
         updateNoUpdate:      "Sie haben die neueste Version.",
         updateChecking:      "Prüfe auf Updates…",
         updateCheckBtn:      "Auf Updates prüfen",
@@ -3351,7 +3366,8 @@
         ocrRunning:          "OCR-Scan läuft…",
         ocrResultNotice:     "Dieses Ergebnis basiert auf OCR. OCR kann Zeichen und Layout falsch erkennen; prüfen Sie Treffer und anonymisierte Datei besonders sorgfältig.",
         saveOcrPdf:          "Anonymisierte OCR-PDF speichern",
-        pdfImageCaveat:      "Dies ist eine Bild-/OCR-PDF. Direktes Bearbeiten der Original-PDF ist deaktiviert, weil Text im Bild nicht sicher entfernt werden kann. Erstellen Sie eine neue anonymisierte PDF aus dem OCR-Text und prüfen Sie das Ergebnis.",
+        saveImagePdf:        "Anonymisierte Bild-PDF speichern",
+        pdfImageCaveat:      "Dies ist eine Bild-/OCR-PDF. Direkte Textschicht-Bearbeitung ist deaktiviert. Verwenden Sie eine anonymisierte Bild-PDF, um OCR-Treffer direkt auf dem Seitenbild zu maskieren und das Scan-Layout möglichst zu bewahren. Prüfen Sie immer das Ergebnis.",
         dstCatEpost:         "E-Mail",
         dstCatTelefon:       "Telefon",
         dstCatAdresse:       "Adresse",
@@ -3597,8 +3613,11 @@
         redactionPreviewEmpty:"Aucun remplacement direct à prévisualiser.",
         redactionPreviewMatches:"Occurrences source",
         pdfPatchFailed:      "L’anonymisation PDF a échoué. Essayez le rapport PDF ou contactez le support avec le fichier journal.",
-        pdfImagePatchUnsafe: "L’anonymisation PDF directe est désactivée pour les PDF image/OCR. Générez plutôt un nouveau PDF anonymisé à partir du texte OCR.",
+        pdfImagePatchUnsafe: "L’anonymisation PDF directe est désactivée pour les PDF image/OCR. Utilisez plutôt le PDF image anonymisé.",
         pdfGenerateFailed:   "La génération PDF a échoué. Consultez le fichier journal pour les détails techniques.",
+        imagePdfRedactionFailed:"L’anonymisation du PDF image a échoué. Consultez le fichier journal pour les détails techniques.",
+        imagePdfMasks:       "masques appliqués",
+        imagePdfUnmatched:   "valeurs sélectionnées non trouvées par l’OCR",
         updateNoUpdate:      "Vous avez la dernière version.",
         updateChecking:      "Vérification des mises à jour…",
         updateCheckBtn:      "Vérifier les mises à jour",
@@ -3765,7 +3784,8 @@
         ocrRunning:          "OCR en cours…",
         ocrResultNotice:     "Ce résultat est basé sur l’OCR. L’OCR peut mal interpréter les caractères et la mise en page ; vérifiez soigneusement les résultats et le fichier anonymisé.",
         saveOcrPdf:          "Enregistrer le PDF OCR anonymisé",
-        pdfImageCaveat:      "Il s’agit d’un PDF image/OCR. La modification directe du PDF original est désactivée, car le texte dans l’image ne peut pas être supprimé de manière sûre. Générez un nouveau PDF anonymisé à partir du texte OCR et vérifiez le résultat.",
+        saveImagePdf:        "Enregistrer le PDF image anonymisé",
+        pdfImageCaveat:      "Il s’agit d’un PDF image/OCR. La modification directe de la couche texte est désactivée. Utilisez le PDF image anonymisé pour masquer les correspondances OCR directement sur l’image de page et conserver au mieux la mise en page scannée. Vérifiez toujours le résultat.",
         dstCatEpost:         "E-mail",
         dstCatTelefon:       "Téléphone",
         dstCatAdresse:       "Adresse",
@@ -4011,8 +4031,11 @@
         redactionPreviewEmpty:"No hay reemplazos directos para previsualizar.",
         redactionPreviewMatches:"Coincidencias fuente",
         pdfPatchFailed:      "La anonimización de PDF falló. Pruebe el informe PDF o contacte con soporte con el archivo de registro.",
-        pdfImagePatchUnsafe: "La anonimización directa de PDF está desactivada para PDF de imagen/OCR. Genere en su lugar un nuevo PDF anonimizado desde el texto OCR.",
+        pdfImagePatchUnsafe: "La anonimización directa de PDF está desactivada para PDF de imagen/OCR. Use en su lugar el PDF de imagen anonimizado.",
         pdfGenerateFailed:   "La generación de PDF falló. Consulte el archivo de registro para detalles técnicos.",
+        imagePdfRedactionFailed:"La anonimización del PDF de imagen falló. Consulte el archivo de registro para detalles técnicos.",
+        imagePdfMasks:       "máscaras aplicadas",
+        imagePdfUnmatched:   "valores seleccionados no encontrados por OCR",
         updateNoUpdate:      "Tiene la versión más reciente.",
         updateChecking:      "Comprobando actualizaciones…",
         updateCheckBtn:      "Buscar actualizaciones",
@@ -4179,7 +4202,8 @@
         ocrRunning:          "Ejecutando OCR…",
         ocrResultNotice:     "Este resultado se basa en OCR. El OCR puede interpretar mal caracteres y diseño, así que verifique cuidadosamente los hallazgos y el archivo anonimizado.",
         saveOcrPdf:          "Guardar PDF OCR anonimizado",
-        pdfImageCaveat:      "Este es un PDF de imagen/OCR. La edición directa del PDF original está desactivada porque el texto dentro de la imagen no puede eliminarse de forma segura. Genere un nuevo PDF anonimizado desde el texto OCR y verifique el resultado.",
+        saveImagePdf:        "Guardar PDF de imagen anonimizado",
+        pdfImageCaveat:      "Este es un PDF de imagen/OCR. La edición directa de la capa de texto está desactivada. Use el PDF de imagen anonimizado para enmascarar coincidencias OCR directamente en la imagen de la página y conservar el diseño escaneado lo mejor posible. Verifique siempre el resultado.",
         dstCatEpost:         "Correo electrónico",
         dstCatTelefon:       "Teléfono",
         dstCatAdresse:       "Dirección",
@@ -5607,7 +5631,7 @@
             ? `<button class="ctrl-btn ctrl-btn-outline-accent" id="g-patch">${t("saveAnon")} .${ext}</button>`
             : ""}
           ${imagePdf
-            ? `<button class="ctrl-btn ctrl-btn-outline-accent" id="g-ocr-pdf">${t("saveOcrPdf")}</button>`
+            ? `<button class="ctrl-btn ctrl-btn-outline-accent" id="g-image-pdf">${t("saveImagePdf")}</button>`
             : ""}
           <button class="ctrl-btn open-anonymized-btn" id="g-open-anonymized">${t("openAnonymizedFile")}</button>
           <span class="anon-msg" id="g-anon-msg"></span>
@@ -5795,7 +5819,7 @@
         { document.querySelectorAll(".g-cb, .g-ai-cb").forEach(cb => cb.checked = false); updateRedactionReport(ext); });
       document.querySelectorAll(".g-cb, .g-ai-cb").forEach(cb => cb.addEventListener("change", () => updateRedactionReport(ext)));
       if (canPatch) document.getElementById("g-patch")?.addEventListener("click", () => postAnon("patch"));
-      if (_isOcrOrImagePdfResult(ext)) document.getElementById("g-ocr-pdf")?.addEventListener("click", () => postAnon("anonymize", "pdf"));
+      if (_isOcrOrImagePdfResult(ext)) document.getElementById("g-image-pdf")?.addEventListener("click", () => postAnon("patch-image-pdf"));
       document.getElementById("g-preview")?.addEventListener("click", previewRedaction);
       document.getElementById("g-anon")?.addEventListener("click", () => postAnon("anonymize", "md"));
       document.getElementById("g-anon-pdf")?.addEventListener("click", () => postAnon("anonymize", "pdf"));
@@ -5823,7 +5847,7 @@
             ? `<button class="ctrl-btn ctrl-btn-outline-accent" id="g-patch">${t("saveAnon")} .${ext}</button>`
             : ""}
           ${imagePdf
-            ? `<button class="ctrl-btn ctrl-btn-outline-accent" id="g-ocr-pdf">${t("saveOcrPdf")}</button>`
+            ? `<button class="ctrl-btn ctrl-btn-outline-accent" id="g-image-pdf">${t("saveImagePdf")}</button>`
             : ""}
           <button class="ctrl-btn open-anonymized-btn" id="g-open-anonymized">${t("openAnonymizedFile")}</button>
           <span class="anon-msg" id="g-anon-msg"></span>
@@ -5965,7 +5989,7 @@
       const msg = document.getElementById(msgId);
       if (!msg) return null;
       const body = _redactionPayload(format);
-      if (!_redactionPayloadHasSelection(body) && !(endpoint === "patch" && body.strip_annotations)) {
+      if (!_redactionPayloadHasSelection(body) && !((endpoint === "patch" || endpoint === "patch-image-pdf") && body.strip_annotations)) {
         msg.style.color="#ffb84d"; msg.textContent=t("selectOne"); return null;
       }
       msg.style.color="var(--muted)"; msg.textContent=t("processing");
@@ -5977,10 +6001,12 @@
         if (d.ok) {
           _setLastAnonymizedPath(d.path);
           const verification = _verificationSummary(d.verification);
+          const imagePdfStats = _imagePdfRedactionSummary(d.image_pdf_redaction);
           msg.style.color="#4caf50";
           msg.innerHTML =
             `${escapeHtml(t("saved"))} ${escapeHtml(d.path)}` +
             `${verification ? ` · ${escapeHtml(verification)}` : ""}` +
+            `${imagePdfStats ? ` · ${escapeHtml(imagePdfStats)}` : ""}` +
             ` <button class="ctrl-btn" id="btn-rescan-redacted" style="font-size:11px;padding:2px 8px;">${escapeHtml(t("rescanRedacted"))}</button>`;
           document.getElementById("btn-rescan-redacted")?.addEventListener("click", () => scanPath(d.path));
           loadRedactionHistory();
@@ -6015,6 +6041,15 @@
         `${activeRemaining} ${t("verificationRemaining")}`;
     }
 
+    function _imagePdfRedactionSummary(stats) {
+      if (!stats) return "";
+      const redactions = Number(stats.redaction_count || 0);
+      const unmatched = Array.isArray(stats.unmatched_values) ? stats.unmatched_values.length : 0;
+      if (!redactions && !unmatched) return "";
+      return `${redactions} ${t("imagePdfMasks")}` +
+        (unmatched ? `, ${unmatched} ${t("imagePdfUnmatched")}` : "");
+    }
+
     async function _openAnonymizedFile(msgId = "g-anon-msg") {
       const msg = document.getElementById(msgId);
       if (!_lastAnonymizedPath) return;
@@ -6043,9 +6078,10 @@
       const ext = _currentResultExt();
       const imagePdf = _isOcrOrImagePdfResult(ext);
       const canPatch = PATCH_EXT.has(ext) && !imagePdf;
+      const endpoint = imagePdf ? "patch-image-pdf" : (canPatch ? "patch" : "anonymize");
       const saved = await postAnon(
-        canPatch ? "patch" : "anonymize",
-        canPatch ? undefined : (imagePdf ? "pdf" : "md"),
+        endpoint,
+        endpoint === "anonymize" ? "md" : undefined,
         msgId,
       );
       if (saved?.ok) await _openAnonymizedFile(msgId);
@@ -7735,7 +7771,7 @@
       _ensureRedactionControlsForAiFindings();
       _syncMainAiSelectionFromAiPanel();
       updateRedactionReport(ext);
-      if (_isOcrOrImagePdfResult(ext)) await postAnon("anonymize", "pdf", "ai-anon-msg");
+      if (_isOcrOrImagePdfResult(ext)) await postAnon("patch-image-pdf", undefined, "ai-anon-msg");
       else if (PATCH_EXT.has(ext)) await postAnon("patch", undefined, "ai-anon-msg");
       else await postAnon("anonymize", "md", "ai-anon-msg");
     }
