@@ -80,6 +80,8 @@ def test_technical_title_case_phrases_are_not_person_names():
         "Designs Python",
         "Purchase Order",
         "Unit Price",
+        "Conversion Tool",
+        "Frequency Range",
         "Line Total",
         "Net Amount",
         "VAT Amount",

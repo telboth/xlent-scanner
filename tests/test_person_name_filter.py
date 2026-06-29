@@ -64,6 +64,8 @@ def test_person_name_filter_rejects_generic_technical_title_case_phrases():
         "Physically Informed Autoencoder",
         "Cyclic Thin Interbeds",
         "Spec-Driven Development",
+        "Conversion Tool",
+        "Frequency Range",
         "Line Total",
         "Net Amount",
         "VAT Amount",

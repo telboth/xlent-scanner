@@ -1,6 +1,6 @@
 # XLENT Compliance-scanner
 
-> **v1.6.10** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
+> **v1.7.0** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
 
 Alt kjøres 100 % lokalt — ingen dokumenter, tekst eller funn sendes over internett.
 
@@ -436,6 +436,11 @@ src/xlent_scanner/
 ---
 
 ## Endringslogg
+
+### v1.7.0
+- Tømmer feltet «Ekstrahert tekst» straks ny fil-, tekst- eller mappeskann starter, slik at tekst fra forrige dokument ikke vises mens ny skann pågår.
+- Ignorerer DOI-resolver-lenker som `doi.org` og `dx.doi.org` i URL-detektoren for å redusere støy i akademiske referanselister.
+- Strammer inn personnavnfilteret for tekniske tittelcase-fraser som «Conversion Tool» og «Frequency Range».
 
 ### v1.6.10
 - La til rasterbasert **anonymisert bilde-PDF** for innskannede/OCR-baserte PDF-er.

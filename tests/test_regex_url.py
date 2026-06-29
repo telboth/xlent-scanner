@@ -22,6 +22,21 @@ def test_https_url_with_path():
     texts = _texts(f)
     assert any("https://example.com" in t for t in texts)
 
+
+def test_doi_resolver_url_not_matched():
+    text = "Se https://doi.org/10.1016/j.ymssp.2015.09.004 for artikkelen."
+    assert list(detect_urls(text)) == []
+
+
+def test_dx_doi_resolver_url_not_matched():
+    text = "Referanse: https://dx.doi.org/10.1785/BSSA0760551393."
+    assert list(detect_urls(text)) == []
+
+
+def test_non_doi_url_still_matched():
+    text = "Se https://example.com/article/10.1016/j.ymssp.2015.09.004"
+    assert "https://example.com/article/10.1016/j.ymssp.2015.09.004" in _texts(list(detect_urls(text)))
+
 # ── www. ──────────────────────────────────────────────────────────────────────
 
 def test_www_url():

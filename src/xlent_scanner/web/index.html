@@ -5305,6 +5305,13 @@
     /* ══════════════════════════════════════════════════════════════════
        RENDERING
     ══════════════════════════════════════════════════════════════════ */
+    function _clearTextPreview() {
+      const section = document.getElementById("text-preview-section");
+      if (!section) return;
+      section.innerHTML = "";
+      section.style.display = "none";
+    }
+
     function clearResult() {
       // Tøm alt relatert til siste skann
       if (_aiPollTimer) { clearInterval(_aiPollTimer); _aiPollTimer = null; }
@@ -5324,7 +5331,7 @@
       _aiFindingsData = [];
       _aiDeepScanCompleted = false;
       _setLastAnonymizedPath("");
-      document.getElementById("text-preview-section").style.display = "none";
+      _clearTextPreview();
       const rescanBtn = document.getElementById("ai-rescan-btn");
       if (rescanBtn) rescanBtn.style.display = "none";
       const sumEl = document.getElementById("severity-summary");
@@ -6272,6 +6279,7 @@
       const isOcrScan = !!extraOpts?.ocr;
       setStatus(isOcrScan ? t("ocrRunning") : t("statusScan"));
       setOcrProgress(isOcrScan);
+      _clearTextPreview();
       resultEl.classList.remove("show");
       lastScan = { type:"path", path, ocr: isOcrScan };
       try {
@@ -6296,6 +6304,7 @@
       const isOcrScan = !!extraOpts?.ocr;
       setStatus(isOcrScan ? t("ocrRunning") : t("statusUp"));
       setOcrProgress(isOcrScan);
+      _clearTextPreview();
       resultEl.classList.remove("show");
       lastScan = { type:"upload", file, name, ocr: isOcrScan };
       try {
@@ -7814,6 +7823,7 @@
       if (!text) { ps.style.color = "var(--warn)"; ps.textContent = t("selectOne"); return; }
       ps.style.color = "var(--muted)"; ps.textContent = t("statusScan");
       setStatus(t("statusScan"));
+      _clearTextPreview();
       resultEl.classList.remove("show");
       lastScan = null;
       try {
@@ -7921,6 +7931,7 @@
       _folderJobId = "";
       fs.style.color = "var(--muted)"; fs.textContent = t("processing");
       fr.style.display = "none";
+      _clearTextPreview();
       _setFolderProgress(false);
       if (cancelBtn) cancelBtn.style.display = "none";
       try {

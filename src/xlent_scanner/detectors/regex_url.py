@@ -10,6 +10,7 @@ E-postadresser (format: bruker@domene.tld) er IKKE inkludert
 from __future__ import annotations
 
 import re
+from urllib.parse import urlparse
 from typing import Iterator
 
 from xlent_scanner.models import Finding
@@ -37,6 +38,13 @@ _WWW_RE = re.compile(
 _TRAILING = re.compile(r"[.,;:!?)]+$")
 
 
+def _is_doi_resolver_url(url: str) -> bool:
+    """Returner True for DOI-resolvere som ikke er personvernsensitive nettadresser."""
+    candidate = url if "://" in url else f"https://{url}"
+    host = (urlparse(candidate).hostname or "").casefold()
+    return host == "doi.org" or host.endswith(".doi.org")
+
+
 def detect_urls(text: str) -> Iterator[Finding]:
     """Finn HTTP/HTTPS URL-er og www.-adresser i teksten (gul alvorlighetsgrad)."""
     seen: set[str] = set()
@@ -50,6 +58,10 @@ def detect_urls(text: str) -> Iterator[Finding]:
                 continue
             # Hopp over e-postlignende strenger (har @)
             if "@" in cleaned:
+                continue
+            # DOI-lenker i akademiske referanser gir ofte mye støy og peker
+            # normalt til publikasjoner, ikke person-/kundedata.
+            if _is_doi_resolver_url(cleaned):
                 continue
             key = cleaned.lower()
             if key in seen:

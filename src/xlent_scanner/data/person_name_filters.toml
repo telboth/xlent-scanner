@@ -71,7 +71,7 @@ generic_title_case_words = [
   "artificial", "assessment", "assurance", "autoencoder", "baseline", "batch",
   "benchmark", "calculation", "calibration", "chart", "classification",
   "component", "components", "configuration", "constraint", "control", "curve",
-  "cycle", "cycles", "cyclic", "dataset", "definition", "design", "development",
+  "conversion", "cycle", "cycles", "cyclic", "dataset", "definition", "design", "development",
   "diagram", "driven", "effect", "energy", "estimate", "evaluation",
   "experiment", "file", "flow", "forecast", "framework", "depth", "field",
   "frequency", "geology", "geoscience", "geophysical", "hypothesis",
@@ -80,9 +80,9 @@ generic_title_case_words = [
   "keyword", "learning", "limitation", "machine", "measurement", "metric",
   "network", "objective", "parameter", "pattern", "phase", "plan", "problem",
   "processing", "profile", "program", "project", "proposal", "protocol",
-  "quality", "regression", "requirement", "reservoir", "risk", "scenario",
+  "quality", "range", "regression", "requirement", "reservoir", "risk", "scenario",
   "physically", "seismic", "sensitivity", "sensor", "signal", "simulation",
-  "size", "software", "spec", "specification", "survey", "thin", "training",
+  "size", "software", "spec", "specification", "survey", "thin", "tool", "training",
   "uncertainty", "velocity", "version", "wave", "waves", "workflow",
   "bachelor", "course", "curriculum", "dissertation", "lecture", "master",
   "amount", "budget", "cost", "description", "discount", "invoice", "line",
@@ -99,13 +99,13 @@ generic_title_case_words = [
 ]
 
 technical_title_case_words = [
-  "artificial", "autoencoder", "batch", "code", "cyclic", "design", "designs",
-  "decoder", "development", "driven", "encoder", "field", "informed",
+  "artificial", "autoencoder", "batch", "code", "conversion", "cyclic", "design", "designs",
+  "decoder", "development", "driven", "encoder", "field", "frequency", "informed",
   "intelligence", "intelligense", "interbeds", "inverse", "machine", "neural",
   "amount", "description", "discount", "line", "net", "office", "order",
   "patent", "physically", "price", "purchase", "python", "quantity", "size",
-  "solver", "sparse", "spec", "subtotal", "tax", "thin", "total",
-  "transformer", "unit", "vat",
+  "range", "solver", "sparse", "spec", "subtotal", "tax", "thin", "tool",
+  "total", "transformer", "unit", "vat",
 ]
 
 place_or_thing_preceders = [

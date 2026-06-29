@@ -693,6 +693,18 @@ def test_ocr_rescan_shows_progress_indicator():
     assert "setOcrProgress(false);" in html[html.index("function clearResult()"):html.index("function renderSeveritySummary()")]
 
 
+def test_text_preview_is_cleared_when_new_scan_starts():
+    html = HTML.read_text(encoding="utf-8")
+
+    assert "function _clearTextPreview()" in html
+    assert 'section.innerHTML = "";' in html[html.index("function _clearTextPreview()"):html.index("function clearResult()")]
+    assert "_clearTextPreview();" in html[html.index("function clearResult()"):html.index("function renderSeveritySummary()")]
+    assert "_clearTextPreview();" in html[html.index("async function scanPath"):html.index("async function scanUpload")]
+    assert "_clearTextPreview();" in html[html.index("async function scanUpload"):html.index("/* ══════════════════════════════════════════════════════════════════\n       DRAG-DROP")]
+    assert "_clearTextPreview();" in html[html.index('document.getElementById("btn-scan-text").addEventListener'):html.index("/* ══════════════════════════════════════════════════════════════════\n       FOLDER SCAN")]
+    assert "_clearTextPreview();" in html[html.index('document.getElementById("btn-scan-folder").addEventListener'):html.index("const dlg = await")]
+
+
 def test_ocr_pdf_redaction_uses_image_pdf_redaction_instead_of_direct_patch():
     html = HTML.read_text(encoding="utf-8")
 
