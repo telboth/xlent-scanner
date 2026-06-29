@@ -8,6 +8,8 @@ Kategorier:
   - Dato med fødselsdato-kontekst   → gul   (personopplysning)
   - Kjøretøyregistrering (NO)       → gul   (kan knyttes til person)
   - Lønn/salary med beløp           → gul   (forretningssensitivt)
+  - Telefon/fax etter eksplisitt label → gul
+  - PO Box-adresse                  → gul
 """
 from __future__ import annotations
 
@@ -215,6 +217,64 @@ def find_salary(text: str) -> Iterator[Finding]:
             )
 
 
+# ── Telefon/fax etter eksplisitt label ───────────────────────────────────────
+# Fanger lokale/internasjonale numre som ikke passer nasjonale regexer, men bare
+# når de står rett etter en tydelig label. Dette dekker f.eks. "Tel: 04-7041111"
+# uten å åpne for generelle 7-sifrede tall.
+_LABELED_PHONE_RE = re.compile(
+    r"(?i)\b(?:tel(?:ephone)?|phone|mobile|mob\.?|fax)\s*[:.]?\s*"
+    r"(\+?\d[\d\s().-]{5,20}\d)"
+)
+
+
+def find_labeled_phone_or_fax(text: str) -> Iterator[Finding]:
+    seen: set[tuple[int, int]] = set()
+    for m in _LABELED_PHONE_RE.finditer(text):
+        raw = m.group(1).strip()
+        number = raw.strip(" .;:,)")
+        digits = re.sub(r"\D", "", number)
+        if not (7 <= len(digits) <= 15):
+            continue
+        # Krev minst to siffer etter siste skilletegn for å unngå avkuttede treff.
+        if re.search(r"[\s().-]$", number):
+            continue
+        span = (m.start(1), m.start(1) + len(number))
+        if span in seen:
+            continue
+        seen.add(span)
+        yield Finding(
+            "telefonnummer",
+            number,
+            _ctx(text, m.start(), m.end()),
+            severity="gul",
+        )
+
+
+# ── PO Box-adresse ───────────────────────────────────────────────────────────
+# Fanger postboksadresser med eksplisitt label. Vi tar med kort sted/land-hale
+# når den står direkte etter nummeret, slik at "PO Box 27758 * Dubai - United
+# Arab Emirates" blir ett redigerbart adressefunn.
+_PO_BOX_ADDRESS_RE = re.compile(
+    r"(?i)\b(?:p\.?\s*o\.?\s*box|po\s*box|post\s*box|postboks)"
+    r"\s*(?:no\.?|nr\.?|#)?\s*[:.]?\s*"
+    r"\d{2,10}"
+    r"(?:\s*[,;*°•·-]\s*"
+    r"[A-ZÆØÅÄÖÜ][A-Za-zÆØÅæøåÄÖäöÜüÉéÈèÁáÀàÓóÒòÍíÌìÑñß .'-]{1,55}"
+    r"){0,3}"
+)
+
+
+def find_po_box_address(text: str) -> Iterator[Finding]:
+    for m in _PO_BOX_ADDRESS_RE.finditer(text):
+        value = m.group(0).strip(" \t\r\n,;")
+        yield Finding(
+            "fysisk adresse",
+            value,
+            _ctx(text, m.start(), m.end()),
+            severity="gul",
+        )
+
+
 # ── Fødselsdato med kontekstnøkkelord ────────────────────────────────────────
 _DOB_DATE_RE = re.compile(
     r"(\d{1,2})[./-](\d{1,2})[./-](\d{2,4})",
@@ -256,6 +316,8 @@ def detect_extra(text: str) -> list[Finding]:
     """Kjører alle ekstra detektorer."""
     findings: list[Finding] = []
     for fn in (find_ipv4, find_ipv6, find_swift,
-               find_passport, find_vehicle_reg, find_salary, find_date_of_birth):
+               find_passport, find_vehicle_reg, find_salary,
+               find_labeled_phone_or_fax, find_po_box_address,
+               find_date_of_birth):
         findings.extend(fn(text))
     return findings

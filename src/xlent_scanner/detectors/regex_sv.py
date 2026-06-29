@@ -11,6 +11,7 @@ from __future__ import annotations
 import re
 from typing import Iterator
 
+from xlent_scanner.detectors.bibliographic import has_bibliographic_context
 from xlent_scanner.models import Finding
 from xlent_scanner.utils import ctx as _ctx
 
@@ -134,7 +135,7 @@ def find_orgnr_sv(text: str) -> Iterator[Finding]:
 #   Internasjonalt: +46 XX XXX XX XX eller 0046 XX XXX XX XX
 
 _SV_PHONE_RE = re.compile(
-    r"(?<!\d)"
+    r"(?<![A-Za-z0-9])"
     r"(?:"
         # ── Internasjonalt: +46 / 0046 + 9 siffer (uten ledende 0)
         r"(?:\+46|0046)[\s\-]?[1-9]\d{1,2}[\s\-]?\d{3}[\s\-]?\d{2}[\s\-]?\d{2}"
@@ -148,12 +149,14 @@ _SV_PHONE_RE = re.compile(
         # ── Fast 3-siffer area (0XX): 031-XX XX XX  (10 sifre inkl. 0)
         r"0[1-9]\d[\s\-]?\d{2}[\s\-]?\d{2}[\s\-]?\d{2}"
     r")"
-    r"(?!\d)"
+    r"(?![A-Za-z0-9])"
 )
 
 
 def find_telefon_sv(text: str) -> Iterator[Finding]:
     for m in _SV_PHONE_RE.finditer(text):
+        if has_bibliographic_context(text, m.start(), m.end()):
+            continue
         yield Finding("telefonnummer (SV)", m.group(0).strip(), _ctx(text, m.start(), m.end()))
 
 
@@ -164,12 +167,12 @@ def find_telefon_sv(text: str) -> Iterator[Finding]:
 # Nøkkelord kreves for å unngå falske positiver fra telefon/datoer o.l.
 
 _BANKGIRO_RE = re.compile(
-    r"(?i)(?:bankgiro|b\.?g\.?)\s*(?:nr\.?)?\s*:?\s*"
+    r"(?i)(?<![A-Za-z0-9])(?:bankgiro|b\.?g\.?)(?![A-Za-z0-9])\s*(?:nr\.?)?\s*:?\s*"
     r"(\d{3,4}[\s\-]\d{4}|\d{7,8})"
 )
 
 _PLUSGIRO_RE = re.compile(
-    r"(?i)(?:plusgiro|p\.?g\.?)\s*(?:nr\.?)?\s*:?\s*"
+    r"(?i)(?<![A-Za-z0-9])(?:plusgiro|p\.?g\.?)(?![A-Za-z0-9])\s*(?:nr\.?)?\s*:?\s*"
     r"(\d{1,7}[\s\-]\d|\d{2,8})"
 )
 

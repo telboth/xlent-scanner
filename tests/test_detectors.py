@@ -461,6 +461,11 @@ class TestFinancials:
         cats = _cats(f)
         assert "prosjektsum" in cats
 
+    def test_unit_price(self):
+        f = list(find_financial_data("Unit Price: USD 125.50"))
+
+        assert [(x.category, x.text) for x in f] == [("enhetspris", "125.50")]
+
     def test_margin(self):
         f = list(find_financial_data("Margin: 35%"))
         cats = _cats(f)

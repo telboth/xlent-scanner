@@ -35,7 +35,7 @@ _CONFIDENTIAL_TERMS = [
     "skyddat",
     # Engelsk
     "confidential", "strictly confidential",
-    "internal use only", "restricted",
+    "internal use only",
     "not for distribution", "top secret",
     "proprietary", "trade secret",
     "privileged and confidential", "eyes only",
@@ -64,6 +64,12 @@ _CONTEXTUAL_CONFIDENTIAL_PHRASES = [
     "classified as confidential",
     "classified as secret",
     "classified as restricted",
+    "restricted access",
+    "restricted distribution",
+    "restricted document",
+    "restricted information",
+    "restricted material",
+    "restricted data",
 ]
 
 # Ord som indikerer kildekode eller konfig som ikke bør deles

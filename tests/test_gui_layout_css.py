@@ -447,7 +447,7 @@ def test_scan_menu_combines_passport_and_salary_categories():
     assert 'class="scan-cat" value="id" checked' in html
     assert 'class="scan-cat" value="finansielt" checked' in html
     assert '"id":            c => ["fødselsnummer","d-nummer","personnummer","samordningsnummer","cpr-nummer","uk national insurance","us social security","mulig personnummer","passnummer"].some(p => c.startsWith(p))' in html
-    assert '"finansielt":    c => ["timepris","dagspris","prosjektsum","margin","rabatt","budsjett","lønn"].some(p => c.startsWith(p))' in html
+    assert '"finansielt":    c => ["timepris","dagspris","prosjektsum","enhetspris","margin","rabatt","budsjett","lønn"].some(p => c.startsWith(p))' in html
     assert '"id":          ["personnummer", "passnummer"]' in html
     assert '"finansielt":  ["budsjett_tall", "lonn"]' in html
 

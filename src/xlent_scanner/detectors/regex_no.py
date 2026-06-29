@@ -11,6 +11,7 @@ Kategorier:
 from __future__ import annotations
 
 import re
+from datetime import date
 from typing import Iterator
 
 from xlent_scanner.detectors.bibliographic import has_bibliographic_context
@@ -201,7 +202,7 @@ def find_kontonummer(text: str) -> Iterator[Finding]:
 # ── telefonnummer ─────────────────────────────────────────────────────────────
 
 _PHONE_RE = re.compile(
-    r"(?<!\d)"
+    r"(?<![A-Za-z0-9])"
     r"(?:"
         # Med eksplisitt landkode (+47 / 0047): alle 8-sifret varianter aksepteres
         r"(?:\+47|0047)[\s\-]?\d{3}[\s\-]?\d{2}[\s\-]?\d{3}"               # 3+2+3: +47 912 34 567
@@ -214,11 +215,38 @@ _PHONE_RE = re.compile(
         r"|[2357]\d[\s\-]?\d{2}[\s\-]?\d{2}[\s\-]?\d{2}"  # fast 2+2+2+2: 22 34 56 78
         r"|[2357]\d{7}"                                   # fast 8 samlet
     r")"
-    r"(?!\d)",
+    r"(?![A-Za-z0-9])",
 )
 
 _YEAR_RANGE_RE = re.compile(r"^(?:19|20)\d{2}-(?:19|20)\d{2}$")
 _ISO_DATE_RE = re.compile(r"^(?:19|20)\d{2}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])$")
+
+
+def _valid_date(year: int, month: int, day: int) -> bool:
+    try:
+        date(year, month, day)
+        return True
+    except ValueError:
+        return False
+
+
+def _looks_like_compact_date(raw: str) -> bool:
+    digits = re.sub(r"[\s\-]", "", raw)
+    if len(digits) != 8 or not digits.isdigit():
+        return False
+
+    # ddmmyyyy, f.eks. 30122025
+    day = int(digits[:2])
+    month = int(digits[2:4])
+    year = int(digits[4:])
+    if 1900 <= year <= 2099 and _valid_date(year, month, day):
+        return True
+
+    # yyyymmdd, f.eks. 20251230
+    year = int(digits[:4])
+    month = int(digits[4:6])
+    day = int(digits[6:])
+    return 1900 <= year <= 2099 and _valid_date(year, month, day)
 
 
 def find_telefon(text: str) -> Iterator[Finding]:
@@ -229,6 +257,8 @@ def find_telefon(text: str) -> Iterator[Finding]:
         if _YEAR_RANGE_RE.match(raw.replace(" ", "")):
             continue
         if _ISO_DATE_RE.match(raw.replace(" ", "")):
+            continue
+        if _looks_like_compact_date(raw):
             continue
         # Fjern landkode for visning av råverdi
         yield Finding("telefonnummer", raw, _ctx(text, m.start(), m.end()))

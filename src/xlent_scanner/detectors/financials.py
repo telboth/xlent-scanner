@@ -1,10 +1,11 @@
 """Detektor for forretningskonfidensielle finansielle data.
 
-Ser etter fire kategorier:
+Ser etter fem kategorier:
   1. Timepris  — beløp knyttet til pris per time/dag  (gul)
   2. Dagspris  — som timepris, men per dag            (gul)
   3. Prosjektsum — totalsummer og budsjetter          (gul)
-  4. Margin / rabatt — prosentsatser for marginer     (gul)
+  4. Enhetspris — unit price / stykkpris              (gul)
+  5. Margin / rabatt — prosentsatser for marginer     (gul)
 
 Strategi: krever ENTEN et tydelig nøkkelord ELLER en per-enhet-indikator
 (/time, /h, /dag) for å minimere falske positiver.
@@ -90,6 +91,21 @@ _SUM_KW_RE = re.compile(
 
 
 # ── D: Margin / rabatt / påslag (prosentsats) ──────────────────────────────────
+_UNIT_PRICE_RE = re.compile(
+    r"(?P<kw>"
+        r"unit[\s\-]?price|unit[\s\-]?cost|price\s+per\s+unit"
+        r"|enhetspris|stykkpris|pris\s+per\s+enhet"
+        r"|à\s*pris|a\s*pris"
+    r")"
+    r"\s*:?\s*"
+    r"(?:NOK|SEK|DKK|EUR|USD|GBP|CHF|£|kr|€|\$)?\s*"
+    r"(\d{1,7}(?:[., \t]\d{3})*(?:[.,]\d{1,2})?)"
+    r"(?:\s*(?:NOK|SEK|DKK|EUR|USD|GBP|CHF|kr|€|\$))?",
+    re.IGNORECASE,
+)
+
+
+# ── E: Margin / rabatt / påslag (prosentsats) ─────────────────────────────────
 # Matcher:  "Margin: 35%",  "Rabatt 20 %",  "Påslag: 12,5%",  "discount: 15%"
 _MARGIN_RE = re.compile(
     r"(?P<kw>"
@@ -140,7 +156,15 @@ def find_financial_data(text: str) -> Iterator[Finding]:
             seen.add(key)
             yield Finding("prosjektsum", amount, _ctx(text, m.start(), m.end()), severity="gul")
 
-    # D: margin / rabatt
+    # D: enhetspris / unit price
+    for m in _UNIT_PRICE_RE.finditer(text):
+        amount = _clean_amount(m.group(2))
+        key = ("enhetspris", amount)
+        if key not in seen:
+            seen.add(key)
+            yield Finding("enhetspris", amount, _ctx(text, m.start(), m.end()), severity="gul")
+
+    # E: margin / rabatt
     for m in _MARGIN_RE.finditer(text):
         pct = m.group(2)
         kw  = m.group("kw").lower()

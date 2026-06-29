@@ -911,12 +911,19 @@ def _is_address_category(category: str) -> bool:
 
 _ADDRESS_NUMBER_RE = re.compile(r"\b\d{1,5}[A-Za-z]?\b")
 _PO_BOX_RE = re.compile(r"\b(?:pb|p\.b\.|postboks|postbox|po box|p\.o\. box)\s*\d+\b", re.IGNORECASE)
+_TECHNICAL_ADDRESS_FALSE_POSITIVE_RE = re.compile(
+    r"\b(?:cpu|gpu|ghz|mhz|core|intel|amd|ryzen|xeon|i[3579]-\d{3,5})\b|"
+    r"\((?:r|tm)\)|@",
+    re.IGNORECASE,
+)
 
 
 def _looks_like_physical_address(value: str) -> bool:
     """LLM-adressefunn må ha husnummer eller postboks, ikke bare sted/bygg."""
     text = " ".join(str(value or "").strip().split())
     if not text or len(text) > 140:
+        return False
+    if _TECHNICAL_ADDRESS_FALSE_POSITIVE_RE.search(text):
         return False
     if _PO_BOX_RE.search(text):
         return True

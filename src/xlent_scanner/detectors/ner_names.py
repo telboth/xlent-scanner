@@ -68,6 +68,12 @@ _STOPWORDS: frozenset[str] = frozenset({
     # Tekniske/akademiske noun phrases som ofte kommer fra tabeller, figurer og PDF-er
     "probe", "interface", "outer", "diameter", "common", "format",
     "comparison", "tool", "blåtind", "blårens",
+    "code", "designs", "python",
+    "purchase", "order", "unit", "price",
+    # Kontinent-/region- og institusjonsord i akademiske/tekniske tekster
+    "europe", "european", "asia", "asian", "africa", "african",
+    "america", "american", "australia", "australian", "antarctica",
+    "patent", "office",
     # Svenske ord som kan forveksles med navn
     "aktiebolag", "handelsbolag", "ekonomi", "styrelse", "direktion",
     "avdelning", "verksamhet", "tjänst", "produkt",
@@ -95,11 +101,74 @@ _ORG_NAMES: frozenset[str] = frozenset({
     "trondheim digital", "digirogland", "oslo kommune",
 })
 
+_GENERIC_TITLE_CASE_WORDS: frozenset[str] = frozenset({
+    # Akademiske/dokumentord
+    "abstract", "appendix", "article", "bibliography", "case", "chapter",
+    "citation", "conference", "description", "discussion", "document",
+    "draft", "example", "figure", "finding", "findings", "introduction",
+    "journal", "literature", "method", "methodology", "paper", "paragraph",
+    "procedure", "proceedings", "reference", "references", "report",
+    "research", "result", "results", "review", "section", "study",
+    "summary", "table", "thesis", "volume",
+    # Tekniske/faglige substantiv
+    "acquisition", "algorithm", "analysis", "application", "architecture",
+    "assessment", "assurance", "baseline", "benchmark", "calculation",
+    "calibration", "chart", "classification", "component", "components",
+    "configuration", "constraint", "control", "curve", "dataset",
+    "definition", "design", "diagram", "effect", "energy", "estimate",
+    "evaluation", "experiment", "file", "flow", "forecast", "framework",
+    "depth", "field", "frequency", "geology", "geoscience", "geophysical",
+    "hypothesis", "implementation", "interface", "interpretation", "inversion", "issue",
+    "keyword", "limitation", "measurement", "metric", "network",
+    "objective", "parameter", "pattern", "phase", "plan", "problem",
+    "processing", "profile", "program", "project", "proposal", "protocol",
+    "quality", "regression", "requirement", "reservoir", "risk", "scenario",
+    "seismic", "sensitivity", "sensor", "signal", "simulation", "software",
+    "specification", "survey", "training", "uncertainty", "velocity",
+    "version", "wave", "waves", "workflow",
+    # Utdanning/kurs
+    "bachelor", "course", "curriculum", "dissertation", "lecture", "master",
+    # Økonomi/ordre/tabell-ord
+    "budget", "cost", "invoice", "order", "payment", "petroleum", "price",
+    "purchase", "quote", "unit",
+    # Norske/svenske generiske fagord
+    "analyse", "ansökan", "artikkel", "avsnitt", "beskrivelse", "bestilling",
+    "budsjett", "diagram", "diskusjon", "dokument", "eksempel", "estimat",
+    "figur", "funn", "innledning", "kapittel", "kostnad", "kvalitet",
+    "leveranse", "litteratur", "metode", "metodikk", "modell", "måling",
+    "oppgave", "oppsummering", "oversikt", "pris", "prosjekt", "rapport",
+    "referanse", "referanser", "resultat", "resultater", "risiko", "sammendrag",
+    "seksjon", "studie", "tabell", "undersøkelse", "utkast", "vedlegg",
+    "vurdering",
+})
+
 _LIST_SEPARATORS_RE = re.compile(r"[,;:/|]|\s+(?:og|och|and|samt|eller|or)\s+", re.IGNORECASE)
 _WORD_RE = re.compile(r"[a-zæøåäöüéèáàóòíìñß]+", re.IGNORECASE)
+_CONTEXT_WINDOW_CHARS = 90
+
+_REFERENCE_CONTEXT_RE = re.compile(
+    r"(?i)"
+    r"(?:"
+    r"\bet\s+al\.?(?=\W|$)"
+    r"|"
+    r"\b(?:"
+    r"doi|isbn|issn|references?|bibliograph(?:y|ies|ic)|"
+    r"citation|citations|cited|journal|proceedings|conference|"
+    r"volume|vol\.|pages?|pp\."
+    r")\b"
+    r")"
+)
 
 
 # ── Hjelpefunksjoner ──────────────────────────────────────────────────────────
+
+
+def _looks_like_generic_title_case_phrase(name: str) -> bool:
+    words = _WORD_RE.findall(str(name or "").casefold())
+    if len(words) < 2:
+        return False
+    generic_words = _GENERIC_TITLE_CASE_WORDS | _STOPWORDS
+    return all(word in generic_words for word in words)
 
 
 def looks_like_person_name(name: str) -> bool:
@@ -123,6 +192,8 @@ def looks_like_person_name(name: str) -> bool:
 
     parts = name.split()
     if len(parts) < 2 or len(parts) > 4:
+        return False
+    if _looks_like_generic_title_case_phrase(name):
         return False
     for part in parts:
         part = part.strip(".,;:()[]{}«»\"'")
@@ -151,6 +222,35 @@ def looks_like_person_name(name: str) -> bool:
                 return False
             if part.isupper() and len(part) > 2:
                 return False
+    return True
+
+
+def _context_window(text: str, start: int, end: int) -> str:
+    left = max(0, start - _CONTEXT_WINDOW_CHARS)
+    right = min(len(text), end + _CONTEXT_WINDOW_CHARS)
+    return text[left:right]
+
+
+def has_negative_person_name_context(text: str, start: int, end: int) -> bool:
+    """Returner True når konteksten tyder på referanse/bibliografi, ikke løpende PII.
+
+    Dette er med vilje et sterkt filter: brede tekniske ord brukes ikke alene her,
+    fordi de kan stå i samme setning som reelle personer.
+    """
+    if not text:
+        return False
+    start = max(0, min(start, len(text)))
+    end = max(start, min(end, len(text)))
+    window = _context_window(text, start, end)
+    return bool(_REFERENCE_CONTEXT_RE.search(window))
+
+
+def looks_like_person_name_in_context(name: str, text: str, start: int, end: int) -> bool:
+    """Returner True bare når både navnet og nærliggende kontekst ser ut som person-PII."""
+    if not looks_like_person_name(name):
+        return False
+    if has_negative_person_name_context(text, start, end):
+        return False
     return True
 
 
@@ -259,7 +359,7 @@ def find_names(text: str, lang: str = "nb") -> Iterator[Finding]:
         name = ent.text.strip()
         if "#" in name or name.startswith("-"):
             continue
-        if not _looks_like_name(name):
+        if not looks_like_person_name_in_context(name, text, ent.start_char, ent.end_char):
             continue
         if name not in seen:
             seen.add(name)

@@ -6930,7 +6930,7 @@
       "navn":          c => c.startsWith("navn (person)"),
       "nettadresse":   c => c.startsWith("nettadresse") || c.startsWith("ip-adresse"),
       "hemmeligheter": c => ["openai","anthropic","github","jwt","bearer","aws","private key","azure storage","passord i konfig","konfigurasjonsord","høy-entropisteng"].some(p => c.startsWith(p)),
-      "finansielt":    c => ["timepris","dagspris","prosjektsum","margin","rabatt","budsjett","lønn"].some(p => c.startsWith(p)),
+      "finansielt":    c => ["timepris","dagspris","prosjektsum","enhetspris","margin","rabatt","budsjett","lønn"].some(p => c.startsWith(p)),
       "medisinsk":     c => c.startsWith("medisinsk") || c.startsWith("medicinsk") || c.startsWith("medical") || c.startsWith("diagnose") || c.startsWith("diagnosis") || c.startsWith("legemiddel") || c.startsWith("läkemedel") || c.startsWith("medication"),
       "konfidensielt": c => c.startsWith("konfidensielt dokument"),
       "klient":        c => c.startsWith("kundenavn"),

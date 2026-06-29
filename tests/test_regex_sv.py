@@ -72,3 +72,14 @@ class TestFindBankgiro:
     def test_no_keyword_no_match(self):
         # Uten nøkkelord – skal ikke matche
         assert not self._texts("Konto 1234567")
+
+
+class TestFindPlusgiro:
+    def _texts(self, text: str) -> list[str]:
+        return [f.text for f in find_plusgiro(text)]
+
+    def test_plusgiro_with_keyword(self):
+        assert self._texts("Plusgiro: 12345-6")
+
+    def test_pg_inside_course_code_is_not_plusgiro(self):
+        assert not self._texts("TPG4925 Petroleum geoscience, master’s thesis")
