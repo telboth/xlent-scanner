@@ -15,6 +15,7 @@ _DOCLING_TABLE_IMAGE_DEPRECATION = (
     r"This field is deprecated\. Use `generate_page_images=True` and call "
     r"`TableItem\.get_image\(\)` to extract table images from page images\."
 )
+_DOCLING_IMAGE_PLACEHOLDER_RE = re.compile(r"(?is)<!--\s*image\s*-->")
 
 from xlent_scanner.detectors.clients import detect_clients
 from xlent_scanner.detectors.creditcards import detect_creditcards
@@ -42,6 +43,7 @@ from xlent_scanner.blacklist import detect_blacklist
 from xlent_scanner.detectors.custom_patterns import detect_custom_patterns
 
 IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff", ".webp"}
+TEXT_WARNING_MIN_CHARS = 50
 
 SUPPORTED_SUFFIXES = {
     ".pdf", ".docx", ".pptx", ".xlsx",
@@ -138,6 +140,32 @@ def _extract_text_pdf_fitz(path: Path) -> str:
         for page in doc:
             chunks.append(page.get_text("text"))
     return "\n".join(chunks).strip()
+
+
+def _pdf_looks_image_based(path: Path) -> bool:
+    """Returnerer True når PDF-en har bilder, men lite/ingen ekte PDF-tekst.
+
+    Dette brukes kun som en OCR-hint. Docling kan returnere Markdown-markører som
+    ``<!-- image -->`` for bildebaserte PDF-er; slike markører er ikke reell tekst
+    og skal ikke hindre at GUI tilbyr OCR.
+    """
+    try:
+        with fitz.open(path) as doc:
+            if doc.page_count == 0:
+                return False
+            image_count = 0
+            embedded_text_len = 0
+            for page in doc:
+                image_count += len(page.get_images(full=True))
+                embedded_text_len += len(page.get_text("text").strip())
+            return image_count > 0 and embedded_text_len < TEXT_WARNING_MIN_CHARS
+    except Exception:
+        return False
+
+
+def _meaningful_extracted_text(text: str) -> str:
+    """Fjerner parser-placeholders før vi vurderer om et dokument har tekst."""
+    return _DOCLING_IMAGE_PLACEHOLDER_RE.sub(" ", text).strip()
 
 
 def _extract_text_pdf(path: Path, ocr: bool = False) -> str:
@@ -698,10 +726,11 @@ def scan_file(
 
     preview = text
 
-    _TEXT_MIN = 50
     warning: str | None = None
     warning_code: str | None = None
-    if not text.strip():
+    meaningful_text = _meaningful_extracted_text(text)
+    pdf_image_based = suffix == ".pdf" and not ocr and _pdf_looks_image_based(p)
+    if not meaningful_text:
         warning_code = "no_text_extracted"
         warning = (
             "Ingen tekst ble funnet i dokumentet. "
@@ -709,7 +738,11 @@ def scan_file(
             "Innhold i bilder kan ikke sjekkes sikkert uten OCR. "
             "Bruk en tekstbasert versjon av filen, eller kjør OCR før scanning."
         )
-    elif len(text.strip()) < _TEXT_MIN:
+    elif len(meaningful_text) < TEXT_WARNING_MIN_CHARS or (
+        pdf_image_based
+        and _DOCLING_IMAGE_PLACEHOLDER_RE.search(text)
+        and len(meaningful_text) < TEXT_WARNING_MIN_CHARS * 4
+    ):
         warning_code = "little_text_extracted"
         warning = (
             "Lite eller ingen tekst ble funnet i dokumentet. "
