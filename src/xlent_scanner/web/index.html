@@ -1664,6 +1664,7 @@
       <details class="settings-section settings-expander" data-settings-key="whitelist">
         <summary class="settings-section-title" data-i18n="settingsWhitelistTitle">Hviteliste</summary>
         <div class="settings-note" data-i18n="whitelistPersonalNote">Denne hvitelisten er personlig og bygges opp av den enkelte bruker.</div>
+        <div class="settings-note" data-i18n="whitelistStructuredNote">Hviteliste brukes ikke for fødselsdato, prosjektsum eller budsjettall.</div>
         <div class="settings-note" id="whitelist-path"></div>
         <textarea id="whitelist-editor" class="settings-textarea" spellcheck="false"></textarea>
         <div class="settings-row" style="margin-top:8px;">
@@ -1900,6 +1901,7 @@
         settingsFilterTitle: "Filtrering",
         settingsWhitelistTitle: "Hviteliste",
         whitelistPersonalNote: "Denne hvitelisten er personlig og bygges opp av den enkelte bruker.",
+        whitelistStructuredNote: "Hviteliste brukes ikke for fødselsdato, prosjektsum eller budsjettall.",
         whitelistReload: "Last inn",
         whitelistSave: "Lagre hviteliste",
         whitelistPathLabel: "Fil:",
@@ -2320,6 +2322,7 @@
         settingsFilterTitle: "Filtrering",
         settingsWhitelistTitle: "Vitlista",
         whitelistPersonalNote: "Denna vitlista är personlig och byggs upp av varje enskild användare.",
+        whitelistStructuredNote: "Vitlistning används inte för födelsedatum, projektsummor eller budgettal.",
         whitelistReload: "Ladda in",
         whitelistSave: "Spara vitlista",
         whitelistPathLabel: "Fil:",
@@ -2730,6 +2733,7 @@
         settingsFilterTitle: "Filtering",
         settingsWhitelistTitle: "Whitelist",
         whitelistPersonalNote: "This whitelist is personal and built by each individual user.",
+        whitelistStructuredNote: "Whitelist is not used for birth dates, project sums, or budget figures.",
         whitelistReload: "Reload",
         whitelistSave: "Save whitelist",
         whitelistPathLabel: "File:",
@@ -3136,7 +3140,15 @@
         stripAnnotationsNote: "Gilt für unterstützte Originalformate: DOCX-Kommentare, PPTX-Sprechernotizen/Kommentare, XLSX-Kommentare und PDF-Anmerkungen.",
         ignoreXlent:         "Interne Begriffe filtern",
         ignoreHint:          "Domainnamen, interne E-Mails und Namen werden herausgefiltert.",
+        settingsWhitelistTitle:"Whitelist",
+        whitelistPersonalNote:"Diese Whitelist ist persönlich und wird von jedem einzelnen Benutzer aufgebaut.",
+        whitelistStructuredNote:"Whitelist wird nicht für Geburtsdaten, Projektsummen oder Budgetzahlen verwendet.",
+        whitelistReload:     "Laden",
+        whitelistSave:       "Whitelist speichern",
+        whitelistPathLabel:  "Datei:",
         whitelistHint:       "Werte, die in zukünftigen Scans nicht mehr gemeldet werden sollen.",
+        whitelistSaved:      "Whitelist gespeichert.",
+        whitelistLoadErr:    "Whitelist konnte nicht gelesen werden:",
         whitelistPath:       "Whitelist-Datei:",
         whitelistSaveOk:     "✓ Whitelist gespeichert.",
         whitelistSaveErr:    "Fehler beim Speichern:",
@@ -3554,7 +3566,15 @@
         stripAnnotationsNote: "S’applique aux formats originaux pris en charge : commentaires DOCX, notes/commentaires PPTX, commentaires XLSX et annotations PDF.",
         ignoreXlent:         "Filtrer les termes internes",
         ignoreHint:          "Les noms de domaine, e-mails internes et noms sont filtrés.",
+        settingsWhitelistTitle:"Liste blanche",
+        whitelistPersonalNote:"Cette liste blanche est personnelle et constituée par chaque utilisateur.",
+        whitelistStructuredNote:"La liste blanche ne s’applique pas aux dates de naissance, montants de projet ou chiffres budgétaires.",
+        whitelistReload:     "Charger",
+        whitelistSave:       "Enregistrer la liste blanche",
+        whitelistPathLabel:  "Fichier :",
         whitelistHint:       "Valeurs à ne plus signaler dans les analyses futures.",
+        whitelistSaved:      "Liste blanche enregistrée.",
+        whitelistLoadErr:    "Impossible de lire la liste blanche :",
         whitelistPath:       "Fichier liste blanche :",
         whitelistSaveOk:     "✓ Liste blanche enregistrée.",
         whitelistSaveErr:    "Erreur d'enregistrement :",
@@ -3972,7 +3992,15 @@
         stripAnnotationsNote: "Se aplica a formatos originales compatibles: comentarios DOCX, notas/comentarios PPTX, comentarios XLSX y anotaciones PDF.",
         ignoreXlent:         "Filtrar términos internos",
         ignoreHint:          "Los nombres de dominio, correos internos y nombres se filtran.",
+        settingsWhitelistTitle:"Lista blanca",
+        whitelistPersonalNote:"Esta lista blanca es personal y la crea cada usuario.",
+        whitelistStructuredNote:"La lista blanca no se usa para fechas de nacimiento, importes de proyecto ni cifras presupuestarias.",
+        whitelistReload:     "Cargar",
+        whitelistSave:       "Guardar lista blanca",
+        whitelistPathLabel:  "Archivo:",
         whitelistHint:       "Valores que no se reportarán en análisis futuros.",
+        whitelistSaved:      "Lista blanca guardada.",
+        whitelistLoadErr:    "No se pudo leer la lista blanca:",
         whitelistPath:       "Archivo lista blanca:",
         whitelistSaveOk:     "✓ Lista blanca guardada.",
         whitelistSaveErr:    "Error al guardar:",
@@ -4344,6 +4372,10 @@
     const PATCH_EXT   = new Set(["docx","pptx","xlsx","pdf"]);
     const IMAGE_EXT   = new Set(["png","jpg","jpeg","bmp","tif","tiff","webp"]);
     const LANG_LABEL  = { nb:"🇳🇴 Norsk", sv:"🇸🇪 Svenska", en:"🇬🇧 English" };
+    const NON_WHITELISTABLE_CATEGORY_TOKENS = [
+      "prosjektsum", "fødselsdato", "fodselsdato", "fødselsdata",
+      "fodselsdata", "budsjettall", "budsjett",
+    ];
 
     function escapeHtml(s) {
       return String(s).replace(/[&<>"']/g, c =>
@@ -4355,6 +4387,10 @@
       if (r.warning_code === "no_text_extracted") return t("warnNoText");
       if (r.warning_code === "little_text_extracted") return t("warnLittleText");
       return r.warning || "";
+    }
+    function _categoryAllowsWhitelist(category) {
+      const normalized = String(category || "").replace("🤖", "").trim().toLowerCase();
+      return !NON_WHITELISTABLE_CATEGORY_TOKENS.some(token => normalized.includes(token));
     }
     function withLogHint(msg) {
       if (!LOG_PATH || LOG_PATH === "__LOG_PATH__") return msg;
@@ -5650,12 +5686,14 @@
       const rows = sorted_use.map(({ f, i }) => {
         const sc    = SEV_COLOR[f.severity] || "#ffb84d";
         const light = (f.severity === "gul" || f.severity === "grønn");
-        const isWl  = f.severity === "grønn";   // hvitelistet funn
-        const canWl = (f.severity === "gul" || f.severity === "rød") && !f.category.startsWith("⚠");
+        const whitelistAllowed = _categoryAllowsWhitelist(f.category);
+        const isWl  = f.severity === "grønn" && whitelistAllowed;   // hvitelistet funn
+        const canWl = (f.severity === "gul" || f.severity === "rød") && !f.category.startsWith("⚠") && whitelistAllowed;
         const wlBtn = isWl
           ? `<span style="font-size:11px;color:var(--ok);padding:0 4px">✓ ${t("wlAdded")}</span>`
           : (canWl
               ? `<button class="wl-btn" data-text="${escapeHtml(f.text)}"
+                   data-category="${escapeHtml(f.category)}"
                    title="${t("wlAdd")}">${t("wlAdd")}</button>`
               : "");
         return `
@@ -5977,7 +6015,10 @@
           try {
             await fetch(`${API}/add-to-whitelist`, {
               method:"POST", headers:{"Content-Type":"application/json"},
-              body: JSON.stringify({ text: btn.dataset.text }),
+              body: JSON.stringify({
+                text: btn.dataset.text,
+                category: btn.dataset.category || "",
+              }),
             });
             const row = btn.closest(".finding-row");
             row.style.opacity = "0.3";
@@ -7623,11 +7664,13 @@
         const sev   = _aiSev(f);
         const sc    = SEV_COLOR[sev] || "#ffb84d";
         const light = (sev === "gul" || sev === "grønn");
-        const canWl = (sev !== "svart" && sev !== "grønn");   // grønne er allerede hvitelistet
+        const whitelistAllowed = _categoryAllowsWhitelist(f.category);
+        const canWl = (sev !== "svart" && sev !== "grønn" && whitelistAllowed);   // grønne er allerede hvitelistet
         const wlBtn = canWl
           ? `<button class="wl-btn ai-wl-btn" data-text="${escapeHtml(f.text||"")}"
+               data-category="${escapeHtml(f.category||"")}"
                title="${t("wlAdd")}">${t("wlAdd")}</button>`
-          : (sev === "grønn"
+          : (sev === "grønn" && whitelistAllowed
               ? `<span style="font-size:11px;color:var(--ok);padding:0 4px">✓ ${t("wlAdded")}</span>`
               : "");
         const li = document.createElement("li");
@@ -7657,10 +7700,11 @@
       list.querySelectorAll(".ai-wl-btn").forEach(btn => {
         btn.addEventListener("click", async () => {
           const text = btn.dataset.text;
+          const category = btn.dataset.category || "";
           try {
             await fetch(`${API}/add-to-whitelist`, {
               method:"POST", headers:{"Content-Type":"application/json"},
-              body: JSON.stringify({ text }),
+              body: JSON.stringify({ text, category }),
             });
             const row = btn.closest(".finding-row");
             row.style.opacity = "0.35";

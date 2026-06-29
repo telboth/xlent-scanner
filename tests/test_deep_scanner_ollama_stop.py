@@ -988,6 +988,33 @@ def test_deep_scan_extracts_financial_numbers_from_budget_table(monkeypatch):
     assert all(f["category"] == "🤖 Budsjettall" for f in findings)
 
 
+def test_deep_scan_budget_findings_do_not_become_green_from_whitelist(monkeypatch):
+    monkeypatch.setattr(deep_scanner, "_call_ollama", lambda model, prompt: [])
+    monkeypatch.setattr("xlent_scanner.whitelist.load_whitelist", lambda: {"30"})
+    deep_scanner._jobs.clear()
+    job_id = "fin01wl"
+    deep_scanner._jobs[job_id] = {
+        "job_id": job_id,
+        "status": "running",
+        "progress": "",
+        "findings": [],
+        "cancelled": False,
+        "started_at": time.time(),
+    }
+    text = "\n".join([
+        "Role | Hours | Cost (NOK) | Comment",
+        "Architect | 12 | 30 | fixed",
+    ])
+
+    deep_scanner._run_deep_scan(text, "llama3.2:3b", "en", job_id, ["budsjett_tall"])
+
+    findings = deep_scanner.get_deep_scan_status(job_id)["findings"]
+    assert findings
+    assert all(f["category"] == "🤖 Budsjettall" for f in findings)
+    assert all(f.get("severity") != "grønn" for f in findings)
+    assert all(not f.get("whitelisted") for f in findings)
+
+
 def test_deep_scan_does_not_extract_loose_or_non_financial_table_numbers(monkeypatch):
     monkeypatch.setattr(deep_scanner, "_call_ollama", lambda model, prompt: [])
     deep_scanner._jobs.clear()

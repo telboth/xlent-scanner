@@ -270,8 +270,9 @@ _TEMPLATE = _JINJA_ENV.from_string("""<!DOCTYPE html>
     <td>
       {% if f.whitelisted %}
       <span class="wl-tag">✓ Hvitelistet</span>
-      {% elif not f.category.startswith('⚠') %}
+      {% elif f.whitelist_allowed and not f.category.startswith('⚠') %}
       <button class="wl-btn" data-text="{{ f.text|e }}"
+              data-category="{{ f.category|e }}"
               title="Ikke varsle om denne verdien i fremtidige skanninger">
         + Hviteliste
       </button>
@@ -336,11 +337,12 @@ document.getElementById('patch-btn').onclick = () => postAction('patch');
 document.querySelectorAll('.wl-btn').forEach(btn => {
   btn.addEventListener('click', async () => {
     const text = btn.dataset.text;
+    const category = btn.dataset.category || '';
     try {
       await fetch(`${API}/add-to-whitelist`, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({text})
+        body: JSON.stringify({text, category})
       });
       const row = btn.closest('.finding-row');
       row.style.opacity = '0.4';
@@ -388,7 +390,7 @@ def _build_merged_findings(
     Whitelist-matchede funn har whitelisted=True og severity='grønn'.
     Duplikate AI-funn (tekst finnes allerede i regelbaserte) hoppes over.
     """
-    from xlent_scanner.whitelist import load_whitelist  # noqa: PLC0415
+    from xlent_scanner.whitelist import category_allows_whitelist, load_whitelist  # noqa: PLC0415
 
     wl = load_whitelist()
     audit_metadata = audit_metadata or {}
@@ -398,6 +400,7 @@ def _build_merged_findings(
 
     # ── Regelbaserte funn ─────────────────────────────────────────────────
     for idx, f in enumerate(result.findings):
+        whitelist_allowed = category_allows_whitelist(f.category)
         existing_texts.add(f.text.lower())
         merged.append(SimpleNamespace(
             category=f.category,
@@ -406,7 +409,8 @@ def _build_merged_findings(
             severity=f.severity,
             finding_index=idx,
             is_ai=False,
-            whitelisted=(f.severity == "grønn"),
+            whitelisted=(f.severity == "grønn" and whitelist_allowed),
+            whitelist_allowed=whitelist_allowed,
             engine="Regelbasert",
             confidence="deterministisk",
         ))
@@ -423,9 +427,10 @@ def _build_merged_findings(
         existing_texts.add(text.lower())
 
         cat = str(f.get("category") or "AI-funn")
+        whitelist_allowed = category_allows_whitelist(cat)
         # Sjekk om allerede merket grønn av deep_scanner (whitelisted der)
         raw_sev = str(f.get("severity") or "")
-        if raw_sev == "grønn" or text.lower() in wl:
+        if whitelist_allowed and (raw_sev == "grønn" or text.lower() in wl):
             sev = "grønn"
             is_wl = True
         else:
@@ -440,6 +445,7 @@ def _build_merged_findings(
             finding_index=None,
             is_ai=True,
             whitelisted=is_wl,
+            whitelist_allowed=whitelist_allowed,
             engine=f"AI ({model})" if model else "AI",
             confidence=str(f.get("confidence") or ""),
         ))

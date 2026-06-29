@@ -35,7 +35,7 @@ from xlent_scanner.report import (
     generate_html,
 )
 from xlent_scanner.utils import open_path, reveal_path
-from xlent_scanner.whitelist import add_to_whitelist
+from xlent_scanner.whitelist import add_to_whitelist, category_allows_whitelist
 
 LOGGER = logging.getLogger("xlent_scanner")
 reports_bp = Blueprint("reports", __name__)
@@ -149,8 +149,15 @@ def write_text_pdf(text: str, out_path: Path, title: str = "") -> None:
 def add_to_whitelist_endpoint():
     data = request.get_json(force=True)
     text = data.get("text", "")
+    category = str(data.get("category") or "")
     if not text:
         return jsonify({"error": "Ingen tekst oppgitt."})
+    if category and not category_allows_whitelist(category):
+        return jsonify({
+            "ok": False,
+            "error": "Denne kategorien kan ikke hvitelistes.",
+            "error_code": "whitelistCategoryBlocked",
+        })
     add_to_whitelist(text)
     return jsonify({"ok": True})
 

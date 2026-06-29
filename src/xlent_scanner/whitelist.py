@@ -16,6 +16,17 @@ from xlent_scanner.models import Finding
 from xlent_scanner.paths import app_data_dir
 
 
+_NON_WHITELISTABLE_CATEGORY_TOKENS = (
+    "prosjektsum",
+    "fødselsdato",
+    "fodselsdato",
+    "fødselsdata",
+    "fodselsdata",
+    "budsjettall",
+    "budsjett",
+)
+
+
 def _whitelist_path() -> Path:
     return app_data_dir() / "whitelist.toml"
 
@@ -119,13 +130,23 @@ def add_to_whitelist(text: str) -> None:
     save_whitelist_entries(existing)
 
 
+def category_allows_whitelist(category: str) -> bool:
+    """Returner False for funnkategorier der whitelist ikke gir faglig mening."""
+    normalized = str(category or "").casefold().replace("🤖", "").strip()
+    return not any(token in normalized for token in _NON_WHITELISTABLE_CATEGORY_TOKENS)
+
+
 def filter_by_whitelist(findings: list[Finding]) -> list[Finding]:
     """Fjern funn der f.text (lowercase) finnes i hvitelisten.
     Beholdt for bakoverkompatibilitet; bruk mark_whitelist_findings() for ny kode."""
     wl = load_whitelist()
     if not wl:
         return findings
-    return [f for f in findings if f.text.lower() not in wl]
+    return [
+        f
+        for f in findings
+        if f.text.lower() not in wl or not category_allows_whitelist(f.category)
+    ]
 
 
 def mark_whitelist_findings(findings: list[Finding]) -> list[Finding]:
@@ -140,7 +161,7 @@ def mark_whitelist_findings(findings: list[Finding]) -> list[Finding]:
         return findings
     result: list[Finding] = []
     for f in findings:
-        if f.text.lower() in wl:
+        if f.text.lower() in wl and category_allows_whitelist(f.category):
             # Merk som grønn – preserve all other fields
             result.append(dataclasses.replace(f, severity="grønn"))
         else:

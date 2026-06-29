@@ -1,6 +1,6 @@
 # XLENT Compliance-scanner
 
-> **v1.7.0** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
+> **v1.7.1** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
 
 Alt kjøres 100 % lokalt — ingen dokumenter, tekst eller funn sendes over internett.
 
@@ -215,7 +215,7 @@ Finder-hurtighandlingen installeres automatisk av `install_macos.sh`. Hvis den m
    - **Mappe** — velg en mappe for å skanne støttede filer
 3. (Valgfritt) Huk av **🔬 Kjør AI-dybdeskann** for også å analysere med lokal AI (krever Ollama)
 4. Se gjennom funnene — sammendragsraden øverst viser antall per alvorlighetsgrad
-5. Klikk **+ Hviteliste** på falske positive for å filtrere dem ut i fremtiden
+5. Klikk **+ Hviteliste** på falske positive for å filtrere dem ut i fremtiden. Strukturerte/sensitive kategorier som fødselsdato, prosjektsum og budsjettall kan ikke hvitelistes.
 6. Bruk **Generer .md-fil** / **Generer PDF** / **Lagre anonymisert .<format>** for å lage en renset versjon
 7. Åpne **HTML-rapport** eller last ned **PDF-rapport** for full dokumentasjon (inkl. AI-funn)
 
@@ -437,10 +437,15 @@ src/xlent_scanner/
 
 ## Endringslogg
 
+### v1.7.1
+- Gjør hvitelisting kategori-bevisst i GUI, HTML-rapport og API, slik at fødselsdato, prosjektsum og budsjettall ikke kan hvitelistes.
+- Oppdaterer hjelpetekst for hviteliste i Innstillinger på alle UI-språk.
+
 ### v1.7.0
 - Tømmer feltet «Ekstrahert tekst» straks ny fil-, tekst- eller mappeskann starter, slik at tekst fra forrige dokument ikke vises mens ny skann pågår.
 - Ignorerer DOI-resolver-lenker som `doi.org` og `dx.doi.org` i URL-detektoren for å redusere støy i akademiske referanselister.
 - Strammer inn personnavnfilteret for tekniske tittelcase-fraser som «Conversion Tool» og «Frequency Range».
+- Skjuler og avviser hvitelisting for fødselsdato, prosjektsum og budsjettall, også ved direkte API-kall.
 
 ### v1.6.10
 - La til rasterbasert **anonymisert bilde-PDF** for innskannede/OCR-baserte PDF-er.

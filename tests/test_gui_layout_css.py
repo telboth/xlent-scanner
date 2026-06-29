@@ -637,6 +637,14 @@ def test_guard_watch_custom_patterns_and_ocr_ui_are_wired():
         "backgroundClipboard",
         "backgroundLast",
         "backgroundLastClipboard",
+        "settingsWhitelistTitle",
+        "whitelistPersonalNote",
+        "whitelistStructuredNote",
+        "whitelistReload",
+        "whitelistSave",
+        "whitelistPathLabel",
+        "whitelistSaved",
+        "whitelistLoadErr",
         "redactionProfile",
         "profileNormal",
         "profileLowFp",
@@ -703,6 +711,23 @@ def test_text_preview_is_cleared_when_new_scan_starts():
     assert "_clearTextPreview();" in html[html.index("async function scanUpload"):html.index("/* ══════════════════════════════════════════════════════════════════\n       DRAG-DROP")]
     assert "_clearTextPreview();" in html[html.index('document.getElementById("btn-scan-text").addEventListener'):html.index("/* ══════════════════════════════════════════════════════════════════\n       FOLDER SCAN")]
     assert "_clearTextPreview();" in html[html.index('document.getElementById("btn-scan-folder").addEventListener'):html.index("const dlg = await")]
+
+
+def test_whitelist_button_is_hidden_for_non_whitelistable_categories():
+    html = HTML.read_text(encoding="utf-8")
+
+    assert 'data-i18n="whitelistStructuredNote"' in html
+    assert "const NON_WHITELISTABLE_CATEGORY_TOKENS" in html
+    for token in ["prosjektsum", "fødselsdato", "budsjettall", "budsjett"]:
+        assert f'"{token}"' in html
+    assert "function _categoryAllowsWhitelist(category)" in html
+    assert 'const whitelistAllowed = _categoryAllowsWhitelist(f.category);' in html
+    assert '&& !f.category.startsWith("⚠") && whitelistAllowed' in html
+    assert 'const canWl = (sev !== "svart" && sev !== "grønn" && whitelistAllowed);' in html
+    assert 'data-category="${escapeHtml(f.category)}"' in html
+    assert 'data-category="${escapeHtml(f.category||"")}"' in html
+    assert 'category: btn.dataset.category || ""' in html
+    assert "body: JSON.stringify({ text, category })" in html
 
 
 def test_ocr_pdf_redaction_uses_image_pdf_redaction_instead_of_direct_patch():

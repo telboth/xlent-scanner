@@ -186,9 +186,39 @@ class TestReport:
         """AI-funn som IKKE er hvitelistet skal ha + Hviteliste-knapp."""
         html = generate_html(
             _result_with_findings(),
+            api_base="http://127.0.0.1:5000",
             ai_findings=[{"category": "🤖 Selskapsnavn", "text": "Shearwater", "context": "x"}],
         )
-        assert "wl-btn" in html
+        assert '<button class="wl-btn"' in html
+        assert 'data-category="🤖 Selskapsnavn"' in html
+        assert "JSON.stringify({text, category})" in html
+
+    def test_whitelist_button_hidden_for_non_whitelistable_categories(self):
+        result = ScanResult(
+            file_name="blocked.txt",
+            file_size=100,
+            text_length=50,
+            text_preview="",
+            original_text="",
+            risk_level="gul",
+            risk_summary="Sensitive funn",
+            language="nb",
+            findings=[
+                Finding(category="prosjektsum", text="4,5 MNOK", severity="gul"),
+                Finding(category="fødselsdato", text="01.02.1980", severity="gul"),
+            ],
+        )
+
+        html = generate_html(
+            result,
+            api_base="http://127.0.0.1:5000",
+            ai_findings=[{"category": "🤖 Budsjettall", "text": "1200000", "context": "x"}],
+        )
+
+        assert "4,5 MNOK" in html
+        assert "01.02.1980" in html
+        assert "1200000" in html
+        assert '<button class="wl-btn"' not in html
 
     def test_microsoft_365_tags_and_policy_warning_render(self):
         result = _result_with_findings()

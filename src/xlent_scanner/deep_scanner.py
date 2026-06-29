@@ -1538,12 +1538,15 @@ def _run_deep_scan(
 
     # Marker whitelist-funn som grønne (same logikk som regelbasert skann)
     try:
-        from xlent_scanner.whitelist import load_whitelist  # noqa: PLC0415
+        from xlent_scanner.whitelist import category_allows_whitelist, load_whitelist  # noqa: PLC0415
         wl = load_whitelist()
         if wl:
             marked = 0
             for f in deduped:
-                if f.get("text", "").lower() in wl:
+                if (
+                    f.get("text", "").lower() in wl
+                    and category_allows_whitelist(str(f.get("category") or ""))
+                ):
                     f["severity"] = "grønn"
                     f["whitelisted"] = True
                     marked += 1
