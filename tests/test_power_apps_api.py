@@ -6,7 +6,7 @@ from pathlib import Path
 from docx import Document
 
 from xlent_scanner import app as app_module
-from xlent_scanner.models import Finding, ScanResult
+from xlent_scanner.models import Finding, ScanResult, SuppressedFinding
 
 
 def _fake_result() -> ScanResult:
@@ -51,6 +51,42 @@ def test_api_scan_text_uses_separate_state_and_omits_original_text(monkeypatch):
     assert "FULL_SECRET_NOT_RETURNED" not in str(data)
     assert "RAW_SECRET_NOT_RETURNED" not in str(data)
     assert app_module.app_state.last_result is sentinel
+
+
+def test_api_scan_text_accepts_scan_profile_and_optional_suppressed(monkeypatch):
+    monkeypatch.delenv("XLENT_SCANNER_API_KEY", raising=False)
+    captured = {}
+
+    def fake_scan_text(*args, **kwargs):
+        captured.update(kwargs)
+        result = _fake_result()
+        result.suppressed_findings = [
+            SuppressedFinding(
+                category="telefonnummer",
+                text="pp. 4662-4666",
+                reason="bibliografisk DOI/ISBN/ISSN/sidekontekst",
+            )
+        ]
+        return result
+
+    monkeypatch.setattr(app_module, "scan_text", fake_scan_text)
+    app_module.app_state.api_scan_results.clear()
+
+    client = app_module.flask_app.test_client()
+    response = client.post(
+        "/api/scan-text",
+        json={
+            "text": "test",
+            "language": "en",
+            "scan_profile": "technical",
+            "include_suppressed": True,
+        },
+    )
+
+    assert response.status_code == 200
+    assert captured["scan_profile"] == "technical"
+    data = response.get_json()
+    assert data["suppressed_findings"][0]["text"] == "pp. 4662-4666"
 
 
 def test_api_scan_text_requires_key_when_configured(monkeypatch):

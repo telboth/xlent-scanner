@@ -2,7 +2,7 @@ param(
     [string]$PythonExe = "",
     [string]$OutputRoot = "artifacts\windows\app",
     [ValidateSet("slim", "full")]
-    [string]$BuildFlavor = "slim",
+    [string]$BuildFlavor = "full",
     [switch]$Clean
 )
 

@@ -25,6 +25,7 @@ def _error_payload(message: str) -> dict:
         "text_length": 0,
         "text_preview": "",
         "findings": [],
+        "suppressed_findings": [],
         "risk_level": "grønn",
         "risk_summary": "",
         "recommended_action": "",
@@ -51,6 +52,24 @@ def _remember_result(result, path: Path | None) -> None:
     )
 
 
+def _scan_file_compat(*args, scan_profile: str = "normal", **kwargs):
+    try:
+        return scan_file(*args, scan_profile=scan_profile, **kwargs)
+    except TypeError as exc:
+        if "unexpected keyword argument" not in str(exc):
+            raise
+        return scan_file(*args, **kwargs)
+
+
+def _scan_text_compat(*args, scan_profile: str = "normal", **kwargs):
+    try:
+        return scan_text(*args, scan_profile=scan_profile, **kwargs)
+    except TypeError as exc:
+        if "unexpected keyword argument" not in str(exc):
+            raise
+        return scan_text(*args, **kwargs)
+
+
 @scanning_bp.post("/scan")
 def scan():
     try:
@@ -59,18 +78,21 @@ def scan():
         ignore_xlent = bool(data.get("ignore_xlent", False))
         language = data.get("language", "auto")
         ocr = bool(data.get("ocr", False))
+        scan_profile = data.get("scan_profile", "normal")
         LOGGER.info(
-            "scan request path=%s lang=%s ignore_xlent=%s ocr=%s",
+            "scan request path=%s lang=%s profile=%s ignore_xlent=%s ocr=%s",
             file_path,
             language,
+            scan_profile,
             ignore_xlent,
             ocr,
         )
-        result = scan_file(
+        result = _scan_file_compat(
             file_path,
             ignore_xlent=ignore_xlent,
             language=language,
             ocr=ocr,
+            scan_profile=scan_profile,
         )
         _remember_result(result, Path(file_path) if file_path else None)
         LOGGER.info(
@@ -95,13 +117,15 @@ def scan_upload():
         ignore_xlent = request.form.get("ignore_xlent", "false").lower() == "true"
         language = request.form.get("language", "auto")
         ocr = request.form.get("ocr", "false").lower() == "true"
+        scan_profile = request.form.get("scan_profile", "normal")
         original_name = uploaded.filename or "ukjent"
         suffix = Path(original_name).suffix.lower()
         LOGGER.info(
-            "scan-upload request name=%s suffix=%s lang=%s ignore_xlent=%s ocr=%s",
+            "scan-upload request name=%s suffix=%s lang=%s profile=%s ignore_xlent=%s ocr=%s",
             original_name,
             suffix,
             language,
+            scan_profile,
             ignore_xlent,
             ocr,
         )
@@ -117,11 +141,12 @@ def scan_upload():
         tmp_path = Path(tmp)
         os.close(fd)
         uploaded.save(str(tmp_path))
-        result = scan_file(
+        result = _scan_file_compat(
             tmp_path,
             ignore_xlent=ignore_xlent,
             language=language,
             ocr=ocr,
+            scan_profile=scan_profile,
         )
         result.file_name = original_name
         app_state.last_tmp_path = tmp_path
@@ -149,8 +174,9 @@ def scan_text_endpoint():
         data = request.get_json(force=True)
         text = data.get("text", "")
         language = data.get("language", "auto")
-        LOGGER.info("scan-text request len=%d lang=%s", len(text), language)
-        result = scan_text(text, language=language)
+        scan_profile = data.get("scan_profile", "normal")
+        LOGGER.info("scan-text request len=%d lang=%s profile=%s", len(text), language, scan_profile)
+        result = _scan_text_compat(text, language=language, scan_profile=scan_profile)
         _remember_result(result, None)
         LOGGER.info("scan-text result findings=%d", len(result.findings))
         return jsonify(asdict(result))

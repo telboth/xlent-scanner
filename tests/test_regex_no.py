@@ -171,5 +171,45 @@ class TestFindTelefon:
     def test_meter_range_not_matched_as_phone(self):
         assert not self._texts("Dybdeintervallet er 3000-4500m.")
 
+    def test_chart_axis_values_not_matched_as_phone(self):
+        text = (
+            "Time domain error 0 5 10 15 20 25 30 35 40 45 50 55 "
+            "60 65 70 75 80 85 90 95 100 105 110 115 Frequency gap [Hz]"
+        )
+
+        hits = self._texts(text)
+
+        assert "20 25 30 35" not in hits
+        assert "40 45 50 55" not in hits
+        assert "70 75 80 85" not in hits
+        assert hits == []
+
+    def test_large_chart_axis_values_not_matched_as_phone(self):
+        text = "Target 0 1000 2000 3000 4000 O,set [m] 0 1 2 3 4 Time [s]"
+
+        assert "2000 3000" not in self._texts(text)
+        assert self._texts(text) == []
+
+    def test_frequency_axis_values_not_matched_as_phone(self):
+        text = "Frequency gap [Hz] 0 10 20 30 40 50 60 Error [degrees]"
+
+        assert "20 30 40 50" not in self._texts(text)
+        assert self._texts(text) == []
+
+    def test_regular_phone_number_with_spaces_is_still_matched(self):
+        assert "22 33 44 55" in self._texts("Ring sentralbordet på 22 33 44 55.")
+
+    def test_explicit_phone_label_overrides_axis_like_number_sequence(self):
+        assert "20 25 30 35" in self._texts("Tel: 20 25 30 35")
+
+    def test_page_range_not_matched_as_phone(self):
+        assert not self._texts("Dette er omtalt i Smith et al., pp. 4662-4666.")
+
+    def test_pages_label_not_matched_as_phone(self):
+        assert not self._texts("See pages 4662-4666 for details.")
+
+    def test_phone_label_still_allows_same_digit_pattern_as_page_range(self):
+        assert "4662-4666" in self._texts("Tel: 4662-4666")
+
     def test_postcode_not_matched(self):
         assert not self._texts("Postnummer: 0150")

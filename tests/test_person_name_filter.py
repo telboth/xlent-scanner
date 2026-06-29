@@ -56,6 +56,14 @@ def test_person_name_filter_rejects_generic_technical_title_case_phrases():
         "Seismic Interpretation",
         "Reservoir Model",
         "Uncertainty Analysis",
+        "Batch Size",
+        "Machine Intelligence",
+        "Machine Intelligense",
+        "Machine Learning",
+        "Artificial Intelligence",
+        "Physically Informed Autoencoder",
+        "Cyclic Thin Interbeds",
+        "Spec-Driven Development",
     ]:
         assert not looks_like_person_name(value)
 

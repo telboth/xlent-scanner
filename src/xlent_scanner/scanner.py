@@ -36,6 +36,7 @@ from xlent_scanner.ignore import filter_findings, load_ignore_list
 from xlent_scanner.language import resolve_language
 from xlent_scanner.models import Finding, ScanResult  # noqa: F401
 from xlent_scanner.risk import assess
+from xlent_scanner.suppression import capture_suppressed_findings
 from xlent_scanner.whitelist import mark_whitelist_findings
 from xlent_scanner.blacklist import detect_blacklist
 from xlent_scanner.detectors.custom_patterns import detect_custom_patterns
@@ -60,6 +61,10 @@ DEFAULT_EXCLUDED_DIRS = {
 }
 
 _ignore_list: dict | None = None
+
+
+def normalise_scan_profile(scan_profile: str | None) -> str:
+    return "technical" if str(scan_profile or "").strip().lower() in {"technical", "academic"} else "normal"
 
 
 def reset_ignore_cache() -> None:
@@ -432,14 +437,17 @@ def _run_detectors(
     text: str,
     lang: str,
     ignore_xlent: bool = False,
+    scan_profile: str = "normal",
 ) -> tuple[list[Finding], bool]:
     """Kjør alle detektorer og returner funn samt om skannen ble degradert."""
     findings: list[Finding] = []
     detector_errors: list[str] = []
 
-    def _run(fn, *args):
+    scan_profile = normalise_scan_profile(scan_profile)
+
+    def _run(fn, *args, **kwargs):
         try:
-            findings.extend(fn(*args))
+            findings.extend(fn(*args, **kwargs))
         except Exception as exc:
             detector_errors.append(f"{fn.__name__}: {type(exc).__name__}: {exc}")
 
@@ -448,7 +456,7 @@ def _run_detectors(
     _run(find_emails, text)
     _run(detect_urls, text)
     if lang in ("nb", "en", "da"):
-        _run(detect_no_specific, text)
+        _run(detect_no_specific, text, scan_profile=scan_profile)
     if lang in ("sv", "en"):
         _run(detect_sv_specific, text)
     if lang == "da":
@@ -467,7 +475,7 @@ def _run_detectors(
     _run(detect_clients, text)
     _run(detect_extra, text)
     _run(detect_custom_patterns, text)
-    _run(detect_names, text, lang)
+    _run(detect_names, text, lang, scan_profile=scan_profile)
 
     if ignore_xlent:
         findings = filter_findings(findings, _get_ignore_list())
@@ -484,7 +492,12 @@ def _run_detectors(
     return findings, bool(ner_err or detector_errors)
 
 
-def scan_text(text: str, language: str = "auto", source_name: str = "Innlimt tekst") -> ScanResult:
+def scan_text(
+    text: str,
+    language: str = "auto",
+    source_name: str = "Innlimt tekst",
+    scan_profile: str = "normal",
+) -> ScanResult:
     """Skann ren tekst direkte (uten filekstraksjon). Brukes for utklippstavle/paste."""
     if not text.strip():
         return ScanResult(
@@ -492,7 +505,9 @@ def scan_text(text: str, language: str = "auto", source_name: str = "Innlimt tek
             error="Ingen tekst å skanne.", scan_status="failed",
         )
     lang = resolve_language(language, text)
-    findings, degraded = _run_detectors(text, lang)
+    scan_profile = normalise_scan_profile(scan_profile)
+    with capture_suppressed_findings() as suppressed:
+        findings, degraded = _run_detectors(text, lang, scan_profile=scan_profile)
 
     result = ScanResult(
         file_name=source_name,
@@ -500,6 +515,7 @@ def scan_text(text: str, language: str = "auto", source_name: str = "Innlimt tek
         text_length=len(text),
         text_preview=text,
         findings=findings,
+        suppressed_findings=list(suppressed),
         original_text=text,
         language=lang,
         scan_status="partial" if degraded else "success",
@@ -601,6 +617,7 @@ def scan_folder(
     max_files: int = DEFAULT_FOLDER_MAX_FILES,
     recursive: bool = False,
     max_depth: int = DEFAULT_FOLDER_MAX_DEPTH,
+    scan_profile: str = "normal",
 ) -> list[ScanResult]:
     """Skann alle støttede filer i en mappe. Returnerer resultater sortert etter risikonivå."""
     plan = build_folder_scan_plan(
@@ -612,7 +629,17 @@ def scan_folder(
     root = Path(folder)
     results = []
     for f in plan["files"]:
-        result = scan_file(f, ignore_xlent=ignore_xlent, language=language)
+        try:
+            result = scan_file(
+                f,
+                ignore_xlent=ignore_xlent,
+                language=language,
+                scan_profile=scan_profile,
+            )
+        except TypeError as exc:
+            if "unexpected keyword argument" not in str(exc):
+                raise
+            result = scan_file(f, ignore_xlent=ignore_xlent, language=language)
         result.relative_path = str(Path(f).relative_to(root))
         result.source_path = str(f)
         results.append(result)
@@ -626,6 +653,7 @@ def scan_file(
     ignore_xlent: bool = False,
     language: str = "auto",
     ocr: bool = False,
+    scan_profile: str = "normal",
 ) -> ScanResult:
     p = Path(path)
     if not p.exists():
@@ -691,8 +719,15 @@ def scan_file(
         )
 
     lang = resolve_language(language, text)
+    scan_profile = normalise_scan_profile(scan_profile)
 
-    findings, degraded = _run_detectors(text, lang, ignore_xlent=ignore_xlent)
+    with capture_suppressed_findings() as suppressed:
+        findings, degraded = _run_detectors(
+            text,
+            lang,
+            ignore_xlent=ignore_xlent,
+            scan_profile=scan_profile,
+        )
 
     result = ScanResult(
         file_name=p.name,
@@ -700,6 +735,7 @@ def scan_file(
         text_length=len(text),
         text_preview=preview,
         findings=findings,
+        suppressed_findings=list(suppressed),
         original_text=text,
         language=lang,
         warning=warning,

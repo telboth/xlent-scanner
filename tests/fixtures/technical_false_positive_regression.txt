@@ -1,0 +1,5 @@
+The target axis is 0 1000 2000 3000 4000 O,set [m].
+The time domain error axis is 0 5 10 15 20 25 30 35 40 45 50.
+The page reference is pp. 4662-4666.
+The reference DOI is doi: 10.1785/BSSA0760551393.
+The model section is Sparse Solver and Neural Transformer.

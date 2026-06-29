@@ -668,6 +668,22 @@ def _api_openapi_spec() -> dict:
             "severity": {"type": "string", "enum": ["grønn", "gul", "rød", "svart"]},
         },
     }
+    suppressed_finding_schema = {
+        "type": "object",
+        "properties": {
+            "category": {"type": "string", "example": "telefonnummer"},
+            "text": {"type": "string", "example": "pp. 4662-4666"},
+            "context": {"type": "string"},
+            "reason": {"type": "string", "example": "bibliografisk DOI/ISBN/ISSN/sidekontekst"},
+            "source": {"type": "string", "example": "Regelbasert"},
+        },
+    }
+    scan_profile_property = {
+        "type": "string",
+        "enum": ["normal", "technical"],
+        "default": "normal",
+        "description": "technical strammer inn postfiltre for tekniske/akademiske dokumenter.",
+    }
     scan_result_schema = {
         "type": "object",
         "properties": {
@@ -687,6 +703,7 @@ def _api_openapi_spec() -> dict:
             "policy_warning_level": {"type": "string", "nullable": True},
             "error": {"type": "string", "nullable": True},
             "findings": {"type": "array", "items": finding_schema},
+            "suppressed_findings": {"type": "array", "items": suppressed_finding_schema},
             "text_preview": {"type": "string"},
         },
         "required": ["ok", "scan_id", "file_name", "scan_status", "findings"],
@@ -726,6 +743,7 @@ def _api_openapi_spec() -> dict:
             },
             "schemas": {
                 "Finding": finding_schema,
+                "SuppressedFinding": suppressed_finding_schema,
                 "ScanResult": scan_result_schema,
                 "Error": error_schema,
             },
@@ -925,7 +943,9 @@ def _api_openapi_spec() -> dict:
                                             "enum": ["auto", "nb", "sv", "en", "de", "fr", "es"],
                                             "default": "auto",
                                         },
+                                        "scan_profile": scan_profile_property,
                                         "include_preview": {"type": "boolean", "default": False},
+                                        "include_suppressed": {"type": "boolean", "default": False},
                                     },
                                 }
                             }
@@ -957,6 +977,7 @@ def _api_openapi_spec() -> dict:
                                             "enum": ["auto", "nb", "sv", "en", "de", "fr", "es"],
                                             "default": "auto",
                                         },
+                                        "scan_profile": scan_profile_property,
                                         "ignore_xlent": {"type": "boolean", "default": False},
                                         "ocr": {
                                             "type": "boolean",
@@ -964,6 +985,7 @@ def _api_openapi_spec() -> dict:
                                             "description": "Kjør OCR ved skanning av bildebasert PDF der dette er tilgjengelig.",
                                         },
                                         "include_preview": {"type": "boolean", "default": False},
+                                        "include_suppressed": {"type": "boolean", "default": False},
                                     },
                                 }
                             }
@@ -984,6 +1006,7 @@ def _api_openapi_spec() -> dict:
                     "parameters": [
                         {"name": "scan_id", "in": "path", "required": True, "schema": {"type": "string"}},
                         {"name": "include_preview", "in": "query", "required": False, "schema": {"type": "boolean"}},
+                        {"name": "include_suppressed", "in": "query", "required": False, "schema": {"type": "boolean"}},
                     ],
                     "responses": {
                         "200": {"description": "Scan-resultat", "content": {"application/json": {"schema": scan_result_schema}}},

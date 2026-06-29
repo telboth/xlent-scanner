@@ -246,6 +246,7 @@ def _run_folder_scan_job(
     folder_path: str,
     ignore_xlent: bool,
     language: str,
+    scan_profile: str,
     opts: dict,
 ) -> None:
     try:
@@ -267,7 +268,17 @@ def _run_folder_scan_job(
                     if job is not None:
                         job.update(status="cancelled", completed_at=time.time())
                     return
-            result = _scan_file(file_path, ignore_xlent=ignore_xlent, language=language)
+            try:
+                result = _scan_file(
+                    file_path,
+                    ignore_xlent=ignore_xlent,
+                    language=language,
+                    scan_profile=scan_profile,
+                )
+            except TypeError as exc:
+                if "unexpected keyword argument" not in str(exc):
+                    raise
+                result = _scan_file(file_path, ignore_xlent=ignore_xlent, language=language)
             result.relative_path = str(Path(file_path).relative_to(root))
             result.source_path = str(file_path)
             row = folder_result_row(result)
@@ -329,12 +340,14 @@ def scan_folder_endpoint():
         folder_path = data.get("folder_path", "")
         ignore_xlent = bool(data.get("ignore_xlent", False))
         language = data.get("language", "auto")
+        scan_profile = data.get("scan_profile", "normal")
         opts = _folder_scan_options(data)
         plan = build_folder_scan_plan(folder_path, **opts)
         results = _scan_folder(
             folder_path,
             ignore_xlent=ignore_xlent,
             language=language,
+            scan_profile=scan_profile,
             **opts,
         )
         summary = []
@@ -368,6 +381,7 @@ def scan_folder_start_endpoint():
         folder_path = data.get("folder_path", "")
         ignore_xlent = bool(data.get("ignore_xlent", False))
         language = data.get("language", "auto")
+        scan_profile = data.get("scan_profile", "normal")
         opts = _folder_scan_options(data)
         job_id = app_state.folder_job_manager.create({
             "status": "queued",
@@ -385,7 +399,7 @@ def scan_folder_start_endpoint():
         })
         threading.Thread(
             target=_run_folder_scan_job,
-            args=(job_id, folder_path, ignore_xlent, language, opts),
+            args=(job_id, folder_path, ignore_xlent, language, scan_profile, opts),
             daemon=True,
             name=f"folder-scan-{job_id[:8]}",
         ).start()

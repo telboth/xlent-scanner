@@ -16,6 +16,7 @@ from typing import Iterator
 
 from xlent_scanner.detectors.bibliographic import has_bibliographic_context
 from xlent_scanner.models import Finding
+from xlent_scanner.suppression import record_suppressed
 from xlent_scanner.utils import ctx as _ctx
 
 
@@ -220,6 +221,23 @@ _PHONE_RE = re.compile(
 
 _YEAR_RANGE_RE = re.compile(r"^(?:19|20)\d{2}-(?:19|20)\d{2}$")
 _ISO_DATE_RE = re.compile(r"^(?:19|20)\d{2}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])$")
+_PHONE_CONTEXT_WINDOW = 90
+_NUMERIC_AXIS_TOKEN_RE = re.compile(r"(?<![A-Za-z0-9.,])\d+(?![A-Za-z0-9.,])")
+_NUMERIC_AXIS_SEPARATOR_RE = re.compile(r"^[\s,;:()\[\]{}<>+\-–—]*$")
+_EXPLICIT_PHONE_CONTEXT_RE = re.compile(
+    r"(?i)(?:\b(?:tel|telefon|phone|mobile|mob|fax|ring|call)\b\.?\s*:?\s*)$"
+)
+_CHART_AXIS_CONTEXT_RE = re.compile(
+    r"(?i)"
+    r"(?:"
+    r"\b(?:"
+    r"time|frequency|frequency\s+gap|error|amplitude|spectrum|phase|"
+    r"domain|target|solver|axis|figure|chapter"
+    r")\b"
+    r"|"
+    r"\[(?:s|m|hz|degrees?|deg)\]"
+    r")"
+)
 
 
 def _valid_date(year: int, month: int, day: int) -> bool:
@@ -249,28 +267,128 @@ def _looks_like_compact_date(raw: str) -> bool:
     return 1900 <= year <= 2099 and _valid_date(year, month, day)
 
 
-def find_telefon(text: str) -> Iterator[Finding]:
+def _normalise_profile(scan_profile: str | None) -> str:
+    return "technical" if str(scan_profile or "").strip().lower() in {"technical", "academic"} else "normal"
+
+
+def _has_explicit_phone_context(text: str, raw: str, start: int) -> bool:
+    if raw.startswith(("+47", "0047")):
+        return True
+    before = text[max(0, start - 30):start]
+    return bool(_EXPLICIT_PHONE_CONTEXT_RE.search(before))
+
+
+def _has_chart_axis_context(text: str, start: int, end: int) -> bool:
+    left = max(0, start - _PHONE_CONTEXT_WINDOW)
+    right = min(len(text), end + _PHONE_CONTEXT_WINDOW)
+    return bool(_CHART_AXIS_CONTEXT_RE.search(text[left:right]))
+
+
+def _is_regular_numeric_sequence(values: list[int], *, min_len: int) -> bool:
+    if len(values) < min_len:
+        return False
+    diffs = [b - a for a, b in zip(values, values[1:])]
+    if not diffs or any(diff == 0 for diff in diffs):
+        return False
+    return all(diff == diffs[0] for diff in diffs)
+
+
+def _looks_like_numeric_axis_sequence(
+    text: str,
+    raw: str,
+    start: int,
+    end: int,
+    *,
+    scan_profile: str = "normal",
+) -> bool:
+    if _has_explicit_phone_context(text, raw, start):
+        return False
+
+    left = max(0, start - _PHONE_CONTEXT_WINDOW)
+    right = min(len(text), end + _PHONE_CONTEXT_WINDOW)
+    tokens = [
+        (left + m.start(), left + m.end(), int(m.group(0)))
+        for m in _NUMERIC_AXIS_TOKEN_RE.finditer(text[left:right])
+    ]
+    candidate_indexes = [
+        idx
+        for idx, (token_start, token_end, _value) in enumerate(tokens)
+        if token_end > start and token_start < end
+    ]
+    if not candidate_indexes:
+        return False
+
+    run_start = candidate_indexes[0]
+    run_end = candidate_indexes[-1]
+    while run_start > 0:
+        sep = text[tokens[run_start - 1][1]:tokens[run_start][0]]
+        if not _NUMERIC_AXIS_SEPARATOR_RE.fullmatch(sep):
+            break
+        run_start -= 1
+    while run_end + 1 < len(tokens):
+        sep = text[tokens[run_end][1]:tokens[run_end + 1][0]]
+        if not _NUMERIC_AXIS_SEPARATOR_RE.fullmatch(sep):
+            break
+        run_end += 1
+
+    run_values = [value for _token_start, _token_end, value in tokens[run_start:run_end + 1]]
+    if _is_regular_numeric_sequence(run_values, min_len=5):
+        return True
+    if (
+        _normalise_profile(scan_profile) == "technical"
+        and _is_regular_numeric_sequence(run_values, min_len=4)
+    ):
+        return True
+
+    candidate_values = [tokens[idx][2] for idx in candidate_indexes]
+    return (
+        _has_chart_axis_context(text, start, end)
+        and _is_regular_numeric_sequence(candidate_values, min_len=4)
+    )
+
+
+def find_telefon(text: str, *, scan_profile: str = "normal") -> Iterator[Finding]:
     for m in _PHONE_RE.finditer(text):
-        if has_bibliographic_context(text, m.start(), m.end()):
-            continue
         raw = m.group(0).strip()
+        context = _ctx(text, m.start(), m.end())
+        if has_bibliographic_context(text, m.start(), m.end()):
+            record_suppressed(
+                "telefonnummer",
+                raw,
+                context,
+                "bibliografisk DOI/ISBN/ISSN/sidekontekst",
+            )
+            continue
         if _YEAR_RANGE_RE.match(raw.replace(" ", "")):
+            record_suppressed("telefonnummer", raw, context, "årsspenn")
             continue
         if _ISO_DATE_RE.match(raw.replace(" ", "")):
+            record_suppressed("telefonnummer", raw, context, "ISO-dato")
             continue
         if _looks_like_compact_date(raw):
+            record_suppressed("telefonnummer", raw, context, "kompakt dato")
+            continue
+        if _looks_like_numeric_axis_sequence(
+            text,
+            raw,
+            m.start(),
+            m.end(),
+            scan_profile=scan_profile,
+        ):
+            record_suppressed("telefonnummer", raw, context, "graf-/akseverdi eller tallsekvens")
             continue
         # Fjern landkode for visning av råverdi
-        yield Finding("telefonnummer", raw, _ctx(text, m.start(), m.end()))
+        yield Finding("telefonnummer", raw, context)
 
 
 # ── samlet ────────────────────────────────────────────────────────────────────
 
-def detect_no_specific(text: str) -> list[Finding]:
+def detect_no_specific(text: str, *, scan_profile: str = "normal") -> list[Finding]:
     """Norske mønstre uten e-post (e-post dekkes av find_emails for alle språk)."""
     findings: list[Finding] = []
-    for fn in (find_fnr, find_orgnr, find_kontonummer, find_telefon):
+    for fn in (find_fnr, find_orgnr, find_kontonummer):
         findings.extend(fn(text))
+    findings.extend(find_telefon(text, scan_profile=scan_profile))
     return findings
 
 

@@ -1,18 +1,7 @@
 """NER-detektor for personnavn via spaCy.
 
-Støttede språk og modeller:
-  nb – nb_core_news_sm  (norsk bokmål)
-  sv – sv_core_news_sm  (svensk)
-  en – en_core_web_sm   (engelsk)
-
-Modeller lastes lazy og caches per språk.
-
-Filtrering for å redusere falske positiver:
-  - Krav om minst 2 ord
-  - Hvert ord må starte med stor bokstav, ikke være hel-caps (akronymer)
-  - Minimumlengde per del: 2 tegn
-  - Felles stoppord-liste for engelske tekniske termer
-  - Forkast organisasjoner, offentlige etater, teamnavn og generiske roller
+Modeller lastes lazy og caches per språk. False-positive-filtre for generiske
+tittel-/fagfraser ligger i ``data/person_name_filters.toml``.
 """
 from __future__ import annotations
 
@@ -20,12 +9,14 @@ import re
 import sys
 from typing import Any, Iterator
 
+from xlent_scanner.detectors.filter_config import load_person_name_filters
 from xlent_scanner.language import SPACY_CONFIG
+from xlent_scanner.models import Finding
+from xlent_scanner.suppression import record_suppressed
+from xlent_scanner.utils import ctx as _ctx
 
 # Er vi inne i en PyInstaller-bundle? Pip-basert nedlasting vil alltid feile der.
 _IS_FROZEN = getattr(sys, "frozen", False)
-from xlent_scanner.models import Finding
-from xlent_scanner.utils import ctx as _ctx
 
 # Modell-cache og feil-cache per språk
 _nlp_cache: dict[str, Any] = {}
@@ -33,118 +24,19 @@ _load_errors: dict[str, str] = {}
 
 _MAX_CHARS = 100_000
 
-
-# ── Stoppord ──────────────────────────────────────────────────────────────────
-
-_STOPWORDS: frozenset[str] = frozenset({
-    # Generelle tekniske termer
-    "xlent", "database", "audit", "check", "automatically", "blacklist", "green",
-    "scoring", "threshold", "hybrid", "rag", "box", "entry", "custom",
-    "consulting", "tune", "phase", "kick", "state", "country", "rigid",
-    "officer", "model", "system", "service", "client", "server", "pipeline",
-    "process", "type", "class", "method", "function", "module", "package",
-    "import", "export", "table", "index", "query", "schema", "config",
-    "token", "api", "data", "user", "admin", "root", "host", "port",
-    "node", "edge", "graph", "list", "array", "object", "value", "key",
-    "test", "debug", "log", "error", "warning", "info", "status", "true",
-    "false", "null", "none", "done", "open", "close", "start", "stop",
-    "source", "target", "input", "output", "result", "response", "request",
-    "cluster", "agent", "chain", "step", "task", "job", "queue", "event",
-    "trigger", "action", "rule", "policy", "role", "group", "team",
-    "junior", "senior", "lead", "manager", "director", "analyst",
-    # Sky- og produktnavn
-    "azure", "aws", "gcp", "google", "microsoft", "amazon",
-    "stripe", "visma", "hubspot", "dynamics", "salesforce", "servicenow",
-    "blob", "storage", "billing", "insight", "insights", "monitor",
-    "app", "apps", "function", "functions", "gateway", "firewall",
-    "container", "kubernetes", "docker", "helm", "terraform", "ansible",
-    "compute", "cloud", "platform", "solution", "solutions", "product",
-    "business", "enterprise", "professional", "standard", "premium",
-    "devops", "devex", "github", "gitlab", "bitbucket", "jenkins",
-    "redis", "kafka", "elastic", "opensearch", "postgres", "mysql",
-    "payment", "invoice", "subscription", "account", "dashboard",
-    "report", "summary", "overview", "analytics", "metrics", "kpi",
-    "integration", "connector", "adapter", "broker", "registry",
-    # Tekniske/akademiske noun phrases som ofte kommer fra tabeller, figurer og PDF-er
-    "probe", "interface", "outer", "diameter", "common", "format",
-    "comparison", "tool", "blåtind", "blårens",
-    "code", "designs", "python",
-    "purchase", "order", "unit", "price",
-    # Kontinent-/region- og institusjonsord i akademiske/tekniske tekster
-    "europe", "european", "asia", "asian", "africa", "african",
-    "america", "american", "australia", "australian", "antarctica",
-    "patent", "office",
-    # Svenske ord som kan forveksles med navn
-    "aktiebolag", "handelsbolag", "ekonomi", "styrelse", "direktion",
-    "avdelning", "verksamhet", "tjänst", "produkt",
-    # Norske/svenske rolleord som modeller ofte forveksler med personer
-    "bruker", "brukeren", "brukere", "brukerne",
-    "veileder", "veilederen", "veiledere", "veilederne",
-    "saksbehandler", "saksbehandleren", "saksbehandlere", "saksbehandlerne",
-    "kunde", "kunden", "kunder", "klient", "klienten", "klienter",
-    "leverandør", "leverandøren", "leverandører",
-})
-
-_ORG_KEYWORDS: frozenset[str] = frozenset({
-    "as", "asa", "ab", "oy", "ltd", "limited", "gmbh", "inc", "llc",
-    "kommune", "kommunen", "kommunes", "kommunal", "fylkeskommune",
-    "direktorat", "direktoratet", "departement", "departementet",
-    "etat", "etaten", "tilsyn", "tilsynet", "nav", "ks",
-    "team", "teamet", "fasit-team", "digital", "digirogland",
-    "arbeids-", "velferdsdirektoratet",
-})
-
-_ORG_NAMES: frozenset[str] = frozenset({
-    "visma", "tieto", "tietoevry", "microsoft", "google", "amazon",
-    "dnb", "equinor", "yara", "xlent",
-    "arbeids- og velferdsdirektoratet",
-    "trondheim digital", "digirogland", "oslo kommune",
-})
-
-_GENERIC_TITLE_CASE_WORDS: frozenset[str] = frozenset({
-    # Akademiske/dokumentord
-    "abstract", "appendix", "article", "bibliography", "case", "chapter",
-    "citation", "conference", "description", "discussion", "document",
-    "draft", "example", "figure", "finding", "findings", "introduction",
-    "journal", "literature", "method", "methodology", "paper", "paragraph",
-    "procedure", "proceedings", "reference", "references", "report",
-    "research", "result", "results", "review", "section", "study",
-    "summary", "table", "thesis", "volume",
-    # Tekniske/faglige substantiv
-    "acquisition", "algorithm", "analysis", "application", "architecture",
-    "assessment", "assurance", "baseline", "benchmark", "calculation",
-    "calibration", "chart", "classification", "component", "components",
-    "configuration", "constraint", "control", "curve", "dataset",
-    "definition", "design", "diagram", "effect", "energy", "estimate",
-    "evaluation", "experiment", "file", "flow", "forecast", "framework",
-    "depth", "field", "frequency", "geology", "geoscience", "geophysical",
-    "hypothesis", "implementation", "interface", "interpretation", "inversion", "issue",
-    "keyword", "limitation", "measurement", "metric", "network",
-    "objective", "parameter", "pattern", "phase", "plan", "problem",
-    "processing", "profile", "program", "project", "proposal", "protocol",
-    "quality", "regression", "requirement", "reservoir", "risk", "scenario",
-    "seismic", "sensitivity", "sensor", "signal", "simulation", "software",
-    "specification", "survey", "training", "uncertainty", "velocity",
-    "version", "wave", "waves", "workflow",
-    # Utdanning/kurs
-    "bachelor", "course", "curriculum", "dissertation", "lecture", "master",
-    # Økonomi/ordre/tabell-ord
-    "budget", "cost", "invoice", "order", "payment", "petroleum", "price",
-    "purchase", "quote", "unit",
-    # Norske/svenske generiske fagord
-    "analyse", "ansökan", "artikkel", "avsnitt", "beskrivelse", "bestilling",
-    "budsjett", "diagram", "diskusjon", "dokument", "eksempel", "estimat",
-    "figur", "funn", "innledning", "kapittel", "kostnad", "kvalitet",
-    "leveranse", "litteratur", "metode", "metodikk", "modell", "måling",
-    "oppgave", "oppsummering", "oversikt", "pris", "prosjekt", "rapport",
-    "referanse", "referanser", "resultat", "resultater", "risiko", "sammendrag",
-    "seksjon", "studie", "tabell", "undersøkelse", "utkast", "vedlegg",
-    "vurdering",
-})
+_FILTERS = load_person_name_filters()
+_STOPWORDS = _FILTERS.stopwords
+_ORG_KEYWORDS = _FILTERS.org_keywords
+_ORG_NAMES = _FILTERS.org_names
+_GENERIC_TITLE_CASE_WORDS = _FILTERS.generic_title_case_words
+_TECHNICAL_TITLE_CASE_WORDS = _FILTERS.technical_title_case_words
+_PLACE_OR_THING_PRECEDERS = _FILTERS.place_or_thing_preceders
+_PLACE_OR_THING_FOLLOWERS = _FILTERS.place_or_thing_followers
 
 _LIST_SEPARATORS_RE = re.compile(r"[,;:/|]|\s+(?:og|och|and|samt|eller|or)\s+", re.IGNORECASE)
 _WORD_RE = re.compile(r"[a-zæøåäöüéèáàóòíìñß]+", re.IGNORECASE)
 _CONTEXT_WINDOW_CHARS = 90
+_TECHNICAL_CONTEXT_WINDOW_CHARS = 140
 
 _REFERENCE_CONTEXT_RE = re.compile(
     r"(?i)"
@@ -159,89 +51,99 @@ _REFERENCE_CONTEXT_RE = re.compile(
     r")"
 )
 
-_PLACE_OR_THING_PRECEDERS: frozenset[str] = frozenset({
-    "the", "of", "in",
-})
 
-_PLACE_OR_THING_FOLLOWERS: frozenset[str] = frozenset({
-    "area", "areas", "basin", "basins", "block", "blocks", "condensate",
-    "field", "fields", "formation", "formations", "gas", "horizon",
-    "horizons", "interval", "intervals", "member", "members", "oil",
-    "platform", "platforms", "play", "plays", "prospect", "prospects",
-    "reservoir", "reservoirs", "sandstone", "sequence", "sequences",
-    "shale", "structure", "structures", "unit", "units", "well", "wells",
-    "zone", "zones",
-})
+def _normalise_profile(scan_profile: str | None) -> str:
+    return "technical" if str(scan_profile or "").strip().lower() in {"technical", "academic"} else "normal"
 
 
-# ── Hjelpefunksjoner ──────────────────────────────────────────────────────────
+def _words(name: str) -> list[str]:
+    return _WORD_RE.findall(str(name or "").casefold())
 
 
 def _looks_like_generic_title_case_phrase(name: str) -> bool:
-    words = _WORD_RE.findall(str(name or "").casefold())
+    words = _words(name)
     if len(words) < 2:
         return False
     generic_words = _GENERIC_TITLE_CASE_WORDS | _STOPWORDS
     return all(word in generic_words for word in words)
 
 
-def looks_like_person_name(name: str) -> bool:
-    """Returner True bare for konkrete personnavn.
+def _looks_like_technical_title_case_phrase(name: str) -> bool:
+    """Strammere filter for tekniske/akademiske dokumenter.
 
-    Brukes både av spaCy-detektoren og AI-dypscann som siste sikkerhetsnett.
+    I tekniske PDF-er flagger spaCy ofte fagfraser som personer fordi alle ord har
+    stor forbokstav. Her forkastes fraser der minst ett ord er et sterkt teknisk
+    signal og resten også ser generiske ut.
     """
+    words = _words(name)
+    if len(words) < 2:
+        return False
+    generic_words = _GENERIC_TITLE_CASE_WORDS | _STOPWORDS | _TECHNICAL_TITLE_CASE_WORDS
+    has_technical_signal = any(word in _TECHNICAL_TITLE_CASE_WORDS for word in words)
+    generic_count = sum(1 for word in words if word in generic_words)
+    return has_technical_signal and generic_count >= len(words) - 1
+
+
+def _base_name_rejection_reason(name: str, *, scan_profile: str = "normal") -> str | None:
     name = " ".join(str(name or "").strip().split())
     if not name:
-        return False
+        return "tom kandidat"
     folded = name.casefold()
     if folded in _ORG_NAMES:
-        return False
+        return "kjent organisasjonsnavn"
     if _LIST_SEPARATORS_RE.search(name):
-        return False
-    words = set(_WORD_RE.findall(folded))
+        return "liste eller sammensatt frase"
+
+    words = set(_words(folded))
     if any(keyword in words for keyword in _ORG_KEYWORDS if "-" not in keyword):
-        return False
+        return "organisasjonsord"
     if any(keyword in folded for keyword in _ORG_KEYWORDS if "-" in keyword):
-        return False
+        return "organisasjonsord"
 
     parts = name.split()
     if len(parts) < 2 or len(parts) > 4:
-        return False
+        return "ikke 2-4 navnedeler"
     if _looks_like_generic_title_case_phrase(name):
-        return False
+        return "generisk tittel-/fagfrase"
+    if _normalise_profile(scan_profile) == "technical" and _looks_like_technical_title_case_phrase(name):
+        return "teknisk/akademisk tittel-frase"
+
     for part in parts:
         part = part.strip(".,;:()[]{}«»\"'")
         if len(part) < 2:
-            return False
-        # Personnavn inneholder aldri sifre – filtrer bort "G3 Legemiddelbruk" o.l.
+            return "for kort navnedel"
         if any(c.isdigit() for c in part):
-            return False
-        # Forkast deler med apostrof/backtick (possessiver som "XLENT’s", koderef)
-        if any(c in part for c in ("’", "’", "’", "`")):
-            return False
+            return "inneholder siffer"
+        if any(c in part for c in ("’", "'", "`")):
+            return "inneholder apostrof eller kodetegn"
         if part.lower() in _STOPWORDS:
-            return False
+            return "generisk stoppord"
         if "-" in part:
-            # Bindestreksnavn: sjekk hvert delord (f.eks. "Anne-Marie")
             subparts = [sp for sp in part.split("-") if sp]
             for sp in subparts:
                 if not sp[0].isupper():
-                    return False   # "RAG-based" → "based" starter med liten → forkast
+                    return "bindestreksdel starter ikke med stor bokstav"
                 if sp.isupper() and len(sp) > 2:
-                    return False   # "RAG-Based" → "RAG" er akronym → forkast
+                    return "akronym i kandidat"
                 if sp.lower() in _STOPWORDS:
-                    return False
+                    return "generisk stoppord"
         else:
             if not part[0].isupper():
-                return False
+                return "navnedel starter ikke med stor bokstav"
             if part.isupper() and len(part) > 2:
-                return False
-    return True
+                return "akronym i kandidat"
+    return None
 
 
-def _context_window(text: str, start: int, end: int) -> str:
-    left = max(0, start - _CONTEXT_WINDOW_CHARS)
-    right = min(len(text), end + _CONTEXT_WINDOW_CHARS)
+def looks_like_person_name(name: str, *, scan_profile: str = "normal") -> bool:
+    """Returner True bare for konkrete personnavn."""
+    return _base_name_rejection_reason(name, scan_profile=scan_profile) is None
+
+
+def _context_window(text: str, start: int, end: int, *, scan_profile: str = "normal") -> str:
+    radius = _TECHNICAL_CONTEXT_WINDOW_CHARS if _normalise_profile(scan_profile) == "technical" else _CONTEXT_WINDOW_CHARS
+    left = max(0, start - radius)
+    right = min(len(text), end + radius)
     return text[left:right]
 
 
@@ -264,29 +166,56 @@ def _has_place_or_technical_context(text: str, start: int, end: int) -> bool:
     return any(word in _PLACE_OR_THING_FOLLOWERS for word in after)
 
 
-def has_negative_person_name_context(text: str, start: int, end: int) -> bool:
-    """Returner True når konteksten tyder på referanse/bibliografi, ikke løpende PII.
-
-    Dette er med vilje et sterkt filter: brede tekniske ord brukes ikke alene her,
-    fordi de kan stå i samme setning som reelle personer.
-    """
+def has_negative_person_name_context(
+    text: str,
+    start: int,
+    end: int,
+    *,
+    scan_profile: str = "normal",
+) -> bool:
+    """Returner True når konteksten tyder på referanse/fagtekst, ikke PII."""
     if not text:
         return False
     start = max(0, min(start, len(text)))
     end = max(start, min(end, len(text)))
-    window = _context_window(text, start, end)
+    window = _context_window(text, start, end, scan_profile=scan_profile)
     if _REFERENCE_CONTEXT_RE.search(window):
         return True
     return _has_place_or_technical_context(text, start, end)
 
 
-def looks_like_person_name_in_context(name: str, text: str, start: int, end: int) -> bool:
-    """Returner True bare når både navnet og nærliggende kontekst ser ut som person-PII."""
-    if not looks_like_person_name(name):
-        return False
-    if has_negative_person_name_context(text, start, end):
-        return False
-    return True
+def person_name_rejection_reason(
+    name: str,
+    text: str = "",
+    start: int = 0,
+    end: int = 0,
+    *,
+    scan_profile: str = "normal",
+) -> str | None:
+    reason = _base_name_rejection_reason(name, scan_profile=scan_profile)
+    if reason:
+        return reason
+    if has_negative_person_name_context(text, start, end, scan_profile=scan_profile):
+        return "referanse-, sted- eller fagkontekst"
+    return None
+
+
+def looks_like_person_name_in_context(
+    name: str,
+    text: str,
+    start: int,
+    end: int,
+    *,
+    scan_profile: str = "normal",
+) -> bool:
+    """Returner True bare når både navn og kontekst ser ut som person-PII."""
+    return person_name_rejection_reason(
+        name,
+        text,
+        start,
+        end,
+        scan_profile=scan_profile,
+    ) is None
 
 
 def _looks_like_name(name: str) -> bool:
@@ -296,10 +225,7 @@ def _looks_like_name(name: str) -> bool:
 # ── Modellhåndtering ──────────────────────────────────────────────────────────
 
 def reset_cache_for_model(model_name: str) -> None:
-    """Tøm NER-cache for en gitt modell (kalles etter nedlasting).
-
-    Neste kall til _get_nlp() vil da laste modellen på nytt fra disk.
-    """
+    """Tøm NER-cache for en gitt modell (kalles etter nedlasting)."""
     lang_for_model = {cfg["model"]: lang for lang, cfg in SPACY_CONFIG.items()}
     lang = lang_for_model.get(model_name)
     if lang:
@@ -314,45 +240,36 @@ def _get_nlp(lang: str = "nb") -> Any | None:
     cfg = SPACY_CONFIG.get(lang, SPACY_CONFIG["nb"])
     model_name = cfg["model"]
 
-    # Sjekk om modellen er lastet ned til bruker-data-mappen.
-    # Gjøres før feil-cache-sjekk: hvis modellen ble lastet ned etter forrige forsøk,
-    # skal vi prøve igjen.
     try:
         from xlent_scanner.model_manager import model_path as _user_model_path  # noqa: PLC0415
         user_path = _user_model_path(model_name)
     except Exception:
         user_path = None
 
-    # Hvis vi har en cachet feil, men modellen nå finnes via bruker-path → prøv igjen
     if lang in _load_errors:
         if user_path is not None:
-            del _load_errors[lang]  # Modell er nå tilgjengelig — prøv på nytt
+            del _load_errors[lang]
         else:
-            return None  # Fortsatt ikke tilgjengelig
+            return None
 
     try:
         import spacy  # type: ignore
 
         if user_path is not None:
-            # Last fra bruker-data-mappen (nedlastet via UI)
             nlp = spacy.load(str(user_path))
         else:
-            # Last fra installert pakke (vanlig dev-miljø)
             nlp = spacy.load(model_name)
 
         _nlp_cache[lang] = nlp
         return nlp
 
     except OSError:
-        # Modellen mangler.
-        # I en installert .exe (frozen) er pip utilgjengelig — brukeren må laste ned via UI.
         if _IS_FROZEN:
             _load_errors[lang] = (
                 f"spaCy-modell ({model_name}) er ikke installert. "
                 f"Gå til Innstillinger → Navnemodeller for å laste ned."
             )
             return None
-        # I utviklingsmiljø: prøv automatisk nedlasting via pip.
         try:
             from spacy.cli import download as spacy_download  # type: ignore
             print(f"[ner] Laster ned manglende modell: {model_name}…", flush=True)
@@ -361,12 +278,12 @@ def _get_nlp(lang: str = "nb") -> Any | None:
             _nlp_cache[lang] = nlp
             print(f"[ner] ✓ {model_name} lastet.", flush=True)
             return nlp
-        except BaseException as exc:   # fanger også SystemExit fra pip-subprosess
+        except BaseException as exc:
             _load_errors[lang] = (
                 f"Klarte ikke å laste ned spaCy-modell ({model_name}): {exc}"
             )
             return None
-    except BaseException as exc:       # fanger SystemExit og andre BaseException
+    except BaseException as exc:
         _load_errors[lang] = f"Klarte ikke å laste spaCy-modell ({model_name}): {exc}"
         return None
 
@@ -378,13 +295,13 @@ def get_load_error(lang: str = "nb") -> str | None:
 
 # ── Deteksjon ─────────────────────────────────────────────────────────────────
 
-def find_names(text: str, lang: str = "nb") -> Iterator[Finding]:
+def find_names(text: str, lang: str = "nb", *, scan_profile: str = "normal") -> Iterator[Finding]:
     nlp = _get_nlp(lang)
     if nlp is None:
         return
 
     cfg = SPACY_CONFIG.get(lang, SPACY_CONFIG["nb"])
-    ner_label = cfg["ner_label"]   # "PER" for nb/sv, "PERSON" for en
+    ner_label = cfg["ner_label"]
 
     doc = nlp(text[:_MAX_CHARS])
     seen: set[str] = set()
@@ -394,7 +311,21 @@ def find_names(text: str, lang: str = "nb") -> Iterator[Finding]:
         name = ent.text.strip()
         if "#" in name or name.startswith("-"):
             continue
-        if not looks_like_person_name_in_context(name, text, ent.start_char, ent.end_char):
+        reason = person_name_rejection_reason(
+            name,
+            text,
+            ent.start_char,
+            ent.end_char,
+            scan_profile=scan_profile,
+        )
+        if reason:
+            record_suppressed(
+                "navn (person)",
+                name,
+                _ctx(text, ent.start_char, ent.end_char),
+                reason,
+                source="spaCy",
+            )
             continue
         if name not in seen:
             seen.add(name)
@@ -405,5 +336,5 @@ def find_names(text: str, lang: str = "nb") -> Iterator[Finding]:
             )
 
 
-def detect_names(text: str, lang: str = "nb") -> list[Finding]:
-    return list(find_names(text, lang))
+def detect_names(text: str, lang: str = "nb", *, scan_profile: str = "normal") -> list[Finding]:
+    return list(find_names(text, lang, scan_profile=scan_profile))

@@ -16,6 +16,15 @@ class Finding:
 
 
 @dataclass
+class SuppressedFinding:
+    category: str
+    text: str
+    context: str = ""
+    reason: str = ""
+    source: str = "Regelbasert"
+
+
+@dataclass
 class ScanResult:
     file_name: str
     file_size: int
@@ -24,6 +33,7 @@ class ScanResult:
     relative_path: str = ""
     source_path: str = ""
     findings: list[Finding] = field(default_factory=list)
+    suppressed_findings: list[SuppressedFinding] = field(default_factory=list)
     error: str | None = None
     risk_level: str = "grønn"         # grønn / gul / rød / svart
     risk_summary: str = ""

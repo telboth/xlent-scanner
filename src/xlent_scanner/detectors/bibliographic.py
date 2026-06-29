@@ -12,6 +12,10 @@ _BIBLIOGRAPHIC_LABEL_RE = re.compile(
     re.IGNORECASE,
 )
 _DOI_VALUE_RE = re.compile(r"\b10\.\d{4,9}/[^\s,;]+", re.IGNORECASE)
+_PAGE_LABEL_PREFIX_RE = re.compile(
+    r"\b(?:p|pp|pages?)\.?\s*$",
+    re.IGNORECASE,
+)
 
 
 def has_bibliographic_context(
@@ -27,7 +31,9 @@ def has_bibliographic_context(
     lo = max(0, start - radius)
     hi = min(len(text), end + radius)
     window = text[lo:hi]
+    prefix = text[lo:start]
     return bool(
         _BIBLIOGRAPHIC_LABEL_RE.search(window)
         or _DOI_VALUE_RE.search(window)
+        or _PAGE_LABEL_PREFIX_RE.search(prefix)
     )

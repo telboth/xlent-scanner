@@ -569,6 +569,18 @@
       line-height: 1.45;
     }
     .finding-reason-body div { margin: 1px 0; }
+    .suppressed-findings {
+      margin-top: 10px; border: 1px solid var(--border); border-radius: 6px;
+      background: var(--panel2); color: var(--muted); font-size: 12px;
+    }
+    .suppressed-findings summary {
+      cursor: pointer; padding: 7px 10px; user-select: none;
+    }
+    .suppressed-findings[open] summary { border-bottom: 1px solid var(--border); }
+    .suppressed-findings-body { padding: 8px 10px; max-height: 260px; overflow-y: auto; }
+    .suppressed-row { padding: 5px 0; border-bottom: 1px solid var(--border); }
+    .suppressed-row:last-child { border-bottom: 0; }
+    .suppressed-reason { color: var(--text); }
     .wl-btn {
       flex-shrink: 0; padding: 2px 7px; border-radius: 4px;
       border: 1px solid var(--border); background: transparent;
@@ -817,6 +829,15 @@
                 <option value="normal" data-i18n="profileNormal">Normal</option>
                 <option value="lowfp" data-i18n="profileLowFp">Lav false positive</option>
                 <option value="strict" data-i18n="profileStrict">Streng</option>
+              </select>
+            </label>
+            <label style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px;"
+                   data-i18n-title="scanProfileTooltip"
+                   title="Bruk teknisk/akademisk for dokumenter med figurer, DOI-er, akser og mange fagfraser.">
+              <span data-i18n="scanProfile">Dokumenttype</span>
+              <select id="scan-profile" style="font-size:11px;padding:2px 6px;">
+                <option value="normal" data-i18n="scanProfileNormal">Normal</option>
+                <option value="technical" data-i18n="scanProfileTechnical">Teknisk/akademisk</option>
               </select>
             </label>
             <button class="ctrl-btn" id="scan-sel-all" style="font-size:11px;padding:2px 8px;" data-i18n="selAll">Velg alle</button>
@@ -1834,6 +1855,9 @@
         whySecretExplanation:"Teksten matcher et mønster for token, nøkkel, passord eller annen hemmelighet.",
         whyWhitelistExplanation:"Funnets tekst finnes i hvitelisten og vises derfor som godkjent/grønn.",
         whyNoContext: "Ingen kontekst lagret.",
+        suppressedTitle:"Forkastede kandidater ({n})",
+        suppressedNote:"Disse kandidatene ble funnet av en detektor, men forkastet av et postfilter.",
+        suppressedMore:"+ {n} flere forkastede kandidater",
         exportJson:   "Eksporter JSON",
         exportCsv:    "Eksporter CSV",
         historyTitle: "Siste skanninger",
@@ -2094,6 +2118,10 @@
         profileNormal:       "Normal",
         profileLowFp:        "Lav false positive",
         profileStrict:       "Streng",
+        scanProfile:         "Dokumenttype",
+        scanProfileNormal:   "Normal",
+        scanProfileTechnical:"Teknisk/akademisk",
+        scanProfileTooltip:  "Bruk teknisk/akademisk for dokumenter med figurer, DOI-er, akser og mange fagfraser.",
         scanCatId:           "Personnummer / ID",
         scanCatKonto:        "Bankdetaljer",
         scanCatKredittkort:  "Kredittkort",
@@ -2239,6 +2267,9 @@
         whySecretExplanation:"Texten matchar ett mönster för token, nyckel, lösenord eller annan hemlighet.",
         whyWhitelistExplanation:"Fyndets text finns i vitlistan och visas därför som godkänd/grön.",
         whyNoContext: "Ingen kontext sparad.",
+        suppressedTitle:"Avvisade kandidater ({n})",
+        suppressedNote:"Dessa kandidater hittades av en detektor men avvisades av ett efterfilter.",
+        suppressedMore:"+ {n} fler avvisade kandidater",
         exportJson:   "Exportera JSON",
         exportCsv:    "Exportera CSV",
         historyTitle: "Senaste skanningar",
@@ -2489,6 +2520,10 @@
         profileNormal:       "Normal",
         profileLowFp:        "Låg false positive",
         profileStrict:       "Strikt",
+        scanProfile:         "Dokumenttyp",
+        scanProfileNormal:   "Normal",
+        scanProfileTechnical:"Teknisk/akademisk",
+        scanProfileTooltip:  "Använd teknisk/akademisk för dokument med figurer, DOI:er, axlar och många fackfraser.",
         scanCatId:           "Personnummer / ID",
         scanCatKonto:        "Bankuppgifter",
         scanCatKredittkort:  "Kredittkort",
@@ -2634,6 +2669,9 @@
         whySecretExplanation:"The text matches a pattern for a token, key, password, or other secret.",
         whyWhitelistExplanation:"The finding text is in the whitelist and is therefore shown as approved/green.",
         whyNoContext: "No context stored.",
+        suppressedTitle:"Suppressed candidates ({n})",
+        suppressedNote:"These candidates were found by a detector but rejected by a post-filter.",
+        suppressedMore:"+ {n} more suppressed candidates",
         exportJson:   "Export JSON",
         exportCsv:    "Export CSV",
         historyTitle: "Recent scans",
@@ -2889,6 +2927,10 @@
         profileNormal:       "Normal",
         profileLowFp:        "Low false positive",
         profileStrict:       "Strict",
+        scanProfile:         "Document type",
+        scanProfileNormal:   "Normal",
+        scanProfileTechnical:"Technical/academic",
+        scanProfileTooltip:  "Use technical/academic for documents with figures, DOIs, axes and many technical phrases.",
         scanCatId:           "National / personal ID numbers",
         scanCatKonto:        "Bank details",
         scanCatKredittkort:  "Credit cards",
@@ -3037,6 +3079,9 @@
         whySecretExplanation:"Der Text passt zu einem Muster für Token, Schlüssel, Passwort oder anderes Secret.",
         whyWhitelistExplanation:"Der Treffertext steht in der Whitelist und wird deshalb als freigegeben/grün angezeigt.",
         whyNoContext:        "Kein Kontext gespeichert.",
+        suppressedTitle:     "Verworfene Kandidaten ({n})",
+        suppressedNote:      "Diese Kandidaten wurden von einem Detektor gefunden, aber durch einen Nachfilter verworfen.",
+        suppressedMore:      "+ {n} weitere verworfene Kandidaten",
         pdfCaveat:           "PDF-Direktbearbeitung: Text wird in Suchschichten ersetzt.",
         warnNoText:          "Im Dokument wurde kein Text gefunden. Die Datei kann bildbasiert oder gescannt sein. Inhalte in Bildern können ohne OCR nicht zuverlässig geprüft werden.",
         warnLittleText:      "Im Dokument wurde nur sehr wenig Text gefunden. Wenn die Datei aus gescannten Bildern besteht, können sensible Informationen für den Scanner unsichtbar sein.",
@@ -3290,6 +3335,10 @@
         profileNormal:       "Normal",
         profileLowFp:        "Wenige False Positives",
         profileStrict:       "Streng",
+        scanProfile:         "Dokumenttyp",
+        scanProfileNormal:   "Normal",
+        scanProfileTechnical:"Technisch/akademisch",
+        scanProfileTooltip:  "Für Dokumente mit Abbildungen, DOIs, Achsen und vielen Fachbegriffen.",
         scanCatId:           "Personennummer / ID",
         scanCatKonto:        "Bankdaten",
         scanCatKredittkort:  "Kreditkarte",
@@ -3440,6 +3489,9 @@
         whySecretExplanation:"Le texte correspond à un motif de jeton, clé, mot de passe ou autre secret.",
         whyWhitelistExplanation:"Le texte du résultat figure dans la liste blanche et s’affiche donc comme approuvé/vert.",
         whyNoContext:        "Aucun contexte enregistré.",
+        suppressedTitle:     "Candidats rejetés ({n})",
+        suppressedNote:      "Ces candidats ont été trouvés par un détecteur puis rejetés par un post-filtre.",
+        suppressedMore:      "+ {n} autres candidats rejetés",
         pdfCaveat:           "Édition PDF directe : le texte est remplacé dans les calques de recherche.",
         warnNoText:          "Aucun texte n’a été trouvé dans le document. Le fichier peut être basé sur des images ou scanné. Le contenu des images ne peut pas être vérifié de manière fiable sans OCR.",
         warnLittleText:      "Très peu de texte a été trouvé dans le document. Si le fichier est composé d’images scannées, des informations sensibles peuvent être invisibles pour le scanner.",
@@ -3693,6 +3745,10 @@
         profileNormal:       "Normal",
         profileLowFp:        "Peu de faux positifs",
         profileStrict:       "Strict",
+        scanProfile:         "Type de document",
+        scanProfileNormal:   "Normal",
+        scanProfileTechnical:"Technique/académique",
+        scanProfileTooltip:  "À utiliser pour les documents avec figures, DOI, axes et nombreux termes techniques.",
         scanCatId:           "Numéro d'identité / ID",
         scanCatKonto:        "Coordonnées bancaires",
         scanCatKredittkort:  "Carte de crédit",
@@ -3843,6 +3899,9 @@
         whySecretExplanation:"El texto coincide con un patrón de token, clave, contraseña u otro secreto.",
         whyWhitelistExplanation:"El texto del hallazgo está en la lista blanca y por eso se muestra como aprobado/verde.",
         whyNoContext:        "No hay contexto guardado.",
+        suppressedTitle:     "Candidatos descartados ({n})",
+        suppressedNote:      "Estos candidatos fueron encontrados por un detector, pero descartados por un postfiltro.",
+        suppressedMore:      "+ {n} candidatos descartados más",
         pdfCaveat:           "Edición directa de PDF: el texto se reemplaza en capas de búsqueda.",
         warnNoText:          "No se encontró texto en el documento. El archivo puede estar basado en imágenes o escaneado. El contenido de las imágenes no puede comprobarse de forma fiable sin OCR.",
         warnLittleText:      "Se encontró muy poco texto en el documento. Si el archivo consta de imágenes escaneadas, la información sensible puede ser invisible para el escáner.",
@@ -4096,6 +4155,10 @@
         profileNormal:       "Normal",
         profileLowFp:        "Bajos falsos positivos",
         profileStrict:       "Estricto",
+        scanProfile:         "Tipo de documento",
+        scanProfileNormal:   "Normal",
+        scanProfileTechnical:"Técnico/académico",
+        scanProfileTooltip:  "Úsalo para documentos con figuras, DOI, ejes y muchas frases técnicas.",
         scanCatId:           "Número de identidad / ID",
         scanCatKonto:        "Datos bancarios",
         scanCatKredittkort:  "Tarjeta de crédito",
@@ -5336,6 +5399,7 @@
         </div>
 
         ${buildFindingsHtml(sorted, canPatch, ext)}
+        ${buildSuppressedHtml(r.suppressed_findings || [])}
 
         <div class="toolbar-row">
           <button id="btn-open-report" class="ctrl-btn">${t("openReport")}</button>
@@ -5395,6 +5459,33 @@
         tpEl.style.display = "none";
       }
 
+    }
+
+    function buildSuppressedHtml(suppressed) {
+      const rows = (Array.isArray(suppressed) ? suppressed : [])
+        .filter(f => f && f.text)
+        .slice(0, 80);
+      if (!rows.length) return "";
+      const body = rows.map(f => `
+        <div class="suppressed-row">
+          <div>
+            <strong>${escapeHtml(f.text || "")}</strong>
+            <span class="cat" style="background:#64748b;color:#fff">${escapeHtml(f.category || "")}</span>
+          </div>
+          <div class="suppressed-reason">${escapeHtml(f.reason || "")}</div>
+          ${f.context ? `<div class="ctx">${escapeHtml(f.context)}</div>` : ""}
+        </div>`).join("");
+      const more = suppressed.length > rows.length
+        ? `<div class="ctx">${escapeHtml(t("suppressedMore").replace("{n}", suppressed.length - rows.length))}</div>`
+        : "";
+      return `<details class="suppressed-findings">
+        <summary>${escapeHtml(t("suppressedTitle").replace("{n}", suppressed.length))}</summary>
+        <div class="suppressed-findings-body">
+          <div class="ctx" style="margin-bottom:6px;">${escapeHtml(t("suppressedNote"))}</div>
+          ${body}
+          ${more}
+        </div>
+      </details>`;
     }
 
     function buildFindingsHtml(sorted, canPatch, ext) {
@@ -6017,6 +6108,7 @@
       return {
         ignore_xlent: document.getElementById("ignoreXlent").checked,
         language:     document.getElementById("langSelect").value,
+        scan_profile: document.getElementById("scan-profile")?.value || "normal",
       };
     }
 
@@ -6064,6 +6156,7 @@
         fd.append("file", new Blob([buf]), name);
         fd.append("ignore_xlent", opts.ignore_xlent);
         fd.append("language",     opts.language);
+        fd.append("scan_profile", opts.scan_profile);
         if (extraOpts?.ocr) fd.append("ocr", "true");
         const r = await (await fetch(`${API}/scan-upload`, { method:"POST", body: fd })).json();
         setStatus("");
@@ -6170,6 +6263,8 @@
           rp.value = s.redactionProfile;
           applyRedactionProfile(s.redactionProfile, false);
         }
+        const sp = document.getElementById("scan-profile");
+        if (sp && s.scanProfile) sp.value = s.scanProfile;
         const sa = document.getElementById("stripAnnotations");
         if (sa) sa.checked = s.stripAnnotations === true;
         const m365Fields = {
@@ -6197,6 +6292,7 @@
           ignoreXlent: document.getElementById("ignoreXlent").checked,
           language:    document.getElementById("langSelect").value,
           redactionProfile: document.getElementById("redaction-profile")?.value || "normal",
+          scanProfile: document.getElementById("scan-profile")?.value || "normal",
           stripAnnotations: document.getElementById("stripAnnotations").checked,
           theme:       normalizeTheme(document.getElementById("themeSelect").value),
           m365_drive_id: document.getElementById("m365-drive-id")?.value || "",
@@ -6220,6 +6316,7 @@
     document.getElementById("ignoreXlent").addEventListener("change", saveSettings);
     document.getElementById("langSelect").addEventListener("change", saveSettings);
     document.getElementById("redaction-profile").addEventListener("change", e => applyRedactionProfile(e.target.value));
+    document.getElementById("scan-profile")?.addEventListener("change", saveSettings);
     document.getElementById("stripAnnotations").addEventListener("change", saveSettings);
     document.getElementById("manual-redaction-terms")?.addEventListener("input", () => {
       updateManualRedactionPreview();
@@ -7572,7 +7669,7 @@
         const r = await (await fetch(`${API}/scan-text`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text, language: opts.language }),
+          body: JSON.stringify({ text, language: opts.language, scan_profile: opts.scan_profile }),
         })).json();
         ps.textContent = "";
         setStatus("");
@@ -7699,6 +7796,7 @@
           folder_path: dlg.path,
           ignore_xlent: opts.ignore_xlent,
           language: opts.language,
+          scan_profile: opts.scan_profile,
           ...folderOpts,
         });
         if (!started.ok) {
@@ -7980,6 +8078,7 @@
             fd.append("file", new Blob([buf]), file.name);
             fd.append("ignore_xlent", opts.ignore_xlent);
             fd.append("language",     opts.language);
+            fd.append("scan_profile", opts.scan_profile);
             r = await (await fetch(`${API}/scan-upload`, { method:"POST", body: fd })).json();
           }
           results.push({

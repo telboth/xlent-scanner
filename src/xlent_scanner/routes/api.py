@@ -22,6 +22,7 @@ LOGGER = logging.getLogger("xlent_scanner")
 _API_SCAN_TTL_SECONDS = 60 * 60
 _API_MAX_SCAN_RESULTS = 50
 _API_ALLOWED_LANGUAGES = {"auto", "nb", "sv", "en", "de", "fr", "es"}
+_API_ALLOWED_SCAN_PROFILES = {"normal", "technical", "academic"}
 _LOCAL_API_HOSTS = {"127.0.0.1", "localhost", "::1"}
 _NO_CACHE = {
     "Cache-Control": "no-cache, no-store, must-revalidate",
@@ -114,6 +115,13 @@ def _api_language(value) -> str:
     return lang
 
 
+def _api_scan_profile(value) -> str:
+    profile = str(value or "normal").strip().lower()
+    if profile not in _API_ALLOWED_SCAN_PROFILES:
+        raise ValueError("Ugyldig scan_profile. Bruk normal eller technical.")
+    return "technical" if profile == "academic" else profile
+
+
 def _api_delete_scan_locked(scan_id: str) -> None:
     entry = app_state.api_scan_results.pop(scan_id, None)
     if not entry:
@@ -169,7 +177,12 @@ def _api_get_scan(scan_id: str) -> dict | None:
         return app_state.api_scan_results.get(scan_id)
 
 
-def _api_result_payload(result, scan_id: str, include_preview: bool = False) -> dict:
+def _api_result_payload(
+    result,
+    scan_id: str,
+    include_preview: bool = False,
+    include_suppressed: bool = False,
+) -> dict:
     payload = {
         "ok": result.scan_status != "failed",
         "scan_id": scan_id,
@@ -199,6 +212,17 @@ def _api_result_payload(result, scan_id: str, include_preview: bool = False) -> 
     }
     if include_preview:
         payload["text_preview"] = result.text_preview
+    if include_suppressed:
+        payload["suppressed_findings"] = [
+            {
+                "category": finding.category,
+                "text": finding.text,
+                "context": finding.context,
+                "reason": finding.reason,
+                "source": finding.source,
+            }
+            for finding in getattr(result, "suppressed_findings", []) or []
+        ]
     return payload
 
 
@@ -262,12 +286,14 @@ def api_scan_text():
             text,
             language=_api_language(data.get("language")),
             source_name="Power Apps tekst",
+            scan_profile=_api_scan_profile(data.get("scan_profile")),
         )
         scan_id = _api_store_scan_result(result)
         return jsonify(_api_result_payload(
             result,
             scan_id,
             include_preview=_api_bool(data.get("include_preview"), False),
+            include_suppressed=_api_bool(data.get("include_suppressed"), False),
         ))
     except ValueError as exc:
         return jsonify({"ok": False, "error": str(exc), "error_code": "bad_request"}), 400
@@ -321,6 +347,7 @@ def api_scan_file():
             ignore_xlent=_api_bool(data.get("ignore_xlent"), False),
             language=_api_language(data.get("language")),
             ocr=_api_bool(data.get("ocr"), False),
+            scan_profile=_api_scan_profile(data.get("scan_profile")),
         )
         result.file_name = file_name
         scan_id = _api_store_scan_result(result, path=tmp_path, owns_path=True)
@@ -329,6 +356,7 @@ def api_scan_file():
             result,
             scan_id,
             include_preview=_api_bool(data.get("include_preview"), False),
+            include_suppressed=_api_bool(data.get("include_suppressed"), False),
         ))
     except ValueError as exc:
         return jsonify({"ok": False, "error": str(exc), "error_code": "bad_request"}), 400
@@ -359,6 +387,7 @@ def api_get_scan_result(scan_id: str):
         entry["result"],
         scan_id,
         include_preview=_api_bool(request.args.get("include_preview"), False),
+        include_suppressed=_api_bool(request.args.get("include_suppressed"), False),
     ))
 
 
