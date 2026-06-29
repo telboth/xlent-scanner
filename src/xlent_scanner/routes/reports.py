@@ -388,6 +388,18 @@ def _replacement_map(data: dict) -> tuple[list, dict[str, str]]:
     return selected, replacements
 
 
+def _is_ocr_or_image_pdf_result() -> bool:
+    result = app_state.last_result
+    if result is None or app_state.last_path is None:
+        return False
+    if app_state.last_path.suffix.lower() != ".pdf":
+        return False
+    return bool(getattr(result, "ocr_used", False)) or result.warning_code in {
+        "no_text_extracted",
+        "little_text_extracted",
+    }
+
+
 def _source_occurrence_count(value: str) -> int:
     if app_state.last_result is None:
         return 0
@@ -445,6 +457,15 @@ def patch():
     strip_annotations = bool(data.get("strip_annotations", False))
     if not replacements and not strip_annotations:
         return jsonify({"error": "Ingen av de valgte funnene kan anonymiseres direkte."})
+    if replacements and _is_ocr_or_image_pdf_result():
+        return jsonify({
+            "ok": False,
+            "error": (
+                "Direkte PDF-anonymisering er deaktivert for bilde-/OCR-PDF. "
+                "Generer en ny anonymisert PDF fra OCR-teksten i stedet."
+            ),
+            "error_code": "pdfImagePatchUnsafe",
+        })
     output = _unique_output(f"{app_state.last_path.stem}-anonymisert", suffix)
     try:
         patch_file(

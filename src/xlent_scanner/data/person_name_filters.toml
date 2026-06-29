@@ -85,8 +85,9 @@ generic_title_case_words = [
   "size", "software", "spec", "specification", "survey", "thin", "training",
   "uncertainty", "velocity", "version", "wave", "waves", "workflow",
   "bachelor", "course", "curriculum", "dissertation", "lecture", "master",
-  "budget", "cost", "invoice", "order", "payment", "petroleum", "price",
-  "purchase", "quote", "unit",
+  "amount", "budget", "cost", "description", "discount", "invoice", "line",
+  "net", "order", "payment", "petroleum", "price", "purchase", "quantity",
+  "quote", "subtotal", "tax", "total", "unit", "vat",
   "analyse", "ansökan", "artikkel", "avsnitt", "beskrivelse", "bestilling",
   "budsjett", "diagram", "diskusjon", "dokument", "eksempel", "estimat",
   "figur", "funn", "innledning", "kapittel", "kostnad", "kvalitet",
@@ -101,8 +102,10 @@ technical_title_case_words = [
   "artificial", "autoencoder", "batch", "code", "cyclic", "design", "designs",
   "decoder", "development", "driven", "encoder", "field", "informed",
   "intelligence", "intelligense", "interbeds", "inverse", "machine", "neural",
-  "office", "order", "patent", "physically", "price", "purchase", "python",
-  "size", "solver", "sparse", "spec", "thin", "transformer", "unit",
+  "amount", "description", "discount", "line", "net", "office", "order",
+  "patent", "physically", "price", "purchase", "python", "quantity", "size",
+  "solver", "sparse", "spec", "subtotal", "tax", "thin", "total",
+  "transformer", "unit", "vat",
 ]
 
 place_or_thing_preceders = [

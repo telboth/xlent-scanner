@@ -566,6 +566,13 @@ def test_deep_scan_drops_false_positive_person_names(monkeypatch):
         "Visma, Tieto og Oslo kommunes Fasit-team",
         "Arbeids- og velferdsdirektoratet, KS, Trondheim Digital og DigiRogland",
     ]
+    english_false_positive_names = [
+        "Unit Price",
+        "Line Total",
+        "Net Amount",
+        "VAT Amount",
+        "Invoice Total",
+    ]
     monkeypatch.setattr(
         deep_scanner,
         "_call_ollama",
@@ -577,6 +584,14 @@ def test_deep_scan_drops_false_positive_person_names(monkeypatch):
                 "confidence": "high",
             }
             for value in false_positive_names
+        ] + [
+            {
+                "category": "Name",
+                "text": value,
+                "context": f"Invoice column {value}",
+                "confidence": "high",
+            }
+            for value in english_false_positive_names
         ] + [
             {
                 "category": "Personnavn",
@@ -600,6 +615,9 @@ def test_deep_scan_drops_false_positive_person_names(monkeypatch):
         "Teksten nevner " + value
         for value in false_positive_names
     ] + [
+        "Invoice column " + value
+        for value in english_false_positive_names
+    ] + [
         "Kontakt Anne Hansen om saken."
     ])
 
@@ -607,7 +625,7 @@ def test_deep_scan_drops_false_positive_person_names(monkeypatch):
 
     texts = {f["text"] for f in deep_scanner.get_deep_scan_status(job_id)["findings"]}
     assert "Anne Hansen" in texts
-    for value in false_positive_names:
+    for value in false_positive_names + english_false_positive_names:
         assert value not in texts
 
 

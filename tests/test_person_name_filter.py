@@ -64,6 +64,12 @@ def test_person_name_filter_rejects_generic_technical_title_case_phrases():
         "Physically Informed Autoencoder",
         "Cyclic Thin Interbeds",
         "Spec-Driven Development",
+        "Line Total",
+        "Net Amount",
+        "VAT Amount",
+        "Invoice Total",
+        "Quantity Description",
+        "Discount Amount",
     ]:
         assert not looks_like_person_name(value)
 

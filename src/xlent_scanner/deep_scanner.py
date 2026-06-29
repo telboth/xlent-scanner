@@ -809,6 +809,8 @@ def _category_key(category: str) -> str:
 
 
 _PERSON_NAME_CATEGORIES = {
+    "name",
+    "names",
     "personnavn",
     "navn",
     "navn (person)",
@@ -1160,6 +1162,12 @@ def _filter_llm_findings_by_category_precision(
             f = dict(f)
             f["text"] = financial_text
             f["category"] = "Budsjettall"
+        elif _is_person_name_category(cat):
+            if not looks_like_person_name(raw_text):
+                removed += 1
+                continue
+            f = dict(f)
+            f["category"] = "Navn (person)"
         elif _is_address_category(cat):
             if not _looks_like_physical_address(raw_text):
                 removed += 1

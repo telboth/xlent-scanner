@@ -320,7 +320,8 @@
       display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px;
     }
     /* ── AI resultater (unified) ────────────────────────────────────── */
-    #ai-scan-status {
+    #ai-scan-status,
+    #ocr-scan-status {
       display: none; margin-top: 10px;
       background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
       padding: 12px 16px;
@@ -329,7 +330,8 @@
       display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;
     }
     .ai-results-title { font-size: 13px; font-weight: 600; }
-    #ai-progress { font-size: 12px; color: var(--muted); margin-bottom: 6px; min-height: 16px; }
+    #ai-progress,
+    #ocr-progress { font-size: 12px; color: var(--muted); margin-bottom: 6px; min-height: 16px; }
     .ai-inline-progress {
       display: none; width: 150px; height: 7px; overflow: hidden;
       border-radius: 999px; background: color-mix(in srgb, var(--muted) 18%, transparent);
@@ -340,7 +342,8 @@
       background: linear-gradient(90deg, #f0b429, #2f80ed, #4caf50);
       transition: width .35s ease;
     }
-    #ai-progress-meter {
+    #ai-progress-meter,
+    #ocr-progress-meter {
       display: none; margin: 4px 0 10px; padding: 8px 10px;
       border: 1px solid var(--border); border-radius: 8px; background: var(--panel2);
     }
@@ -965,6 +968,20 @@
           data-i18n="clearResult">🗑 Tøm</button>
       </div>
       <div id="result"></div>
+
+      <div id="ocr-scan-status" aria-live="polite">
+        <div class="ai-results-head">
+          <span class="ai-results-title">🔎 OCR</span>
+        </div>
+        <div id="ocr-progress"></div>
+        <div id="ocr-progress-meter">
+          <div class="ai-progress-track"><div id="ocr-progress-fill" class="ai-progress-fill"></div></div>
+          <div class="ai-progress-meta">
+            <span id="ocr-progress-label"></span>
+            <span></span>
+          </div>
+        </div>
+      </div>
 
       <div id="background-panel" class="background-panel" aria-live="polite">
         <div style="font-weight:700;color:var(--text);margin-bottom:5px;" data-i18n="backgroundTitle">Bakgrunnsjobber</div>
@@ -2040,6 +2057,7 @@
         redactionPreviewEmpty:"Ingen direkte erstatninger å forhåndsvise.",
         redactionPreviewMatches:"Treff i kilde",
         pdfPatchFailed:     "PDF-anonymisering feilet. Prøv PDF-rapport eller kontakt support med loggfil.",
+        pdfImagePatchUnsafe:"Direkte PDF-anonymisering er deaktivert for bilde-/OCR-PDF. Generer en ny anonymisert PDF fra OCR-teksten i stedet.",
         pdfGenerateFailed:  "PDF-generering feilet. Se loggfil for tekniske detaljer.",
         updateCheckTop: "Se etter oppdateringer",
         updateCheckNow: "Se etter oppdateringer nå",
@@ -2189,6 +2207,9 @@
         ocrRescanBtn:        "Kjør OCR-skann",
         ocrRescanTooltip:    "Kjører OCR for å hente tekst fra bildebaserte PDF-er og bildefiler. Dette kan ta tid og bør brukes når vanlig tekstuttrekk finner lite eller ingen tekst.",
         ocrRunning:          "Kjører OCR-skann…",
+        ocrResultNotice:     "Resultatet er basert på OCR. OCR kan feiltolke tegn og layout, så kontroller funn og anonymisert fil ekstra nøye.",
+        saveOcrPdf:          "Lagre anonymisert OCR-PDF",
+        pdfImageCaveat:      "Dette er en bilde-/OCR-PDF. Direkte redigering av original-PDF er deaktivert fordi tekst i bildet ikke kan fjernes sikkert. Generer en ny anonymisert PDF fra OCR-teksten og kontroller resultatet.",
       },
       sv: {
         subtitle:     "Kontrollerar och anonymiserar dokument med känslig information",
@@ -2442,6 +2463,7 @@
         redactionPreviewEmpty:"Inga direkta ersättningar att förhandsvisa.",
         redactionPreviewMatches:"Träffar i källan",
         pdfPatchFailed:     "PDF-anonymisering misslyckades. Prova PDF-rapport eller kontakta support med loggfilen.",
+        pdfImagePatchUnsafe:"Direkt PDF-anonymisering är inaktiverad för bild-/OCR-PDF. Generera en ny anonymiserad PDF från OCR-texten i stället.",
         pdfGenerateFailed:  "PDF-generering misslyckades. Se loggfilen för tekniska detaljer.",
         updateCheckTop: "Sök efter uppdateringar",
         updateCheckNow: "Sök efter uppdateringar nu",
@@ -2591,6 +2613,9 @@
         ocrRescanBtn:        "Kör OCR-skanning",
         ocrRescanTooltip:    "Kör OCR för att hämta text från bildbaserade PDF:er och bildfiler. Detta kan ta tid och bör användas när vanlig textextraktion hittar lite eller ingen text.",
         ocrRunning:          "Kör OCR-skanning…",
+        ocrResultNotice:     "Resultatet bygger på OCR. OCR kan feltolka tecken och layout, så kontrollera fynd och anonymiserad fil extra noggrant.",
+        saveOcrPdf:          "Spara anonymiserad OCR-PDF",
+        pdfImageCaveat:      "Detta är en bild-/OCR-PDF. Direkt redigering av original-PDF är inaktiverad eftersom text i bilden inte kan tas bort säkert. Generera en ny anonymiserad PDF från OCR-texten och kontrollera resultatet.",
       },
       en: {
         subtitle:     "Checks and anonymizes documents for sensitive information",
@@ -2849,6 +2874,7 @@
         redactionPreviewEmpty:"No direct replacements to preview.",
         redactionPreviewMatches:"Source matches",
         pdfPatchFailed:     "PDF redaction failed. Try the PDF report or contact support with the log file.",
+        pdfImagePatchUnsafe:"Direct PDF redaction is disabled for image/OCR PDFs. Generate a new redacted PDF from the OCR text instead.",
         pdfGenerateFailed:  "PDF generation failed. See the log file for technical details.",
         updateCheckTop: "Check for updates",
         updateCheckNow: "Check for updates now",
@@ -2998,6 +3024,9 @@
         ocrRescanBtn:        "Run OCR scan",
         ocrRescanTooltip:    "Runs OCR to extract text from image-based PDFs and image files. This can take time and should be used when normal text extraction finds little or no text.",
         ocrRunning:          "Running OCR scan…",
+        ocrResultNotice:     "This result is based on OCR. OCR can misread characters and layout, so verify findings and the redacted file carefully.",
+        saveOcrPdf:          "Save redacted OCR PDF",
+        pdfImageCaveat:      "This is an image/OCR PDF. Direct editing of the original PDF is disabled because text inside the image cannot be removed safely. Generate a new redacted PDF from the OCR text and verify the result.",
       },
 
       // ── Deutsch ────────────────────────────────────────────────────────
@@ -3154,6 +3183,7 @@
         redactionPreviewEmpty:"Keine direkten Ersetzungen für die Vorschau.",
         redactionPreviewMatches:"Treffer in Quelle",
         pdfPatchFailed:      "PDF-Anonymisierung fehlgeschlagen. Versuchen Sie den PDF-Bericht oder kontaktieren Sie den Support mit der Logdatei.",
+        pdfImagePatchUnsafe: "Direkte PDF-Anonymisierung ist für Bild-/OCR-PDFs deaktiviert. Erstellen Sie stattdessen eine neue anonymisierte PDF aus dem OCR-Text.",
         pdfGenerateFailed:   "PDF-Erstellung fehlgeschlagen. Technische Details stehen in der Logdatei.",
         updateNoUpdate:      "Sie haben die neueste Version.",
         updateChecking:      "Prüfe auf Updates…",
@@ -3319,6 +3349,9 @@
         ocrRescanBtn:        "OCR-Scan starten",
         ocrRescanTooltip:    "Führt OCR aus, um Text aus bildbasierten PDFs und Bilddateien zu extrahieren. Dies kann Zeit benötigen und sollte genutzt werden, wenn die normale Textextraktion wenig oder keinen Text findet.",
         ocrRunning:          "OCR-Scan läuft…",
+        ocrResultNotice:     "Dieses Ergebnis basiert auf OCR. OCR kann Zeichen und Layout falsch erkennen; prüfen Sie Treffer und anonymisierte Datei besonders sorgfältig.",
+        saveOcrPdf:          "Anonymisierte OCR-PDF speichern",
+        pdfImageCaveat:      "Dies ist eine Bild-/OCR-PDF. Direktes Bearbeiten der Original-PDF ist deaktiviert, weil Text im Bild nicht sicher entfernt werden kann. Erstellen Sie eine neue anonymisierte PDF aus dem OCR-Text und prüfen Sie das Ergebnis.",
         dstCatEpost:         "E-Mail",
         dstCatTelefon:       "Telefon",
         dstCatAdresse:       "Adresse",
@@ -3564,6 +3597,7 @@
         redactionPreviewEmpty:"Aucun remplacement direct à prévisualiser.",
         redactionPreviewMatches:"Occurrences source",
         pdfPatchFailed:      "L’anonymisation PDF a échoué. Essayez le rapport PDF ou contactez le support avec le fichier journal.",
+        pdfImagePatchUnsafe: "L’anonymisation PDF directe est désactivée pour les PDF image/OCR. Générez plutôt un nouveau PDF anonymisé à partir du texte OCR.",
         pdfGenerateFailed:   "La génération PDF a échoué. Consultez le fichier journal pour les détails techniques.",
         updateNoUpdate:      "Vous avez la dernière version.",
         updateChecking:      "Vérification des mises à jour…",
@@ -3729,6 +3763,9 @@
         ocrRescanBtn:        "Lancer l’OCR",
         ocrRescanTooltip:    "Lance l’OCR pour extraire le texte des PDF basés sur des images et des fichiers image. Cela peut prendre du temps et doit être utilisé lorsque l’extraction normale trouve peu ou pas de texte.",
         ocrRunning:          "OCR en cours…",
+        ocrResultNotice:     "Ce résultat est basé sur l’OCR. L’OCR peut mal interpréter les caractères et la mise en page ; vérifiez soigneusement les résultats et le fichier anonymisé.",
+        saveOcrPdf:          "Enregistrer le PDF OCR anonymisé",
+        pdfImageCaveat:      "Il s’agit d’un PDF image/OCR. La modification directe du PDF original est désactivée, car le texte dans l’image ne peut pas être supprimé de manière sûre. Générez un nouveau PDF anonymisé à partir du texte OCR et vérifiez le résultat.",
         dstCatEpost:         "E-mail",
         dstCatTelefon:       "Téléphone",
         dstCatAdresse:       "Adresse",
@@ -3974,6 +4011,7 @@
         redactionPreviewEmpty:"No hay reemplazos directos para previsualizar.",
         redactionPreviewMatches:"Coincidencias fuente",
         pdfPatchFailed:      "La anonimización de PDF falló. Pruebe el informe PDF o contacte con soporte con el archivo de registro.",
+        pdfImagePatchUnsafe: "La anonimización directa de PDF está desactivada para PDF de imagen/OCR. Genere en su lugar un nuevo PDF anonimizado desde el texto OCR.",
         pdfGenerateFailed:   "La generación de PDF falló. Consulte el archivo de registro para detalles técnicos.",
         updateNoUpdate:      "Tiene la versión más reciente.",
         updateChecking:      "Comprobando actualizaciones…",
@@ -4139,6 +4177,9 @@
         ocrRescanBtn:        "Ejecutar OCR",
         ocrRescanTooltip:    "Ejecuta OCR para extraer texto de PDF basados en imágenes y archivos de imagen. Puede tardar y debe usarse cuando la extracción normal encuentra poco o ningún texto.",
         ocrRunning:          "Ejecutando OCR…",
+        ocrResultNotice:     "Este resultado se basa en OCR. El OCR puede interpretar mal caracteres y diseño, así que verifique cuidadosamente los hallazgos y el archivo anonimizado.",
+        saveOcrPdf:          "Guardar PDF OCR anonimizado",
+        pdfImageCaveat:      "Este es un PDF de imagen/OCR. La edición directa del PDF original está desactivada porque el texto dentro de la imagen no puede eliminarse de forma segura. Genere un nuevo PDF anonimizado desde el texto OCR y verifique el resultado.",
         dstCatEpost:         "Correo electrónico",
         dstCatTelefon:       "Teléfono",
         dstCatAdresse:       "Dirección",
@@ -4296,6 +4337,54 @@
       return `${msg} (${t("logHint")} ${LOG_PATH})`;
     }
     function setStatus(msg) { statusEl.textContent = msg; }
+
+    function setOcrProgress(active) {
+      const box = document.getElementById("ocr-scan-status");
+      const progress = document.getElementById("ocr-progress");
+      const meter = document.getElementById("ocr-progress-meter");
+      const fill = document.getElementById("ocr-progress-fill");
+      const label = document.getElementById("ocr-progress-label");
+      const ocrBtn = document.getElementById("btn-ocr-rescan");
+      if (!box) return;
+      if (ocrBtn) {
+        ocrBtn.disabled = !!active;
+        if (active) {
+          ocrBtn.innerHTML = `<span class="btn-spinner" aria-label="Loading"></span> ${escapeHtml(t("ocrRunning"))}`;
+        } else {
+          ocrBtn.textContent = t("ocrRescanBtn");
+        }
+      }
+      if (active) {
+        box.style.display = "";
+        if (progress) {
+          progress.innerHTML = `<span class="btn-spinner" aria-label="Loading"></span> ${escapeHtml(t("ocrRunning"))}`;
+        }
+        if (meter) meter.style.display = "";
+        if (fill) {
+          fill.classList.add("indeterminate");
+          fill.style.width = "35%";
+        }
+        if (label) label.textContent = t("ocrRunning");
+      } else {
+        box.style.display = "none";
+        if (progress) progress.textContent = "";
+        if (meter) meter.style.display = "none";
+        if (fill) {
+          fill.classList.remove("indeterminate");
+          fill.style.width = "0%";
+        }
+        if (label) label.textContent = "";
+      }
+    }
+
+    function _isOcrOrImagePdfResult(ext = _currentResultExt()) {
+      return ext === "pdf" && Boolean(
+        lastResult?.ocr_used ||
+        lastScan?.ocr ||
+        lastResult?.warning_code === "no_text_extracted" ||
+        lastResult?.warning_code === "little_text_extracted"
+      );
+    }
 
     /* ── State ─────────────────────────────────────────────────────── */
     let lastResult  = null;   // last ScanResult JSON
@@ -5205,6 +5294,7 @@
       document.getElementById("ai-scan-status").style.display = "none";
       document.getElementById("ai-progress").textContent = "";
       _resetAiProgressMeter();
+      setOcrProgress(false);
       document.getElementById("ai-findings-area").innerHTML = "";
       document.getElementById("ai-anon-bar").style.display = "none";
       _aiFindingsData = [];
@@ -5352,7 +5442,8 @@
       const color    = LEVEL_COLOR[lvl] || "#8a96a8";
       const icon     = LEVEL_ICON[lvl]  || "•";
       const ext      = r.file_name.split(".").pop().toLowerCase();
-      const canPatch = PATCH_EXT.has(ext);
+      const isOcrPdf = _isOcrOrImagePdfResult(ext);
+      const canPatch = PATCH_EXT.has(ext) && !isOcrPdf;
 
       const sorted = r.findings
         .map((f, i) => ({ f, i }))
@@ -5369,6 +5460,8 @@
         : "";
       const warningBanner = warning
         ? `<div class="warning-banner">⚠️ ${escapeHtml(warning)}${ocrBtnHtml}</div>` : "";
+      const ocrResultBanner = (r.ocr_used || lastScan?.ocr)
+        ? `<div class="warning-banner">🔎 ${escapeHtml(t("ocrResultNotice"))}</div>` : "";
       const policyWarningBanner = r.policy_warning
         ? `<div class="policy-warning-banner">⛔ ${escapeHtml(t("m365PolicyWarning"))}: ${escapeHtml(r.policy_warning)}</div>` : "";
       const m365TagsHtml = buildM365TagsHtml(r);
@@ -5391,6 +5484,7 @@
         </div>
 
         ${warningBanner}
+        ${ocrResultBanner}
         ${policyWarningBanner}
         ${m365TagsHtml}
 
@@ -5426,6 +5520,8 @@
       // OCR re-skann av bilde-PDF (knappen finnes kun når canOcr var sann)
       document.getElementById("btn-ocr-rescan")?.addEventListener("click", () => {
         if (!lastScan) return;
+        const btn = document.getElementById("btn-ocr-rescan");
+        if (btn) btn.disabled = true;
         if (lastScan.type === "path") scanPath(lastScan.path, { ocr: true });
         else if (lastScan.type === "upload") scanUpload(lastScan.file, lastScan.name, { ocr: true });
       });
@@ -5497,8 +5593,9 @@
 
       const sorted_use = filtered;
 
+      const imagePdf = _isOcrOrImagePdfResult(ext);
       const pdfNote = (ext === "pdf")
-        ? `<div class="pdf-caveat">⚠ ${t("pdfCaveat")}</div>` : "";
+        ? `<div class="pdf-caveat">⚠ ${imagePdf ? t("pdfImageCaveat") : t("pdfCaveat")}</div>` : "";
 
       const anonBar = `
         ${pdfNote}
@@ -5508,6 +5605,9 @@
           <span class="ctrl-sep"></span>
           ${canPatch
             ? `<button class="ctrl-btn ctrl-btn-outline-accent" id="g-patch">${t("saveAnon")} .${ext}</button>`
+            : ""}
+          ${imagePdf
+            ? `<button class="ctrl-btn ctrl-btn-outline-accent" id="g-ocr-pdf">${t("saveOcrPdf")}</button>`
             : ""}
           <button class="ctrl-btn open-anonymized-btn" id="g-open-anonymized">${t("openAnonymizedFile")}</button>
           <span class="anon-msg" id="g-anon-msg"></span>
@@ -5664,7 +5764,8 @@
       const selected = document.querySelectorAll(".g-cb:checked, .g-ai-cb:checked").length + manualCount;
       const total = document.querySelectorAll(".g-cb, .g-ai-cb").length + manualCount;
       const unsafe = [];
-      if (ext === "pdf") unsafe.push("PDF");
+      if (_isOcrOrImagePdfResult(ext)) unsafe.push("OCR/bilde-PDF");
+      else if (ext === "pdf") unsafe.push("PDF");
       if (lastResult?.warning_code) unsafe.push(lastResult.warning_code);
       const unsafeText = unsafe.length ? unsafe.join(", ") : "0";
       el.innerHTML =
@@ -5694,6 +5795,7 @@
         { document.querySelectorAll(".g-cb, .g-ai-cb").forEach(cb => cb.checked = false); updateRedactionReport(ext); });
       document.querySelectorAll(".g-cb, .g-ai-cb").forEach(cb => cb.addEventListener("change", () => updateRedactionReport(ext)));
       if (canPatch) document.getElementById("g-patch")?.addEventListener("click", () => postAnon("patch"));
+      if (_isOcrOrImagePdfResult(ext)) document.getElementById("g-ocr-pdf")?.addEventListener("click", () => postAnon("anonymize", "pdf"));
       document.getElementById("g-preview")?.addEventListener("click", previewRedaction);
       document.getElementById("g-anon")?.addEventListener("click", () => postAnon("anonymize", "md"));
       document.getElementById("g-anon-pdf")?.addEventListener("click", () => postAnon("anonymize", "pdf"));
@@ -5706,9 +5808,10 @@
       const list = resultEl.querySelector("ul.findings-list");
       if (!list) return;
       const ext = _currentResultExt();
-      const canPatch = PATCH_EXT.has(ext);
+      const imagePdf = _isOcrOrImagePdfResult(ext);
+      const canPatch = PATCH_EXT.has(ext) && !imagePdf;
       const pdfNote = (ext === "pdf")
-        ? `<div class="pdf-caveat">⚠ ${t("pdfCaveat")}</div>` : "";
+        ? `<div class="pdf-caveat">⚠ ${imagePdf ? t("pdfImageCaveat") : t("pdfCaveat")}</div>` : "";
       const wrapper = document.createElement("div");
       wrapper.innerHTML = `
         ${pdfNote}
@@ -5718,6 +5821,9 @@
           <span class="ctrl-sep"></span>
           ${canPatch
             ? `<button class="ctrl-btn ctrl-btn-outline-accent" id="g-patch">${t("saveAnon")} .${ext}</button>`
+            : ""}
+          ${imagePdf
+            ? `<button class="ctrl-btn ctrl-btn-outline-accent" id="g-ocr-pdf">${t("saveOcrPdf")}</button>`
             : ""}
           <button class="ctrl-btn open-anonymized-btn" id="g-open-anonymized">${t("openAnonymizedFile")}</button>
           <span class="anon-msg" id="g-anon-msg"></span>
@@ -5935,10 +6041,11 @@
         updateRedactionReport(_currentResultExt());
       }
       const ext = _currentResultExt();
-      const canPatch = PATCH_EXT.has(ext);
+      const imagePdf = _isOcrOrImagePdfResult(ext);
+      const canPatch = PATCH_EXT.has(ext) && !imagePdf;
       const saved = await postAnon(
         canPatch ? "patch" : "anonymize",
-        canPatch ? undefined : "md",
+        canPatch ? undefined : (imagePdf ? "pdf" : "md"),
         msgId,
       );
       if (saved?.ok) await _openAnonymizedFile(msgId);
@@ -6126,9 +6233,11 @@
     }
 
     async function scanPath(path, extraOpts) {
-      setStatus(extraOpts?.ocr ? t("ocrRunning") : t("statusScan"));
+      const isOcrScan = !!extraOpts?.ocr;
+      setStatus(isOcrScan ? t("ocrRunning") : t("statusScan"));
+      setOcrProgress(isOcrScan);
       resultEl.classList.remove("show");
-      lastScan = { type:"path", path };
+      lastScan = { type:"path", path, ocr: isOcrScan };
       try {
         const opts = getOpts();
         const r = await (await fetch(`${API}/scan`, {
@@ -6136,19 +6245,23 @@
           body: JSON.stringify({ file_path: path, ...opts, ...(extraOpts || {}) }),
         })).json();
         setStatus("");
+        setOcrProgress(false);
         renderResult(r);
         addToHistory(r, () => scanPath(path));
       } catch(e) {
         setStatus("");
+        setOcrProgress(false);
         resultEl.classList.add("show");
         resultEl.innerHTML = `<div class="err">${escapeHtml(withLogHint(`${t("scanErr")} ${String(e)}`))}</div>`;
       }
     }
 
     async function scanUpload(file, name, extraOpts) {
-      setStatus(extraOpts?.ocr ? t("ocrRunning") : t("statusUp"));
+      const isOcrScan = !!extraOpts?.ocr;
+      setStatus(isOcrScan ? t("ocrRunning") : t("statusUp"));
+      setOcrProgress(isOcrScan);
       resultEl.classList.remove("show");
-      lastScan = { type:"upload", file, name };
+      lastScan = { type:"upload", file, name, ocr: isOcrScan };
       try {
         const opts = getOpts();
         const buf = await file.arrayBuffer();
@@ -6160,10 +6273,12 @@
         if (extraOpts?.ocr) fd.append("ocr", "true");
         const r = await (await fetch(`${API}/scan-upload`, { method:"POST", body: fd })).json();
         setStatus("");
+        setOcrProgress(false);
         renderResult(r);
         addToHistory(r, () => scanUpload(file, name));
       } catch(e) {
         setStatus("");
+        setOcrProgress(false);
         resultEl.classList.add("show");
         resultEl.innerHTML = `<div class="err">${escapeHtml(withLogHint(`${t("dragErr")} ${String(e)}`))}</div>`;
       }
@@ -7620,7 +7735,8 @@
       _ensureRedactionControlsForAiFindings();
       _syncMainAiSelectionFromAiPanel();
       updateRedactionReport(ext);
-      if (PATCH_EXT.has(ext)) await postAnon("patch", undefined, "ai-anon-msg");
+      if (_isOcrOrImagePdfResult(ext)) await postAnon("anonymize", "pdf", "ai-anon-msg");
+      else if (PATCH_EXT.has(ext)) await postAnon("patch", undefined, "ai-anon-msg");
       else await postAnon("anonymize", "md", "ai-anon-msg");
     }
 

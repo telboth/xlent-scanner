@@ -773,6 +773,7 @@ def scan_file(
         language=lang,
         warning=warning,
         warning_code=warning_code,
+        ocr_used=bool(ocr),
         scan_status="partial" if warning_code or degraded else "success",
     )
     return assess(result)

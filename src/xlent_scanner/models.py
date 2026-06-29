@@ -42,6 +42,7 @@ class ScanResult:
     language: str = ""                # detektert/valgt språk: nb / sv / en
     warning: str | None = None        # advarsel om tom/bilde-basert fil
     warning_code: str | None = None   # stabil kode som GUI/API kan oversette
+    ocr_used: bool = False            # teksten er ekstrahert med OCR
     microsoft_tags: dict = field(default_factory=dict)
     policy_warning: str | None = None
     policy_warning_level: str | None = None

@@ -80,6 +80,10 @@ def test_technical_title_case_phrases_are_not_person_names():
         "Designs Python",
         "Purchase Order",
         "Unit Price",
+        "Line Total",
+        "Net Amount",
+        "VAT Amount",
+        "Invoice Total",
     ]:
         assert not looks_like_person_name(value)
 

@@ -645,6 +645,10 @@ def test_guard_watch_custom_patterns_and_ocr_ui_are_wired():
         "ocrRescanBtn",
         "ocrRescanTooltip",
         "ocrRunning",
+        "ocrResultNotice",
+        "saveOcrPdf",
+        "pdfImageCaveat",
+        "pdfImagePatchUnsafe",
         "aiToggleTooltip",
         "folderRecursiveTooltip",
         "folderRedactSelectedTooltip",
@@ -666,6 +670,37 @@ def test_tooltips_exist_for_expensive_or_external_actions():
     assert 'title="${escapeHtml(t("folderRedactSelectedTooltip"))}"' in html
     assert 'document.querySelectorAll("[data-i18n-title]")' in html
     assert "el.title = t(el.dataset.i18nTitle);" in html
+
+
+def test_ocr_rescan_shows_progress_indicator():
+    html = HTML.read_text(encoding="utf-8")
+
+    assert 'id="ocr-scan-status"' in html
+    assert 'id="ocr-progress-meter"' in html
+    assert 'id="ocr-progress-fill" class="ai-progress-fill"' in html
+    assert "function setOcrProgress(active)" in html
+    assert "setOcrProgress(isOcrScan);" in html
+    assert "setOcrProgress(false);" in html
+    assert "ocrBtn.disabled = !!active;" in html
+    assert 'lastScan = { type:"path", path, ocr: isOcrScan };' in html
+    assert 'lastScan = { type:"upload", file, name, ocr: isOcrScan };' in html
+    assert 'fill.classList.add("indeterminate")' in html
+    assert '<span class="btn-spinner" aria-label="Loading"></span> ${escapeHtml(t("ocrRunning"))}' in html
+    assert "setOcrProgress(false);" in html[html.index("function clearResult()"):html.index("function renderSeveritySummary()")]
+
+
+def test_ocr_pdf_redaction_uses_generated_pdf_instead_of_direct_patch():
+    html = HTML.read_text(encoding="utf-8")
+
+    assert "function _isOcrOrImagePdfResult" in html
+    assert "const isOcrPdf = _isOcrOrImagePdfResult(ext);" in html
+    assert "const canPatch = PATCH_EXT.has(ext) && !isOcrPdf;" in html
+    assert 'id="g-ocr-pdf"' in html
+    assert 'postAnon("anonymize", "pdf")' in html
+    assert 'canPatch ? undefined : (imagePdf ? "pdf" : "md")' in html
+    assert 'if (_isOcrOrImagePdfResult(ext)) await postAnon("anonymize", "pdf", "ai-anon-msg");' in html
+    assert 't("pdfImageCaveat")' in html
+    assert 't("ocrResultNotice")' in html
 
 
 def test_settings_panel_does_not_use_filled_primary_buttons():

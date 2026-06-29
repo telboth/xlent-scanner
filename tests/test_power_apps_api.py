@@ -317,3 +317,27 @@ def test_patch_docx_expands_financial_ai_table_finding_to_cells(tmp_path: Path, 
         "[ANONYMISERT]",
     ]
     assert milk_cells == ["Milk", "20", "1", "20"]
+
+
+def test_patch_rejects_ocr_image_pdf_direct_redaction(tmp_path: Path):
+    source = tmp_path / "scan.pdf"
+    source.write_bytes(b"%PDF-1.4\n% synthetic image pdf placeholder\n")
+    app_module.app_state.last_path = source
+    app_module.app_state.last_result = ScanResult(
+        file_name="scan.pdf",
+        file_size=source.stat().st_size,
+        text_length=11,
+        text_preview="Unit Price",
+        original_text="Unit Price",
+        warning_code="no_text_extracted",
+        ocr_used=True,
+        findings=[Finding(category="navn (person)", text="Unit Price", context="Unit Price")],
+    )
+
+    client = app_module.flask_app.test_client()
+    response = client.post("/patch", json={"indices": [0]})
+
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data["ok"] is False
+    assert data["error_code"] == "pdfImagePatchUnsafe"
