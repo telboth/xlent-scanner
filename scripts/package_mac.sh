@@ -59,22 +59,53 @@ fi
 OUT_DIR="$REPO_ROOT/$INSTALLER_OUT_DIR"
 mkdir -p "$OUT_DIR"
 
-STAGING_DIR="$OUT_DIR/.dmg_staging"
-rm -rf "$STAGING_DIR"
+STAGING_PARENT="$(mktemp -d "${TMPDIR:-/tmp}/xlent-scanner-dmg.XXXXXX")"
+STAGING_DIR="$STAGING_PARENT/staging"
+
+cleanup() {
+  rm -rf "$STAGING_PARENT"
+}
+trap cleanup EXIT
+
 mkdir -p "$STAGING_DIR"
 
 cp -R "$APP_PATH" "$STAGING_DIR/"
 ln -s /Applications "$STAGING_DIR/Applications"
 
 DMG_PATH="$OUT_DIR/xlent-scanner-macos-$VERSION.dmg"
+DMG_TMP="$(mktemp "$OUT_DIR/.xlent-scanner-macos-$VERSION.XXXXXX.dmg")"
 rm -f "$DMG_PATH"
+rm -f "$DMG_TMP"
 
-hdiutil create \
-  -volname "XLENT Scanner" \
-  -srcfolder "$STAGING_DIR" \
-  -ov \
-  -format UDZO \
-  "$DMG_PATH"
+create_dmg() {
+  local attempt
+  local status
 
-rm -rf "$STAGING_DIR"
+  for attempt in 1 2 3; do
+    rm -f "$DMG_TMP"
+    if hdiutil create \
+      -volname "XLENT Scanner" \
+      -srcfolder "$STAGING_DIR" \
+      -ov \
+      -format UDZO \
+      "$DMG_TMP"; then
+      mv "$DMG_TMP" "$DMG_PATH"
+      return 0
+    else
+      status=$?
+    fi
+
+    rm -f "$DMG_TMP"
+    if [[ "$attempt" -eq 3 ]]; then
+      return "$status"
+    fi
+
+    echo "hdiutil create failed (attempt $attempt/3, status $status). Retrying..." >&2
+    sync || true
+    sleep "$((attempt * 5))"
+  done
+}
+
+create_dmg
+
 echo "DMG created: $DMG_PATH"

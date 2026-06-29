@@ -159,6 +159,20 @@ _REFERENCE_CONTEXT_RE = re.compile(
     r")"
 )
 
+_PLACE_OR_THING_PRECEDERS: frozenset[str] = frozenset({
+    "the", "of", "in",
+})
+
+_PLACE_OR_THING_FOLLOWERS: frozenset[str] = frozenset({
+    "area", "areas", "basin", "basins", "block", "blocks", "condensate",
+    "field", "fields", "formation", "formations", "gas", "horizon",
+    "horizons", "interval", "intervals", "member", "members", "oil",
+    "platform", "platforms", "play", "plays", "prospect", "prospects",
+    "reservoir", "reservoirs", "sandstone", "sequence", "sequences",
+    "shale", "structure", "structures", "unit", "units", "well", "wells",
+    "zone", "zones",
+})
+
 
 # ── Hjelpefunksjoner ──────────────────────────────────────────────────────────
 
@@ -231,6 +245,25 @@ def _context_window(text: str, start: int, end: int) -> str:
     return text[left:right]
 
 
+def _words_before(text: str, start: int, *, limit: int = 4) -> list[str]:
+    left = max(0, start - _CONTEXT_WINDOW_CHARS)
+    return _WORD_RE.findall(text[left:start].casefold())[-limit:]
+
+
+def _words_after(text: str, end: int, *, limit: int = 4) -> list[str]:
+    right = min(len(text), end + _CONTEXT_WINDOW_CHARS)
+    return _WORD_RE.findall(text[end:right].casefold())[:limit]
+
+
+def _has_place_or_technical_context(text: str, start: int, end: int) -> bool:
+    before = _words_before(text, start, limit=1)
+    if not before or before[-1] not in _PLACE_OR_THING_PRECEDERS:
+        return False
+
+    after = _words_after(text, end, limit=4)
+    return any(word in _PLACE_OR_THING_FOLLOWERS for word in after)
+
+
 def has_negative_person_name_context(text: str, start: int, end: int) -> bool:
     """Returner True når konteksten tyder på referanse/bibliografi, ikke løpende PII.
 
@@ -242,7 +275,9 @@ def has_negative_person_name_context(text: str, start: int, end: int) -> bool:
     start = max(0, min(start, len(text)))
     end = max(start, min(end, len(text)))
     window = _context_window(text, start, end)
-    return bool(_REFERENCE_CONTEXT_RE.search(window))
+    if _REFERENCE_CONTEXT_RE.search(window):
+        return True
+    return _has_place_or_technical_context(text, start, end)
 
 
 def looks_like_person_name_in_context(name: str, text: str, start: int, end: int) -> bool:

@@ -83,3 +83,17 @@ def test_release_uses_single_macos_install_script() -> None:
     assert "install_mac_quick_action.sh" not in release_script
     assert "install_mac_service.sh" not in workflow
     assert "install_mac_service.sh" not in release_script
+
+
+def test_macos_package_script_uses_temp_staging_and_hdiutil_retry() -> None:
+    script = Path("scripts/package_mac.sh").read_text(encoding="utf-8")
+
+    assert "mktemp -d" in script
+    assert "STAGING_PARENT" in script
+    assert "trap cleanup EXIT" in script
+    assert "for attempt in 1 2 3" in script
+    assert "hdiutil create" in script
+    assert "else\n      status=$?" in script
+    assert "sleep \"$((attempt * 5))\"" in script
+    assert 'mv "$DMG_TMP" "$DMG_PATH"' in script
+    assert 'ln -s /Applications "$STAGING_DIR/Applications"' in script

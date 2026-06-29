@@ -78,6 +78,19 @@ def test_person_name_context_filter_rejects_bibliographic_lines():
     assert not looks_like_person_name_in_context("Thomas Elboth", text, start, end)
 
 
+def test_person_name_context_filter_rejects_geoscience_field_names():
+    text = (
+        "The text discusses the Sleipner Vest gas field and the "
+        "Sleipner Øst condensate field."
+    )
+    for name in ("Sleipner Vest", "Sleipner Øst"):
+        start = text.index(name)
+        end = start + len(name)
+
+        assert looks_like_person_name(name)
+        assert not looks_like_person_name_in_context(name, text, start, end)
+
+
 def test_person_name_context_filter_keeps_normal_sentence_names():
     text = "Rapporten ble skrevet av Thomas Elboth etter intervjuet."
     start = text.index("Thomas")
