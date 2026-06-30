@@ -963,6 +963,18 @@ def test_anonymized_file_button_saves_then_opens_without_prior_save():
     assert 'id="ai-open-anonymized-btn" data-i18n="openAnonymizedFile" disabled' not in html
     assert 'await postAnon(' in html
     assert 'if (saved?.ok) await _openAnonymizedFile(msgId);' in html
+    assert "function _preferredOpenAnonymizedFormat" in html
+    assert 'return ext === "pdf" ? "pdf" : "md";' in html
+
+
+def test_top_rescan_button_is_available_without_ai_toggle():
+    html = HTML.read_text(encoding="utf-8")
+
+    assert "function _rescanLastDocument()" in html
+    assert 'rescanBtn.style.display = lastResult ? "" : "none";' in html
+    assert 'if (document.getElementById("ai-scan-toggle")?.checked) autoAiScan();' in html
+    assert "else _rescanLastDocument();" in html
+    assert '(this.checked && lastResult)' not in html
 
 
 def test_secondary_redaction_and_export_actions_are_collapsed():

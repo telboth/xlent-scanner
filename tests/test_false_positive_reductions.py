@@ -87,6 +87,7 @@ def test_technical_title_case_phrases_are_not_person_names():
         "VAT Amount",
         "Invoice Total",
         "Ocean Freight",
+        "Customer Details",
     ]:
         assert not looks_like_person_name(value)
 

@@ -5679,7 +5679,7 @@
 
       // Oppdater re-skann-knapp nå som lastResult er satt
       { const rb = document.getElementById("ai-rescan-btn");
-        if (rb) rb.style.display = (document.getElementById("ai-scan-toggle")?.checked && lastResult) ? "" : "none"; }
+        if (rb) rb.style.display = lastResult ? "" : "none"; }
 
       // Start AI-skann automatisk hvis toggle er på (ikke for mappeskann)
       if (_scanMode !== "folder") {
@@ -6200,6 +6200,11 @@
       }
     }
 
+    function _preferredOpenAnonymizedFormat(ext, endpoint) {
+      if (endpoint !== "anonymize") return undefined;
+      return ext === "pdf" ? "pdf" : "md";
+    }
+
     async function _saveAndOpenAnonymized(msgId = "g-anon-msg") {
       if (msgId === "ai-anon-msg") {
         _ensureRedactionControlsForAiFindings();
@@ -6212,7 +6217,7 @@
       const endpoint = imagePdf ? "patch-image-pdf" : (canPatch ? "patch" : "anonymize");
       const saved = await postAnon(
         endpoint,
-        endpoint === "anonymize" ? "md" : undefined,
+        _preferredOpenAnonymizedFormat(ext, endpoint),
         msgId,
       );
       if (saved?.ok) await _openAnonymizedFile(msgId);
@@ -7423,19 +7428,27 @@
     document.getElementById("scan-sel-none").addEventListener("click", () =>
       document.querySelectorAll(".scan-cat").forEach(cb => cb.checked = false));
 
+    function _rescanLastDocument() {
+      if (!lastScan) return;
+      if (lastScan.type === "path") scanPath(lastScan.path);
+      else if (lastScan.type === "upload") scanUpload(lastScan.file, lastScan.name);
+    }
+
     // AI-toggle: vis/skjul opsjoner og last modeller
     document.getElementById("ai-scan-toggle").addEventListener("change", function() {
       const optsEl    = document.getElementById("ai-scan-opts");
       const rescanBtn = document.getElementById("ai-rescan-btn");
       optsEl.style.display = this.checked ? "" : "none";
-      // Vis re-skann-knapp kun når toggle er på og et resultat allerede finnes
-      if (rescanBtn) rescanBtn.style.display = (this.checked && lastResult) ? "" : "none";
+      // Vis re-skann-knapp når et resultat finnes, også uten AI-toggle.
+      if (rescanBtn) rescanBtn.style.display = lastResult ? "" : "none";
       if (this.checked) _loadAiModels();
     });
 
-    // Re-skann-knapp: kjør AI-skannet på nytt med gjeldende innstillinger
+    // Re-skann-knapp: AI-dybdeskann når toggle er på, ellers vanlig scan.
     document.getElementById("ai-rescan-btn").addEventListener("click", () => {
-      if (lastResult) autoAiScan();
+      if (!lastResult) return;
+      if (document.getElementById("ai-scan-toggle")?.checked) autoAiScan();
+      else _rescanLastDocument();
     });
 
     async function _loadAiModels() {

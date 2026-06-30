@@ -88,6 +88,7 @@ generic_title_case_words = [
   "bachelor", "course", "curriculum", "dissertation", "lecture", "master",
   "amount", "budget", "cost", "description", "discount", "invoice", "line",
   "net", "order", "payment", "petroleum", "price", "purchase", "quantity",
+  "customer", "details",
   "quote", "subtotal", "tax", "total", "unit", "vat",
   "analyse", "ansökan", "artikkel", "avsnitt", "beskrivelse", "bestilling",
   "budsjett", "diagram", "diskusjon", "dokument", "eksempel", "estimat",
