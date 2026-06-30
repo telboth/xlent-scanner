@@ -159,6 +159,31 @@ def test_api_scan_file_accepts_pdf_mode(monkeypatch):
     assert captured["pdf_mode"] == "advanced"
 
 
+def test_api_scan_file_accepts_scan_mode_alias(monkeypatch):
+    monkeypatch.delenv("XLENT_SCANNER_API_KEY", raising=False)
+    captured = {}
+
+    def fake_scan_file(*args, **kwargs):
+        captured.update(kwargs)
+        return _fake_result()
+
+    monkeypatch.setattr(app_module, "scan_file", fake_scan_file)
+    app_module.app_state.api_scan_results.clear()
+    client = app_module.flask_app.test_client()
+
+    response = client.post(
+        "/api/scan-file",
+        json={
+            "file_name": "kunde.jpg",
+            "content_base64": base64.b64encode(b"image").decode("ascii"),
+            "scan_mode": "advanced",
+        },
+    )
+
+    assert response.status_code == 200
+    assert captured["pdf_mode"] == "advanced"
+
+
 def test_api_scan_file_rejects_invalid_base64(monkeypatch):
     monkeypatch.delenv("XLENT_SCANNER_API_KEY", raising=False)
     client = app_module.flask_app.test_client()
@@ -434,3 +459,69 @@ def test_patch_image_pdf_uses_raster_redaction_route(tmp_path: Path, monkeypatch
     assert captured["replacements"] == {"Ola Nordmann": "<Person A>"}
     assert captured["method"] == "patch_image_pdf"
     assert app_module.app_state.last_anonymized_path == Path(data["path"])
+
+
+def test_patch_image_pdf_accepts_image_files_via_temp_pdf(tmp_path: Path, monkeypatch):
+    from xlent_scanner.image_pdf_redaction import ImagePdfRedactionStats
+    from xlent_scanner.routes import reports as reports_routes
+
+    monkeypatch.setattr(Path, "home", lambda: tmp_path)
+    downloads = tmp_path / "Downloads"
+    downloads.mkdir()
+
+    source = tmp_path / "scan.jpg"
+    source.write_bytes(b"synthetic image bytes")
+    temp_pdf = tmp_path / "scan-as-pdf.pdf"
+    temp_pdf.write_bytes(b"%PDF-1.4\n% synthetic converted image pdf\n")
+    app_module.app_state.last_path = source
+    app_module.app_state.last_result = ScanResult(
+        file_name="scan.jpg",
+        file_size=source.stat().st_size,
+        text_length=11,
+        text_preview="Ola Nordmann",
+        original_text="Ola Nordmann",
+        ocr_used=True,
+        findings=[Finding(category="navn (person)", text="Ola Nordmann", context="Ola Nordmann")],
+    )
+
+    captured = {}
+
+    def fake_image_to_temp_pdf(source_arg):
+        captured["converted_source"] = source_arg
+        return temp_pdf
+
+    def fake_redact_image_pdf(source_arg, replacements, output, *, strip_annotations=False):
+        captured["source"] = source_arg
+        captured["replacements"] = replacements
+        output.write_bytes(b"%PDF-1.4\n% redacted image pdf placeholder\n")
+        return ImagePdfRedactionStats(
+            pages=1,
+            redaction_count=1,
+            matched_values=["Ola Nordmann"],
+            unmatched_values=[],
+        )
+
+    def fake_record_redaction(output, result, selected, *, ai_findings, method, ai_metadata):
+        captured["method"] = method
+        return {
+            "id": "audit-1",
+            "path": str(output),
+            "verification": {"passed": True, "removed_count": 1},
+        }
+
+    monkeypatch.setattr(reports_routes, "_image_to_temp_pdf", fake_image_to_temp_pdf, raising=False)
+    monkeypatch.setattr(reports_routes, "redact_image_pdf", fake_redact_image_pdf)
+    monkeypatch.setattr(reports_routes, "record_redaction", fake_record_redaction)
+
+    client = app_module.flask_app.test_client()
+    response = client.post("/patch-image-pdf", json={"indices": [0]})
+
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data["ok"] is True
+    assert data["path"].endswith("-anonymisert-bilde.pdf")
+    assert captured["converted_source"] == source
+    assert captured["source"] == temp_pdf
+    assert captured["replacements"] == {"Ola Nordmann": "<Person A>"}
+    assert captured["method"] == "patch_image_file_pdf"
+    assert not temp_pdf.exists()

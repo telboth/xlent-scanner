@@ -34,6 +34,7 @@ from xlent_scanner.report import (
     combined_assessment,
     generate_html,
 )
+from xlent_scanner.scanner import IMAGE_SUFFIXES, _image_to_temp_pdf
 from xlent_scanner.utils import open_path, reveal_path
 from xlent_scanner.whitelist import add_to_whitelist, category_allows_whitelist
 
@@ -508,8 +509,10 @@ def patch():
 def patch_image_pdf():
     if app_state.last_result is None or app_state.last_path is None:
         return jsonify({"error": "Ingen skannet fil tilgjengelig."})
-    if app_state.last_path.suffix.lower() != ".pdf":
-        return jsonify({"error": "Rasterbasert bilde-PDF-redaction støtter bare PDF."})
+    source_path = app_state.last_path
+    source_suffix = source_path.suffix.lower()
+    if source_suffix != ".pdf" and source_suffix not in IMAGE_SUFFIXES:
+        return jsonify({"error": "Rasterbasert bilde-redaction støtter bare PDF og bildefiler."})
 
     data = request.get_json(force=True)
     selected, replacements = _replacement_map(data)
@@ -519,9 +522,14 @@ def patch_image_pdf():
         return jsonify({"error": "Ingen av de valgte funnene kan anonymiseres direkte."})
 
     output = _unique_output(f"{app_state.last_path.stem}-anonymisert-bilde", ".pdf")
+    redaction_source = source_path
+    tmp_pdf: Path | None = None
     try:
+        if source_suffix in IMAGE_SUFFIXES:
+            tmp_pdf = _image_to_temp_pdf(source_path)
+            redaction_source = tmp_pdf
         stats = redact_image_pdf(
-            app_state.last_path,
+            redaction_source,
             replacements,
             output,
             strip_annotations=strip_annotations,
@@ -532,12 +540,18 @@ def patch_image_pdf():
             "error": "Bilde-PDF-anonymisering feilet. Se loggfil for tekniske detaljer.",
             "error_code": "imagePdfRedactionFailed",
         })
+    finally:
+        if tmp_pdf is not None:
+            try:
+                tmp_pdf.unlink(missing_ok=True)
+            except OSError:
+                pass
 
     audit = _record_output(
         output,
         selected,
         ai_findings,
-        method="patch_image_pdf",
+        method="patch_image_file_pdf" if source_suffix in IMAGE_SUFFIXES else "patch_image_pdf",
     )
     return jsonify({
         "ok": True,

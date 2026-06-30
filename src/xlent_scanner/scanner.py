@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import html
 import re
+import tempfile
 import time
 import warnings
 from collections.abc import Iterable
@@ -237,12 +238,41 @@ def _get_image_ocr_engine():
     return _image_ocr_engine
 
 
-def _extract_text_image(path: Path, ocr: bool = False) -> str:
+def _image_to_temp_pdf(path: Path) -> Path:
+    """Konverter en bildefil til midlertidig én-sides PDF for Docling OCR."""
+    with fitz.open(path) as image_doc:
+        pdf_bytes = image_doc.convert_to_pdf()
+    with tempfile.NamedTemporaryFile(prefix="xlent-image-ocr-", suffix=".pdf", delete=False) as handle:
+        handle.write(pdf_bytes)
+        return Path(handle.name)
+
+
+def _extract_text_image(path: Path, ocr: bool = False, pdf_mode: str = "fast") -> str:
     """Ekstraherer tekst fra PNG/JPG/TIFF/WebP via OCR.
 
     Uten eksplisitt OCR returnerer vi tom tekst slik at GUI kan vise samme
     OCR-tilbud som for bildebaserte PDF-er.
+
+    Avansert scan-modus konverterer bildet til midlertidig PDF og kjører
+    Docling OCR. Det gir bedre sjanse for å bevare layout/struktur enn ren
+    RapidOCR-linjetekst.
     """
+    if normalise_pdf_mode(pdf_mode) == "advanced":
+        tmp_pdf: Path | None = None
+        try:
+            tmp_pdf = _image_to_temp_pdf(path)
+            return _extract_text_pdf(tmp_pdf, ocr=True, pdf_mode="advanced")
+        except Exception as exc:
+            raise RuntimeError(
+                "Avansert OCR av bildefil feilet. Kontroller at Docling OCR "
+                f"er tilgjengelig ({type(exc).__name__}: {exc})."
+            ) from exc
+        finally:
+            if tmp_pdf is not None:
+                try:
+                    tmp_pdf.unlink(missing_ok=True)
+                except OSError:
+                    pass
     if not ocr:
         return ""
     try:
@@ -459,7 +489,7 @@ def _extract_text_html(path: Path) -> str:
 def extract_text(path: Path, ocr: bool = False, pdf_mode: str = "fast") -> str:
     suffix = path.suffix.lower()
     if suffix in IMAGE_SUFFIXES:
-        return _extract_text_image(path, ocr=ocr)
+        return _extract_text_image(path, ocr=ocr, pdf_mode=pdf_mode)
     if suffix == ".pdf":
         return _extract_text_pdf(path, ocr=ocr, pdf_mode=pdf_mode)
     if suffix == ".docx":
@@ -778,6 +808,8 @@ def scan_file(
             scan_status="failed",
         )
     suffix = p.suffix.lower()
+    scan_mode = normalise_pdf_mode(pdf_mode)
+    advanced_image_ocr = suffix in IMAGE_SUFFIXES and scan_mode == "advanced"
     if suffix not in SUPPORTED_SUFFIXES:
         return ScanResult(
             file_name=p.name, file_size=p.stat().st_size,
@@ -788,7 +820,7 @@ def scan_file(
     try:
         try:
             extract_t0 = time.perf_counter()
-            text = extract_text(p, ocr=ocr, pdf_mode=pdf_mode)
+            text = extract_text(p, ocr=ocr, pdf_mode=scan_mode)
             extract_seconds = round(time.perf_counter() - extract_t0, 4)
         except TypeError as exc:
             # Flere tester og tredjepartsintegrasjoner monkeypatcher extract_text(path).
@@ -877,7 +909,7 @@ def scan_file(
         language=lang,
         warning=warning,
         warning_code=warning_code,
-        ocr_used=bool(ocr),
+        ocr_used=bool(ocr or advanced_image_ocr),
         scan_status="partial" if warning_code or degraded else "success",
         scan_timings={
             "extract_seconds": extract_seconds,
@@ -885,7 +917,8 @@ def scan_file(
             "detectors_seconds": detector_seconds,
             "detectors": detector_timings,
             "total_seconds": round(time.perf_counter() - total_t0, 4),
-            "pdf_mode": normalise_pdf_mode(pdf_mode) if suffix == ".pdf" else "",
+            "pdf_mode": scan_mode if suffix == ".pdf" else "",
+            "scan_mode": scan_mode if suffix == ".pdf" or suffix in IMAGE_SUFFIXES else "",
         },
     )
     return assess(result)

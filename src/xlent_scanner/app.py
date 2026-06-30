@@ -694,11 +694,16 @@ def _api_openapi_spec() -> dict:
         },
         "description": "Valgte regelbaserte scan-kategorier. Utelat feltet for å skanne alle kategorier.",
     }
-    pdf_mode_property = {
+    scan_mode_property = {
         "type": "string",
         "enum": ["fast", "auto", "advanced"],
         "default": "fast",
-        "description": "PDF-tekstmodus: fast=PyMuPDF, auto=Docling ved lite tekst, advanced=prøv Docling og bruk beste resultat.",
+        "description": "Scan-modus: fast=PyMuPDF for PDF/RapidOCR for bilder, auto=Docling ved lite PDF-tekst, advanced=Docling for PDF og bildefiler for bedre struktur/layout.",
+    }
+    pdf_mode_property = {
+        **scan_mode_property,
+        "description": "Bakoverkompatibelt alias for scan_mode.",
+        "deprecated": True,
     }
     scan_result_schema = {
         "type": "object",
@@ -1000,6 +1005,7 @@ def _api_openapi_spec() -> dict:
                                         },
                                         "scan_profile": scan_profile_property,
                                         "categories": scan_categories_property,
+                                        "scan_mode": scan_mode_property,
                                         "pdf_mode": pdf_mode_property,
                                         "ignore_xlent": {"type": "boolean", "default": False},
                                         "ocr": {

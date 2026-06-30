@@ -345,7 +345,7 @@ def scan_folder_endpoint():
         ignore_xlent = bool(data.get("ignore_xlent", False))
         language = data.get("language", "auto")
         scan_profile = data.get("scan_profile", "normal")
-        pdf_mode = data.get("pdf_mode", "fast")
+        pdf_mode = data.get("scan_mode", data.get("pdf_mode", "fast"))
         categories = data.get("categories") if isinstance(data.get("categories"), list) else None
         opts = _folder_scan_options(data)
         plan = build_folder_scan_plan(folder_path, **opts)
@@ -390,7 +390,7 @@ def scan_folder_start_endpoint():
         ignore_xlent = bool(data.get("ignore_xlent", False))
         language = data.get("language", "auto")
         scan_profile = data.get("scan_profile", "normal")
-        pdf_mode = data.get("pdf_mode", "fast")
+        pdf_mode = data.get("scan_mode", data.get("pdf_mode", "fast"))
         categories = data.get("categories") if isinstance(data.get("categories"), list) else None
         opts = _folder_scan_options(data)
         job_id = app_state.folder_job_manager.create({

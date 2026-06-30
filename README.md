@@ -1,6 +1,6 @@
 # XLENT Compliance-scanner
 
-> **v1.7.4** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
+> **v1.7.5** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
 
 Alt kjøres 100 % lokalt — ingen dokumenter, tekst eller funn sendes over internett.
 
@@ -437,6 +437,12 @@ src/xlent_scanner/
 ---
 
 ## Endringslogg
+
+### v1.7.5
+- Endrer brukerflaten fra «PDF-modus» til «Scan-modus», med samme bakoverkompatible `pdf_mode`-parameter og nytt `scan_mode`-alias i API-et.
+- Viser tydelig hint når «Avansert» scan-modus er valgt, siden Docling gir bedre layout/tabeller/struktur, men kan bruke mer tid.
+- Lar «Avansert» scan-modus kjøre bildefiler via midlertidig PDF og Docling OCR for bedre layoutbevaring enn ren linje-OCR.
+- Støtter «Lagre anonymisert bilde-PDF» også for OCR-skannede bildefiler, ved å konvertere bildet til PDF og bruke samme rasterbaserte maskering som bilde-PDF-er.
 
 ### v1.7.4
 - Avviser `dddd-dddd` som telefonnummer for å unngå falske treff på saks-/referansenummer som `2026-0011`.

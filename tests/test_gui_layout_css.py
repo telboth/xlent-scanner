@@ -667,6 +667,7 @@ def test_guard_watch_custom_patterns_and_ocr_ui_are_wired():
         "folderRedactSelectedTooltip",
         "updateRunScriptTooltip",
         "m365WriteMetadataTooltip",
+        "scanModeAdvancedHint",
     ]:
         expected = 7 if key == "redactionProfile" else 6
         assert html.count(f"{key}:") == expected
@@ -675,6 +676,7 @@ def test_guard_watch_custom_patterns_and_ocr_ui_are_wired():
 def test_tooltips_exist_for_expensive_or_external_actions():
     html = HTML.read_text(encoding="utf-8")
 
+    assert 'data-i18n-title="pdfModeTooltip"' in html
     assert 'data-i18n-title="aiToggleTooltip"' in html
     assert 'data-i18n-title="folderRecursiveTooltip"' in html
     assert 'data-i18n-title="m365WriteMetadataTooltip"' in html
@@ -683,6 +685,26 @@ def test_tooltips_exist_for_expensive_or_external_actions():
     assert 'title="${escapeHtml(t("folderRedactSelectedTooltip"))}"' in html
     assert 'document.querySelectorAll("[data-i18n-title]")' in html
     assert "el.title = t(el.dataset.i18nTitle);" in html
+
+
+def test_scan_mode_tooltip_explains_modes_and_layout_tradeoff():
+    html = HTML.read_text(encoding="utf-8")
+
+    norwegian_tooltip = (
+        "Rask: PyMuPDF for PDF og RapidOCR for bilder. Auto: bruker Docling bare når PDF-en har lite tekst. "
+        "Avansert: bruker Docling for PDF-er og bildefiler, og beholder formatering, tabeller og struktur mye bedre"
+    )
+    english_tooltip = (
+        "Fast: PyMuPDF for PDFs and RapidOCR for images. Auto: uses Docling only when the PDF has little text. "
+        "Advanced: uses Docling for PDFs and image files, and preserves formatting, tables, and structure much better"
+    )
+    assert "Scan-modus" in html
+    assert "Scan mode" in html
+    assert 'id="scan-mode-hint"' in html
+    assert 'function updateScanModeHint()' in html
+    assert 'mode === "advanced"' in html
+    assert norwegian_tooltip in html
+    assert english_tooltip in html
 
 
 def test_ocr_rescan_shows_progress_indicator():
@@ -743,6 +765,7 @@ def test_ocr_pdf_redaction_uses_image_pdf_redaction_instead_of_direct_patch():
     html = HTML.read_text(encoding="utf-8")
 
     assert "function _isOcrOrImagePdfResult" in html
+    assert "if (IMAGE_EXT.has(ext)) return Boolean(lastResult?.ocr_used || lastScan?.ocr);" in html
     assert "const isOcrPdf = _isOcrOrImagePdfResult(ext);" in html
     assert "const canPatch = PATCH_EXT.has(ext) && !isOcrPdf;" in html
     assert 'id="g-image-pdf"' in html

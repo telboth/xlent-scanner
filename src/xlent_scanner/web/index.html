@@ -845,14 +845,15 @@
             </label>
             <label style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px;"
                    data-i18n-title="pdfModeTooltip"
-                   title="Rask bruker PyMuPDF. Avansert bruker Docling og kan gi bedre layout/tabeller, men tar lengre tid. OCR-knappen brukes for bilde-PDF.">
-              <span data-i18n="pdfMode">PDF-modus</span>
+                   title="Rask: PyMuPDF for PDF og RapidOCR for bilder. Auto: bruker Docling bare når PDF-en har lite tekst. Avansert: bruker Docling for PDF-er og bildefiler, og beholder formatering, tabeller og struktur mye bedre, men tar lengre tid.">
+              <span data-i18n="pdfMode">Scan-modus</span>
               <select id="pdf-mode" style="font-size:11px;padding:2px 6px;">
                 <option value="fast" data-i18n="pdfModeFast">Rask</option>
                 <option value="auto" data-i18n="pdfModeAuto">Auto</option>
                 <option value="advanced" data-i18n="pdfModeAdvanced">Avansert</option>
               </select>
             </label>
+            <span id="scan-mode-hint" style="display:none;font-size:11px;color:#b45309;background:#fff7ed;border:1px solid #fed7aa;border-radius:999px;padding:2px 8px;" data-i18n="scanModeAdvancedHint">Avansert kan ta lengre tid, men bevarer layout og tabeller bedre.</span>
             <button class="ctrl-btn" id="scan-sel-all" style="font-size:11px;padding:2px 8px;" data-i18n="selAll">Velg alle</button>
             <button class="ctrl-btn" id="scan-sel-none" style="font-size:11px;padding:2px 8px;" data-i18n="selNone">Fjern alle</button>
           </div>
@@ -2156,11 +2157,12 @@
         scanProfileNormal:   "Normal",
         scanProfileTechnical:"Teknisk/akademisk",
         scanProfileTooltip:  "Bruk teknisk/akademisk for dokumenter med figurer, DOI-er, akser og mange fagfraser.",
-        pdfMode:             "PDF-modus",
+        pdfMode:             "Scan-modus",
         pdfModeFast:         "Rask",
         pdfModeAuto:         "Auto",
         pdfModeAdvanced:     "Avansert",
-        pdfModeTooltip:      "Rask bruker PyMuPDF. Auto bruker Docling bare ved lite tekst. Avansert bruker Docling og kan ta lengre tid.",
+        pdfModeTooltip:      "Rask: PyMuPDF for PDF og RapidOCR for bilder. Auto: bruker Docling bare når PDF-en har lite tekst. Avansert: bruker Docling for PDF-er og bildefiler, og beholder formatering, tabeller og struktur mye bedre, men tar lengre tid.",
+        scanModeAdvancedHint:"Avansert kan ta lengre tid, men bevarer layout og tabeller bedre.",
         scanTimingLabel:     "Tidsbruk",
         scanCatId:           "Personnummer / ID",
         scanCatAdresse:      "Fysisk adresse",
@@ -2233,7 +2235,7 @@
         ocrResultNotice:     "Resultatet er basert på OCR. OCR kan feiltolke tegn og layout, så kontroller funn og anonymisert fil ekstra nøye.",
         saveOcrPdf:          "Lagre anonymisert OCR-PDF",
         saveImagePdf:        "Lagre anonymisert bilde-PDF",
-        pdfImageCaveat:      "Dette er en bilde-/OCR-PDF. Direkte tekstlagsredigering er deaktivert. Bruk anonymisert bilde-PDF for å maskere OCR-treff direkte på sidebildet og bevare skannet layout best mulig. Kontroller alltid resultatet.",
+        pdfImageCaveat:      "Dette er en bilde-/OCR-fil. Direkte tekstlagsredigering er deaktivert. Bruk anonymisert bilde-PDF for å maskere OCR-treff direkte på sidebildet og bevare skannet layout best mulig. Kontroller alltid resultatet.",
       },
       sv: {
         subtitle:     "Kontrollerar och anonymiserar dokument med känslig information",
@@ -2574,11 +2576,12 @@
         scanProfileNormal:   "Normal",
         scanProfileTechnical:"Teknisk/akademisk",
         scanProfileTooltip:  "Använd teknisk/akademisk för dokument med figurer, DOI:er, axlar och många fackfraser.",
-        pdfMode:             "PDF-läge",
+        pdfMode:             "Skanningsläge",
         pdfModeFast:         "Snabb",
         pdfModeAuto:         "Auto",
         pdfModeAdvanced:     "Avancerad",
-        pdfModeTooltip:      "Snabb använder PyMuPDF. Auto använder Docling bara vid lite text. Avancerad använder Docling och kan ta längre tid.",
+        pdfModeTooltip:      "Snabb: PyMuPDF för PDF och RapidOCR för bilder. Auto: använder Docling bara när PDF:en har lite text. Avancerad: använder Docling för PDF:er och bildfiler och bevarar formatering, tabeller och struktur mycket bättre, men tar längre tid.",
+        scanModeAdvancedHint:"Avancerad kan ta längre tid men bevarar layout och tabeller bättre.",
         scanTimingLabel:     "Tidsåtgång",
         scanCatId:           "Personnummer / ID",
         scanCatAdresse:      "Fysisk adress",
@@ -2651,7 +2654,7 @@
         ocrResultNotice:     "Resultatet bygger på OCR. OCR kan feltolka tecken och layout, så kontrollera fynd och anonymiserad fil extra noggrant.",
         saveOcrPdf:          "Spara anonymiserad OCR-PDF",
         saveImagePdf:        "Spara anonymiserad bild-PDF",
-        pdfImageCaveat:      "Detta är en bild-/OCR-PDF. Direkt textlagerredigering är inaktiverad. Använd anonymiserad bild-PDF för att maskera OCR-träffar direkt på sidbilden och bevara skannad layout så bra som möjligt. Kontrollera alltid resultatet.",
+        pdfImageCaveat:      "Detta är en bild-/OCR-fil. Direkt textlagerredigering är inaktiverad. Använd anonymiserad bild-PDF för att maskera OCR-träffar direkt på sidbilden och bevara skannad layout så bra som möjligt. Kontrollera alltid resultatet.",
       },
       en: {
         subtitle:     "Checks and anonymizes documents for sensitive information",
@@ -2997,11 +3000,12 @@
         scanProfileNormal:   "Normal",
         scanProfileTechnical:"Technical/academic",
         scanProfileTooltip:  "Use technical/academic for documents with figures, DOIs, axes and many technical phrases.",
-        pdfMode:             "PDF mode",
+        pdfMode:             "Scan mode",
         pdfModeFast:         "Fast",
         pdfModeAuto:         "Auto",
         pdfModeAdvanced:     "Advanced",
-        pdfModeTooltip:      "Fast uses PyMuPDF. Auto uses Docling only for sparse text. Advanced uses Docling and may be slower.",
+        pdfModeTooltip:      "Fast: PyMuPDF for PDFs and RapidOCR for images. Auto: uses Docling only when the PDF has little text. Advanced: uses Docling for PDFs and image files, and preserves formatting, tables, and structure much better, but takes longer.",
+        scanModeAdvancedHint:"Advanced can take longer, but preserves layout and tables better.",
         scanTimingLabel:     "Timing",
         scanCatId:           "National / personal ID numbers",
         scanCatAdresse:      "Physical address",
@@ -3074,7 +3078,7 @@
         ocrResultNotice:     "This result is based on OCR. OCR can misread characters and layout, so verify findings and the redacted file carefully.",
         saveOcrPdf:          "Save redacted OCR PDF",
         saveImagePdf:        "Save redacted image PDF",
-        pdfImageCaveat:      "This is an image/OCR PDF. Direct text-layer editing is disabled. Use redacted image PDF to mask OCR matches directly on the page image and preserve scanned layout as closely as possible. Always verify the result.",
+        pdfImageCaveat:      "This is an image/OCR file. Direct text-layer editing is disabled. Use redacted image PDF to mask OCR matches directly on the page image and preserve scanned layout as closely as possible. Always verify the result.",
       },
 
       // ── Deutsch ────────────────────────────────────────────────────────
@@ -3411,7 +3415,7 @@
         ocrResultNotice:     "Dieses Ergebnis basiert auf OCR. OCR kann Zeichen und Layout falsch erkennen; prüfen Sie Treffer und anonymisierte Datei besonders sorgfältig.",
         saveOcrPdf:          "Anonymisierte OCR-PDF speichern",
         saveImagePdf:        "Anonymisierte Bild-PDF speichern",
-        pdfImageCaveat:      "Dies ist eine Bild-/OCR-PDF. Direkte Textschicht-Bearbeitung ist deaktiviert. Verwenden Sie eine anonymisierte Bild-PDF, um OCR-Treffer direkt auf dem Seitenbild zu maskieren und das Scan-Layout möglichst zu bewahren. Prüfen Sie immer das Ergebnis.",
+        pdfImageCaveat:      "Dies ist eine Bild-/OCR-Datei. Direkte Textschicht-Bearbeitung ist deaktiviert. Verwenden Sie eine anonymisierte Bild-PDF, um OCR-Treffer direkt auf dem Seitenbild zu maskieren und das Scan-Layout möglichst zu bewahren. Prüfen Sie immer das Ergebnis.",
         dstCatEpost:         "E-Mail",
         dstCatTelefon:       "Telefon",
         dstCatAdresse:       "Adresse",
@@ -3432,11 +3436,12 @@
         scanProfileNormal:   "Normal",
         scanProfileTechnical:"Technisch/akademisch",
         scanProfileTooltip:  "Für Dokumente mit Abbildungen, DOIs, Achsen und vielen Fachbegriffen.",
-        pdfMode:             "PDF-Modus",
+        pdfMode:             "Scan-Modus",
         pdfModeFast:         "Schnell",
         pdfModeAuto:         "Auto",
         pdfModeAdvanced:     "Erweitert",
-        pdfModeTooltip:      "Schnell nutzt PyMuPDF. Auto nutzt Docling nur bei wenig Text. Erweitert nutzt Docling und kann länger dauern.",
+        pdfModeTooltip:      "Schnell: PyMuPDF für PDFs und RapidOCR für Bilder. Auto: nutzt Docling nur, wenn die PDF wenig Text enthält. Erweitert: nutzt Docling für PDFs und Bilddateien und erhält Formatierung, Tabellen und Struktur deutlich besser, dauert aber länger.",
+        scanModeAdvancedHint:"Erweitert kann länger dauern, erhält Layout und Tabellen aber besser.",
         scanTimingLabel:     "Zeitmessung",
         scanCatId:           "Personennummer / ID",
         scanCatAdresse:      "Physische Adresse",
@@ -3844,7 +3849,7 @@
         ocrResultNotice:     "Ce résultat est basé sur l’OCR. L’OCR peut mal interpréter les caractères et la mise en page ; vérifiez soigneusement les résultats et le fichier anonymisé.",
         saveOcrPdf:          "Enregistrer le PDF OCR anonymisé",
         saveImagePdf:        "Enregistrer le PDF image anonymisé",
-        pdfImageCaveat:      "Il s’agit d’un PDF image/OCR. La modification directe de la couche texte est désactivée. Utilisez le PDF image anonymisé pour masquer les correspondances OCR directement sur l’image de page et conserver au mieux la mise en page scannée. Vérifiez toujours le résultat.",
+        pdfImageCaveat:      "Il s’agit d’un fichier image/OCR. La modification directe de la couche texte est désactivée. Utilisez le PDF image anonymisé pour masquer les correspondances OCR directement sur l’image de page et conserver au mieux la mise en page scannée. Vérifiez toujours le résultat.",
         dstCatEpost:         "E-mail",
         dstCatTelefon:       "Téléphone",
         dstCatAdresse:       "Adresse",
@@ -3865,11 +3870,12 @@
         scanProfileNormal:   "Normal",
         scanProfileTechnical:"Technique/académique",
         scanProfileTooltip:  "À utiliser pour les documents avec figures, DOI, axes et nombreux termes techniques.",
-        pdfMode:             "Mode PDF",
+        pdfMode:             "Mode de scan",
         pdfModeFast:         "Rapide",
         pdfModeAuto:         "Auto",
         pdfModeAdvanced:     "Avancé",
-        pdfModeTooltip:      "Rapide utilise PyMuPDF. Auto utilise Docling seulement si peu de texte est trouvé. Avancé utilise Docling et peut être plus lent.",
+        pdfModeTooltip:      "Rapide : PyMuPDF pour les PDF et RapidOCR pour les images. Auto : utilise Docling seulement si le PDF contient peu de texte. Avancé : utilise Docling pour les PDF et les fichiers image et conserve beaucoup mieux la mise en forme, les tableaux et la structure, mais prend plus de temps.",
+        scanModeAdvancedHint:"Avancé peut prendre plus de temps, mais conserve mieux la mise en page et les tableaux.",
         scanTimingLabel:     "Temps",
         scanCatId:           "Numéro d'identité / ID",
         scanCatAdresse:      "Adresse physique",
@@ -4277,7 +4283,7 @@
         ocrResultNotice:     "Este resultado se basa en OCR. El OCR puede interpretar mal caracteres y diseño, así que verifique cuidadosamente los hallazgos y el archivo anonimizado.",
         saveOcrPdf:          "Guardar PDF OCR anonimizado",
         saveImagePdf:        "Guardar PDF de imagen anonimizado",
-        pdfImageCaveat:      "Este es un PDF de imagen/OCR. La edición directa de la capa de texto está desactivada. Use el PDF de imagen anonimizado para enmascarar coincidencias OCR directamente en la imagen de la página y conservar el diseño escaneado lo mejor posible. Verifique siempre el resultado.",
+        pdfImageCaveat:      "Este es un archivo de imagen/OCR. La edición directa de la capa de texto está desactivada. Use el PDF de imagen anonimizado para enmascarar coincidencias OCR directamente en la imagen de la página y conservar el diseño escaneado lo mejor posible. Verifique siempre el resultado.",
         dstCatEpost:         "Correo electrónico",
         dstCatTelefon:       "Teléfono",
         dstCatAdresse:       "Dirección",
@@ -4298,11 +4304,12 @@
         scanProfileNormal:   "Normal",
         scanProfileTechnical:"Técnico/académico",
         scanProfileTooltip:  "Úsalo para documentos con figuras, DOI, ejes y muchas frases técnicas.",
-        pdfMode:             "Modo PDF",
+        pdfMode:             "Modo de escaneo",
         pdfModeFast:         "Rápido",
         pdfModeAuto:         "Auto",
         pdfModeAdvanced:     "Avanzado",
-        pdfModeTooltip:      "Rápido usa PyMuPDF. Auto usa Docling solo si hay poco texto. Avanzado usa Docling y puede tardar más.",
+        pdfModeTooltip:      "Rápido: PyMuPDF para PDF y RapidOCR para imágenes. Auto: usa Docling solo cuando el PDF tiene poco texto. Avanzado: usa Docling para PDF y archivos de imagen, y conserva mucho mejor el formato, las tablas y la estructura, pero tarda más.",
+        scanModeAdvancedHint:"Avanzado puede tardar más, pero conserva mejor el diseño y las tablas.",
         scanTimingLabel:     "Tiempo",
         scanCatId:           "Número de identidad / ID",
         scanCatAdresse:      "Dirección física",
@@ -4451,6 +4458,14 @@
     }
     function setStatus(msg) { statusEl.textContent = msg; }
 
+    function updateScanModeHint() {
+      const hint = document.getElementById("scan-mode-hint");
+      const mode = document.getElementById("pdf-mode")?.value || "fast";
+      if (!hint) return;
+      hint.textContent = t("scanModeAdvancedHint");
+      hint.style.display = mode === "advanced" ? "" : "none";
+    }
+
     function setOcrProgress(active) {
       const box = document.getElementById("ocr-scan-status");
       const progress = document.getElementById("ocr-progress");
@@ -4491,6 +4506,7 @@
     }
 
     function _isOcrOrImagePdfResult(ext = _currentResultExt()) {
+      if (IMAGE_EXT.has(ext)) return Boolean(lastResult?.ocr_used || lastScan?.ocr);
       return ext === "pdf" && Boolean(
         lastResult?.ocr_used ||
         lastScan?.ocr ||
@@ -4540,6 +4556,7 @@
       document.querySelectorAll("[data-i18n-title]").forEach(el => {
         el.title = t(el.dataset.i18nTitle);
       });
+      updateScanModeHint();
 
       // Update confidence select options (dybdeskann tab + AI-scan panel)
       document.querySelectorAll("#dst-confidence-select option[data-i18n], #ai-conf-select option[data-i18n]").forEach(el => {
@@ -5549,7 +5566,8 @@
       if (Number.isFinite(Number(timings.total_seconds))) parts.push(`total ${Number(timings.total_seconds).toFixed(2)}s`);
       if (Number.isFinite(Number(timings.extract_seconds))) parts.push(`tekst ${Number(timings.extract_seconds).toFixed(2)}s`);
       if (Number.isFinite(Number(timings.detectors_seconds))) parts.push(`detektorer ${Number(timings.detectors_seconds).toFixed(2)}s`);
-      if (timings.pdf_mode) parts.push(`PDF ${timings.pdf_mode}`);
+      if (timings.scan_mode) parts.push(`Scan ${timings.scan_mode}`);
+      else if (timings.pdf_mode) parts.push(`Scan ${timings.pdf_mode}`);
       if (!parts.length) return "";
       return `<div style="font-size:11px;color:var(--muted);margin-top:3px;">${escapeHtml(t("scanTimingLabel"))}: ${escapeHtml(parts.join(" · "))}</div>`;
     }
@@ -5724,8 +5742,9 @@
       const sorted_use = filtered;
 
       const imagePdf = _isOcrOrImagePdfResult(ext);
-      const pdfNote = (ext === "pdf")
-        ? `<div class="pdf-caveat">⚠ ${imagePdf ? t("pdfImageCaveat") : t("pdfCaveat")}</div>` : "";
+      const pdfNote = imagePdf
+        ? `<div class="pdf-caveat">⚠ ${t("pdfImageCaveat")}</div>`
+        : (ext === "pdf" ? `<div class="pdf-caveat">⚠ ${t("pdfCaveat")}</div>` : "");
 
       const anonBar = `
         ${pdfNote}
@@ -5896,7 +5915,7 @@
       const selected = document.querySelectorAll(".g-cb:checked, .g-ai-cb:checked").length + manualCount;
       const total = document.querySelectorAll(".g-cb, .g-ai-cb").length + manualCount;
       const unsafe = [];
-      if (_isOcrOrImagePdfResult(ext)) unsafe.push("OCR/bilde-PDF");
+      if (_isOcrOrImagePdfResult(ext)) unsafe.push(IMAGE_EXT.has(ext) ? "OCR-bilde" : "OCR/bilde-PDF");
       else if (ext === "pdf") unsafe.push("PDF");
       if (lastResult?.warning_code) unsafe.push(lastResult.warning_code);
       const unsafeText = unsafe.length ? unsafe.join(", ") : "0";
@@ -5942,8 +5961,9 @@
       const ext = _currentResultExt();
       const imagePdf = _isOcrOrImagePdfResult(ext);
       const canPatch = PATCH_EXT.has(ext) && !imagePdf;
-      const pdfNote = (ext === "pdf")
-        ? `<div class="pdf-caveat">⚠ ${imagePdf ? t("pdfImageCaveat") : t("pdfCaveat")}</div>` : "";
+      const pdfNote = imagePdf
+        ? `<div class="pdf-caveat">⚠ ${t("pdfImageCaveat")}</div>`
+        : (ext === "pdf" ? `<div class="pdf-caveat">⚠ ${t("pdfCaveat")}</div>` : "");
       const wrapper = document.createElement("div");
       wrapper.innerHTML = `
         ${pdfNote}
@@ -6364,6 +6384,7 @@
         language:     document.getElementById("langSelect").value,
         scan_profile: document.getElementById("scan-profile")?.value || "normal",
         pdf_mode:     document.getElementById("pdf-mode")?.value || "fast",
+        scan_mode:    document.getElementById("pdf-mode")?.value || "fast",
         categories:   [...document.querySelectorAll(".scan-cat:checked")].map(cb => cb.value),
       };
     }
@@ -6424,6 +6445,7 @@
         fd.append("ignore_xlent", opts.ignore_xlent);
         fd.append("language",     opts.language);
         fd.append("scan_profile", opts.scan_profile);
+        fd.append("scan_mode",    opts.scan_mode);
         fd.append("pdf_mode",     opts.pdf_mode);
         fd.append("categories",   opts.categories.join(","));
         if (extraOpts?.ocr) fd.append("ocr", "true");
@@ -6538,6 +6560,7 @@
         if (sp && s.scanProfile) sp.value = s.scanProfile;
         const pm = document.getElementById("pdf-mode");
         if (pm && s.pdfMode) pm.value = s.pdfMode;
+        updateScanModeHint();
         const sa = document.getElementById("stripAnnotations");
         if (sa) sa.checked = s.stripAnnotations === true;
         const m365Fields = {
@@ -6591,7 +6614,7 @@
     document.getElementById("langSelect").addEventListener("change", saveSettings);
     document.getElementById("redaction-profile").addEventListener("change", e => applyRedactionProfile(e.target.value));
     document.getElementById("scan-profile")?.addEventListener("change", saveSettings);
-    document.getElementById("pdf-mode")?.addEventListener("change", saveSettings);
+    document.getElementById("pdf-mode")?.addEventListener("change", () => { updateScanModeHint(); saveSettings(); });
     document.getElementById("stripAnnotations").addEventListener("change", saveSettings);
     document.getElementById("manual-redaction-terms")?.addEventListener("input", () => {
       updateManualRedactionPreview();
@@ -7987,6 +8010,7 @@
             text,
             language: opts.language,
             scan_profile: opts.scan_profile,
+            scan_mode: opts.scan_mode,
             pdf_mode: opts.pdf_mode,
             categories: opts.categories,
           }),
@@ -8118,6 +8142,7 @@
           ignore_xlent: opts.ignore_xlent,
           language: opts.language,
           scan_profile: opts.scan_profile,
+          scan_mode: opts.scan_mode,
           pdf_mode: opts.pdf_mode,
           categories: opts.categories,
           ...folderOpts,
@@ -8402,6 +8427,7 @@
             fd.append("ignore_xlent", opts.ignore_xlent);
             fd.append("language",     opts.language);
             fd.append("scan_profile", opts.scan_profile);
+            fd.append("scan_mode",    opts.scan_mode);
             fd.append("pdf_mode",     opts.pdf_mode);
             fd.append("categories",   opts.categories.join(","));
             r = await (await fetch(`${API}/scan-upload`, { method:"POST", body: fd })).json();

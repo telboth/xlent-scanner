@@ -207,7 +207,7 @@ def test_image_file_ocr_uses_image_extractor(monkeypatch, tmp_path: Path):
         "til at OCR-testen ikke gir varsel om lite tekst."
     )
 
-    def fake_extract_text_image(path: Path, ocr: bool = False) -> str:
+    def fake_extract_text_image(path: Path, ocr: bool = False, pdf_mode: str = "fast") -> str:
         seen["ocr"] = ocr
         return extracted
 
@@ -218,6 +218,40 @@ def test_image_file_ocr_uses_image_extractor(monkeypatch, tmp_path: Path):
     assert result.error is None
     assert seen["ocr"] is True
     assert result.original_text == extracted
+
+
+def test_image_file_advanced_scan_uses_docling_pdf_ocr(monkeypatch, tmp_path: Path):
+    image = tmp_path / "scan.jpg"
+    image.write_bytes(b"synthetic image bytes")
+    tmp_pdf = tmp_path / "image-as-pdf.pdf"
+    tmp_pdf.write_bytes(b"%PDF-1.4")
+    extracted = (
+        "Docling OCR fant strukturert tekst i bildefilen, og teksten er lang nok "
+        "til at testen ikke gir varsel om lite tekst."
+    )
+    seen: dict[str, object] = {}
+
+    monkeypatch.setattr(scanner, "_image_to_temp_pdf", lambda path: tmp_pdf)
+
+    def fake_extract_text_pdf(path: Path, ocr: bool = False, pdf_mode: str = "fast") -> str:
+        seen["path"] = path
+        seen["ocr"] = ocr
+        seen["pdf_mode"] = pdf_mode
+        return extracted
+
+    def fail_rapidocr(*_args, **_kwargs):
+        raise AssertionError("RapidOCR should not be used in advanced image scan mode")
+
+    monkeypatch.setattr(scanner, "_extract_text_pdf", fake_extract_text_pdf)
+    monkeypatch.setattr(scanner, "_get_image_ocr_engine", fail_rapidocr)
+
+    result = scanner.scan_file(image, language="nb", pdf_mode="advanced")
+
+    assert result.error is None
+    assert result.ocr_used is True
+    assert result.original_text == extracted
+    assert seen == {"path": tmp_pdf, "ocr": True, "pdf_mode": "advanced"}
+    assert result.scan_timings["scan_mode"] == "advanced"
 
 
 def test_api_scan_file_accepts_ocr_flag(monkeypatch):
