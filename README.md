@@ -1,6 +1,6 @@
 # XLENT Compliance-scanner
 
-> **v1.7.1** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
+> **v1.7.2** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
 
 Alt kjøres 100 % lokalt — ingen dokumenter, tekst eller funn sendes over internett.
 
@@ -14,7 +14,7 @@ Alt kjøres 100 % lokalt — ingen dokumenter, tekst eller funn sendes over inte
 - **Bla-til-fil** — velg fil fra disk
 - **Lim inn tekst** — skann tekst direkte (uten å lagre en fil)
 - **Mappeskann** — velg en mappe og skann støttede filer i én operasjon, valgfritt også i undermapper
-- **Kategorifilter** — velg hvilke typer funn du vil se (personnummer/ID inkl. passnummer, bankdetaljer, finansielle nøkkeltall inkl. lønn, navn, secrets, …)
+- **Kategorifilter** — velg hvilke typer funn som skal skannes og vises (personnummer/ID inkl. passnummer, fysiske adresser, bankdetaljer, finansielle nøkkeltall inkl. lønn, navn, secrets, …)
 
 ### AI-dybdeskann (Ollama) — innebygd i scanner-fanen
 
@@ -436,6 +436,13 @@ src/xlent_scanner/
 ---
 
 ## Endringslogg
+
+### v1.7.2
+- Gjør vanlig PDF-scan raskere ved å bruke PyMuPDF først og bare falle tilbake til Docling når PDF-en har lite/ingen tekst eller OCR er valgt.
+- Hindrer at vanlig scan laster spaCy-navnemodellen kun for å sjekke NER-status; navnemodell lastes nå bare når navnekategorien faktisk kjøres.
+- Sender valgte kategorier fra GUI/API til backend, slik at uvalgte regelbaserte detektorer kan hoppes over i stedet for bare å skjules i resultatlisten.
+- Preloader norsk spaCy-navnemodell i bakgrunnen etter app-start for å redusere venting ved første navneskann.
+- Beholder forbedringen for all-caps etternavn i tydelig author/supervisor/personkontekst.
 
 ### v1.7.1
 - Gjør hvitelisting kategori-bevisst i GUI, HTML-rapport og API, slik at fødselsdato, prosjektsum og budsjettall ikke kan hvitelistes.

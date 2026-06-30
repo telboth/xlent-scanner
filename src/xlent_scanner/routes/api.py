@@ -122,6 +122,14 @@ def _api_scan_profile(value) -> str:
     return "technical" if profile == "academic" else profile
 
 
+def _api_categories(value) -> list[str] | None:
+    if value is None:
+        return None
+    if not isinstance(value, list):
+        raise ValueError("categories må være en liste.")
+    return [str(item) for item in value]
+
+
 def _api_delete_scan_locked(scan_id: str) -> None:
     entry = app_state.api_scan_results.pop(scan_id, None)
     if not entry:
@@ -287,6 +295,7 @@ def api_scan_text():
             language=_api_language(data.get("language")),
             source_name="Power Apps tekst",
             scan_profile=_api_scan_profile(data.get("scan_profile")),
+            categories=_api_categories(data.get("categories")),
         )
         scan_id = _api_store_scan_result(result)
         return jsonify(_api_result_payload(
@@ -348,6 +357,7 @@ def api_scan_file():
             language=_api_language(data.get("language")),
             ocr=_api_bool(data.get("ocr"), False),
             scan_profile=_api_scan_profile(data.get("scan_profile")),
+            categories=_api_categories(data.get("categories")),
         )
         result.file_name = file_name
         scan_id = _api_store_scan_result(result, path=tmp_path, owns_path=True)

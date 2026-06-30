@@ -79,12 +79,14 @@ def test_api_scan_text_accepts_scan_profile_and_optional_suppressed(monkeypatch)
             "text": "test",
             "language": "en",
             "scan_profile": "technical",
+            "categories": ["epost"],
             "include_suppressed": True,
         },
     )
 
     assert response.status_code == 200
     assert captured["scan_profile"] == "technical"
+    assert captured["categories"] == ["epost"]
     data = response.get_json()
     assert data["suppressed_findings"][0]["text"] == "pp. 4662-4666"
 

@@ -4,6 +4,7 @@ from __future__ import annotations
 import html
 import re
 import warnings
+from collections.abc import Iterable
 from pathlib import Path
 
 import fitz  # type: ignore[import-untyped]  # fallback PDF-parser
@@ -62,11 +63,130 @@ DEFAULT_EXCLUDED_DIRS = {
     "Library", "AppData",
 }
 
+SCAN_CATEGORY_KEYS = {
+    "navn",
+    "epost",
+    "telefon",
+    "adresse",
+    "fodselsdato",
+    "id",
+    "klient",
+    "orgnummer",
+    "nettadresse",
+    "konto",
+    "kredittkort",
+    "hemmeligheter",
+    "finansielt",
+    "medisinsk",
+    "konfidensielt",
+}
+
 _ignore_list: dict | None = None
 
 
 def normalise_scan_profile(scan_profile: str | None) -> str:
     return "technical" if str(scan_profile or "").strip().lower() in {"technical", "academic"} else "normal"
+
+
+def normalise_scan_categories(categories: Iterable[str] | None) -> frozenset[str] | None:
+    """Normaliser valgte scan-kategorier.
+
+    None betyr bakoverkompatibelt "kjør alt". En tom liste betyr at brukeren
+    eksplisitt har valgt bort alle kategorier.
+    """
+    if categories is None:
+        return None
+    return frozenset(
+        str(category).strip().lower()
+        for category in categories
+        if str(category).strip().lower() in SCAN_CATEGORY_KEYS
+    )
+
+
+def _category_enabled(selected: frozenset[str] | None, *keys: str) -> bool:
+    return selected is None or any(key in selected for key in keys)
+
+
+def _finding_matches_scan_categories(finding: Finding, selected: frozenset[str] | None) -> bool:
+    if selected is None:
+        return True
+    cat = str(finding.category or "").casefold()
+    if cat.startswith("⚠"):
+        return True
+
+    checks = {
+        "epost": lambda c: c.startswith("e-post"),
+        "telefon": lambda c: c.startswith("telefonnummer"),
+        "adresse": lambda c: c.startswith("fysisk adresse"),
+        "id": lambda c: any(
+            c.startswith(prefix)
+            for prefix in (
+                "fødselsnummer",
+                "d-nummer",
+                "personnummer",
+                "samordningsnummer",
+                "cpr-nummer",
+                "uk national insurance",
+                "us social security",
+                "mulig personnummer",
+                "passnummer",
+            )
+        ),
+        "fodselsdato": lambda c: c.startswith("fødselsdato"),
+        "konto": lambda c: any(
+            c.startswith(prefix)
+            for prefix in ("kontonummer", "bankgiro", "plusgiro", "iban", "swift/bic")
+        ),
+        "kredittkort": lambda c: c.startswith("kredittkort"),
+        "navn": lambda c: c.startswith("navn (person)"),
+        "nettadresse": lambda c: c.startswith("nettadresse") or c.startswith("ip-adresse"),
+        "hemmeligheter": lambda c: any(
+            c.startswith(prefix)
+            for prefix in (
+                "openai",
+                "anthropic",
+                "github",
+                "jwt",
+                "bearer",
+                "aws",
+                "private key",
+                "azure storage",
+                "passord i konfig",
+                "konfigurasjonsord",
+                "høy-entropisteng",
+            )
+        ),
+        "finansielt": lambda c: any(
+            c.startswith(prefix)
+            for prefix in (
+                "timepris",
+                "dagspris",
+                "prosjektsum",
+                "enhetspris",
+                "margin",
+                "rabatt",
+                "budsjett",
+                "lønn",
+            )
+        ),
+        "medisinsk": lambda c: any(
+            c.startswith(prefix)
+            for prefix in (
+                "medisinsk",
+                "medicinsk",
+                "medical",
+                "diagnose",
+                "diagnosis",
+                "legemiddel",
+                "läkemedel",
+                "medication",
+            )
+        ),
+        "konfidensielt": lambda c: c.startswith("konfidensielt dokument"),
+        "klient": lambda c: c.startswith("kundenavn"),
+        "orgnummer": lambda c: c.startswith("organisasjonsnummer"),
+    }
+    return any(checks[key](cat) for key in selected if key in checks)
 
 
 def reset_ignore_cache() -> None:
@@ -191,13 +311,21 @@ def _extract_text_pdf(path: Path, ocr: bool = False) -> str:
                 "OCR krever Docling med OCR-motor — kjør fra kildekode "
                 "med «uv sync» hvis pakken mangler den."
             ) from exc
+    fitz_text = _extract_text_pdf_fitz(path)
+    if len(_meaningful_extracted_text(fitz_text)) >= TEXT_WARNING_MIN_CHARS:
+        return fitz_text
+
     try:
         with warnings.catch_warnings():
             _ignore_docling_table_image_deprecation()
             converter = _get_pdf_converter()
-            return converter.convert(str(path)).document.export_to_markdown()
+            docling_text = converter.convert(str(path)).document.export_to_markdown()
     except Exception:
-        return _extract_text_pdf_fitz(path)
+        return fitz_text
+
+    if len(_meaningful_extracted_text(docling_text)) > len(_meaningful_extracted_text(fitz_text)):
+        return docling_text
+    return fitz_text
 
 
 def _get_image_ocr_engine():
@@ -466,12 +594,14 @@ def _run_detectors(
     lang: str,
     ignore_xlent: bool = False,
     scan_profile: str = "normal",
+    categories: Iterable[str] | None = None,
 ) -> tuple[list[Finding], bool]:
     """Kjør alle detektorer og returner funn samt om skannen ble degradert."""
     findings: list[Finding] = []
     detector_errors: list[str] = []
 
     scan_profile = normalise_scan_profile(scan_profile)
+    selected_categories = normalise_scan_categories(categories)
 
     def _run(fn, *args, **kwargs):
         try:
@@ -479,39 +609,71 @@ def _run_detectors(
         except Exception as exc:
             detector_errors.append(f"{fn.__name__}: {type(exc).__name__}: {exc}")
 
-    _run(detect_keywords, text)
-    _run(detect_secrets, text)
-    _run(find_emails, text)
-    _run(detect_urls, text)
-    if lang in ("nb", "en", "da"):
+    if _category_enabled(selected_categories, "konfidensielt"):
+        _run(detect_keywords, text)
+    if _category_enabled(selected_categories, "hemmeligheter"):
+        _run(detect_secrets, text)
+    if _category_enabled(selected_categories, "epost"):
+        _run(find_emails, text)
+    if _category_enabled(selected_categories, "nettadresse"):
+        _run(detect_urls, text)
+    if lang in ("nb", "en", "da") and _category_enabled(
+        selected_categories,
+        "id",
+        "orgnummer",
+        "konto",
+        "telefon",
+    ):
         _run(detect_no_specific, text, scan_profile=scan_profile)
-    if lang in ("sv", "en"):
+    if lang in ("sv", "en") and _category_enabled(
+        selected_categories,
+        "id",
+        "orgnummer",
+        "konto",
+        "telefon",
+    ):
         _run(detect_sv_specific, text)
-    if lang == "da":
+    if lang == "da" and _category_enabled(selected_categories, "id"):
         _run(detect_da_specific, text)
-    if lang in ("en", "de", "fr", "es"):
+    if lang in ("en", "de", "fr", "es") and _category_enabled(selected_categories, "id", "telefon"):
         _run(detect_en_specific, text)
-    if lang == "de":
+    if lang == "de" and _category_enabled(selected_categories, "id", "telefon"):
         _run(detect_de_specific, text)
-    if lang == "fr":
+    if lang == "fr" and _category_enabled(selected_categories, "id", "telefon"):
         _run(detect_fr_specific, text)
-    if lang == "es":
+    if lang == "es" and _category_enabled(selected_categories, "id", "telefon"):
         _run(detect_es_specific, text)
-    _run(detect_iban, text)
-    _run(detect_creditcards, text)
-    _run(detect_financials, text)
-    _run(detect_clients, text)
-    _run(detect_extra, text)
+    if _category_enabled(selected_categories, "konto"):
+        _run(detect_iban, text)
+    if _category_enabled(selected_categories, "kredittkort"):
+        _run(detect_creditcards, text)
+    if _category_enabled(selected_categories, "finansielt"):
+        _run(detect_financials, text)
+    if _category_enabled(selected_categories, "klient"):
+        _run(detect_clients, text)
+    if _category_enabled(
+        selected_categories,
+        "fodselsdato",
+        "id",
+        "konto",
+        "nettadresse",
+        "telefon",
+        "adresse",
+        "finansielt",
+    ):
+        _run(detect_extra, text)
     _run(detect_custom_patterns, text)
-    _run(detect_names, text, lang, scan_profile=scan_profile)
+    if _category_enabled(selected_categories, "navn"):
+        _run(detect_names, text, lang, scan_profile=scan_profile)
 
     if ignore_xlent:
         findings = filter_findings(findings, _get_ignore_list())
 
+    findings = [f for f in findings if _finding_matches_scan_categories(f, selected_categories)]
     findings = mark_whitelist_findings(findings)
     _run(detect_blacklist, text)
 
-    ner_err = get_load_error(lang)
+    ner_err = get_load_error(lang) if _category_enabled(selected_categories, "navn") else None
     if ner_err:
         findings.append(Finding(category="⚠ NER ikke tilgjengelig", text=ner_err, context=""))
     for det_err in detector_errors:
@@ -525,6 +687,7 @@ def scan_text(
     language: str = "auto",
     source_name: str = "Innlimt tekst",
     scan_profile: str = "normal",
+    categories: Iterable[str] | None = None,
 ) -> ScanResult:
     """Skann ren tekst direkte (uten filekstraksjon). Brukes for utklippstavle/paste."""
     if not text.strip():
@@ -534,8 +697,14 @@ def scan_text(
         )
     lang = resolve_language(language, text)
     scan_profile = normalise_scan_profile(scan_profile)
+    selected_categories = normalise_scan_categories(categories)
     with capture_suppressed_findings() as suppressed:
-        findings, degraded = _run_detectors(text, lang, scan_profile=scan_profile)
+        findings, degraded = _run_detectors(
+            text,
+            lang,
+            scan_profile=scan_profile,
+            categories=selected_categories,
+        )
 
     result = ScanResult(
         file_name=source_name,
@@ -543,7 +712,9 @@ def scan_text(
         text_length=len(text),
         text_preview=text,
         findings=findings,
-        suppressed_findings=list(suppressed),
+        suppressed_findings=[
+            f for f in suppressed if _finding_matches_scan_categories(f, selected_categories)
+        ],
         original_text=text,
         language=lang,
         scan_status="partial" if degraded else "success",
@@ -646,6 +817,7 @@ def scan_folder(
     recursive: bool = False,
     max_depth: int = DEFAULT_FOLDER_MAX_DEPTH,
     scan_profile: str = "normal",
+    categories: Iterable[str] | None = None,
 ) -> list[ScanResult]:
     """Skann alle støttede filer i en mappe. Returnerer resultater sortert etter risikonivå."""
     plan = build_folder_scan_plan(
@@ -663,6 +835,7 @@ def scan_folder(
                 ignore_xlent=ignore_xlent,
                 language=language,
                 scan_profile=scan_profile,
+                categories=categories,
             )
         except TypeError as exc:
             if "unexpected keyword argument" not in str(exc):
@@ -682,6 +855,7 @@ def scan_file(
     language: str = "auto",
     ocr: bool = False,
     scan_profile: str = "normal",
+    categories: Iterable[str] | None = None,
 ) -> ScanResult:
     p = Path(path)
     if not p.exists():
@@ -753,6 +927,7 @@ def scan_file(
 
     lang = resolve_language(language, text)
     scan_profile = normalise_scan_profile(scan_profile)
+    selected_categories = normalise_scan_categories(categories)
 
     with capture_suppressed_findings() as suppressed:
         findings, degraded = _run_detectors(
@@ -760,6 +935,7 @@ def scan_file(
             lang,
             ignore_xlent=ignore_xlent,
             scan_profile=scan_profile,
+            categories=selected_categories,
         )
 
     result = ScanResult(
@@ -768,7 +944,9 @@ def scan_file(
         text_length=len(text),
         text_preview=preview,
         findings=findings,
-        suppressed_findings=list(suppressed),
+        suppressed_findings=[
+            f for f in suppressed if _finding_matches_scan_categories(f, selected_categories)
+        ],
         original_text=text,
         language=lang,
         warning=warning,

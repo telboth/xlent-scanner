@@ -247,6 +247,7 @@ def _run_folder_scan_job(
     ignore_xlent: bool,
     language: str,
     scan_profile: str,
+    categories: list[str] | None,
     opts: dict,
 ) -> None:
     try:
@@ -274,6 +275,7 @@ def _run_folder_scan_job(
                     ignore_xlent=ignore_xlent,
                     language=language,
                     scan_profile=scan_profile,
+                    categories=categories,
                 )
             except TypeError as exc:
                 if "unexpected keyword argument" not in str(exc):
@@ -341,6 +343,7 @@ def scan_folder_endpoint():
         ignore_xlent = bool(data.get("ignore_xlent", False))
         language = data.get("language", "auto")
         scan_profile = data.get("scan_profile", "normal")
+        categories = data.get("categories") if isinstance(data.get("categories"), list) else None
         opts = _folder_scan_options(data)
         plan = build_folder_scan_plan(folder_path, **opts)
         results = _scan_folder(
@@ -348,6 +351,7 @@ def scan_folder_endpoint():
             ignore_xlent=ignore_xlent,
             language=language,
             scan_profile=scan_profile,
+            categories=categories,
             **opts,
         )
         summary = []
@@ -382,6 +386,7 @@ def scan_folder_start_endpoint():
         ignore_xlent = bool(data.get("ignore_xlent", False))
         language = data.get("language", "auto")
         scan_profile = data.get("scan_profile", "normal")
+        categories = data.get("categories") if isinstance(data.get("categories"), list) else None
         opts = _folder_scan_options(data)
         job_id = app_state.folder_job_manager.create({
             "status": "queued",
@@ -399,7 +404,7 @@ def scan_folder_start_endpoint():
         })
         threading.Thread(
             target=_run_folder_scan_job,
-            args=(job_id, folder_path, ignore_xlent, language, scan_profile, opts),
+            args=(job_id, folder_path, ignore_xlent, language, scan_profile, categories, opts),
             daemon=True,
             name=f"folder-scan-{job_id[:8]}",
         ).start()

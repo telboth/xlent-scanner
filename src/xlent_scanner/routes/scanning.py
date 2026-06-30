@@ -38,6 +38,16 @@ def _error_payload(message: str) -> dict:
     }
 
 
+def _request_categories(value) -> list[str] | None:
+    if value is None:
+        return None
+    if isinstance(value, list):
+        return [str(item) for item in value]
+    if isinstance(value, str):
+        return [item.strip() for item in value.split(",") if item.strip()]
+    return None
+
+
 def _remember_result(result, path: Path | None) -> None:
     app_state.last_result = result
     app_state.last_path = path
@@ -58,7 +68,14 @@ def _scan_file_compat(*args, scan_profile: str = "normal", **kwargs):
     except TypeError as exc:
         if "unexpected keyword argument" not in str(exc):
             raise
-        return scan_file(*args, **kwargs)
+        legacy_kwargs = dict(kwargs)
+        legacy_kwargs.pop("categories", None)
+        try:
+            return scan_file(*args, scan_profile=scan_profile, **legacy_kwargs)
+        except TypeError as exc2:
+            if "unexpected keyword argument" not in str(exc2):
+                raise
+            return scan_file(*args, **legacy_kwargs)
 
 
 def _scan_text_compat(*args, scan_profile: str = "normal", **kwargs):
@@ -67,7 +84,14 @@ def _scan_text_compat(*args, scan_profile: str = "normal", **kwargs):
     except TypeError as exc:
         if "unexpected keyword argument" not in str(exc):
             raise
-        return scan_text(*args, **kwargs)
+        legacy_kwargs = dict(kwargs)
+        legacy_kwargs.pop("categories", None)
+        try:
+            return scan_text(*args, scan_profile=scan_profile, **legacy_kwargs)
+        except TypeError as exc2:
+            if "unexpected keyword argument" not in str(exc2):
+                raise
+            return scan_text(*args, **legacy_kwargs)
 
 
 @scanning_bp.post("/scan")
@@ -79,13 +103,15 @@ def scan():
         language = data.get("language", "auto")
         ocr = bool(data.get("ocr", False))
         scan_profile = data.get("scan_profile", "normal")
+        categories = _request_categories(data.get("categories"))
         LOGGER.info(
-            "scan request path=%s lang=%s profile=%s ignore_xlent=%s ocr=%s",
+            "scan request path=%s lang=%s profile=%s ignore_xlent=%s ocr=%s categories=%s",
             file_path,
             language,
             scan_profile,
             ignore_xlent,
             ocr,
+            categories,
         )
         result = _scan_file_compat(
             file_path,
@@ -93,6 +119,7 @@ def scan():
             language=language,
             ocr=ocr,
             scan_profile=scan_profile,
+            categories=categories,
         )
         _remember_result(result, Path(file_path) if file_path else None)
         LOGGER.info(
@@ -118,16 +145,18 @@ def scan_upload():
         language = request.form.get("language", "auto")
         ocr = request.form.get("ocr", "false").lower() == "true"
         scan_profile = request.form.get("scan_profile", "normal")
+        categories = _request_categories(request.form.get("categories"))
         original_name = uploaded.filename or "ukjent"
         suffix = Path(original_name).suffix.lower()
         LOGGER.info(
-            "scan-upload request name=%s suffix=%s lang=%s profile=%s ignore_xlent=%s ocr=%s",
+            "scan-upload request name=%s suffix=%s lang=%s profile=%s ignore_xlent=%s ocr=%s categories=%s",
             original_name,
             suffix,
             language,
             scan_profile,
             ignore_xlent,
             ocr,
+            categories,
         )
 
         if app_state.last_tmp_path and app_state.last_tmp_path.exists():
@@ -147,6 +176,7 @@ def scan_upload():
             language=language,
             ocr=ocr,
             scan_profile=scan_profile,
+            categories=categories,
         )
         result.file_name = original_name
         app_state.last_tmp_path = tmp_path
@@ -175,8 +205,20 @@ def scan_text_endpoint():
         text = data.get("text", "")
         language = data.get("language", "auto")
         scan_profile = data.get("scan_profile", "normal")
-        LOGGER.info("scan-text request len=%d lang=%s profile=%s", len(text), language, scan_profile)
-        result = _scan_text_compat(text, language=language, scan_profile=scan_profile)
+        categories = _request_categories(data.get("categories"))
+        LOGGER.info(
+            "scan-text request len=%d lang=%s profile=%s categories=%s",
+            len(text),
+            language,
+            scan_profile,
+            categories,
+        )
+        result = _scan_text_compat(
+            text,
+            language=language,
+            scan_profile=scan_profile,
+            categories=categories,
+        )
         _remember_result(result, None)
         LOGGER.info("scan-text result findings=%d", len(result.findings))
         return jsonify(asdict(result))

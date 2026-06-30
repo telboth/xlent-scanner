@@ -862,6 +862,7 @@
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="finansielt" checked> <span data-i18n="scanCatFinansielt">Finansielle nøkkeltall</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="medisinsk"> <span data-i18n="dstCatMedisinsk">Medisinsk (kun dybdeskann)</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="konfidensielt" checked> <span data-i18n="scanCatKonfidensielt">Konfidensielle ord</span></label>
+          <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="adresse" checked> <span data-i18n="scanCatAdresse">Fysisk adresse</span></label>
         </div>
         <details class="manual-redaction">
           <summary id="manual-redaction-summary" data-i18n="manualRedactionLabel">Ord og uttrykk som skal anonymiseres</summary>
@@ -2146,6 +2147,7 @@
         scanProfileTechnical:"Teknisk/akademisk",
         scanProfileTooltip:  "Bruk teknisk/akademisk for dokumenter med figurer, DOI-er, akser og mange fagfraser.",
         scanCatId:           "Personnummer / ID",
+        scanCatAdresse:      "Fysisk adresse",
         scanCatKonto:        "Bankdetaljer",
         scanCatKredittkort:  "Kredittkort",
         scanCatNavn:         "Navn (person)",
@@ -2557,6 +2559,7 @@
         scanProfileTechnical:"Teknisk/akademisk",
         scanProfileTooltip:  "Använd teknisk/akademisk för dokument med figurer, DOI:er, axlar och många fackfraser.",
         scanCatId:           "Personnummer / ID",
+        scanCatAdresse:      "Fysisk adress",
         scanCatKonto:        "Bankuppgifter",
         scanCatKredittkort:  "Kredittkort",
         scanCatNavn:         "Namn (person)",
@@ -2973,6 +2976,7 @@
         scanProfileTechnical:"Technical/academic",
         scanProfileTooltip:  "Use technical/academic for documents with figures, DOIs, axes and many technical phrases.",
         scanCatId:           "National / personal ID numbers",
+        scanCatAdresse:      "Physical address",
         scanCatKonto:        "Bank details",
         scanCatKredittkort:  "Credit cards",
         scanCatNavn:         "Person names",
@@ -3401,6 +3405,7 @@
         scanProfileTechnical:"Technisch/akademisch",
         scanProfileTooltip:  "Für Dokumente mit Abbildungen, DOIs, Achsen und vielen Fachbegriffen.",
         scanCatId:           "Personennummer / ID",
+        scanCatAdresse:      "Physische Adresse",
         scanCatKonto:        "Bankdaten",
         scanCatKredittkort:  "Kreditkarte",
         scanCatNavn:         "Name (Person)",
@@ -3827,6 +3832,7 @@
         scanProfileTechnical:"Technique/académique",
         scanProfileTooltip:  "À utiliser pour les documents avec figures, DOI, axes et nombreux termes techniques.",
         scanCatId:           "Numéro d'identité / ID",
+        scanCatAdresse:      "Adresse physique",
         scanCatKonto:        "Coordonnées bancaires",
         scanCatKredittkort:  "Carte de crédit",
         scanCatNavn:         "Nom (personne)",
@@ -4253,6 +4259,7 @@
         scanProfileTechnical:"Técnico/académico",
         scanProfileTooltip:  "Úsalo para documentos con figuras, DOI, ejes y muchas frases técnicas.",
         scanCatId:           "Número de identidad / ID",
+        scanCatAdresse:      "Dirección física",
         scanCatKonto:        "Datos bancarios",
         scanCatKredittkort:  "Tarjeta de crédito",
         scanCatNavn:         "Nombre (persona)",
@@ -5654,9 +5661,7 @@
     function buildFindingsHtml(sorted, canPatch, ext) {
       // Filter findings based on selected scan categories
       const selectedCats = [...document.querySelectorAll(".scan-cat:checked")].map(cb => cb.value);
-      const filtered = selectedCats.length
-        ? sorted.filter(({f}) => _findingMatchesCat(f, selectedCats))
-        : sorted;
+      const filtered = sorted.filter(({f}) => _findingMatchesCat(f, selectedCats));
 
       const sorted_use = filtered;
 
@@ -6300,14 +6305,15 @@
         ignore_xlent: document.getElementById("ignoreXlent").checked,
         language:     document.getElementById("langSelect").value,
         scan_profile: document.getElementById("scan-profile")?.value || "normal",
+        categories:   [...document.querySelectorAll(".scan-cat:checked")].map(cb => cb.value),
       };
     }
 
     function applyRedactionProfile(profile, persist = true) {
       const selectedByProfile = {
         lowfp: new Set(["id", "konto", "kredittkort", "hemmeligheter", "konfidensielt", "orgnummer"]),
-        normal: new Set(["epost", "telefon", "id", "fodselsdato", "konto", "kredittkort", "navn", "nettadresse", "hemmeligheter", "finansielt", "konfidensielt", "klient", "orgnummer"]),
-        strict: new Set(["epost", "telefon", "id", "fodselsdato", "konto", "kredittkort", "navn", "nettadresse", "hemmeligheter", "finansielt", "medisinsk", "konfidensielt", "klient", "orgnummer"]),
+        normal: new Set(["epost", "telefon", "adresse", "id", "fodselsdato", "konto", "kredittkort", "navn", "nettadresse", "hemmeligheter", "finansielt", "konfidensielt", "klient", "orgnummer"]),
+        strict: new Set(["epost", "telefon", "adresse", "id", "fodselsdato", "konto", "kredittkort", "navn", "nettadresse", "hemmeligheter", "finansielt", "medisinsk", "konfidensielt", "klient", "orgnummer"]),
       };
       const selected = selectedByProfile[profile] || selectedByProfile.normal;
       document.querySelectorAll(".scan-cat").forEach(cb => { cb.checked = selected.has(cb.value); });
@@ -6356,6 +6362,7 @@
         fd.append("ignore_xlent", opts.ignore_xlent);
         fd.append("language",     opts.language);
         fd.append("scan_profile", opts.scan_profile);
+        fd.append("categories",   opts.categories.join(","));
         if (extraOpts?.ocr) fd.append("ocr", "true");
         const r = await (await fetch(`${API}/scan-upload`, { method:"POST", body: fd })).json();
         setStatus("");
@@ -7221,6 +7228,7 @@
     const FILTER_MAP = {
       "epost":         c => c.startsWith("e-post"),
       "telefon":       c => c.startsWith("telefonnummer"),
+      "adresse":       c => c.startsWith("fysisk adresse"),
       "id":            c => ["fødselsnummer","d-nummer","personnummer","samordningsnummer","cpr-nummer","uk national insurance","us social security","mulig personnummer","passnummer"].some(p => c.startsWith(p)),
       "fodselsdato":   c => c.startsWith("fødselsdato"),
       "konto":         c => ["kontonummer","bankgiro","plusgiro","iban","swift/bic"].some(p => c.startsWith(p)),
@@ -7239,12 +7247,14 @@
     const AI_CAT_MAP = {
       "epost":       "epost",
       "telefon":     "telefon",
+      "adresse":     "adresse",
       "id":          ["personnummer", "passnummer"],
       "fodselsdato": "fodselsdato",
       "konto":       ["bankkonto", "swift"],
       "navn":        "navn",
       "nettadresse": "nettadresse",
       "finansielt":  ["budsjett_tall", "lonn"],
+      "klient":      "selskapsnavn",
       "medisinsk":   "medisinsk",
     };
 
@@ -7875,7 +7885,12 @@
         const r = await (await fetch(`${API}/scan-text`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text, language: opts.language, scan_profile: opts.scan_profile }),
+          body: JSON.stringify({
+            text,
+            language: opts.language,
+            scan_profile: opts.scan_profile,
+            categories: opts.categories,
+          }),
         })).json();
         ps.textContent = "";
         setStatus("");
@@ -8004,6 +8019,7 @@
           ignore_xlent: opts.ignore_xlent,
           language: opts.language,
           scan_profile: opts.scan_profile,
+          categories: opts.categories,
           ...folderOpts,
         });
         if (!started.ok) {
@@ -8286,6 +8302,7 @@
             fd.append("ignore_xlent", opts.ignore_xlent);
             fd.append("language",     opts.language);
             fd.append("scan_profile", opts.scan_profile);
+            fd.append("categories",   opts.categories.join(","));
             r = await (await fetch(`${API}/scan-upload`, { method:"POST", body: fd })).json();
           }
           results.push({

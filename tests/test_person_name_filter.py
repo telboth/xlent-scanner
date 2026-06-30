@@ -113,3 +113,25 @@ def test_person_name_context_filter_keeps_normal_sentence_names():
     end = start + len("Thomas Elboth")
 
     assert looks_like_person_name_in_context("Thomas Elboth", text, start, end)
+
+
+def test_person_name_context_filter_keeps_uppercase_surname_in_author_context():
+    text = "Author: Jie HOU Supervisors: Ørjan Grøttem MARTINSEN"
+
+    for name in ("Jie HOU", "Ørjan Grøttem MARTINSEN"):
+        start = text.index(name)
+        end = start + len(name)
+
+        assert looks_like_person_name_in_context(name, text, start, end)
+
+
+def test_person_name_context_filter_keeps_performed_by_name_near_reference_terms():
+    text = (
+        "Reference model simulated in CST "
+        "(simulations performed by Kristian Gjertsen Kjelgård)."
+    )
+    name = "Kristian Gjertsen Kjelgård"
+    start = text.index(name)
+    end = start + len(name)
+
+    assert looks_like_person_name_in_context(name, text, start, end)

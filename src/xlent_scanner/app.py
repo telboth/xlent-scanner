@@ -40,6 +40,7 @@ from xlent_scanner.paths import app_data_dir
 from xlent_scanner.ignore import (
     get_ignore_toml_text,
 )
+from xlent_scanner.detectors.ner_names import preload_model_async
 from xlent_scanner.patch import patch_file
 from xlent_scanner.routes.api import (
     api_key_configured as _api_key_configured,
@@ -684,6 +685,30 @@ def _api_openapi_spec() -> dict:
         "default": "normal",
         "description": "technical strammer inn postfiltre for tekniske/akademiske dokumenter.",
     }
+    scan_categories_property = {
+        "type": "array",
+        "items": {
+            "type": "string",
+            "enum": [
+                "navn",
+                "epost",
+                "telefon",
+                "adresse",
+                "fodselsdato",
+                "id",
+                "klient",
+                "orgnummer",
+                "nettadresse",
+                "konto",
+                "kredittkort",
+                "hemmeligheter",
+                "finansielt",
+                "medisinsk",
+                "konfidensielt",
+            ],
+        },
+        "description": "Valgte regelbaserte scan-kategorier. Utelat feltet for å skanne alle kategorier.",
+    }
     scan_result_schema = {
         "type": "object",
         "properties": {
@@ -944,6 +969,7 @@ def _api_openapi_spec() -> dict:
                                             "default": "auto",
                                         },
                                         "scan_profile": scan_profile_property,
+                                        "categories": scan_categories_property,
                                         "include_preview": {"type": "boolean", "default": False},
                                         "include_suppressed": {"type": "boolean", "default": False},
                                     },
@@ -978,6 +1004,7 @@ def _api_openapi_spec() -> dict:
                                             "default": "auto",
                                         },
                                         "scan_profile": scan_profile_property,
+                                        "categories": scan_categories_property,
                                         "ignore_xlent": {"type": "boolean", "default": False},
                                         "ocr": {
                                             "type": "boolean",
@@ -1114,6 +1141,14 @@ def _start_flask(port: int, host: str = "127.0.0.1") -> None:
     flask_app.run(host=host, port=port, threaded=True, use_reloader=False)
 
 
+def _start_ner_preload() -> None:
+    try:
+        preload_model_async("nb")
+        LOGGER.info("Started background preload for nb spaCy model")
+    except Exception:
+        LOGGER.warning("Could not start background NER preload", exc_info=True)
+
+
 def _web_mode_command() -> list[str]:
     """Kommando for å starte web-modus i ny prosess."""
     if getattr(sys, "frozen", False):
@@ -1153,6 +1188,7 @@ def _run_web_mode() -> None:
     app_state.port = _free_port()
     url = f"http://127.0.0.1:{app_state.port}"
     LOGGER.info("Starting WEB mode on %s", url)
+    _start_ner_preload()
 
     def _open_browser() -> None:
         time.sleep(0.5)
@@ -1214,6 +1250,7 @@ def _run_api_mode() -> None:
         app_state.port,
         _api_key_configured(),
     )
+    _start_ner_preload()
     _start_flask(app_state.port, host=host)
 
 
@@ -1374,6 +1411,7 @@ def main() -> None:
     t.start()
     _wait_for_flask(app_state.port)
     LOGGER.info("Flask is reachable on 127.0.0.1:%s", app_state.port)
+    _start_ner_preload()
 
     webview_cache = tempfile.mkdtemp(prefix="xlent-scanner-wv-")
     fresh_url = f"http://127.0.0.1:{app_state.port}/?_v={int(time.time())}"

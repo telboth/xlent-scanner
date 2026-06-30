@@ -107,6 +107,7 @@ def test_scan_category_grid_order_matches_requested_columns():
         "finansielt",
         "medisinsk",
         "konfidensielt",
+        "adresse",
     ]
 
 

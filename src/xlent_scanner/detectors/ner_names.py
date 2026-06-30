@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import re
 import sys
+import threading
 from typing import Any, Iterator
 
 from xlent_scanner.detectors.filter_config import load_person_name_filters
@@ -21,6 +22,7 @@ _IS_FROZEN = getattr(sys, "frozen", False)
 # Modell-cache og feil-cache per språk
 _nlp_cache: dict[str, Any] = {}
 _load_errors: dict[str, str] = {}
+_nlp_lock = threading.RLock()
 
 _MAX_CHARS = 100_000
 
@@ -50,6 +52,38 @@ _REFERENCE_CONTEXT_RE = re.compile(
     r")\b"
     r")"
 )
+
+_POSITIVE_PERSON_CONTEXT_RE = re.compile(
+    r"(?i)"
+    r"(?:"
+    r"\b(?:author|authors|supervisor|supervisors|advisor|advisors)\s*:?"
+    r"|"
+    r"\b(?:performed|written|prepared|created|developed)\s+by\b"
+    r"|"
+    r"\b(?:forfatter|forfattere|veileder|veiledere)\s*:?"
+    r"|"
+    r"\b(?:skrevet|utarbeidet|utført|laget|utviklet)\s+av\b"
+    r")"
+)
+
+_NON_NAME_UPPERCASE_PARTS = {
+    "ai",
+    "api",
+    "cnn",
+    "cpu",
+    "cst",
+    "db",
+    "doi",
+    "gpu",
+    "isbn",
+    "issn",
+    "llm",
+    "ml",
+    "ocr",
+    "pdf",
+    "ui",
+    "ux",
+}
 
 
 def _normalise_profile(scan_profile: str | None) -> str:
@@ -84,7 +118,35 @@ def _looks_like_technical_title_case_phrase(name: str) -> bool:
     return has_technical_signal and generic_count >= len(words) - 1
 
 
-def _base_name_rejection_reason(name: str, *, scan_profile: str = "normal") -> str | None:
+def _has_normal_cased_name_part(parts: list[str]) -> bool:
+    for part in parts:
+        subparts = [sp for sp in part.strip(".,;:()[]{}«»\"'").split("-") if sp]
+        if not subparts:
+            continue
+        if all(sp[0].isupper() and any(c.islower() for c in sp[1:]) for sp in subparts):
+            return True
+    return False
+
+
+def _is_allowed_uppercase_surname(parts: list[str], index: int, part: str) -> bool:
+    part = part.strip(".,;:()[]{}«»\"'")
+    if index != len(parts) - 1:
+        return False
+    if part.casefold() in _NON_NAME_UPPERCASE_PARTS:
+        return False
+    if not part.replace("-", "").isalpha():
+        return False
+    if not _has_normal_cased_name_part(parts[:index]):
+        return False
+    return True
+
+
+def _base_name_rejection_reason(
+    name: str,
+    *,
+    scan_profile: str = "normal",
+    allow_uppercase_surname: bool = False,
+) -> str | None:
     name = " ".join(str(name or "").strip().split())
     if not name:
         return "tom kandidat"
@@ -108,7 +170,7 @@ def _base_name_rejection_reason(name: str, *, scan_profile: str = "normal") -> s
     if _normalise_profile(scan_profile) == "technical" and _looks_like_technical_title_case_phrase(name):
         return "teknisk/akademisk tittel-frase"
 
-    for part in parts:
+    for index, part in enumerate(parts):
         part = part.strip(".,;:()[]{}«»\"'")
         if len(part) < 2:
             return "for kort navnedel"
@@ -123,14 +185,28 @@ def _base_name_rejection_reason(name: str, *, scan_profile: str = "normal") -> s
             for sp in subparts:
                 if not sp[0].isupper():
                     return "bindestreksdel starter ikke med stor bokstav"
-                if sp.isupper() and len(sp) > 2:
+                if (
+                    sp.isupper()
+                    and len(sp) > 2
+                    and not (
+                        allow_uppercase_surname
+                        and _is_allowed_uppercase_surname(parts, index, part)
+                    )
+                ):
                     return "akronym i kandidat"
                 if sp.lower() in _STOPWORDS:
                     return "generisk stoppord"
         else:
             if not part[0].isupper():
                 return "navnedel starter ikke med stor bokstav"
-            if part.isupper() and len(part) > 2:
+            if (
+                part.isupper()
+                and len(part) > 2
+                and not (
+                    allow_uppercase_surname
+                    and _is_allowed_uppercase_surname(parts, index, part)
+                )
+            ):
                 return "akronym i kandidat"
     return None
 
@@ -155,6 +231,11 @@ def _words_before(text: str, start: int, *, limit: int = 4) -> list[str]:
 def _words_after(text: str, end: int, *, limit: int = 4) -> list[str]:
     right = min(len(text), end + _CONTEXT_WINDOW_CHARS)
     return _WORD_RE.findall(text[end:right].casefold())[:limit]
+
+
+def _has_positive_person_name_context(text: str, start: int) -> bool:
+    left = max(0, start - _CONTEXT_WINDOW_CHARS)
+    return bool(_POSITIVE_PERSON_CONTEXT_RE.search(text[left:start]))
 
 
 def _has_place_or_technical_context(text: str, start: int, end: int) -> bool:
@@ -192,10 +273,18 @@ def person_name_rejection_reason(
     *,
     scan_profile: str = "normal",
 ) -> str | None:
-    reason = _base_name_rejection_reason(name, scan_profile=scan_profile)
+    positive_context = _has_positive_person_name_context(text, start) if text else False
+    reason = _base_name_rejection_reason(
+        name,
+        scan_profile=scan_profile,
+        allow_uppercase_surname=positive_context,
+    )
     if reason:
         return reason
-    if has_negative_person_name_context(text, start, end, scan_profile=scan_profile):
+    if (
+        not positive_context
+        and has_negative_person_name_context(text, start, end, scan_profile=scan_profile)
+    ):
         return "referanse-, sted- eller fagkontekst"
     return None
 
@@ -229,68 +318,88 @@ def reset_cache_for_model(model_name: str) -> None:
     lang_for_model = {cfg["model"]: lang for lang, cfg in SPACY_CONFIG.items()}
     lang = lang_for_model.get(model_name)
     if lang:
-        _nlp_cache.pop(lang, None)
-        _load_errors.pop(lang, None)
+        with _nlp_lock:
+            _nlp_cache.pop(lang, None)
+            _load_errors.pop(lang, None)
 
 
 def _get_nlp(lang: str = "nb") -> Any | None:
-    if lang in _nlp_cache:
-        return _nlp_cache[lang]
+    with _nlp_lock:
+        if lang in _nlp_cache:
+            return _nlp_cache[lang]
 
-    cfg = SPACY_CONFIG.get(lang, SPACY_CONFIG["nb"])
-    model_name = cfg["model"]
+        cfg = SPACY_CONFIG.get(lang, SPACY_CONFIG["nb"])
+        model_name = cfg["model"]
 
-    try:
-        from xlent_scanner.model_manager import model_path as _user_model_path  # noqa: PLC0415
-        user_path = _user_model_path(model_name)
-    except Exception:
-        user_path = None
-
-    if lang in _load_errors:
-        if user_path is not None:
-            del _load_errors[lang]
-        else:
-            return None
-
-    try:
-        import spacy  # type: ignore
-
-        if user_path is not None:
-            nlp = spacy.load(str(user_path))
-        else:
-            nlp = spacy.load(model_name)
-
-        _nlp_cache[lang] = nlp
-        return nlp
-
-    except OSError:
-        if _IS_FROZEN:
-            _load_errors[lang] = (
-                f"spaCy-modell ({model_name}) er ikke installert. "
-                f"Gå til Innstillinger → Navnemodeller for å laste ned."
-            )
-            return None
         try:
-            from spacy.cli import download as spacy_download  # type: ignore
-            print(f"[ner] Laster ned manglende modell: {model_name}…", flush=True)
-            spacy_download(model_name)
-            nlp = spacy.load(model_name)
+            from xlent_scanner.model_manager import model_path as _user_model_path  # noqa: PLC0415
+            user_path = _user_model_path(model_name)
+        except Exception:
+            user_path = None
+
+        if lang in _load_errors:
+            if user_path is not None:
+                del _load_errors[lang]
+            else:
+                return None
+
+        try:
+            import spacy  # type: ignore
+
+            if user_path is not None:
+                nlp = spacy.load(str(user_path))
+            else:
+                nlp = spacy.load(model_name)
+
             _nlp_cache[lang] = nlp
-            print(f"[ner] ✓ {model_name} lastet.", flush=True)
             return nlp
+
+        except OSError:
+            if _IS_FROZEN:
+                _load_errors[lang] = (
+                    f"spaCy-modell ({model_name}) er ikke installert. "
+                    f"Gå til Innstillinger → Navnemodeller for å laste ned."
+                )
+                return None
+            try:
+                from spacy.cli import download as spacy_download  # type: ignore
+                print(f"[ner] Laster ned manglende modell: {model_name}…", flush=True)
+                spacy_download(model_name)
+                nlp = spacy.load(model_name)
+                _nlp_cache[lang] = nlp
+                print(f"[ner] ✓ {model_name} lastet.", flush=True)
+                return nlp
+            except BaseException as exc:
+                _load_errors[lang] = (
+                    f"Klarte ikke å laste ned spaCy-modell ({model_name}): {exc}"
+                )
+                return None
         except BaseException as exc:
-            _load_errors[lang] = (
-                f"Klarte ikke å laste ned spaCy-modell ({model_name}): {exc}"
-            )
+            _load_errors[lang] = f"Klarte ikke å laste spaCy-modell ({model_name}): {exc}"
             return None
-    except BaseException as exc:
-        _load_errors[lang] = f"Klarte ikke å laste spaCy-modell ({model_name}): {exc}"
-        return None
 
 
-def get_load_error(lang: str = "nb") -> str | None:
+def get_load_error(lang: str = "nb", *, load: bool = False) -> str | None:
+    if load:
+        _get_nlp(lang)
+    with _nlp_lock:
+        return _load_errors.get(lang)
+
+
+def preload_model(lang: str = "nb") -> None:
+    """Varm opp spaCy-modellen uten å blokkere scan-kalleren."""
     _get_nlp(lang)
-    return _load_errors.get(lang)
+
+
+def preload_model_async(lang: str = "nb") -> threading.Thread:
+    thread = threading.Thread(
+        target=preload_model,
+        args=(lang,),
+        daemon=True,
+        name=f"ner-preload-{lang}",
+    )
+    thread.start()
+    return thread
 
 
 # ── Deteksjon ─────────────────────────────────────────────────────────────────
