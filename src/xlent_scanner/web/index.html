@@ -5585,7 +5585,7 @@
       const canOcr = (ext === "pdf" || IMAGE_EXT.has(ext)) && lastScan
         && (r.warning_code === "no_text_extracted" || r.warning_code === "little_text_extracted");
       const ocrBtnHtml = canOcr
-        ? ` <button id="btn-ocr-rescan" class="ctrl-btn ctrl-btn-primary"
+        ? ` <button id="btn-ocr-rescan" class="ctrl-btn ctrl-btn-outline-primary"
               style="margin-left:10px;font-size:12px;"
               title="${escapeHtml(t("ocrRescanTooltip"))}">${t("ocrRescanBtn")}</button>`
         : "";
@@ -6382,6 +6382,10 @@
       setOcrProgress(isOcrScan);
       _clearTextPreview();
       resultEl.classList.remove("show");
+      if (isOcrScan) {
+        resultEl.innerHTML = "";
+        renderSeveritySummary();
+      }
       lastScan = { type:"path", path, ocr: isOcrScan };
       try {
         const opts = getOpts();
@@ -6407,6 +6411,10 @@
       setOcrProgress(isOcrScan);
       _clearTextPreview();
       resultEl.classList.remove("show");
+      if (isOcrScan) {
+        resultEl.innerHTML = "";
+        renderSeveritySummary();
+      }
       lastScan = { type:"upload", file, name, ocr: isOcrScan };
       try {
         const opts = getOpts();

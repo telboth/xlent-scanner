@@ -208,8 +208,8 @@ class TestFindTelefon:
     def test_pages_label_not_matched_as_phone(self):
         assert not self._texts("See pages 4662-4666 for details.")
 
-    def test_phone_label_still_allows_same_digit_pattern_as_page_range(self):
-        assert "4662-4666" in self._texts("Tel: 4662-4666")
+    def test_phone_label_does_not_override_four_four_reference_pattern(self):
+        assert not self._texts("Tel: 4662-4666")
 
     def test_postcode_not_matched(self):
         assert not self._texts("Postnummer: 0150")

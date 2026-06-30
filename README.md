@@ -1,6 +1,6 @@
 # XLENT Compliance-scanner
 
-> **v1.7.3** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
+> **v1.7.4** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
 
 Alt kjøres 100 % lokalt — ingen dokumenter, tekst eller funn sendes over internett.
 
@@ -437,6 +437,13 @@ src/xlent_scanner/
 ---
 
 ## Endringslogg
+
+### v1.7.4
+- Avviser `dddd-dddd` som telefonnummer for å unngå falske treff på saks-/referansenummer som `2026-0011`.
+- Legger `Ocean Freight` inn i personnavnfilteret via generiske fag-/frakttermer.
+- Gjør OCR-knappen mer lesbar ved å bruke outline-stil i stedet for blå primærknapp.
+- Tømmer gammel resultatmelding når OCR-skann startes, slik at «ingen sensitive funn» ikke vises mens OCR pågår.
+- Låser med regresjonstest at AI-dybdeskann forkaster ordet `IBAN` alene, men beholder validerte IBAN-numre.
 
 ### v1.7.3
 - Fjerner feilaktig `master`-tag lokalt og fra GitHub slik at `master` igjen kun er branch.

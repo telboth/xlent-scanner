@@ -86,6 +86,7 @@ def test_technical_title_case_phrases_are_not_person_names():
         "Net Amount",
         "VAT Amount",
         "Invoice Total",
+        "Ocean Freight",
     ]:
         assert not looks_like_person_name(value)
 
@@ -128,6 +129,19 @@ def test_ai_phone_postfilter_keeps_real_phone_numbers():
             "confidence": "high",
         }
     ]
+
+
+def test_ai_bank_postfilter_drops_plain_iban_label_but_keeps_valid_iban():
+    assert _filter_llm_findings_by_category_precision(
+        [{"category": "IBAN", "text": "IBAN", "context": "IBAN"}],
+        source="IBAN",
+    ) == []
+
+    source = "IBAN NO8010000000006"
+    assert _filter_llm_findings_by_category_precision(
+        [{"category": "IBAN", "text": "NO8010000000006", "context": source}],
+        source=source,
+    ) == [{"category": "IBAN", "text": "NO8010000000006", "context": source}]
 
 
 def test_ai_address_postfilter_drops_cpu_model_strings():

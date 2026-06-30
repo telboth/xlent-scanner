@@ -149,6 +149,10 @@ class TestTelefon:
         f = list(find_telefon("Signert 2021-03-09"))
         assert f == []
 
+    def test_no_false_positive_on_four_digit_case_numbers(self):
+        f = list(find_telefon("Saksnr 2026-0011, 2026-0002 og 2025-0010"))
+        assert f == []
+
 
 class TestEmail:
     def test_simple_email(self):

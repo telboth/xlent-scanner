@@ -84,6 +84,7 @@ generic_title_case_words = [
   "physically", "seismic", "sensitivity", "sensor", "signal", "simulation",
   "size", "software", "spec", "specification", "survey", "thin", "tool", "training",
   "uncertainty", "velocity", "version", "wave", "waves", "workflow",
+  "ocean", "freight",
   "bachelor", "course", "curriculum", "dissertation", "lecture", "master",
   "amount", "budget", "cost", "description", "discount", "invoice", "line",
   "net", "order", "payment", "petroleum", "price", "purchase", "quantity",

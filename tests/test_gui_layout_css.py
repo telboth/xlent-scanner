@@ -699,6 +699,14 @@ def test_ocr_rescan_shows_progress_indicator():
     assert 'lastScan = { type:"upload", file, name, ocr: isOcrScan };' in html
     assert 'fill.classList.add("indeterminate")' in html
     assert '<span class="btn-spinner" aria-label="Loading"></span> ${escapeHtml(t("ocrRunning"))}' in html
+    assert 'class="ctrl-btn ctrl-btn-primary"' not in html[
+        html.index('const ocrBtnHtml = canOcr'):html.index('const warningBanner = warning')
+    ]
+    assert 'class="ctrl-btn ctrl-btn-outline-primary"' in html[
+        html.index('const ocrBtnHtml = canOcr'):html.index('const warningBanner = warning')
+    ]
+    assert 'if (isOcrScan) {' in html[html.index("async function scanPath"):html.index("async function scanUpload")]
+    assert 'resultEl.innerHTML = "";' in html[html.index("async function scanPath"):html.index("async function scanUpload")]
     assert "setOcrProgress(false);" in html[html.index("function clearResult()"):html.index("function renderSeveritySummary()")]
 
 

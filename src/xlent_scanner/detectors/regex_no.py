@@ -221,6 +221,7 @@ _PHONE_RE = re.compile(
 
 _YEAR_RANGE_RE = re.compile(r"^(?:19|20)\d{2}-(?:19|20)\d{2}$")
 _ISO_DATE_RE = re.compile(r"^(?:19|20)\d{2}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])$")
+_FOUR_FOUR_ID_RE = re.compile(r"^\d{4}-\d{4}$")
 _PHONE_CONTEXT_WINDOW = 90
 _NUMERIC_AXIS_TOKEN_RE = re.compile(r"(?<![A-Za-z0-9.,])\d+(?![A-Za-z0-9.,])")
 _NUMERIC_AXIS_SEPARATOR_RE = re.compile(r"^[\s,;:()\[\]{}<>+\-–—]*$")
@@ -364,6 +365,9 @@ def find_telefon(text: str, *, scan_profile: str = "normal") -> Iterator[Finding
             continue
         if _ISO_DATE_RE.match(raw.replace(" ", "")):
             record_suppressed("telefonnummer", raw, context, "ISO-dato")
+            continue
+        if _FOUR_FOUR_ID_RE.match(raw):
+            record_suppressed("telefonnummer", raw, context, "4+4 saks-/referansenummer")
             continue
         if _looks_like_compact_date(raw):
             record_suppressed("telefonnummer", raw, context, "kompakt dato")
