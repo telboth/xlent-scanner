@@ -10,7 +10,7 @@ from xlent_scanner.models import Finding, ScanResult, SuppressedFinding
 
 
 def _fake_result() -> ScanResult:
-    return ScanResult(
+    result = ScanResult(
         file_name="Power Apps tekst",
         file_size=0,
         text_length=42,
@@ -30,6 +30,8 @@ def _fake_result() -> ScanResult:
         original_text="FULL_SECRET_NOT_RETURNED",
         language="nb",
     )
+    result.scan_timings = {"total_seconds": 0.01}
+    return result
 
 
 def test_api_scan_text_uses_separate_state_and_omits_original_text(monkeypatch):
@@ -127,8 +129,34 @@ def test_api_scan_file_accepts_base64_and_omits_original_text(monkeypatch):
     assert response.status_code == 200
     data = response.get_json()
     assert data["file_name"] == "kunde.txt"
+    assert data["scan_timings"] == {"total_seconds": 0.01}
     assert "original_text" not in data
     assert "FULL_SECRET_NOT_RETURNED" not in str(data)
+
+
+def test_api_scan_file_accepts_pdf_mode(monkeypatch):
+    monkeypatch.delenv("XLENT_SCANNER_API_KEY", raising=False)
+    captured = {}
+
+    def fake_scan_file(*args, **kwargs):
+        captured.update(kwargs)
+        return _fake_result()
+
+    monkeypatch.setattr(app_module, "scan_file", fake_scan_file)
+    app_module.app_state.api_scan_results.clear()
+    client = app_module.flask_app.test_client()
+
+    response = client.post(
+        "/api/scan-file",
+        json={
+            "file_name": "kunde.pdf",
+            "content_base64": base64.b64encode(b"%PDF-1.4").decode("ascii"),
+            "pdf_mode": "advanced",
+        },
+    )
+
+    assert response.status_code == 200
+    assert captured["pdf_mode"] == "advanced"
 
 
 def test_api_scan_file_rejects_invalid_base64(monkeypatch):

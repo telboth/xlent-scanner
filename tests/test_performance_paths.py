@@ -39,7 +39,30 @@ def test_pdf_extraction_tries_docling_when_fitz_text_is_too_short(monkeypatch, t
     monkeypatch.setattr(scanner, "_extract_text_pdf_fitz", lambda path: "OK")
     monkeypatch.setattr(scanner, "_get_pdf_converter", lambda ocr=False: FakeConverter())
 
-    assert scanner._extract_text_pdf(pdf) == docling_text
+    assert scanner._extract_text_pdf(pdf, pdf_mode="auto") == docling_text
+
+
+def test_pdf_fast_mode_does_not_try_docling_for_sparse_text(monkeypatch, tmp_path: Path):
+    pdf = tmp_path / "sparse.pdf"
+    pdf.write_bytes(b"%PDF-1.4")
+
+    monkeypatch.setattr(scanner, "_extract_text_pdf_fitz", lambda path: "OK")
+
+    def fail_docling(*_args, **_kwargs):
+        raise AssertionError("Docling should not be loaded in fast PDF mode")
+
+    monkeypatch.setattr(scanner, "_get_pdf_converter", fail_docling)
+
+    assert scanner._extract_text_pdf(pdf, pdf_mode="fast") == "OK"
+
+
+def test_scan_text_reports_timing_diagnostics():
+    result = scanner.scan_text("Kontakt test@example.com.", language="nb", categories=["epost"])
+
+    assert result.scan_timings["total_seconds"] >= 0
+    assert result.scan_timings["language_seconds"] >= 0
+    assert result.scan_timings["detectors_seconds"] >= 0
+    assert result.scan_timings["detectors"]["find_emails"] >= 0
 
 
 def test_category_filtered_scan_skips_ner_when_names_are_not_selected(monkeypatch):
@@ -58,4 +81,3 @@ def test_category_filtered_scan_skips_ner_when_names_are_not_selected(monkeypatc
 
     assert [f.category for f in result.findings] == ["e-post"]
     assert result.findings[0].text == "test@example.com"
-

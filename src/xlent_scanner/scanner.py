@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import html
 import re
+import time
 import warnings
 from collections.abc import Iterable
 from pathlib import Path
@@ -38,6 +39,11 @@ from xlent_scanner.ignore import filter_findings, load_ignore_list
 from xlent_scanner.language import resolve_language
 from xlent_scanner.models import Finding, ScanResult  # noqa: F401
 from xlent_scanner.risk import assess
+from xlent_scanner.scan_categories import (
+    category_enabled as _category_enabled,
+    finding_matches_scan_categories as _finding_matches_scan_categories,
+    normalise_scan_categories,
+)
 from xlent_scanner.suppression import capture_suppressed_findings
 from xlent_scanner.whitelist import mark_whitelist_findings
 from xlent_scanner.blacklist import detect_blacklist
@@ -63,24 +69,6 @@ DEFAULT_EXCLUDED_DIRS = {
     "Library", "AppData",
 }
 
-SCAN_CATEGORY_KEYS = {
-    "navn",
-    "epost",
-    "telefon",
-    "adresse",
-    "fodselsdato",
-    "id",
-    "klient",
-    "orgnummer",
-    "nettadresse",
-    "konto",
-    "kredittkort",
-    "hemmeligheter",
-    "finansielt",
-    "medisinsk",
-    "konfidensielt",
-}
-
 _ignore_list: dict | None = None
 
 
@@ -88,105 +76,9 @@ def normalise_scan_profile(scan_profile: str | None) -> str:
     return "technical" if str(scan_profile or "").strip().lower() in {"technical", "academic"} else "normal"
 
 
-def normalise_scan_categories(categories: Iterable[str] | None) -> frozenset[str] | None:
-    """Normaliser valgte scan-kategorier.
-
-    None betyr bakoverkompatibelt "kjør alt". En tom liste betyr at brukeren
-    eksplisitt har valgt bort alle kategorier.
-    """
-    if categories is None:
-        return None
-    return frozenset(
-        str(category).strip().lower()
-        for category in categories
-        if str(category).strip().lower() in SCAN_CATEGORY_KEYS
-    )
-
-
-def _category_enabled(selected: frozenset[str] | None, *keys: str) -> bool:
-    return selected is None or any(key in selected for key in keys)
-
-
-def _finding_matches_scan_categories(finding: Finding, selected: frozenset[str] | None) -> bool:
-    if selected is None:
-        return True
-    cat = str(finding.category or "").casefold()
-    if cat.startswith("⚠"):
-        return True
-
-    checks = {
-        "epost": lambda c: c.startswith("e-post"),
-        "telefon": lambda c: c.startswith("telefonnummer"),
-        "adresse": lambda c: c.startswith("fysisk adresse"),
-        "id": lambda c: any(
-            c.startswith(prefix)
-            for prefix in (
-                "fødselsnummer",
-                "d-nummer",
-                "personnummer",
-                "samordningsnummer",
-                "cpr-nummer",
-                "uk national insurance",
-                "us social security",
-                "mulig personnummer",
-                "passnummer",
-            )
-        ),
-        "fodselsdato": lambda c: c.startswith("fødselsdato"),
-        "konto": lambda c: any(
-            c.startswith(prefix)
-            for prefix in ("kontonummer", "bankgiro", "plusgiro", "iban", "swift/bic")
-        ),
-        "kredittkort": lambda c: c.startswith("kredittkort"),
-        "navn": lambda c: c.startswith("navn (person)"),
-        "nettadresse": lambda c: c.startswith("nettadresse") or c.startswith("ip-adresse"),
-        "hemmeligheter": lambda c: any(
-            c.startswith(prefix)
-            for prefix in (
-                "openai",
-                "anthropic",
-                "github",
-                "jwt",
-                "bearer",
-                "aws",
-                "private key",
-                "azure storage",
-                "passord i konfig",
-                "konfigurasjonsord",
-                "høy-entropisteng",
-            )
-        ),
-        "finansielt": lambda c: any(
-            c.startswith(prefix)
-            for prefix in (
-                "timepris",
-                "dagspris",
-                "prosjektsum",
-                "enhetspris",
-                "margin",
-                "rabatt",
-                "budsjett",
-                "lønn",
-            )
-        ),
-        "medisinsk": lambda c: any(
-            c.startswith(prefix)
-            for prefix in (
-                "medisinsk",
-                "medicinsk",
-                "medical",
-                "diagnose",
-                "diagnosis",
-                "legemiddel",
-                "läkemedel",
-                "medication",
-            )
-        ),
-        "konfidensielt": lambda c: c.startswith("konfidensielt dokument"),
-        "klient": lambda c: c.startswith("kundenavn"),
-        "orgnummer": lambda c: c.startswith("organisasjonsnummer"),
-    }
-    return any(checks[key](cat) for key in selected if key in checks)
+def normalise_pdf_mode(pdf_mode: str | None) -> str:
+    mode = str(pdf_mode or "fast").strip().lower()
+    return mode if mode in {"fast", "auto", "advanced"} else "fast"
 
 
 def reset_ignore_cache() -> None:
@@ -288,11 +180,10 @@ def _meaningful_extracted_text(text: str) -> str:
     return _DOCLING_IMAGE_PLACEHOLDER_RE.sub(" ", text).strip()
 
 
-def _extract_text_pdf(path: Path, ocr: bool = False) -> str:
+def _extract_text_pdf(path: Path, ocr: bool = False, pdf_mode: str = "fast") -> str:
     """Ekstraherer tekst fra PDF.
 
-    Prøver Docling først (bedre layout-rekonstruksjon og tabelldeteksjon).
-    Faller tilbake til PyMuPDF ved feil (f.eks. hvis Docling ikke er tilgjengelig i frozen build).
+    Standardmodus er rask PyMuPDF. Docling brukes bare i advanced/auto eller OCR.
 
     Med ocr=True kjøres Docling med OCR-motor aktivert (for bilde-PDF-er).
     Da er PyMuPDF-fallback meningsløs (den gir samme tomme resultat), så
@@ -311,8 +202,11 @@ def _extract_text_pdf(path: Path, ocr: bool = False) -> str:
                 "OCR krever Docling med OCR-motor — kjør fra kildekode "
                 "med «uv sync» hvis pakken mangler den."
             ) from exc
+    mode = normalise_pdf_mode(pdf_mode)
     fitz_text = _extract_text_pdf_fitz(path)
-    if len(_meaningful_extracted_text(fitz_text)) >= TEXT_WARNING_MIN_CHARS:
+    if mode == "fast":
+        return fitz_text
+    if mode == "auto" and len(_meaningful_extracted_text(fitz_text)) >= TEXT_WARNING_MIN_CHARS:
         return fitz_text
 
     try:
@@ -562,12 +456,12 @@ def _extract_text_html(path: Path) -> str:
     return content.strip()
 
 
-def extract_text(path: Path, ocr: bool = False) -> str:
+def extract_text(path: Path, ocr: bool = False, pdf_mode: str = "fast") -> str:
     suffix = path.suffix.lower()
     if suffix in IMAGE_SUFFIXES:
         return _extract_text_image(path, ocr=ocr)
     if suffix == ".pdf":
-        return _extract_text_pdf(path, ocr=ocr)
+        return _extract_text_pdf(path, ocr=ocr, pdf_mode=pdf_mode)
     if suffix == ".docx":
         return _extract_text_docx(path)
     if suffix == ".pptx":
@@ -595,19 +489,23 @@ def _run_detectors(
     ignore_xlent: bool = False,
     scan_profile: str = "normal",
     categories: Iterable[str] | None = None,
-) -> tuple[list[Finding], bool]:
+) -> tuple[list[Finding], bool, dict]:
     """Kjør alle detektorer og returner funn samt om skannen ble degradert."""
     findings: list[Finding] = []
     detector_errors: list[str] = []
+    timings: dict[str, float] = {}
 
     scan_profile = normalise_scan_profile(scan_profile)
     selected_categories = normalise_scan_categories(categories)
 
     def _run(fn, *args, **kwargs):
+        t0 = time.perf_counter()
         try:
             findings.extend(fn(*args, **kwargs))
         except Exception as exc:
             detector_errors.append(f"{fn.__name__}: {type(exc).__name__}: {exc}")
+        finally:
+            timings[fn.__name__] = round(timings.get(fn.__name__, 0.0) + time.perf_counter() - t0, 4)
 
     if _category_enabled(selected_categories, "konfidensielt"):
         _run(detect_keywords, text)
@@ -679,7 +577,7 @@ def _run_detectors(
     for det_err in detector_errors:
         findings.append(Finding(category="⚠ Detektor-feil", text=det_err, context=""))
 
-    return findings, bool(ner_err or detector_errors)
+    return findings, bool(ner_err or detector_errors), timings
 
 
 def scan_text(
@@ -690,21 +588,26 @@ def scan_text(
     categories: Iterable[str] | None = None,
 ) -> ScanResult:
     """Skann ren tekst direkte (uten filekstraksjon). Brukes for utklippstavle/paste."""
+    total_t0 = time.perf_counter()
     if not text.strip():
         return ScanResult(
             file_name=source_name, file_size=0, text_length=0, text_preview="",
             error="Ingen tekst å skanne.", scan_status="failed",
         )
+    lang_t0 = time.perf_counter()
     lang = resolve_language(language, text)
+    language_seconds = round(time.perf_counter() - lang_t0, 4)
     scan_profile = normalise_scan_profile(scan_profile)
     selected_categories = normalise_scan_categories(categories)
     with capture_suppressed_findings() as suppressed:
-        findings, degraded = _run_detectors(
+        detector_t0 = time.perf_counter()
+        findings, degraded, detector_timings = _run_detectors(
             text,
             lang,
             scan_profile=scan_profile,
             categories=selected_categories,
         )
+        detector_seconds = round(time.perf_counter() - detector_t0, 4)
 
     result = ScanResult(
         file_name=source_name,
@@ -718,6 +621,12 @@ def scan_text(
         original_text=text,
         language=lang,
         scan_status="partial" if degraded else "success",
+        scan_timings={
+            "language_seconds": language_seconds,
+            "detectors_seconds": detector_seconds,
+            "detectors": detector_timings,
+            "total_seconds": round(time.perf_counter() - total_t0, 4),
+        },
     )
     return assess(result)
 
@@ -818,6 +727,7 @@ def scan_folder(
     max_depth: int = DEFAULT_FOLDER_MAX_DEPTH,
     scan_profile: str = "normal",
     categories: Iterable[str] | None = None,
+    pdf_mode: str = "fast",
 ) -> list[ScanResult]:
     """Skann alle støttede filer i en mappe. Returnerer resultater sortert etter risikonivå."""
     plan = build_folder_scan_plan(
@@ -836,6 +746,7 @@ def scan_folder(
                 language=language,
                 scan_profile=scan_profile,
                 categories=categories,
+                pdf_mode=pdf_mode,
             )
         except TypeError as exc:
             if "unexpected keyword argument" not in str(exc):
@@ -856,7 +767,9 @@ def scan_file(
     ocr: bool = False,
     scan_profile: str = "normal",
     categories: Iterable[str] | None = None,
+    pdf_mode: str = "fast",
 ) -> ScanResult:
+    total_t0 = time.perf_counter()
     p = Path(path)
     if not p.exists():
         return ScanResult(
@@ -874,13 +787,22 @@ def scan_file(
         )
     try:
         try:
-            text = extract_text(p, ocr=ocr)
+            extract_t0 = time.perf_counter()
+            text = extract_text(p, ocr=ocr, pdf_mode=pdf_mode)
+            extract_seconds = round(time.perf_counter() - extract_t0, 4)
         except TypeError as exc:
             # Flere tester og tredjepartsintegrasjoner monkeypatcher extract_text(path).
-            # Behold bakoverkompatibilitet når OCR ikke er eksplisitt valgt.
-            if ocr or "unexpected keyword argument" not in str(exc):
+            # Behold bakoverkompatibilitet med eldre signaturer uten pdf_mode.
+            if "unexpected keyword argument" not in str(exc):
                 raise
-            text = extract_text(p)
+            extract_t0 = time.perf_counter()
+            try:
+                text = extract_text(p, ocr=ocr)
+            except TypeError as exc2:
+                if ocr or "unexpected keyword argument" not in str(exc2):
+                    raise
+                text = extract_text(p)
+            extract_seconds = round(time.perf_counter() - extract_t0, 4)
     except Exception as exc:
         msg = str(exc)
         if any(k in msg.lower() for k in ("illegal character", "not well-formed", "invalid token", "xml", "expat")):
@@ -925,18 +847,22 @@ def scan_file(
             "Vurder å bruke en tekstbasert versjon av filen."
         )
 
+    lang_t0 = time.perf_counter()
     lang = resolve_language(language, text)
+    language_seconds = round(time.perf_counter() - lang_t0, 4)
     scan_profile = normalise_scan_profile(scan_profile)
     selected_categories = normalise_scan_categories(categories)
 
     with capture_suppressed_findings() as suppressed:
-        findings, degraded = _run_detectors(
+        detector_t0 = time.perf_counter()
+        findings, degraded, detector_timings = _run_detectors(
             text,
             lang,
             ignore_xlent=ignore_xlent,
             scan_profile=scan_profile,
             categories=selected_categories,
         )
+        detector_seconds = round(time.perf_counter() - detector_t0, 4)
 
     result = ScanResult(
         file_name=p.name,
@@ -953,5 +879,13 @@ def scan_file(
         warning_code=warning_code,
         ocr_used=bool(ocr),
         scan_status="partial" if warning_code or degraded else "success",
+        scan_timings={
+            "extract_seconds": extract_seconds,
+            "language_seconds": language_seconds,
+            "detectors_seconds": detector_seconds,
+            "detectors": detector_timings,
+            "total_seconds": round(time.perf_counter() - total_t0, 4),
+            "pdf_mode": normalise_pdf_mode(pdf_mode) if suffix == ".pdf" else "",
+        },
     )
     return assess(result)

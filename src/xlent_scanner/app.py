@@ -65,6 +65,7 @@ from xlent_scanner.scanner import (
     scan_folder,
     scan_text,
 )
+from xlent_scanner.scan_categories import SCAN_CATEGORIES
 from xlent_scanner.utils import open_path
 from xlent_scanner.whitelist import (
     get_whitelist_entries,
@@ -689,25 +690,15 @@ def _api_openapi_spec() -> dict:
         "type": "array",
         "items": {
             "type": "string",
-            "enum": [
-                "navn",
-                "epost",
-                "telefon",
-                "adresse",
-                "fodselsdato",
-                "id",
-                "klient",
-                "orgnummer",
-                "nettadresse",
-                "konto",
-                "kredittkort",
-                "hemmeligheter",
-                "finansielt",
-                "medisinsk",
-                "konfidensielt",
-            ],
+            "enum": [category.key for category in SCAN_CATEGORIES],
         },
         "description": "Valgte regelbaserte scan-kategorier. Utelat feltet for å skanne alle kategorier.",
+    }
+    pdf_mode_property = {
+        "type": "string",
+        "enum": ["fast", "auto", "advanced"],
+        "default": "fast",
+        "description": "PDF-tekstmodus: fast=PyMuPDF, auto=Docling ved lite tekst, advanced=prøv Docling og bruk beste resultat.",
     }
     scan_result_schema = {
         "type": "object",
@@ -727,6 +718,10 @@ def _api_openapi_spec() -> dict:
             "policy_warning": {"type": "string", "nullable": True},
             "policy_warning_level": {"type": "string", "nullable": True},
             "error": {"type": "string", "nullable": True},
+            "scan_timings": {
+                "type": "object",
+                "description": "Sekunder brukt på ekstraksjon, språkdeteksjon, detektorer og total scan.",
+            },
             "findings": {"type": "array", "items": finding_schema},
             "suppressed_findings": {"type": "array", "items": suppressed_finding_schema},
             "text_preview": {"type": "string"},
@@ -1005,6 +1000,7 @@ def _api_openapi_spec() -> dict:
                                         },
                                         "scan_profile": scan_profile_property,
                                         "categories": scan_categories_property,
+                                        "pdf_mode": pdf_mode_property,
                                         "ignore_xlent": {"type": "boolean", "default": False},
                                         "ocr": {
                                             "type": "boolean",

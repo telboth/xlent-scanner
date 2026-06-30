@@ -36,6 +36,13 @@ def test_technical_regression_corpus_has_no_phone_false_positives():
     assert ("telefonnummer", "4662-4666") in suppressed
 
 
+def test_technical_regression_corpus_has_no_academic_url_or_name_false_positives():
+    result = scan_text(FIXTURE.read_text(encoding="utf-8"), language="en", scan_profile="technical")
+
+    assert [f.text for f in result.findings if f.category == "nettadresse"] == []
+    assert [f.text for f in result.findings if f.category.startswith("navn")] == []
+
+
 def test_normal_profile_still_accepts_real_phone_numbers():
     result = scan_text("Ring Tel: 22 34 56 78 eller +47 912 34 567.", language="nb")
 

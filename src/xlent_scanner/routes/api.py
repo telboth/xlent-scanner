@@ -122,6 +122,13 @@ def _api_scan_profile(value) -> str:
     return "technical" if profile == "academic" else profile
 
 
+def _api_pdf_mode(value) -> str:
+    mode = str(value or "fast").strip().lower()
+    if mode not in {"fast", "auto", "advanced"}:
+        raise ValueError("Ugyldig pdf_mode. Bruk fast, auto eller advanced.")
+    return mode
+
+
 def _api_categories(value) -> list[str] | None:
     if value is None:
         return None
@@ -208,6 +215,7 @@ def _api_result_payload(
         "policy_warning": getattr(result, "policy_warning", None),
         "policy_warning_level": getattr(result, "policy_warning_level", None),
         "error": result.error,
+        "scan_timings": getattr(result, "scan_timings", {}) or {},
         "findings": [
             {
                 "category": finding.category,
@@ -358,6 +366,7 @@ def api_scan_file():
             ocr=_api_bool(data.get("ocr"), False),
             scan_profile=_api_scan_profile(data.get("scan_profile")),
             categories=_api_categories(data.get("categories")),
+            pdf_mode=_api_pdf_mode(data.get("pdf_mode")),
         )
         result.file_name = file_name
         scan_id = _api_store_scan_result(result, path=tmp_path, owns_path=True)

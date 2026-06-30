@@ -843,6 +843,16 @@
                 <option value="technical" data-i18n="scanProfileTechnical">Teknisk/akademisk</option>
               </select>
             </label>
+            <label style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px;"
+                   data-i18n-title="pdfModeTooltip"
+                   title="Rask bruker PyMuPDF. Avansert bruker Docling og kan gi bedre layout/tabeller, men tar lengre tid. OCR-knappen brukes for bilde-PDF.">
+              <span data-i18n="pdfMode">PDF-modus</span>
+              <select id="pdf-mode" style="font-size:11px;padding:2px 6px;">
+                <option value="fast" data-i18n="pdfModeFast">Rask</option>
+                <option value="auto" data-i18n="pdfModeAuto">Auto</option>
+                <option value="advanced" data-i18n="pdfModeAdvanced">Avansert</option>
+              </select>
+            </label>
             <button class="ctrl-btn" id="scan-sel-all" style="font-size:11px;padding:2px 8px;" data-i18n="selAll">Velg alle</button>
             <button class="ctrl-btn" id="scan-sel-none" style="font-size:11px;padding:2px 8px;" data-i18n="selNone">Fjern alle</button>
           </div>
@@ -2146,6 +2156,12 @@
         scanProfileNormal:   "Normal",
         scanProfileTechnical:"Teknisk/akademisk",
         scanProfileTooltip:  "Bruk teknisk/akademisk for dokumenter med figurer, DOI-er, akser og mange fagfraser.",
+        pdfMode:             "PDF-modus",
+        pdfModeFast:         "Rask",
+        pdfModeAuto:         "Auto",
+        pdfModeAdvanced:     "Avansert",
+        pdfModeTooltip:      "Rask bruker PyMuPDF. Auto bruker Docling bare ved lite tekst. Avansert bruker Docling og kan ta lengre tid.",
+        scanTimingLabel:     "Tidsbruk",
         scanCatId:           "Personnummer / ID",
         scanCatAdresse:      "Fysisk adresse",
         scanCatKonto:        "Bankdetaljer",
@@ -2558,6 +2574,12 @@
         scanProfileNormal:   "Normal",
         scanProfileTechnical:"Teknisk/akademisk",
         scanProfileTooltip:  "Använd teknisk/akademisk för dokument med figurer, DOI:er, axlar och många fackfraser.",
+        pdfMode:             "PDF-läge",
+        pdfModeFast:         "Snabb",
+        pdfModeAuto:         "Auto",
+        pdfModeAdvanced:     "Avancerad",
+        pdfModeTooltip:      "Snabb använder PyMuPDF. Auto använder Docling bara vid lite text. Avancerad använder Docling och kan ta längre tid.",
+        scanTimingLabel:     "Tidsåtgång",
         scanCatId:           "Personnummer / ID",
         scanCatAdresse:      "Fysisk adress",
         scanCatKonto:        "Bankuppgifter",
@@ -2975,6 +2997,12 @@
         scanProfileNormal:   "Normal",
         scanProfileTechnical:"Technical/academic",
         scanProfileTooltip:  "Use technical/academic for documents with figures, DOIs, axes and many technical phrases.",
+        pdfMode:             "PDF mode",
+        pdfModeFast:         "Fast",
+        pdfModeAuto:         "Auto",
+        pdfModeAdvanced:     "Advanced",
+        pdfModeTooltip:      "Fast uses PyMuPDF. Auto uses Docling only for sparse text. Advanced uses Docling and may be slower.",
+        scanTimingLabel:     "Timing",
         scanCatId:           "National / personal ID numbers",
         scanCatAdresse:      "Physical address",
         scanCatKonto:        "Bank details",
@@ -3404,6 +3432,12 @@
         scanProfileNormal:   "Normal",
         scanProfileTechnical:"Technisch/akademisch",
         scanProfileTooltip:  "Für Dokumente mit Abbildungen, DOIs, Achsen und vielen Fachbegriffen.",
+        pdfMode:             "PDF-Modus",
+        pdfModeFast:         "Schnell",
+        pdfModeAuto:         "Auto",
+        pdfModeAdvanced:     "Erweitert",
+        pdfModeTooltip:      "Schnell nutzt PyMuPDF. Auto nutzt Docling nur bei wenig Text. Erweitert nutzt Docling und kann länger dauern.",
+        scanTimingLabel:     "Zeitmessung",
         scanCatId:           "Personennummer / ID",
         scanCatAdresse:      "Physische Adresse",
         scanCatKonto:        "Bankdaten",
@@ -3831,6 +3865,12 @@
         scanProfileNormal:   "Normal",
         scanProfileTechnical:"Technique/académique",
         scanProfileTooltip:  "À utiliser pour les documents avec figures, DOI, axes et nombreux termes techniques.",
+        pdfMode:             "Mode PDF",
+        pdfModeFast:         "Rapide",
+        pdfModeAuto:         "Auto",
+        pdfModeAdvanced:     "Avancé",
+        pdfModeTooltip:      "Rapide utilise PyMuPDF. Auto utilise Docling seulement si peu de texte est trouvé. Avancé utilise Docling et peut être plus lent.",
+        scanTimingLabel:     "Temps",
         scanCatId:           "Numéro d'identité / ID",
         scanCatAdresse:      "Adresse physique",
         scanCatKonto:        "Coordonnées bancaires",
@@ -4258,6 +4298,12 @@
         scanProfileNormal:   "Normal",
         scanProfileTechnical:"Técnico/académico",
         scanProfileTooltip:  "Úsalo para documentos con figuras, DOI, ejes y muchas frases técnicas.",
+        pdfMode:             "Modo PDF",
+        pdfModeFast:         "Rápido",
+        pdfModeAuto:         "Auto",
+        pdfModeAdvanced:     "Avanzado",
+        pdfModeTooltip:      "Rápido usa PyMuPDF. Auto usa Docling solo si hay poco texto. Avanzado usa Docling y puede tardar más.",
+        scanTimingLabel:     "Tiempo",
         scanCatId:           "Número de identidad / ID",
         scanCatAdresse:      "Dirección física",
         scanCatKonto:        "Datos bancarios",
@@ -5497,6 +5543,17 @@
       </details>`;
     }
 
+    function buildTimingHtml(timings) {
+      if (!timings || typeof timings !== "object") return "";
+      const parts = [];
+      if (Number.isFinite(Number(timings.total_seconds))) parts.push(`total ${Number(timings.total_seconds).toFixed(2)}s`);
+      if (Number.isFinite(Number(timings.extract_seconds))) parts.push(`tekst ${Number(timings.extract_seconds).toFixed(2)}s`);
+      if (Number.isFinite(Number(timings.detectors_seconds))) parts.push(`detektorer ${Number(timings.detectors_seconds).toFixed(2)}s`);
+      if (timings.pdf_mode) parts.push(`PDF ${timings.pdf_mode}`);
+      if (!parts.length) return "";
+      return `<div style="font-size:11px;color:var(--muted);margin-top:3px;">${escapeHtml(t("scanTimingLabel"))}: ${escapeHtml(parts.join(" · "))}</div>`;
+    }
+
     function renderResult(r) {
       lastResult = r;
       _aiFindingsData = [];
@@ -5554,6 +5611,7 @@
               ${r.findings.length} ${t("metaFindings")}
               ${r.language ? " &middot; " + (LANG_LABEL[r.language]||r.language) : ""}
             </div>
+            ${buildTimingHtml(r.scan_timings)}
           </div>
         </div>
 
@@ -6305,17 +6363,13 @@
         ignore_xlent: document.getElementById("ignoreXlent").checked,
         language:     document.getElementById("langSelect").value,
         scan_profile: document.getElementById("scan-profile")?.value || "normal",
+        pdf_mode:     document.getElementById("pdf-mode")?.value || "fast",
         categories:   [...document.querySelectorAll(".scan-cat:checked")].map(cb => cb.value),
       };
     }
 
     function applyRedactionProfile(profile, persist = true) {
-      const selectedByProfile = {
-        lowfp: new Set(["id", "konto", "kredittkort", "hemmeligheter", "konfidensielt", "orgnummer"]),
-        normal: new Set(["epost", "telefon", "adresse", "id", "fodselsdato", "konto", "kredittkort", "navn", "nettadresse", "hemmeligheter", "finansielt", "konfidensielt", "klient", "orgnummer"]),
-        strict: new Set(["epost", "telefon", "adresse", "id", "fodselsdato", "konto", "kredittkort", "navn", "nettadresse", "hemmeligheter", "finansielt", "medisinsk", "konfidensielt", "klient", "orgnummer"]),
-      };
-      const selected = selectedByProfile[profile] || selectedByProfile.normal;
+      const selected = new Set(SCAN_CATEGORY_PROFILES[profile] || SCAN_CATEGORY_PROFILES.normal || []);
       document.querySelectorAll(".scan-cat").forEach(cb => { cb.checked = selected.has(cb.value); });
       const conf = document.getElementById("ai-conf-select");
       if (conf) conf.value = profile === "lowfp" ? "high" : (profile === "strict" ? "low" : "medium");
@@ -6362,6 +6416,7 @@
         fd.append("ignore_xlent", opts.ignore_xlent);
         fd.append("language",     opts.language);
         fd.append("scan_profile", opts.scan_profile);
+        fd.append("pdf_mode",     opts.pdf_mode);
         fd.append("categories",   opts.categories.join(","));
         if (extraOpts?.ocr) fd.append("ocr", "true");
         const r = await (await fetch(`${API}/scan-upload`, { method:"POST", body: fd })).json();
@@ -6473,6 +6528,8 @@
         }
         const sp = document.getElementById("scan-profile");
         if (sp && s.scanProfile) sp.value = s.scanProfile;
+        const pm = document.getElementById("pdf-mode");
+        if (pm && s.pdfMode) pm.value = s.pdfMode;
         const sa = document.getElementById("stripAnnotations");
         if (sa) sa.checked = s.stripAnnotations === true;
         const m365Fields = {
@@ -6501,6 +6558,7 @@
           language:    document.getElementById("langSelect").value,
           redactionProfile: document.getElementById("redaction-profile")?.value || "normal",
           scanProfile: document.getElementById("scan-profile")?.value || "normal",
+          pdfMode: document.getElementById("pdf-mode")?.value || "fast",
           stripAnnotations: document.getElementById("stripAnnotations").checked,
           theme:       normalizeTheme(document.getElementById("themeSelect").value),
           m365_drive_id: document.getElementById("m365-drive-id")?.value || "",
@@ -6525,6 +6583,7 @@
     document.getElementById("langSelect").addEventListener("change", saveSettings);
     document.getElementById("redaction-profile").addEventListener("change", e => applyRedactionProfile(e.target.value));
     document.getElementById("scan-profile")?.addEventListener("change", saveSettings);
+    document.getElementById("pdf-mode")?.addEventListener("change", saveSettings);
     document.getElementById("stripAnnotations").addEventListener("change", saveSettings);
     document.getElementById("manual-redaction-terms")?.addEventListener("input", () => {
       updateManualRedactionPreview();
@@ -7225,7 +7284,7 @@
     ══════════════════════════════════════════════════════════════════ */
 
     // Mapping: .scan-cat verdi → finding.category matcher (lowercase)
-    const FILTER_MAP = {
+    let FILTER_MAP = {
       "epost":         c => c.startsWith("e-post"),
       "telefon":       c => c.startsWith("telefonnummer"),
       "adresse":       c => c.startsWith("fysisk adresse"),
@@ -7244,7 +7303,7 @@
     };
 
     // Mapping: .scan-cat verdi → AI deep_scanner kategori-nøkkel
-    const AI_CAT_MAP = {
+    let AI_CAT_MAP = {
       "epost":       "epost",
       "telefon":     "telefon",
       "adresse":     "adresse",
@@ -7259,7 +7318,7 @@
     };
 
     // Disse kategoriene dekkes godt av vanlig regex-scan og sendes ikke til AI.
-    const AI_REGEX_COVERED_SCAN_CATS = new Set([
+    let AI_REGEX_COVERED_SCAN_CATS = new Set([
       "epost",
       "nettadresse",
       "telefon",
@@ -7268,6 +7327,37 @@
       "kredittkort",
       "konfidensielt",
     ]);
+
+    let SCAN_CATEGORY_PROFILES = {
+      lowfp: ["id", "konto", "kredittkort", "hemmeligheter", "konfidensielt", "orgnummer"],
+      normal: ["epost", "telefon", "adresse", "id", "fodselsdato", "konto", "kredittkort", "navn", "nettadresse", "hemmeligheter", "finansielt", "konfidensielt", "klient", "orgnummer"],
+      strict: ["epost", "telefon", "adresse", "id", "fodselsdato", "konto", "kredittkort", "navn", "nettadresse", "hemmeligheter", "finansielt", "medisinsk", "konfidensielt", "klient", "orgnummer"],
+    };
+
+    async function loadScanCategoryConfig() {
+      try {
+        const cfg = await (await fetch(`${API}/scan-categories`)).json();
+        const categories = Array.isArray(cfg.categories) ? cfg.categories : [];
+        const nextFilterMap = {};
+        const nextAiMap = {};
+        const nextRegexCovered = new Set();
+        for (const category of categories) {
+          const key = String(category.key || "");
+          const prefixes = Array.isArray(category.match_prefixes) ? category.match_prefixes.map(String) : [];
+          nextFilterMap[key] = c => prefixes.some(prefix => c.startsWith(prefix));
+          if (Array.isArray(category.ai_categories) && category.ai_categories.length) {
+            nextAiMap[key] = category.ai_categories.length === 1 ? category.ai_categories[0] : category.ai_categories;
+          }
+          if (category.regex_covered_for_ai) nextRegexCovered.add(key);
+        }
+        if (Object.keys(nextFilterMap).length) FILTER_MAP = nextFilterMap;
+        if (Object.keys(nextAiMap).length) AI_CAT_MAP = nextAiMap;
+        if (nextRegexCovered.size) AI_REGEX_COVERED_SCAN_CATS = nextRegexCovered;
+        if (cfg.profiles && typeof cfg.profiles === "object") SCAN_CATEGORY_PROFILES = cfg.profiles;
+      } catch (_) {
+        // Statisk HTML-konfig er fallback hvis backend ikke svarer tidlig nok.
+      }
+    }
 
     function _findingMatchesCat(f, selectedCats) {
       const cat = (f.category || "").toLowerCase();
@@ -7889,6 +7979,7 @@
             text,
             language: opts.language,
             scan_profile: opts.scan_profile,
+            pdf_mode: opts.pdf_mode,
             categories: opts.categories,
           }),
         })).json();
@@ -8019,6 +8110,7 @@
           ignore_xlent: opts.ignore_xlent,
           language: opts.language,
           scan_profile: opts.scan_profile,
+          pdf_mode: opts.pdf_mode,
           categories: opts.categories,
           ...folderOpts,
         });
@@ -8302,6 +8394,7 @@
             fd.append("ignore_xlent", opts.ignore_xlent);
             fd.append("language",     opts.language);
             fd.append("scan_profile", opts.scan_profile);
+            fd.append("pdf_mode",     opts.pdf_mode);
             fd.append("categories",   opts.categories.join(","));
             r = await (await fetch(`${API}/scan-upload`, { method:"POST", body: fd })).json();
           }
@@ -8328,52 +8421,55 @@
     }
 
     /* Init */
-    loadSettings();
-    // Anvend lagret språk (localStorage) – oppdaterer all statisk tekst hvis ≠ nb
-    if (uiLang !== "nb") setUiLang(uiLang);
-    syncAboutLang();
-    setStatus(t("statusReady"));
-    // Apply initial placeholder translations
-    document.querySelectorAll("[data-i18n-placeholder]").forEach(el => {
-      el.placeholder = t(el.dataset.i18nPlaceholder);
-    });
-    document.querySelectorAll("[data-i18n-title]").forEach(el => {
-      el.title = t(el.dataset.i18nTitle);
-    });
-    updateManualRedactionPreview();
-    initSettingsExpanders();
-    setIgnoreMessage(t("ignoreHint"), "var(--muted)", "hint");
-    renderIgnorePath();
-    loadIgnoreEditor();
-    setWhitelistMessage(t("whitelistHint"), "var(--muted)", "hint");
-    renderWhitelistPath();
-    setBlacklistMessage(t("blacklistHint"), "var(--muted)", "hint");
-    renderBlacklistPath();
-    renderLogPath();
-    const macQuickActionSection = document.getElementById("section-mac-quick-action");
-    if (macQuickActionSection && APP_PLATFORM === "darwin") {
-      macQuickActionSection.style.display = "";
+    async function initApp() {
+      await loadScanCategoryConfig();
+      loadSettings();
+      // Anvend lagret språk (localStorage) – oppdaterer all statisk tekst hvis ≠ nb
+      if (uiLang !== "nb") setUiLang(uiLang);
+      syncAboutLang();
+      setStatus(t("statusReady"));
+      // Apply initial placeholder translations
+      document.querySelectorAll("[data-i18n-placeholder]").forEach(el => {
+        el.placeholder = t(el.dataset.i18nPlaceholder);
+      });
+      document.querySelectorAll("[data-i18n-title]").forEach(el => {
+        el.title = t(el.dataset.i18nTitle);
+      });
+      updateManualRedactionPreview();
+      initSettingsExpanders();
+      setIgnoreMessage(t("ignoreHint"), "var(--muted)", "hint");
+      renderIgnorePath();
+      loadIgnoreEditor();
+      setWhitelistMessage(t("whitelistHint"), "var(--muted)", "hint");
+      renderWhitelistPath();
+      setBlacklistMessage(t("blacklistHint"), "var(--muted)", "hint");
+      renderBlacklistPath();
+      renderLogPath();
+      const macQuickActionSection = document.getElementById("section-mac-quick-action");
+      if (macQuickActionSection && APP_PLATFORM === "darwin") {
+        macQuickActionSection.style.display = "";
+      }
+      const runInstallScriptBtn = document.getElementById("btn-run-install-script");
+      if (runInstallScriptBtn && !canRunInstallScript()) {
+        runInstallScriptBtn.style.display = "none";
+      }
+      loadWhitelistEditor();
+      loadBlacklistEditor();
+      loadCustomPatternsEditor();
+      restoreClipGuard();
+      restoreWatch();
+      runUpdateCheck(false);
+      m365RefreshStatus();
+      loadNerStatus();
+      loadOllamaSettingsStatus();
+      loadHistoryFromApi();
+      loadRedactionHistory();
+      startBackgroundStatusPolling();
+      _loadAiModels();   // Pre-last Ollama-modeller ved oppstart så AI-toggle er klar umiddelbart
     }
-    const runInstallScriptBtn = document.getElementById("btn-run-install-script");
-    if (runInstallScriptBtn && !canRunInstallScript()) {
-      runInstallScriptBtn.style.display = "none";
-    }
-    loadWhitelistEditor();
-    loadBlacklistEditor();
-    loadCustomPatternsEditor();
-    restoreClipGuard();
-    restoreWatch();
-    runUpdateCheck(false);
-    m365RefreshStatus();
-    loadNerStatus();
-    loadOllamaSettingsStatus();
-    loadHistoryFromApi();
-    loadRedactionHistory();
-    startBackgroundStatusPolling();
-    _loadAiModels();   // Pre-last Ollama-modeller ved oppstart så AI-toggle er klar umiddelbart
 
     /* ── Windows kontekstmeny: auto-skann fil sendt via høyreklikk ── */
-    (async function checkStartupFile() {
+    async function checkStartupFile() {
       try {
         const r = await (await fetch(`${API}/startup-file`)).json();
         if (r.path) {
@@ -8383,7 +8479,9 @@
           await scanPath(r.path);
         }
       } catch(_) { /* ingen fil, eller Flask ikke klar ennå */ }
-    })();
+    }
+
+    initApp().then(checkStartupFile);
 </script>
 </body>
 </html>

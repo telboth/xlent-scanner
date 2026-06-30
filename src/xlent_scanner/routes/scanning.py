@@ -12,10 +12,16 @@ from flask import Blueprint, jsonify, request
 
 from xlent_scanner.app_state import app_state
 from xlent_scanner.history import add_history_entry
+from xlent_scanner.scan_categories import categories_payload
 from xlent_scanner.scanner import scan_file, scan_text
 
 LOGGER = logging.getLogger("xlent_scanner")
 scanning_bp = Blueprint("scanning", __name__)
+
+
+@scanning_bp.get("/scan-categories")
+def scan_categories():
+    return jsonify(categories_payload())
 
 
 def _error_payload(message: str) -> dict:
@@ -103,12 +109,14 @@ def scan():
         language = data.get("language", "auto")
         ocr = bool(data.get("ocr", False))
         scan_profile = data.get("scan_profile", "normal")
+        pdf_mode = data.get("pdf_mode", "fast")
         categories = _request_categories(data.get("categories"))
         LOGGER.info(
-            "scan request path=%s lang=%s profile=%s ignore_xlent=%s ocr=%s categories=%s",
+            "scan request path=%s lang=%s profile=%s pdf_mode=%s ignore_xlent=%s ocr=%s categories=%s",
             file_path,
             language,
             scan_profile,
+            pdf_mode,
             ignore_xlent,
             ocr,
             categories,
@@ -120,6 +128,7 @@ def scan():
             ocr=ocr,
             scan_profile=scan_profile,
             categories=categories,
+            pdf_mode=pdf_mode,
         )
         _remember_result(result, Path(file_path) if file_path else None)
         LOGGER.info(
@@ -145,15 +154,17 @@ def scan_upload():
         language = request.form.get("language", "auto")
         ocr = request.form.get("ocr", "false").lower() == "true"
         scan_profile = request.form.get("scan_profile", "normal")
+        pdf_mode = request.form.get("pdf_mode", "fast")
         categories = _request_categories(request.form.get("categories"))
         original_name = uploaded.filename or "ukjent"
         suffix = Path(original_name).suffix.lower()
         LOGGER.info(
-            "scan-upload request name=%s suffix=%s lang=%s profile=%s ignore_xlent=%s ocr=%s categories=%s",
+            "scan-upload request name=%s suffix=%s lang=%s profile=%s pdf_mode=%s ignore_xlent=%s ocr=%s categories=%s",
             original_name,
             suffix,
             language,
             scan_profile,
+            pdf_mode,
             ignore_xlent,
             ocr,
             categories,
@@ -177,6 +188,7 @@ def scan_upload():
             ocr=ocr,
             scan_profile=scan_profile,
             categories=categories,
+            pdf_mode=pdf_mode,
         )
         result.file_name = original_name
         app_state.last_tmp_path = tmp_path

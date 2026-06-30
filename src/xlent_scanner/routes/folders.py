@@ -247,6 +247,7 @@ def _run_folder_scan_job(
     ignore_xlent: bool,
     language: str,
     scan_profile: str,
+    pdf_mode: str,
     categories: list[str] | None,
     opts: dict,
 ) -> None:
@@ -275,6 +276,7 @@ def _run_folder_scan_job(
                     ignore_xlent=ignore_xlent,
                     language=language,
                     scan_profile=scan_profile,
+                    pdf_mode=pdf_mode,
                     categories=categories,
                 )
             except TypeError as exc:
@@ -343,6 +345,7 @@ def scan_folder_endpoint():
         ignore_xlent = bool(data.get("ignore_xlent", False))
         language = data.get("language", "auto")
         scan_profile = data.get("scan_profile", "normal")
+        pdf_mode = data.get("pdf_mode", "fast")
         categories = data.get("categories") if isinstance(data.get("categories"), list) else None
         opts = _folder_scan_options(data)
         plan = build_folder_scan_plan(folder_path, **opts)
@@ -351,6 +354,7 @@ def scan_folder_endpoint():
             ignore_xlent=ignore_xlent,
             language=language,
             scan_profile=scan_profile,
+            pdf_mode=pdf_mode,
             categories=categories,
             **opts,
         )
@@ -386,6 +390,7 @@ def scan_folder_start_endpoint():
         ignore_xlent = bool(data.get("ignore_xlent", False))
         language = data.get("language", "auto")
         scan_profile = data.get("scan_profile", "normal")
+        pdf_mode = data.get("pdf_mode", "fast")
         categories = data.get("categories") if isinstance(data.get("categories"), list) else None
         opts = _folder_scan_options(data)
         job_id = app_state.folder_job_manager.create({
@@ -404,7 +409,7 @@ def scan_folder_start_endpoint():
         })
         threading.Thread(
             target=_run_folder_scan_job,
-            args=(job_id, folder_path, ignore_xlent, language, scan_profile, categories, opts),
+            args=(job_id, folder_path, ignore_xlent, language, scan_profile, pdf_mode, categories, opts),
             daemon=True,
             name=f"folder-scan-{job_id[:8]}",
         ).start()

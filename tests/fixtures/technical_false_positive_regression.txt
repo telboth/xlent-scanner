@@ -3,3 +3,8 @@ The time domain error axis is 0 5 10 15 20 25 30 35 40 45 50.
 The page reference is pp. 4662-4666.
 The reference DOI is doi: 10.1785/BSSA0760551393.
 The model section is Sparse Solver and Neural Transformer.
+The DOI URL is https://doi.org/10.1016/j.ymssp.2015.09.004.
+The conversion section mentions Conversion Tool and Frequency Range.
+The training setup mentions Batch Size and Machine Intelligence.
+The method section mentions Physically Informed Autoencoder and Cyclic Thin Interbeds.
+The hardware string is Intel(R) Core(TM) i7-8700 CPU @ 3.20 GHz.

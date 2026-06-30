@@ -42,3 +42,27 @@ def test_app_only_keeps_core_routes_directly_registered():
     }
 
     assert direct_rules == {"/", "/startup-file", "/logo.svg"}
+
+
+def test_scan_categories_endpoint_exposes_backend_category_order():
+    client = app_module.flask_app.test_client()
+
+    response = client.get("/scan-categories")
+
+    assert response.status_code == 200
+    data = response.get_json()
+    assert [item["key"] for item in data["categories"][:5]] == [
+        "navn",
+        "epost",
+        "telefon",
+        "fodselsdato",
+        "id",
+    ]
+    assert data["profiles"]["lowfp"] == [
+        "id",
+        "konto",
+        "kredittkort",
+        "hemmeligheter",
+        "konfidensielt",
+        "orgnummer",
+    ]

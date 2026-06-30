@@ -1,6 +1,6 @@
 # XLENT Compliance-scanner
 
-> **v1.7.2** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
+> **v1.7.3** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
 
 Alt kjøres 100 % lokalt — ingen dokumenter, tekst eller funn sendes over internett.
 
@@ -15,6 +15,7 @@ Alt kjøres 100 % lokalt — ingen dokumenter, tekst eller funn sendes over inte
 - **Lim inn tekst** — skann tekst direkte (uten å lagre en fil)
 - **Mappeskann** — velg en mappe og skann støttede filer i én operasjon, valgfritt også i undermapper
 - **Kategorifilter** — velg hvilke typer funn som skal skannes og vises (personnummer/ID inkl. passnummer, fysiske adresser, bankdetaljer, finansielle nøkkeltall inkl. lønn, navn, secrets, …)
+- **PDF-modus** — velg rask PyMuPDF-skann, automatisk Docling-fallback eller avansert Docling-sammenligning ved behov
 
 ### AI-dybdeskann (Ollama) — innebygd i scanner-fanen
 
@@ -424,7 +425,7 @@ src/xlent_scanner/
 ```
 
 **Teknologistakk:**
-- Dokumentekstraksjon: Docling for PDF (med PyMuPDF fallback) + native ekstraksjon for DOCX/PPTX/XLSX/TXT/MD/HTML/CSV/EML/RTF/ODT
+- Dokumentekstraksjon: PyMuPDF som standard for PDF, valgfri Docling/OCR ved behov + native ekstraksjon for DOCX/PPTX/XLSX/TXT/MD/HTML/CSV/EML/RTF/ODT
 - NER: [spaCy](https://spacy.io/) med `nb_core_news_sm`, `sv_core_news_sm`, `en_core_web_sm`, `de_core_news_sm`, `fr_core_news_sm`, `es_core_news_sm` (dansk gjenbruker norsk modell)
 - GUI: [PyWebView](https://pywebview.flowrl.com/) med innebygd Flask-server
 - AI-dybdeskann: [Ollama](https://ollama.ai) REST API (`/api/generate`)
@@ -436,6 +437,13 @@ src/xlent_scanner/
 ---
 
 ## Endringslogg
+
+### v1.7.3
+- Fjerner feilaktig `master`-tag lokalt og fra GitHub slik at `master` igjen kun er branch.
+- Sentraliserer scan-kategorier i backend og eksponerer dem til GUI-et via `/scan-categories`, slik at kategoriorden, profiler og AI-mapping ikke må vedlikeholdes flere steder.
+- Legger til PDF-modus i GUI/API: rask PyMuPDF, automatisk Docling-fallback ved lite tekst og avansert Docling-sammenligning.
+- Legger til scan-timing i resultat og API-respons for ekstraksjon, språkdeteksjon, detektorer og total tid.
+- Utvider teknisk/akademisk regresjonsfixture for DOI-lenker, telefonlignende aksetall og tekniske Title Case-navnefalske positiver.
 
 ### v1.7.2
 - Gjør vanlig PDF-scan raskere ved å bruke PyMuPDF først og bare falle tilbake til Docling når PDF-en har lite/ingen tekst eller OCR er valgt.

@@ -877,7 +877,9 @@ def test_ai_deep_scan_progress_bar_and_eta_are_wired():
 def test_ai_deep_scan_skips_regex_covered_categories():
     html = HTML.read_text(encoding="utf-8")
 
-    assert "const AI_REGEX_COVERED_SCAN_CATS = new Set([" in html
+    assert "let AI_REGEX_COVERED_SCAN_CATS = new Set([" in html
+    assert "await loadScanCategoryConfig();" in html
+    assert "AI_REGEX_COVERED_SCAN_CATS = new Set(" in html
     for value in [
         '"epost"',
         '"nettadresse"',
