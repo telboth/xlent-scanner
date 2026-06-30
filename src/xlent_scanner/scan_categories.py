@@ -36,6 +36,7 @@ SCAN_CATEGORIES: tuple[ScanCategory, ...] = (
         "us social security",
         "mulig personnummer",
         "passnummer",
+        "tax identification number",
     )),
     ScanCategory("klient", "scanCatKlient", ai_categories=("selskapsnavn",), match_prefixes=("kundenavn",)),
     ScanCategory("orgnummer", "scanCatOrgnummer", regex_covered_for_ai=True, match_prefixes=("organisasjonsnummer",)),
@@ -139,4 +140,3 @@ def categories_payload() -> dict:
         ],
         "profiles": {name: list(keys) for name, keys in PROFILE_CATEGORIES.items()},
     }
-

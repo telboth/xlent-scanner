@@ -157,6 +157,39 @@ def find_passport(text: str) -> Iterator[Finding]:
         )
 
 
+# ── Tax ID / Tax Identification Number ──────────────────────────────────────
+# Generisk internasjonal regel: krev eksplisitt label, og masker verdien etter
+# labelen. Kategorien går under Personnummer / ID i scan_categories.py.
+_TAX_ID_RE = re.compile(
+    r"(?i)\b(?:"
+    r"tax\s*(?:id|identification\s*number|number|no\.?)"
+    r"|tin"
+    r"|vat\s*(?:id|number|no\.?)"
+    r")\b\s*[:#.]?\s*"
+    r"([A-Z]{0,3}[\s-]*\d[A-Z0-9][A-Z0-9\s./-]{3,28}[A-Z0-9])"
+)
+
+
+def find_tax_id(text: str) -> Iterator[Finding]:
+    seen: set[str] = set()
+    for m in _TAX_ID_RE.finditer(text):
+        raw_value = re.split(r"[.;,]\s+[A-ZÆØÅÄÖÜ]", m.group(1), maxsplit=1)[0]
+        value = " ".join(raw_value.strip(" \t\r\n,;:.").split())
+        compact = re.sub(r"\s+", "", value).upper()
+        digits = re.sub(r"\D", "", value)
+        if compact in seen:
+            continue
+        if not (6 <= len(digits) <= 20):
+            continue
+        seen.add(compact)
+        yield Finding(
+            "tax identification number",
+            value,
+            _ctx(text, m.start(), m.end()),
+            severity="svart",
+        )
+
+
 # ── Norsk kjøretøyregistreringsnummer ────────────────────────────────────────
 # Format: AB 12345 eller AB12345 (2 bokstaver + 5 siffer)
 # Spesialtilganger: El-biler EK, EL, EV + vanlige prefikser
@@ -275,6 +308,85 @@ def find_po_box_address(text: str) -> Iterator[Finding]:
         )
 
 
+# ── Gateadresse ──────────────────────────────────────────────────────────────
+# Presis flerspråklig regel med minst to signaler:
+#   1) eksplisitt gate-/vei-/street-/rue-/calle-ord
+#   2) husnummer
+# Støtter både "Baker Street 221B" og "10 Downing Street".
+_ADDRESS_WORD = (
+    r"(?i:(?:"
+    r"gate|gata|gaten|vei|veien|vegen|plass|brygge|alle|allé|"
+    r"street|st\.?|road|rd\.?|avenue|ave\.?|drive|lane|way|boulevard|blvd\.?|"
+    r"straße|strasse|weg|platz|allee|"
+    r"rue|avenue|chemin|boulevard|"
+    r"calle|avenida|paseo|plaza|"
+    r"via|viale|piazza"
+    r"))"
+)
+_CAP_WORD = r"[A-ZÆØÅÄÖÜÉÈÁÀÓÒÍÌÑ][A-Za-zÆØÅæøåÄÖäöÜüÉéÈèÁáÀàÓóÒòÍíÌìÑñß.'-]{1,}"
+_HOUSE_NO = r"\d{1,5}[A-Za-z]?(?:[-/]\d{1,4}[A-Za-z]?)?"
+_POSTAL_TAIL = (
+    r"(?:\s*[,;]\s*"
+    r"(?:[A-Z]{1,3}[-\s]?)?\d{4,6}\s+"
+    r"[A-ZÆØÅÄÖÜÉÈÁÀÓÒÍÌÑ][A-Za-zÆØÅæøåÄÖäöÜüÉéÈèÁáÀàÓóÒòÍíÌìÑñß .'-]{1,40}"
+    r")?"
+)
+
+_STREET_NAME_BEFORE_NUMBER_RE = re.compile(
+    rf"(?<![\w@])"
+    rf"({_CAP_WORD}(?:\s+(?:de|del|der|den|la|le|du|of|the|{_CAP_WORD})){{0,5}}\s+{_ADDRESS_WORD}\s+{_HOUSE_NO}{_POSTAL_TAIL})"
+    rf"(?![\w@])",
+)
+
+_STREET_NUMBER_BEFORE_NAME_RE = re.compile(
+    rf"(?<![\w@])"
+    rf"({_HOUSE_NO}\s+{_CAP_WORD}(?:\s+(?:de|del|der|den|la|le|du|of|the|{_CAP_WORD})){{0,5}}\s+{_ADDRESS_WORD}{_POSTAL_TAIL})"
+    rf"(?![\w@])",
+)
+
+_COMPOUND_STREET_BEFORE_NUMBER_RE = re.compile(
+    rf"(?<![\w@])"
+    rf"({_CAP_WORD}(?:{_ADDRESS_WORD})\s+{_HOUSE_NO}{_POSTAL_TAIL})"
+    rf"(?![\w@])",
+)
+
+_STREET_WORD_BEFORE_NAME_RE = re.compile(
+    rf"(?<![\w@])"
+    rf"({_ADDRESS_WORD}\s+(?:(?:de|del|der|den|la|le|du|of|the)\s+)?{_CAP_WORD}(?:\s+{_CAP_WORD}){{0,4}}\s+{_HOUSE_NO}{_POSTAL_TAIL})"
+    rf"(?![\w@])",
+)
+
+
+def find_street_address(text: str) -> Iterator[Finding]:
+    seen: set[tuple[int, int]] = set()
+    matches: list[tuple[int, Finding]] = []
+    for pattern in (
+        _STREET_NAME_BEFORE_NUMBER_RE,
+        _STREET_NUMBER_BEFORE_NAME_RE,
+        _COMPOUND_STREET_BEFORE_NUMBER_RE,
+        _STREET_WORD_BEFORE_NAME_RE,
+    ):
+        for m in pattern.finditer(text):
+            span = m.span(1)
+            if any(start <= span[0] < end or start < span[1] <= end for start, end in seen):
+                continue
+            value = m.group(1).strip(" \t\r\n,;.")
+            seen.add(span)
+            matches.append(
+                (
+                    span[0],
+                    Finding(
+                        "fysisk adresse",
+                        value,
+                        _ctx(text, m.start(1), m.end(1)),
+                        severity="gul",
+                    ),
+                )
+            )
+    for _start, finding in sorted(matches, key=lambda item: item[0]):
+        yield finding
+
+
 # ── Fødselsdato med kontekstnøkkelord ────────────────────────────────────────
 _DOB_DATE_RE = re.compile(
     r"(\d{1,2})[./-](\d{1,2})[./-](\d{2,4})",
@@ -316,8 +428,8 @@ def detect_extra(text: str) -> list[Finding]:
     """Kjører alle ekstra detektorer."""
     findings: list[Finding] = []
     for fn in (find_ipv4, find_ipv6, find_swift,
-               find_passport, find_vehicle_reg, find_salary,
+               find_passport, find_tax_id, find_vehicle_reg, find_salary,
                find_labeled_phone_or_fax, find_po_box_address,
-               find_date_of_birth):
+               find_street_address, find_date_of_birth):
         findings.extend(fn(text))
     return findings

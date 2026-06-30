@@ -1,6 +1,6 @@
 # XLENT Compliance-scanner
 
-> **v1.7.5** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
+> **v1.7.6** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
 
 Alt kjøres 100 % lokalt — ingen dokumenter, tekst eller funn sendes over internett.
 
@@ -437,6 +437,12 @@ src/xlent_scanner/
 ---
 
 ## Endringslogg
+
+### v1.7.6
+- Legger til generisk Tax ID/TIN/VAT ID-deteksjon under «Personnummer / ID», styrt av samme kategoriavkryssing.
+- Legger til firmanavn-deteksjon basert på juridiske suffix som AS, ASA, LTD og LLC under «Firmanavn».
+- Utvider regelbasert adressedeteksjon med flerspråklige gateadresser som krever minst to signaler: adresseord og husnummer.
+- Legger regresjonstester for Tax ID, firmanavn-suffix, adressefunn og kategori-filter.
 
 ### v1.7.5
 - Endrer brukerflaten fra «PDF-modus» til «Scan-modus», med samme bakoverkompatible `pdf_mode`-parameter og nytt `scan_mode`-alias i API-et.
