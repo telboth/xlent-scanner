@@ -730,6 +730,22 @@ def test_auto_ocr_setting_defaults_on_and_is_wired():
     assert "if (!autoOcrStarted) autoAiScan();" in html
 
 
+def test_scanner_result_sections_use_expanders_and_neutral_scan_buttons():
+    html = HTML.read_text(encoding="utf-8")
+
+    assert '<button id="btn-scan-text" class="ctrl-btn" data-i18n="pasteBtn">Skann tekst</button>' in html
+    assert '<button id="btn-scan-folder" class="ctrl-btn" data-i18n="folderBtn">📂 Velg og skann mappe</button>' in html
+    assert 'id="btn-scan-text" class="ctrl-btn ctrl-btn-primary"' not in html
+    assert 'id="btn-scan-folder" class="ctrl-btn ctrl-btn-primary"' not in html
+
+    assert ".result-expander" in html
+    assert '<details class="result-expander text-preview-expander">' in html
+    assert '<summary>${escapeHtml(t("extractedText"))}</summary>' in html
+    assert '<details class="result-expander redaction-report-expander" open>' in html
+    assert '<summary>${escapeHtml(t("redactionReport"))}</summary>' in html
+    assert 'resultEl.querySelector(".redaction-report-expander .result-expander-body") || resultEl' in html
+
+
 def test_scan_strategy_is_shown_in_timing_diagnostics():
     html = HTML.read_text(encoding="utf-8")
 

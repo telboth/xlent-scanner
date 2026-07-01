@@ -543,6 +543,18 @@
       font-size: 11px; color: var(--muted); text-transform: uppercase;
       letter-spacing: .06em; margin: 14px 0 7px;
     }
+    .result-expander {
+      border: 1px solid var(--border); border-radius: 7px;
+      background: var(--panel); margin-top: 10px; overflow: hidden;
+    }
+    .result-expander summary {
+      cursor: pointer; user-select: none; padding: 8px 11px;
+      font-size: 12px; font-weight: 700; color: var(--text);
+      background: var(--panel2);
+    }
+    .result-expander[open] summary { border-bottom: 1px solid var(--border); }
+    .result-expander-body { padding: 9px 11px 11px; }
+    .result-expander .section-heading:first-child { margin-top: 0; }
     .findings-list { list-style: none; padding: 0; margin: 0; }
     .finding-row {
       background: var(--panel2); border-left: 3px solid var(--warn);
@@ -911,7 +923,7 @@
       <div id="paste-area" style="display:none; flex-direction:column; gap:8px;">
         <textarea id="paste-input" class="paste-input" data-i18n-placeholder="pastePlaceholder"></textarea>
         <div style="display:flex; align-items:center; gap:10px;">
-          <button id="btn-scan-text" class="ctrl-btn ctrl-btn-primary" data-i18n="pasteBtn">Skann tekst</button>
+          <button id="btn-scan-text" class="ctrl-btn" data-i18n="pasteBtn">Skann tekst</button>
           <span id="paste-status" style="font-size:12px; color:var(--muted);"></span>
         </div>
       </div>
@@ -919,7 +931,7 @@
       <!-- Mappe-modus -->
       <div id="folder-area" style="display:none; flex-direction:column; gap:8px;">
         <div style="display:flex; align-items:center; gap:10px;">
-          <button id="btn-scan-folder" class="ctrl-btn ctrl-btn-primary" data-i18n="folderBtn">📂 Velg og skann mappe</button>
+          <button id="btn-scan-folder" class="ctrl-btn" data-i18n="folderBtn">📂 Velg og skann mappe</button>
           <button id="btn-cancel-folder" class="ctrl-btn" style="display:none;" data-i18n="folderCancel">Avbryt</button>
           <span id="folder-status" style="font-size:12px; color:var(--muted);"></span>
         </div>
@@ -5727,8 +5739,12 @@
       // Tekst-forhåndsvisning vises ETTER deep-scan-seksjonen
       const tpEl = document.getElementById("text-preview-section");
       if (r.text_preview) {
-        tpEl.innerHTML = `<h3 class="section-heading">${t("extractedText")}</h3>
-          <div class="preview">${escapeHtml(r.text_preview)}</div>`;
+        tpEl.innerHTML = `<details class="result-expander text-preview-expander">
+          <summary>${escapeHtml(t("extractedText"))}</summary>
+          <div class="result-expander-body">
+            <div class="preview">${escapeHtml(r.text_preview)}</div>
+          </div>
+        </details>`;
         tpEl.style.display = "";
       } else {
         tpEl.innerHTML = "";
@@ -5862,15 +5878,25 @@
           ? t("noFindings")
           : `${t("noFindings")} (${sorted.length - filtered.length} skjult av filter)`;
         return `
-          ${anonBar}
-          ${redactionStatus}
-          <p class="no-findings-message" style="color:var(--ok);margin-top:6px;">${escapeHtml(message)}</p>`;
+          <details class="result-expander redaction-report-expander" open>
+            <summary>${escapeHtml(t("redactionReport"))}</summary>
+            <div class="result-expander-body">
+              ${anonBar}
+              ${redactionStatus}
+              <p class="no-findings-message" style="color:var(--ok);margin-top:6px;">${escapeHtml(message)}</p>
+            </div>
+          </details>`;
       }
       return `
-        <h3 class="section-heading">${t("sectionFind")} (${sorted_use.length})${hiddenNote}</h3>
-        ${anonBar}
-        ${redactionStatus}
-        <ul class="findings-list">${rows}</ul>`;
+        <details class="result-expander redaction-report-expander" open>
+          <summary>${escapeHtml(t("redactionReport"))}</summary>
+          <div class="result-expander-body">
+            <h3 class="section-heading">${t("sectionFind")} (${sorted_use.length})${hiddenNote}</h3>
+            ${anonBar}
+            ${redactionStatus}
+            <ul class="findings-list">${rows}</ul>
+          </div>
+        </details>`;
     }
 
     function _manualRedactionTerms() {
@@ -7807,9 +7833,10 @@
       let list = resultEl.querySelector("ul.findings-list");
       if (!list) {
         if (resultEl.firstChild && resultEl.classList.contains("show")) {
+          const target = resultEl.querySelector(".redaction-report-expander .result-expander-body") || resultEl;
           const sec = document.createElement("div");
           sec.innerHTML = `<h3 class="section-heading">${t("sectionFind")} (0)</h3><ul class="findings-list"></ul>`;
-          resultEl.appendChild(sec);
+          target.appendChild(sec);
           list = sec.querySelector("ul.findings-list");
         } else {
           return;
