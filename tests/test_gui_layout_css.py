@@ -165,8 +165,7 @@ def test_theme_translations_exist_for_all_ui_languages():
         "themeLight",
         "themeNote",
     ]:
-        expected = 7 if key == "redactionProfile" else 6
-        assert html.count(f"{key}:") == expected
+        assert html.count(f"{key}:") == 6
 
 
 def test_update_install_script_controls_exist_for_supported_desktop_platforms():
@@ -190,8 +189,7 @@ def test_update_install_script_controls_exist_for_supported_desktop_platforms():
         "updateInstallScriptFailed",
         "updateInstallScriptUnsupported",
     ]:
-        expected = 7 if key == "redactionProfile" else 6
-        assert html.count(f"{key}:") == expected
+        assert html.count(f"{key}:") == 6
 
 
 def test_top_update_check_button_is_wired():
@@ -554,7 +552,6 @@ def test_guard_watch_custom_patterns_and_ocr_ui_are_wired():
     for element_id in [
         "background-panel",
         "background-panel-body",
-        "redaction-profile",
         "custom-patterns-editor",
         "custom-pattern-name",
         "custom-pattern-regex",
@@ -587,7 +584,6 @@ def test_guard_watch_custom_patterns_and_ocr_ui_are_wired():
         'item.source === "watch"',
         "addCustomPatternFromForm",
         "testCustomPatternForm",
-        "applyRedactionProfile",
         "rescanRedacted",
         "loadCustomPatternsEditor();",
         "restoreClipGuard();",
@@ -646,10 +642,6 @@ def test_guard_watch_custom_patterns_and_ocr_ui_are_wired():
         "whitelistPathLabel",
         "whitelistSaved",
         "whitelistLoadErr",
-        "redactionProfile",
-        "profileNormal",
-        "profileLowFp",
-        "profileStrict",
         "rescanRedacted",
         "ocrRescanBtn",
         "ocrRescanTooltip",
@@ -669,8 +661,7 @@ def test_guard_watch_custom_patterns_and_ocr_ui_are_wired():
         "m365WriteMetadataTooltip",
         "scanModeAdvancedHint",
     ]:
-        expected = 7 if key == "redactionProfile" else 6
-        assert html.count(f"{key}:") == expected
+        assert html.count(f"{key}:") == 6
 
 
 def test_tooltips_exist_for_expensive_or_external_actions():
@@ -975,6 +966,37 @@ def test_top_rescan_button_is_available_without_ai_toggle():
     assert 'if (document.getElementById("ai-scan-toggle")?.checked) autoAiScan();' in html
     assert "else _rescanLastDocument();" in html
     assert '(this.checked && lastResult)' not in html
+
+
+def test_suppressed_candidates_can_be_selected_for_redaction():
+    html = HTML.read_text(encoding="utf-8")
+
+    assert 'class="suppressed-cb"' in html
+    assert 'data-i18n="suppressedUseCandidate"' in html
+    assert 'document.querySelectorAll(".suppressed-cb:checked")' in html
+    assert '".g-cb:checked, .g-ai-cb:checked, .suppressed-cb:checked"' in html
+    assert "category: cb.dataset.category || \"Forkastet kandidat\"" in html
+    assert "suppressedUseCandidate:" in html
+
+
+def test_document_type_selector_is_removed_and_frontend_uses_auto_profile():
+    html = HTML.read_text(encoding="utf-8")
+
+    assert 'id="scan-profile"' not in html
+    assert 'data-i18n="scanProfile">Dokumenttype' not in html
+    assert 'scan_profile: "auto"' in html
+    assert "scanProfile:" not in html
+
+
+def test_redaction_profile_selector_is_removed_from_frontend():
+    html = HTML.read_text(encoding="utf-8")
+
+    assert 'id="redaction-profile"' not in html
+    assert 'data-i18n="redactionProfile"' not in html
+    assert "function applyRedactionProfile" not in html
+    assert "SCAN_CATEGORY_PROFILES" not in html
+    assert "redactionProfile:" not in html
+    assert "profileLowFp:" not in html
 
 
 def test_secondary_redaction_and_export_actions_are_collapsed():

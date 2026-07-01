@@ -22,7 +22,7 @@ LOGGER = logging.getLogger("xlent_scanner")
 _API_SCAN_TTL_SECONDS = 60 * 60
 _API_MAX_SCAN_RESULTS = 50
 _API_ALLOWED_LANGUAGES = {"auto", "nb", "sv", "en", "de", "fr", "es"}
-_API_ALLOWED_SCAN_PROFILES = {"normal", "technical", "academic"}
+_API_ALLOWED_SCAN_PROFILES = {"normal", "technical", "academic", "auto"}
 _LOCAL_API_HOSTS = {"127.0.0.1", "localhost", "::1"}
 _NO_CACHE = {
     "Cache-Control": "no-cache, no-store, must-revalidate",
@@ -116,9 +116,9 @@ def _api_language(value) -> str:
 
 
 def _api_scan_profile(value) -> str:
-    profile = str(value or "normal").strip().lower()
+    profile = str(value or "auto").strip().lower()
     if profile not in _API_ALLOWED_SCAN_PROFILES:
-        raise ValueError("Ugyldig scan_profile. Bruk normal eller technical.")
+        raise ValueError("Ugyldig scan_profile. Bruk normal, technical eller auto.")
     return "technical" if profile == "academic" else profile
 
 

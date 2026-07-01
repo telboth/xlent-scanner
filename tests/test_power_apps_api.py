@@ -93,6 +93,45 @@ def test_api_scan_text_accepts_scan_profile_and_optional_suppressed(monkeypatch)
     assert data["suppressed_findings"][0]["text"] == "pp. 4662-4666"
 
 
+def test_api_scan_text_accepts_auto_scan_profile(monkeypatch):
+    monkeypatch.delenv("XLENT_SCANNER_API_KEY", raising=False)
+    captured = {}
+
+    def fake_scan_text(*args, **kwargs):
+        captured.update(kwargs)
+        return _fake_result()
+
+    monkeypatch.setattr(app_module, "scan_text", fake_scan_text)
+    app_module.app_state.api_scan_results.clear()
+
+    client = app_module.flask_app.test_client()
+    response = client.post(
+        "/api/scan-text",
+        json={"text": "test", "language": "en", "scan_profile": "auto"},
+    )
+
+    assert response.status_code == 200
+    assert captured["scan_profile"] == "auto"
+
+
+def test_api_scan_text_defaults_to_auto_scan_profile(monkeypatch):
+    monkeypatch.delenv("XLENT_SCANNER_API_KEY", raising=False)
+    captured = {}
+
+    def fake_scan_text(*args, **kwargs):
+        captured.update(kwargs)
+        return _fake_result()
+
+    monkeypatch.setattr(app_module, "scan_text", fake_scan_text)
+    app_module.app_state.api_scan_results.clear()
+
+    client = app_module.flask_app.test_client()
+    response = client.post("/api/scan-text", json={"text": "test", "language": "en"})
+
+    assert response.status_code == 200
+    assert captured["scan_profile"] == "auto"
+
+
 def test_api_scan_text_requires_key_when_configured(monkeypatch):
     monkeypatch.setenv("XLENT_SCANNER_API_KEY", "secret-key")
     monkeypatch.setattr(app_module, "scan_text", lambda *args, **kwargs: _fake_result())

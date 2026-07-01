@@ -356,6 +356,12 @@ _STREET_WORD_BEFORE_NAME_RE = re.compile(
     rf"(?![\w@])",
 )
 
+_SUITE_ADDRESS_RE = re.compile(
+    rf"(?<![\w@])"
+    rf"({_HOUSE_NO}\s+{_CAP_WORD}(?:\s+{_CAP_WORD}){{0,5}}\s+(?i:suite|ste\.?|unit|apt\.?|apartment)\s+{_HOUSE_NO}{_POSTAL_TAIL})"
+    rf"(?![\w@])",
+)
+
 
 def find_street_address(text: str) -> Iterator[Finding]:
     seen: set[tuple[int, int]] = set()
@@ -365,6 +371,7 @@ def find_street_address(text: str) -> Iterator[Finding]:
         _STREET_NUMBER_BEFORE_NAME_RE,
         _COMPOUND_STREET_BEFORE_NUMBER_RE,
         _STREET_WORD_BEFORE_NAME_RE,
+        _SUITE_ADDRESS_RE,
     ):
         for m in pattern.finditer(text):
             span = m.span(1)

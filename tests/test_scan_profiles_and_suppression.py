@@ -4,7 +4,7 @@ from pathlib import Path
 
 from xlent_scanner.detectors.filter_config import load_person_name_filters
 from xlent_scanner.detectors.ner_names import looks_like_person_name
-from xlent_scanner.scanner import scan_text
+from xlent_scanner.scanner import looks_like_technical_or_academic_text, scan_text
 
 
 FIXTURE = Path(__file__).parent / "fixtures" / "technical_false_positive_regression.txt"
@@ -41,6 +41,28 @@ def test_technical_regression_corpus_has_no_academic_url_or_name_false_positives
 
     assert [f.text for f in result.findings if f.category == "nettadresse"] == []
     assert [f.text for f in result.findings if f.category.startswith("navn")] == []
+
+
+def test_auto_scan_profile_detects_technical_academic_text():
+    text = FIXTURE.read_text(encoding="utf-8")
+
+    assert looks_like_technical_or_academic_text(text)
+    result = scan_text(text, language="en", scan_profile="auto")
+
+    assert result.scan_timings["scan_profile"] == "technical"
+    assert [f.text for f in result.findings if f.category == "telefonnummer"] == []
+    assert [f.text for f in result.findings if f.category.startswith("navn")] == []
+
+
+def test_auto_scan_profile_keeps_plain_text_normal():
+    result = scan_text(
+        "Ring Tel: 22 34 56 78 eller +47 912 34 567.",
+        language="nb",
+        scan_profile="auto",
+    )
+
+    assert result.scan_timings["scan_profile"] == "normal"
+    assert "22 34 56 78" in [f.text for f in result.findings if f.category == "telefonnummer"]
 
 
 def test_normal_profile_still_accepts_real_phone_numbers():

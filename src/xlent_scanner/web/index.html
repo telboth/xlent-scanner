@@ -826,23 +826,6 @@
         <div class="scan-opts-head">
           <span class="scan-opts-label" data-i18n="scanOptsTitle">Hva vil du finne?</span>
           <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
-            <label style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px;">
-              <span data-i18n="redactionProfile">Profil</span>
-              <select id="redaction-profile" style="font-size:11px;padding:2px 6px;">
-                <option value="normal" data-i18n="profileNormal">Normal</option>
-                <option value="lowfp" data-i18n="profileLowFp">Lav false positive</option>
-                <option value="strict" data-i18n="profileStrict">Streng</option>
-              </select>
-            </label>
-            <label style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px;"
-                   data-i18n-title="scanProfileTooltip"
-                   title="Bruk teknisk/akademisk for dokumenter med figurer, DOI-er, akser og mange fagfraser.">
-              <span data-i18n="scanProfile">Dokumenttype</span>
-              <select id="scan-profile" style="font-size:11px;padding:2px 6px;">
-                <option value="normal" data-i18n="scanProfileNormal">Normal</option>
-                <option value="technical" data-i18n="scanProfileTechnical">Teknisk/akademisk</option>
-              </select>
-            </label>
             <label style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px;"
                    data-i18n-title="pdfModeTooltip"
                    title="Rask: PyMuPDF for PDF og RapidOCR for bilder. Auto: bruker Docling bare når PDF-en har lite tekst. Avansert: bruker Docling for PDF-er og bildefiler, og beholder formatering, tabeller og struktur mye bedre, men tar lengre tid.">
@@ -1887,6 +1870,7 @@
         whyNoContext: "Ingen kontekst lagret.",
         suppressedTitle:"Forkastede kandidater ({n})",
         suppressedNote:"Disse kandidatene ble funnet av en detektor, men forkastet av et postfilter.",
+        suppressedUseCandidate:"Fjern likevel",
         suppressedMore:"+ {n} flere forkastede kandidater",
         exportJson:   "Eksporter JSON",
         exportCsv:    "Eksporter CSV",
@@ -2149,14 +2133,6 @@
         folderLevel:        "Nivå",
         folderFile:         "Fil",
         scanOptsTitle:       "Hva vil du finne?",
-        redactionProfile:    "Profil",
-        profileNormal:       "Normal",
-        profileLowFp:        "Lav false positive",
-        profileStrict:       "Streng",
-        scanProfile:         "Dokumenttype",
-        scanProfileNormal:   "Normal",
-        scanProfileTechnical:"Teknisk/akademisk",
-        scanProfileTooltip:  "Bruk teknisk/akademisk for dokumenter med figurer, DOI-er, akser og mange fagfraser.",
         pdfMode:             "Scan-modus",
         pdfModeFast:         "Rask",
         pdfModeAuto:         "Auto",
@@ -2316,6 +2292,7 @@
         whyNoContext: "Ingen kontext sparad.",
         suppressedTitle:"Avvisade kandidater ({n})",
         suppressedNote:"Dessa kandidater hittades av en detektor men avvisades av ett efterfilter.",
+        suppressedUseCandidate:"Ta bort ändå",
         suppressedMore:"+ {n} fler avvisade kandidater",
         exportJson:   "Exportera JSON",
         exportCsv:    "Exportera CSV",
@@ -2568,14 +2545,6 @@
         folderLevel:        "Nivå",
         folderFile:         "Fil",
         scanOptsTitle:       "Vad vill du hitta?",
-        redactionProfile:    "Profil",
-        profileNormal:       "Normal",
-        profileLowFp:        "Låg false positive",
-        profileStrict:       "Strikt",
-        scanProfile:         "Dokumenttyp",
-        scanProfileNormal:   "Normal",
-        scanProfileTechnical:"Teknisk/akademisk",
-        scanProfileTooltip:  "Använd teknisk/akademisk för dokument med figurer, DOI:er, axlar och många fackfraser.",
         pdfMode:             "Skanningsläge",
         pdfModeFast:         "Snabb",
         pdfModeAuto:         "Auto",
@@ -2735,6 +2704,7 @@
         whyNoContext: "No context stored.",
         suppressedTitle:"Suppressed candidates ({n})",
         suppressedNote:"These candidates were found by a detector but rejected by a post-filter.",
+        suppressedUseCandidate:"Remove anyway",
         suppressedMore:"+ {n} more suppressed candidates",
         exportJson:   "Export JSON",
         exportCsv:    "Export CSV",
@@ -2992,14 +2962,6 @@
         folderLevel:        "Level",
         folderFile:         "File",
         scanOptsTitle:       "What do you want to find?",
-        redactionProfile:    "Profile",
-        profileNormal:       "Normal",
-        profileLowFp:        "Low false positive",
-        profileStrict:       "Strict",
-        scanProfile:         "Document type",
-        scanProfileNormal:   "Normal",
-        scanProfileTechnical:"Technical/academic",
-        scanProfileTooltip:  "Use technical/academic for documents with figures, DOIs, axes and many technical phrases.",
         pdfMode:             "Scan mode",
         pdfModeFast:         "Fast",
         pdfModeAuto:         "Auto",
@@ -3162,6 +3124,7 @@
         whyNoContext:        "Kein Kontext gespeichert.",
         suppressedTitle:     "Verworfene Kandidaten ({n})",
         suppressedNote:      "Diese Kandidaten wurden von einem Detektor gefunden, aber durch einen Nachfilter verworfen.",
+        suppressedUseCandidate:"Trotzdem entfernen",
         suppressedMore:      "+ {n} weitere verworfene Kandidaten",
         pdfCaveat:           "PDF-Direktbearbeitung: Text wird in Suchschichten ersetzt.",
         warnNoText:          "Im Dokument wurde kein Text gefunden. Die Datei kann bildbasiert oder gescannt sein. Inhalte in Bildern können ohne OCR nicht zuverlässig geprüft werden.",
@@ -3428,14 +3391,6 @@
         dstCatBankkonto:     "Bankkonto",
         dstHwReq:            "⚠ Tiefenscan läuft lokal und kann mehrere Minuten dauern. Empfohlen: mind. 16 GB RAM. GPU-Beschleunigung wird automatisch genutzt.",
         scanOptsTitle:       "Was soll gesucht werden?",
-        redactionProfile:    "Profil",
-        profileNormal:       "Normal",
-        profileLowFp:        "Wenige False Positives",
-        profileStrict:       "Streng",
-        scanProfile:         "Dokumenttyp",
-        scanProfileNormal:   "Normal",
-        scanProfileTechnical:"Technisch/akademisch",
-        scanProfileTooltip:  "Für Dokumente mit Abbildungen, DOIs, Achsen und vielen Fachbegriffen.",
         pdfMode:             "Scan-Modus",
         pdfModeFast:         "Schnell",
         pdfModeAuto:         "Auto",
@@ -3596,6 +3551,7 @@
         whyNoContext:        "Aucun contexte enregistré.",
         suppressedTitle:     "Candidats rejetés ({n})",
         suppressedNote:      "Ces candidats ont été trouvés par un détecteur puis rejetés par un post-filtre.",
+        suppressedUseCandidate:"Supprimer quand même",
         suppressedMore:      "+ {n} autres candidats rejetés",
         pdfCaveat:           "Édition PDF directe : le texte est remplacé dans les calques de recherche.",
         warnNoText:          "Aucun texte n’a été trouvé dans le document. Le fichier peut être basé sur des images ou scanné. Le contenu des images ne peut pas être vérifié de manière fiable sans OCR.",
@@ -3862,14 +3818,6 @@
         dstCatBankkonto:     "Compte bancaire",
         dstHwReq:            "⚠ L'analyse approfondie s'exécute localement et peut prendre plusieurs minutes. Recommandé : au moins 16 Go de RAM. L'accélération GPU est utilisée automatiquement.",
         scanOptsTitle:       "Que rechercher ?",
-        redactionProfile:    "Profil",
-        profileNormal:       "Normal",
-        profileLowFp:        "Peu de faux positifs",
-        profileStrict:       "Strict",
-        scanProfile:         "Type de document",
-        scanProfileNormal:   "Normal",
-        scanProfileTechnical:"Technique/académique",
-        scanProfileTooltip:  "À utiliser pour les documents avec figures, DOI, axes et nombreux termes techniques.",
         pdfMode:             "Mode de scan",
         pdfModeFast:         "Rapide",
         pdfModeAuto:         "Auto",
@@ -4030,6 +3978,7 @@
         whyNoContext:        "No hay contexto guardado.",
         suppressedTitle:     "Candidatos descartados ({n})",
         suppressedNote:      "Estos candidatos fueron encontrados por un detector, pero descartados por un postfiltro.",
+        suppressedUseCandidate:"Eliminar de todos modos",
         suppressedMore:      "+ {n} candidatos descartados más",
         pdfCaveat:           "Edición directa de PDF: el texto se reemplaza en capas de búsqueda.",
         warnNoText:          "No se encontró texto en el documento. El archivo puede estar basado en imágenes o escaneado. El contenido de las imágenes no puede comprobarse de forma fiable sin OCR.",
@@ -4296,14 +4245,6 @@
         dstCatBankkonto:     "Cuenta bancaria",
         dstHwReq:            "⚠ El escaneo profundo se ejecuta localmente y puede tardar varios minutos. Recomendado: al menos 16 GB de RAM. La aceleración GPU se usa automáticamente.",
         scanOptsTitle:       "¿Qué buscar?",
-        redactionProfile:    "Perfil",
-        profileNormal:       "Normal",
-        profileLowFp:        "Bajos falsos positivos",
-        profileStrict:       "Estricto",
-        scanProfile:         "Tipo de documento",
-        scanProfileNormal:   "Normal",
-        scanProfileTechnical:"Técnico/académico",
-        scanProfileTooltip:  "Úsalo para documentos con figuras, DOI, ejes y muchas frases técnicas.",
         pdfMode:             "Modo de escaneo",
         pdfModeFast:         "Rápido",
         pdfModeAuto:         "Auto",
@@ -5715,6 +5656,13 @@
       const body = rows.map(f => `
         <div class="suppressed-row">
           <div>
+            <label style="display:inline-flex;align-items:center;gap:5px;margin-right:6px;">
+              <input type="checkbox" class="suppressed-cb"
+                data-text="${escapeHtml(f.text || "")}"
+                data-category="${escapeHtml(f.category || "")}"
+                data-context="${escapeHtml(f.context || "")}">
+              <span data-i18n="suppressedUseCandidate">${escapeHtml(t("suppressedUseCandidate"))}</span>
+            </label>
             <strong>${escapeHtml(f.text || "")}</strong>
             <span class="cat" style="background:#64748b;color:#fff">${escapeHtml(f.category || "")}</span>
           </div>
@@ -5867,6 +5815,7 @@
         .map(cb => +cb.value);
       const aiRows = [...document.querySelectorAll(".g-ai-cb:checked")];
       const aiTexts = aiRows.map(cb => (cb.dataset.aiText || "").trim()).filter(Boolean);
+      const suppressedRows = [...document.querySelectorAll(".suppressed-cb:checked")];
       const manualTerms = _manualRedactionTerms();
       const aiTextsUnique = [...new Set(aiTexts)];
       const aiFindings = [];
@@ -5882,6 +5831,20 @@
           category: f.category || "🤖 AI-funn",
           text: f.text || "",
           context: f.context || "",
+        });
+      }
+      for (const cb of suppressedRows) {
+        const text = (cb.dataset.text || "").trim();
+        if (!text) continue;
+        const category = cb.dataset.category || "Forkastet kandidat";
+        const context = cb.dataset.context || "";
+        const key = `${String(category || "").toLowerCase()}\u0001${String(text || "").toLowerCase()}\u0001${String(context || "").toLowerCase()}`;
+        if (aiFindingKeys.has(key)) continue;
+        aiFindingKeys.add(key);
+        aiFindings.push({
+          category: cb.dataset.category || "Forkastet kandidat",
+          text,
+          context,
         });
       }
       for (const text of manualTerms) {
@@ -5912,8 +5875,8 @@
       const el = document.getElementById("redaction-report");
       if (!el) return;
       const manualCount = _manualRedactionTerms().length;
-      const selected = document.querySelectorAll(".g-cb:checked, .g-ai-cb:checked").length + manualCount;
-      const total = document.querySelectorAll(".g-cb, .g-ai-cb").length + manualCount;
+      const selected = document.querySelectorAll(".g-cb:checked, .g-ai-cb:checked, .suppressed-cb:checked").length + manualCount;
+      const total = document.querySelectorAll(".g-cb, .g-ai-cb, .suppressed-cb").length + manualCount;
       const unsafe = [];
       if (_isOcrOrImagePdfResult(ext)) unsafe.push(IMAGE_EXT.has(ext) ? "OCR-bilde" : "OCR/bilde-PDF");
       else if (ext === "pdf") unsafe.push("PDF");
@@ -5944,7 +5907,7 @@
         { document.querySelectorAll(".g-cb:not(:disabled), .g-ai-cb").forEach(cb => cb.checked = true); updateRedactionReport(ext); });
       document.getElementById("g-sel-none")?.addEventListener("click", () =>
         { document.querySelectorAll(".g-cb, .g-ai-cb").forEach(cb => cb.checked = false); updateRedactionReport(ext); });
-      document.querySelectorAll(".g-cb, .g-ai-cb").forEach(cb => cb.addEventListener("change", () => updateRedactionReport(ext)));
+      document.querySelectorAll(".g-cb, .g-ai-cb, .suppressed-cb").forEach(cb => cb.addEventListener("change", () => updateRedactionReport(ext)));
       if (canPatch) document.getElementById("g-patch")?.addEventListener("click", () => postAnon("patch"));
       if (_isOcrOrImagePdfResult(ext)) document.getElementById("g-image-pdf")?.addEventListener("click", () => postAnon("patch-image-pdf"));
       document.getElementById("g-preview")?.addEventListener("click", previewRedaction);
@@ -6387,19 +6350,11 @@
       return {
         ignore_xlent: document.getElementById("ignoreXlent").checked,
         language:     document.getElementById("langSelect").value,
-        scan_profile: document.getElementById("scan-profile")?.value || "normal",
+        scan_profile: "auto",
         pdf_mode:     document.getElementById("pdf-mode")?.value || "fast",
         scan_mode:    document.getElementById("pdf-mode")?.value || "fast",
         categories:   [...document.querySelectorAll(".scan-cat:checked")].map(cb => cb.value),
       };
-    }
-
-    function applyRedactionProfile(profile, persist = true) {
-      const selected = new Set(SCAN_CATEGORY_PROFILES[profile] || SCAN_CATEGORY_PROFILES.normal || []);
-      document.querySelectorAll(".scan-cat").forEach(cb => { cb.checked = selected.has(cb.value); });
-      const conf = document.getElementById("ai-conf-select");
-      if (conf) conf.value = profile === "lowfp" ? "high" : (profile === "strict" ? "low" : "medium");
-      if (persist) saveSettings();
     }
 
     async function scanPath(path, extraOpts) {
@@ -6556,13 +6511,6 @@
         // language: default "auto"
         const ls = document.getElementById("langSelect");
         if (ls && s.language) ls.value = s.language;
-        const rp = document.getElementById("redaction-profile");
-        if (rp && s.redactionProfile) {
-          rp.value = s.redactionProfile;
-          applyRedactionProfile(s.redactionProfile, false);
-        }
-        const sp = document.getElementById("scan-profile");
-        if (sp && s.scanProfile) sp.value = s.scanProfile;
         const pm = document.getElementById("pdf-mode");
         if (pm && s.pdfMode) pm.value = s.pdfMode;
         updateScanModeHint();
@@ -6592,8 +6540,6 @@
         localStorage.setItem("xlentScannerSettings", JSON.stringify({
           ignoreXlent: document.getElementById("ignoreXlent").checked,
           language:    document.getElementById("langSelect").value,
-          redactionProfile: document.getElementById("redaction-profile")?.value || "normal",
-          scanProfile: document.getElementById("scan-profile")?.value || "normal",
           pdfMode: document.getElementById("pdf-mode")?.value || "fast",
           stripAnnotations: document.getElementById("stripAnnotations").checked,
           theme:       normalizeTheme(document.getElementById("themeSelect").value),
@@ -6617,8 +6563,6 @@
     });
     document.getElementById("ignoreXlent").addEventListener("change", saveSettings);
     document.getElementById("langSelect").addEventListener("change", saveSettings);
-    document.getElementById("redaction-profile").addEventListener("change", e => applyRedactionProfile(e.target.value));
-    document.getElementById("scan-profile")?.addEventListener("change", saveSettings);
     document.getElementById("pdf-mode")?.addEventListener("change", () => { updateScanModeHint(); saveSettings(); });
     document.getElementById("stripAnnotations").addEventListener("change", saveSettings);
     document.getElementById("manual-redaction-terms")?.addEventListener("input", () => {
@@ -7364,12 +7308,6 @@
       "konfidensielt",
     ]);
 
-    let SCAN_CATEGORY_PROFILES = {
-      lowfp: ["id", "konto", "kredittkort", "hemmeligheter", "konfidensielt", "orgnummer"],
-      normal: ["epost", "telefon", "adresse", "id", "fodselsdato", "konto", "kredittkort", "navn", "nettadresse", "hemmeligheter", "finansielt", "konfidensielt", "klient", "orgnummer"],
-      strict: ["epost", "telefon", "adresse", "id", "fodselsdato", "konto", "kredittkort", "navn", "nettadresse", "hemmeligheter", "finansielt", "medisinsk", "konfidensielt", "klient", "orgnummer"],
-    };
-
     async function loadScanCategoryConfig() {
       try {
         const cfg = await (await fetch(`${API}/scan-categories`)).json();
@@ -7389,7 +7327,6 @@
         if (Object.keys(nextFilterMap).length) FILTER_MAP = nextFilterMap;
         if (Object.keys(nextAiMap).length) AI_CAT_MAP = nextAiMap;
         if (nextRegexCovered.size) AI_REGEX_COVERED_SCAN_CATS = nextRegexCovered;
-        if (cfg.profiles && typeof cfg.profiles === "object") SCAN_CATEGORY_PROFILES = cfg.profiles;
       } catch (_) {
         // Statisk HTML-konfig er fallback hvis backend ikke svarer tidlig nok.
       }

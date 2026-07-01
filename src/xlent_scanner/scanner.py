@@ -73,8 +73,49 @@ DEFAULT_EXCLUDED_DIRS = {
 _ignore_list: dict | None = None
 
 
+_TECHNICAL_PROFILE_PATTERNS: tuple[tuple[re.Pattern[str], int], ...] = (
+    (re.compile(r"(?i)\bdoi\b|doi\.org/|10\.\d{4,9}/"), 3),
+    (re.compile(r"(?i)\b(?:isbn|issn)\b"), 2),
+    (re.compile(r"(?i)\bet\s+al\."), 2),
+    (re.compile(r"(?i)\b(?:references|bibliography)\b"), 1),
+    (re.compile(r"(?i)\b(?:abstract|methodology|method|results|discussion)\b"), 1),
+    (re.compile(r"(?i)\b(?:fig\.?|figure|table)\s*\d+\b"), 1),
+    (re.compile(r"(?i)\b(?:frequency|amplitude|spectrum|axis|time\s+domain|phase|solver)\b"), 1),
+    (re.compile(r"(?i)\b\d+(?:[.,]\d+)?\s*(?:hz|khz|mhz|ghz|ms|ns|mm|cm|km|m/s|db|°c)\b"), 1),
+    (re.compile(r"\[[0-9]{1,3}\]"), 1),
+)
+
+
 def normalise_scan_profile(scan_profile: str | None) -> str:
-    return "technical" if str(scan_profile or "").strip().lower() in {"technical", "academic"} else "normal"
+    profile = str(scan_profile or "").strip().lower()
+    return "technical" if profile in {"technical", "academic"} else "normal"
+
+
+def looks_like_technical_or_academic_text(text: str) -> bool:
+    """Heuristisk profilvalg for dokumenter med teknisk/akademisk støy.
+
+    Terskelen er bevisst konservativ: ett svakt signal skal ikke endre profil,
+    mens DOI/DOI-lenker alene er et sterkt akademisk signal.
+    """
+    sample = str(text or "")[:50_000]
+    if not sample.strip():
+        return False
+    score = 0
+    for pattern, weight in _TECHNICAL_PROFILE_PATTERNS:
+        matches = pattern.findall(sample)
+        if not matches:
+            continue
+        score += min(len(matches), 3) * weight
+        if weight >= 3:
+            return True
+    return score >= 3
+
+
+def resolve_scan_profile(scan_profile: str | None, text: str) -> str:
+    profile = str(scan_profile or "normal").strip().lower()
+    if profile == "auto":
+        return "technical" if looks_like_technical_or_academic_text(text) else "normal"
+    return normalise_scan_profile(profile)
 
 
 def normalise_pdf_mode(pdf_mode: str | None) -> str:
@@ -525,7 +566,7 @@ def _run_detectors(
     detector_errors: list[str] = []
     timings: dict[str, float] = {}
 
-    scan_profile = normalise_scan_profile(scan_profile)
+    scan_profile = resolve_scan_profile(scan_profile, text)
     selected_categories = normalise_scan_categories(categories)
 
     def _run(fn, *args, **kwargs):
@@ -627,7 +668,7 @@ def scan_text(
     lang_t0 = time.perf_counter()
     lang = resolve_language(language, text)
     language_seconds = round(time.perf_counter() - lang_t0, 4)
-    scan_profile = normalise_scan_profile(scan_profile)
+    scan_profile = resolve_scan_profile(scan_profile, text)
     selected_categories = normalise_scan_categories(categories)
     with capture_suppressed_findings() as suppressed:
         detector_t0 = time.perf_counter()
@@ -656,6 +697,7 @@ def scan_text(
             "detectors_seconds": detector_seconds,
             "detectors": detector_timings,
             "total_seconds": round(time.perf_counter() - total_t0, 4),
+            "scan_profile": scan_profile,
         },
     )
     return assess(result)
@@ -882,7 +924,7 @@ def scan_file(
     lang_t0 = time.perf_counter()
     lang = resolve_language(language, text)
     language_seconds = round(time.perf_counter() - lang_t0, 4)
-    scan_profile = normalise_scan_profile(scan_profile)
+    scan_profile = resolve_scan_profile(scan_profile, text)
     selected_categories = normalise_scan_categories(categories)
 
     with capture_suppressed_findings() as suppressed:
@@ -917,6 +959,7 @@ def scan_file(
             "detectors_seconds": detector_seconds,
             "detectors": detector_timings,
             "total_seconds": round(time.perf_counter() - total_t0, 4),
+            "scan_profile": scan_profile,
             "pdf_mode": scan_mode if suffix == ".pdf" else "",
             "scan_mode": scan_mode if suffix == ".pdf" or suffix in IMAGE_SUFFIXES else "",
         },

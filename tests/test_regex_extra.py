@@ -80,6 +80,7 @@ def test_detect_extra_includes_po_box_address() -> None:
 def test_tax_id_after_label_is_detected_as_person_id() -> None:
     samples = [
         "Tax ID: 123-45-6789",
+        "Tax Id: 996-90-5190",
         "Tax Id 987654321",
         "tax identification number: AB-123456789",
         "TIN: 12 345 678",
@@ -89,6 +90,7 @@ def test_tax_id_after_label_is_detected_as_person_id() -> None:
 
     assert [(f.category, f.text) for f in findings] == [
         ("tax identification number", "123-45-6789"),
+        ("tax identification number", "996-90-5190"),
         ("tax identification number", "987654321"),
         ("tax identification number", "AB-123456789"),
         ("tax identification number", "12 345 678"),
@@ -108,6 +110,7 @@ def test_street_addresses_are_detected_across_languages() -> None:
             "DE: Hauptstraße 5.",
             "FR: Rue de Rivoli 99.",
             "ES: Calle Mayor 12.",
+            "US: 8041 Hawkins Village Suite 621.",
         ]
     )
 
@@ -120,6 +123,7 @@ def test_street_addresses_are_detected_across_languages() -> None:
         ("fysisk adresse", "Hauptstraße 5"),
         ("fysisk adresse", "Rue de Rivoli 99"),
         ("fysisk adresse", "Calle Mayor 12"),
+        ("fysisk adresse", "8041 Hawkins Village Suite 621"),
     ]
 
 

@@ -682,9 +682,9 @@ def _api_openapi_spec() -> dict:
     }
     scan_profile_property = {
         "type": "string",
-        "enum": ["normal", "technical"],
-        "default": "normal",
-        "description": "technical strammer inn postfiltre for tekniske/akademiske dokumenter.",
+        "enum": ["normal", "technical", "auto"],
+        "default": "auto",
+        "description": "auto velger normal eller technical basert på tekstsignaler; technical strammer inn postfiltre for tekniske/akademiske dokumenter.",
     }
     scan_categories_property = {
         "type": "array",
