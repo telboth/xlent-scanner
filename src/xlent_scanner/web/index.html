@@ -826,8 +826,6 @@
         <div class="scan-opts-head">
           <span class="scan-opts-label" data-i18n="scanOptsTitle">Hva vil du finne?</span>
           <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
-            <button class="ctrl-btn" id="scan-sel-all" style="font-size:11px;padding:2px 8px;" data-i18n="selAll">Velg alle</button>
-            <button class="ctrl-btn" id="scan-sel-none" style="font-size:11px;padding:2px 8px;" data-i18n="selNone">Fjern alle</button>
             <button class="ctrl-btn" id="scan-sel-default" style="font-size:11px;padding:2px 8px;" data-i18n="selDefault">Standardvalg</button>
           </div>
         </div>
@@ -1067,8 +1065,8 @@
         </div>
         <div class="about-section">
           <h3>Anonymisering og eksport</h3>
-          <p>Etter scanning kan du velge hvilke funn som skal brukes og generere en redigert/redacted versjon. For DOCX, PPTX, XLSX og PDF erstattes teksten direkte i filen. For andre formater genereres en renset .md-fil. Kommentarer, speaker notes og støttede annotasjoner kan fjernes, og resultatet kan re-scannes manuelt med egen knapp. Funn kan eksporteres som JSON/CSV, full HTML/PDF-rapport eller batch-/auditrapport for mappeskann.</p>
-          <p style="color:var(--muted);font-size:12px;">⚠ PDF-redaktering erstatter tekst i innholdsstrømmen, men tekst i metadata eller bilder anonymiseres ikke. Kontroller resultatet.</p>
+          <p>Etter scanning kan du velge hvilke funn som skal brukes og generere en anonymisert/redacted versjon. For DOCX, PPTX, XLSX og tekstbaserte PDF-er erstattes teksten direkte i filen. For skannede PDF-er og bildefiler kan appen lage anonymisert bilde-PDF ved å maskere OCR-treff direkte på sidebildet. Kommentarer, speaker notes og støttede annotasjoner kan fjernes, og anonymisert fil kan åpnes direkte fra resultatet. Funn kan eksporteres som JSON/CSV, full HTML/PDF-rapport eller batch-/auditrapport for mappeskann.</p>
+          <p style="color:var(--muted);font-size:12px;">⚠ PDF- og OCR-redaktering bør alltid kontrolleres visuelt. OCR kan lese feil, og treff som ikke finnes igjen i sidebildet blir rapportert.</p>
         </div>
         <div class="about-section">
           <h3>Arbeidsflyter og overvåking</h3>
@@ -1076,7 +1074,8 @@
             <li><strong>Fil, lim inn og mappe:</strong> Skann enkeltfiler, flere filer via drag-and-drop, tekst fra utklippstavlen eller hele mapper. Mappeskann kan kjøres rekursivt med maks antall filer, maks dybde, tabellvisning, tooltip per fil, full rapport ved klikk, filter, sortering, eksport og batch-redaction av valgte filer.</li>
             <li><strong>Mappevakt:</strong> Opptil tre valgte mapper, for eksempel Downloads, overvåkes lokalt. Nye og endrede filer skannes når de er ferdig skrevet, og resultatene vises i historikken og bakgrunnsstatusen.</li>
             <li><strong>Utklippstavle-vakt:</strong> Varsler lokalt hvis du kopierer rødt eller svart innhold før det limes inn i et annet verktøy. Innholdet lagres ikke.</li>
-            <li><strong>OCR for bilde-PDF:</strong> Hvis et dokument ser ut til å inneholde lite eller ingen tekst, kan du kjøre en OCR-skann for å hente tekst fra innskannede sider.</li>
+            <li><strong>Automatisk scan-modus:</strong> Appen velger rask eller avansert dokumentlesing automatisk. Tabeller, lite tekst eller bildebasert innhold sendes til avansert behandling.</li>
+            <li><strong>OCR for skannede dokumenter:</strong> Hvis en PDF eller bildefil inneholder lite eller ingen maskinlesbar tekst, kan OCR startes automatisk eller manuelt. OCR-resultater merkes tydelig.</li>
             <li><strong>Desktop, web og hurtigvalg:</strong> Programmet kan kjøres som desktop-app eller lokal webmodus. Windows høyreklikk og macOS Finder Quick Action kan sende filer direkte til scanneren når installasjonsskriptet er brukt.</li>
           </ul>
         </div>
@@ -1084,8 +1083,9 @@
           <h3>Tilpasning og integrasjoner</h3>
           <ul>
             <li>Personlig hviteliste, blacklist og ignore.toml kan redigeres i Innstillinger.</li>
+            <li>Ord og uttrykk som alltid skal anonymiseres kan legges inn manuelt for dokumenter der vanlige regler ikke finner alt.</li>
             <li>Egendefinerte regex-mønstre kan legges inn via UI for interne saksnumre, prosjektkoder eller andre organisasjonsspesifikke formater.</li>
-            <li>Redaction-profiler kan brukes for å velge mellom normal, streng og mer konservativ scanning.</li>
+            <li>Forkastede kandidater vises separat og kan likevel velges for anonymisering hvis et postfilter har vært for strengt.</li>
             <li>Microsoft 365-tags og sensitivity/retention-labels kan leses, foreslås og skrives der Graph-tilgang er konfigurert, inkludert lokal mapping fra trafikklysnivå til ønsket label.</li>
             <li>Et lokalt API med Swagger/OpenAPI-side gjør det mulig å bygge andre frontender, for eksempel Power Apps, uten å endre desktop-appen.</li>
             <li>Appen kan sjekke GitHub for ny versjon, laste ned riktig installer for operativsystemet og vise installasjonsskript der dette er relevant.</li>
@@ -1144,8 +1144,8 @@
         </div>
         <div class="about-section">
           <h3>Anonymisering och export</h3>
-          <p>Efter skanning kan du välja vilka fynd som ska användas och generera en redigerad/redacted version. För DOCX, PPTX, XLSX och PDF ersätts texten direkt i filen. Kommentarer, speaker notes och stödda annoteringar kan tas bort, och resultatet kan skannas om manuellt med en egen knapp. Fynd kan exporteras som JSON/CSV, full HTML/PDF-rapport eller batch-/auditrapport för mappskanning.</p>
-          <p style="color:var(--muted);font-size:12px;">⚠ PDF-redigering ersätter text i innehållsströmmen, men text i metadata eller bilder anonymiseras inte. Kontrollera resultatet.</p>
+          <p>Efter skanning kan du välja vilka fynd som ska användas och generera en anonymiserad/redacted version. För DOCX, PPTX, XLSX och textbaserade PDF:er ersätts texten direkt i filen. För skannade PDF:er och bildfiler kan appen skapa en anonymiserad bild-PDF genom att maskera OCR-träffar direkt på sidbilden. Kommentarer, speaker notes och stödda annoteringar kan tas bort, och anonymiserad fil kan öppnas direkt från resultatet. Fynd kan exporteras som JSON/CSV, full HTML/PDF-rapport eller batch-/auditrapport för mappskanning.</p>
+          <p style="color:var(--muted);font-size:12px;">⚠ PDF- och OCR-redigering bör alltid kontrolleras visuellt. OCR kan läsa fel, och träffar som inte hittas igen i sidbilden rapporteras.</p>
         </div>
         <div class="about-section">
           <h3>Arbetsflöden och övervakning</h3>
@@ -1153,7 +1153,8 @@
             <li><strong>Fil, klistra in och mapp:</strong> Skanna enskilda filer, flera filer via drag-and-drop, text från urklipp eller hela mappar. Mappskanning kan köras rekursivt med max antal filer, max djup, tabellvy, tooltip per fil, full rapport vid klick, filter, sortering, export och batch-redaction av valda filer.</li>
             <li><strong>Mappvakt:</strong> Upp till tre valda mappar, till exempel Downloads, övervakas lokalt. Nya och ändrade filer skannas när de är färdigskrivna, och resultaten visas i historiken och bakgrundsstatusen.</li>
             <li><strong>Urklippsvakt:</strong> Varnar lokalt om du kopierar rött eller svart innehåll innan det klistras in i ett annat verktyg. Innehållet sparas inte.</li>
-            <li><strong>OCR för bild-PDF:</strong> Om ett dokument verkar innehålla lite eller ingen text kan du köra OCR-skanning för att hämta text från inskannade sidor.</li>
+            <li><strong>Automatiskt skanningsläge:</strong> Appen väljer snabb eller avancerad dokumentläsning automatiskt. Tabeller, lite text eller bildbaserat innehåll skickas till avancerad behandling.</li>
+            <li><strong>OCR för skannade dokument:</strong> Om en PDF eller bildfil innehåller lite eller ingen maskinläsbar text kan OCR startas automatiskt eller manuellt. OCR-resultat markeras tydligt.</li>
             <li><strong>Desktop, webb och snabbval:</strong> Programmet kan köras som desktop-app eller lokal webbläge. Windows högerklick och macOS Finder Quick Action kan skicka filer direkt till scannern när installationsskriptet har använts.</li>
           </ul>
         </div>
@@ -1161,8 +1162,9 @@
           <h3>Anpassning och integrationer</h3>
           <ul>
             <li>Personlig vitlista, blacklist och ignore.toml kan redigeras i Inställningar.</li>
+            <li>Ord och uttryck som alltid ska anonymiseras kan läggas in manuellt för dokument där vanliga regler inte hittar allt.</li>
             <li>Anpassade regex-mönster kan läggas in via UI för interna ärendenummer, projektkoder eller andra organisationsspecifika format.</li>
-            <li>Redaction-profiler kan användas för att välja mellan normal, strikt och mer konservativ skanning.</li>
+            <li>Avvisade kandidater visas separat och kan ändå väljas för anonymisering om ett postfilter har varit för strikt.</li>
             <li>Microsoft 365-taggar och sensitivity/retention-labels kan läsas, föreslås och skrivas där Graph-åtkomst är konfigurerad, inklusive lokal mapping från trafikljusnivå till önskad label.</li>
             <li>Ett lokalt API med Swagger/OpenAPI-sida gör det möjligt att bygga andra frontender, till exempel Power Apps, utan att ändra desktop-appen.</li>
             <li>Appen kan kontrollera GitHub för ny version, ladda ned rätt installer för operativsystemet och visa installationsskript där det är relevant.</li>
@@ -1221,8 +1223,8 @@
         </div>
         <div class="about-section">
           <h3>Redaction and export</h3>
-          <p>After scanning you can select which findings to use and generate a redacted version. For DOCX, PPTX, XLSX, and PDF the text is replaced directly in the file. Comments, speaker notes, and supported annotations can be removed, and the result can be manually re-scanned with a dedicated button. Findings can be exported as JSON/CSV, full HTML/PDF reports, or batch/audit reports for folder scans.</p>
-          <p style="color:var(--muted);font-size:12px;">⚠ PDF redaction replaces text in the content stream, but text in metadata or images is not redacted. Verify the result.</p>
+          <p>After scanning you can select which findings to use and generate a redacted version. For DOCX, PPTX, XLSX, and text-based PDFs the text is replaced directly in the file. For scanned PDFs and image files the app can create a redacted image PDF by masking OCR matches directly on the page image. Comments, speaker notes, and supported annotations can be removed, and the redacted file can be opened directly from the result. Findings can be exported as JSON/CSV, full HTML/PDF reports, or batch/audit reports for folder scans.</p>
+          <p style="color:var(--muted);font-size:12px;">⚠ PDF and OCR redaction should always be visually verified. OCR can misread text, and matches that cannot be found again on the page image are reported.</p>
         </div>
         <div class="about-section">
           <h3>Workflows and monitoring</h3>
@@ -1230,7 +1232,8 @@
             <li><strong>File, paste, and folder:</strong> Scan single files, multiple files via drag-and-drop, pasted text, or whole folders. Folder scans can run recursively with maximum file count, maximum depth, table view, per-file tooltips, full report on click, filtering, sorting, export, and batch redaction of selected files.</li>
             <li><strong>Folder watch:</strong> Up to three selected folders, for example Downloads, are monitored locally. New and changed files are scanned once they are stable, and results appear in history and the background status panel.</li>
             <li><strong>Clipboard guard:</strong> Warns locally if you copy red or black content before pasting it into another tool. Clipboard content is not stored.</li>
-            <li><strong>OCR for image PDFs:</strong> If a document appears to contain little or no text, you can run an OCR scan to extract text from scanned pages.</li>
+            <li><strong>Automatic scan mode:</strong> The app chooses fast or advanced document reading automatically. Tables, little text, or image-based content are sent through advanced processing.</li>
+            <li><strong>OCR for scanned documents:</strong> If a PDF or image file has little or no machine-readable text, OCR can start automatically or manually. OCR-based results are clearly marked.</li>
             <li><strong>Desktop, web, and quick actions:</strong> The app can run as a desktop app or in local web mode. Windows right-click and macOS Finder Quick Action can send files directly to the scanner when the installer script has been used.</li>
           </ul>
         </div>
@@ -1238,8 +1241,9 @@
           <h3>Customisation and integrations</h3>
           <ul>
             <li>Personal whitelist, blacklist, and ignore.toml can be edited in Settings.</li>
+            <li>Words and phrases that should always be redacted can be entered manually for documents where normal rules do not find everything.</li>
             <li>Custom regex patterns can be added through the UI for internal case numbers, project codes, or other organisation-specific formats.</li>
-            <li>Redaction profiles can be used to choose between normal, strict, and more conservative scanning.</li>
+            <li>Suppressed candidates are shown separately and can still be selected for redaction if a post-filter was too strict.</li>
             <li>Microsoft 365 tags and sensitivity/retention labels can be read, suggested, and written when Graph access is configured, including local mapping from traffic-light level to target label.</li>
             <li>A local API with a Swagger/OpenAPI page makes it possible to build other frontends, such as Power Apps, without changing the desktop app.</li>
             <li>The app can check GitHub for new versions, download the correct installer for the operating system, and show installer scripts where relevant.</li>
@@ -1298,8 +1302,8 @@
         </div>
         <div class="about-section">
           <h3>Anonymisierung und Export</h3>
-          <p>Nach dem Scan können Sie auswählen, welche Treffer verwendet werden sollen, und eine redigierte/redacted Version erzeugen. Bei DOCX, PPTX, XLSX und PDF wird der Text direkt in der Datei ersetzt. Kommentare, Speaker Notes und unterstützte Annotationen können entfernt werden, und das Ergebnis kann per eigener Schaltfläche manuell erneut gescannt werden. Treffer lassen sich als JSON/CSV, vollständiger HTML/PDF-Bericht oder Batch-/Auditbericht für Ordnerscans exportieren.</p>
-          <p style="color:var(--muted);font-size:12px;">⚠ Bei PDF wird Text im Inhaltsstrom ersetzt, aber Text in Metadaten oder Bildern wird nicht anonymisiert. Ergebnis prüfen.</p>
+          <p>Nach dem Scan können Sie auswählen, welche Treffer verwendet werden sollen, und eine anonymisierte/redacted Version erzeugen. Bei DOCX, PPTX, XLSX und textbasierten PDFs wird der Text direkt in der Datei ersetzt. Für gescannte PDFs und Bilddateien kann die App eine anonymisierte Bild-PDF erzeugen, indem OCR-Treffer direkt auf dem Seitenbild maskiert werden. Kommentare, Speaker Notes und unterstützte Annotationen können entfernt werden, und die anonymisierte Datei kann direkt aus dem Ergebnis geöffnet werden. Treffer lassen sich als JSON/CSV, vollständiger HTML/PDF-Bericht oder Batch-/Auditbericht für Ordnerscans exportieren.</p>
+          <p style="color:var(--muted);font-size:12px;">⚠ PDF- und OCR-Redaktion sollte immer visuell geprüft werden. OCR kann Text falsch lesen; Treffer, die nicht im Seitenbild wiedergefunden werden, werden gemeldet.</p>
         </div>
         <div class="about-section">
           <h3>Arbeitsabläufe und Überwachung</h3>
@@ -1307,7 +1311,8 @@
             <li><strong>Datei, Einfügen und Ordner:</strong> Scannen Sie einzelne Dateien, mehrere Dateien per Drag-and-drop, eingefügten Text oder ganze Ordner. Ordnerscans können rekursiv mit maximaler Dateianzahl, maximaler Tiefe, Tabellenansicht, Tooltip pro Datei, vollständigem Bericht per Klick, Filter, Sortierung, Export und Batch-Redaction ausgewählter Dateien laufen.</li>
             <li><strong>Ordnerwächter:</strong> Bis zu drei ausgewählte Ordner, zum Beispiel Downloads, werden lokal überwacht. Neue und geänderte Dateien werden nach stabilem Schreibzustand gescannt und im Verlauf sowie im Hintergrundstatus angezeigt.</li>
             <li><strong>Zwischenablage-Wächter:</strong> Warnt lokal, wenn Sie roten oder schwarzen Inhalt kopieren, bevor er in ein anderes Tool eingefügt wird. Der Inhalt wird nicht gespeichert.</li>
-            <li><strong>OCR für Bild-PDFs:</strong> Wenn ein Dokument wenig oder keinen Text enthält, kann ein OCR-Scan Text aus gescannten Seiten extrahieren.</li>
+            <li><strong>Automatischer Scanmodus:</strong> Die App wählt schnelle oder erweiterte Dokumentlesung automatisch. Tabellen, wenig Text oder bildbasierte Inhalte werden erweitert verarbeitet.</li>
+            <li><strong>OCR für gescannte Dokumente:</strong> Wenn eine PDF- oder Bilddatei wenig oder keinen maschinenlesbaren Text enthält, kann OCR automatisch oder manuell starten. OCR-basierte Ergebnisse werden klar markiert.</li>
             <li><strong>Desktop, Web und Schnellaktionen:</strong> Die App kann als Desktop-App oder im lokalen Webmodus laufen. Windows-Rechtsklick und macOS Finder Quick Action können Dateien direkt an den Scanner senden, wenn das Installationsskript verwendet wurde.</li>
           </ul>
         </div>
@@ -1315,8 +1320,9 @@
           <h3>Anpassung und Integrationen</h3>
           <ul>
             <li>Persönliche Whitelist, Blacklist und ignore.toml können in den Einstellungen bearbeitet werden.</li>
+            <li>Wörter und Ausdrücke, die immer anonymisiert werden sollen, können manuell erfasst werden, wenn normale Regeln nicht alles finden.</li>
             <li>Benutzerdefinierte Regex-Muster können über die UI für interne Vorgangsnummern, Projektcodes oder andere organisationsspezifische Formate ergänzt werden.</li>
-            <li>Redaction-Profile erlauben die Wahl zwischen normalem, strengem und konservativerem Scanverhalten.</li>
+            <li>Verworfene Kandidaten werden separat angezeigt und können dennoch für die Anonymisierung ausgewählt werden, falls ein Nachfilter zu streng war.</li>
             <li>Microsoft 365-Tags sowie Sensitivity- und Retention-Labels können gelesen, vorgeschlagen und geschrieben werden, wenn Graph-Zugriff konfiguriert ist, inklusive lokaler Zuordnung von Ampelniveau zu Ziel-Label.</li>
             <li>Ein lokales API mit Swagger/OpenAPI-Seite ermöglicht andere Frontends, zum Beispiel Power Apps, ohne die Desktop-App zu ändern.</li>
             <li>Die App kann GitHub auf neue Versionen prüfen, den passenden Installer für das Betriebssystem herunterladen und relevante Installationsskripte anzeigen.</li>
@@ -1375,8 +1381,8 @@
         </div>
         <div class="about-section">
           <h3>Anonymisation et export</h3>
-          <p>Après le scan, vous pouvez choisir les résultats à utiliser et générer une version expurgée/redacted. Pour DOCX, PPTX, XLSX et PDF, le texte est remplacé directement dans le fichier. Les commentaires, notes de présentation et annotations prises en charge peuvent être supprimés, et le résultat peut être rescanné manuellement avec un bouton dédié. Les résultats peuvent être exportés en JSON/CSV, rapport HTML/PDF complet ou rapport batch/audit pour les analyses de dossier.</p>
-          <p style="color:var(--muted);font-size:12px;">⚠ Dans les PDF, le texte est remplacé dans le flux de contenu, mais le texte des métadonnées ou des images n’est pas anonymisé. Vérifiez le résultat.</p>
+          <p>Après le scan, vous pouvez choisir les résultats à utiliser et générer une version anonymisée/redacted. Pour DOCX, PPTX, XLSX et les PDF textuels, le texte est remplacé directement dans le fichier. Pour les PDF scannés et fichiers image, l’application peut créer un PDF image anonymisé en masquant les correspondances OCR directement sur l’image de page. Les commentaires, notes de présentation et annotations prises en charge peuvent être supprimés, et le fichier anonymisé peut être ouvert directement depuis le résultat. Les résultats peuvent être exportés en JSON/CSV, rapport HTML/PDF complet ou rapport batch/audit pour les analyses de dossier.</p>
+          <p style="color:var(--muted);font-size:12px;">⚠ L’anonymisation PDF et OCR doit toujours être vérifiée visuellement. L’OCR peut mal lire le texte ; les correspondances introuvables sur l’image de page sont signalées.</p>
         </div>
         <div class="about-section">
           <h3>Flux de travail et surveillance</h3>
@@ -1384,7 +1390,8 @@
             <li><strong>Fichier, collage et dossier :</strong> analysez des fichiers seuls, plusieurs fichiers par glisser-déposer, du texte collé ou des dossiers entiers. L’analyse de dossier peut être récursive avec un nombre maximal de fichiers, une profondeur maximale, une vue tableau, des infobulles par fichier, un rapport complet au clic, filtres, tri, export et redaction batch des fichiers sélectionnés.</li>
             <li><strong>Surveillance de dossier :</strong> jusqu’à trois dossiers choisis, par exemple Téléchargements, sont surveillés localement. Les fichiers nouveaux ou modifiés sont analysés lorsqu’ils sont stables, puis affichés dans l’historique et le statut d’arrière-plan.</li>
             <li><strong>Surveillance du presse-papiers :</strong> avertit localement si vous copiez du contenu rouge ou noir avant de le coller dans un autre outil. Le contenu n’est pas stocké.</li>
-            <li><strong>OCR pour PDF image :</strong> si un document contient peu ou pas de texte, vous pouvez lancer un OCR pour extraire le texte des pages scannées.</li>
+            <li><strong>Mode de scan automatique :</strong> l’application choisit automatiquement la lecture rapide ou avancée. Les tableaux, le faible volume de texte ou le contenu basé sur des images passent par le traitement avancé.</li>
+            <li><strong>OCR pour documents scannés :</strong> si un PDF ou fichier image contient peu ou pas de texte lisible par machine, l’OCR peut démarrer automatiquement ou manuellement. Les résultats OCR sont clairement marqués.</li>
             <li><strong>Desktop, web et actions rapides :</strong> l’application peut fonctionner comme application desktop ou en mode web local. Le clic droit Windows et Finder Quick Action sur macOS peuvent envoyer des fichiers directement au scanner lorsque le script d’installation a été utilisé.</li>
           </ul>
         </div>
@@ -1392,8 +1399,9 @@
           <h3>Personnalisation et intégrations</h3>
           <ul>
             <li>La liste blanche personnelle, la blacklist et ignore.toml peuvent être modifiées dans les paramètres.</li>
+            <li>Les mots et expressions qui doivent toujours être anonymisés peuvent être saisis manuellement lorsque les règles normales ne trouvent pas tout.</li>
             <li>Des expressions régulières personnalisées (regex) peuvent être ajoutées via l’interface pour des numéros de dossier internes, codes projet ou autres formats propres à l’organisation.</li>
-            <li>Les profils de redaction permettent de choisir entre une analyse normale, stricte ou plus conservatrice.</li>
+            <li>Les candidats rejetés sont affichés séparément et peuvent quand même être sélectionnés pour l’anonymisation si un post-filtre a été trop strict.</li>
             <li>Les tags Microsoft 365 et les labels de sensibilité/rétention peuvent être lus, proposés et écrits lorsque l’accès Graph est configuré, avec mapping local du niveau de risque vers le label cible.</li>
             <li>Une API locale avec page Swagger/OpenAPI permet de créer d’autres frontends, par exemple Power Apps, sans modifier l’application desktop.</li>
             <li>L’application peut vérifier GitHub pour les nouvelles versions, télécharger l’installer adapté au système d’exploitation et afficher les scripts d’installation pertinents.</li>
@@ -1452,8 +1460,8 @@
         </div>
         <div class="about-section">
           <h3>Anonimización y exportación</h3>
-          <p>Después del análisis puede elegir qué hallazgos usar y generar una versión redactada/redacted. En DOCX, PPTX, XLSX y PDF el texto se reemplaza directamente en el archivo. Se pueden eliminar comentarios, notas del orador y anotaciones compatibles, y el resultado puede volver a escanearse manualmente con un botón dedicado. También puede exportar hallazgos como JSON/CSV, informe HTML/PDF completo o informe batch/audit para escaneos de carpeta.</p>
-          <p style="color:var(--muted);font-size:12px;">⚠ En PDF se reemplaza texto en el flujo de contenido, pero el texto en metadatos o imágenes no se anonimiza. Verifique el resultado.</p>
+          <p>Después del análisis puede elegir qué hallazgos usar y generar una versión anonimizada/redacted. En DOCX, PPTX, XLSX y PDF textuales el texto se reemplaza directamente en el archivo. Para PDF escaneados y archivos de imagen, la app puede crear un PDF de imagen anonimizado enmascarando coincidencias OCR directamente sobre la imagen de la página. Se pueden eliminar comentarios, notas del orador y anotaciones compatibles, y el archivo anonimizado puede abrirse directamente desde el resultado. También puede exportar hallazgos como JSON/CSV, informe HTML/PDF completo o informe batch/audit para escaneos de carpeta.</p>
+          <p style="color:var(--muted);font-size:12px;">⚠ La anonimización PDF y OCR siempre debe verificarse visualmente. OCR puede leer mal el texto; las coincidencias que no se encuentren de nuevo en la imagen de página se informan.</p>
         </div>
         <div class="about-section">
           <h3>Flujos de trabajo y supervisión</h3>
@@ -1461,7 +1469,8 @@
             <li><strong>Archivo, pegar y carpeta:</strong> escanee archivos individuales, varios archivos mediante arrastrar y soltar, texto pegado o carpetas completas. El escaneo de carpetas puede ejecutarse recursivamente con número máximo de archivos, profundidad máxima, vista de tabla, tooltip por archivo, informe completo al hacer clic, filtros, ordenación, exportación y redaction batch de archivos seleccionados.</li>
             <li><strong>Vigilancia de carpeta:</strong> hasta tres carpetas elegidas, por ejemplo Descargas, se supervisan localmente. Los archivos nuevos o modificados se escanean cuando están estables y los resultados aparecen en el historial y el estado de fondo.</li>
             <li><strong>Vigilancia del portapapeles:</strong> avisa localmente si copia contenido rojo o negro antes de pegarlo en otra herramienta. El contenido no se guarda.</li>
-            <li><strong>OCR para PDF de imagen:</strong> si un documento contiene poco o ningún texto, puede ejecutar OCR para extraer texto de páginas escaneadas.</li>
+            <li><strong>Modo de escaneo automático:</strong> la app elige automáticamente lectura rápida o avanzada. Tablas, poco texto o contenido basado en imágenes pasan por procesamiento avanzado.</li>
+            <li><strong>OCR para documentos escaneados:</strong> si un PDF o archivo de imagen tiene poco o ningún texto legible por máquina, OCR puede iniciarse automática o manualmente. Los resultados OCR se marcan claramente.</li>
             <li><strong>Desktop, web y acciones rápidas:</strong> la aplicación puede ejecutarse como app de escritorio o en modo web local. El clic derecho de Windows y Finder Quick Action en macOS pueden enviar archivos directamente al scanner cuando se ha usado el script de instalación.</li>
           </ul>
         </div>
@@ -1469,8 +1478,9 @@
           <h3>Personalización e integraciones</h3>
           <ul>
             <li>La lista blanca personal, la blacklist e ignore.toml se pueden editar en Configuración.</li>
+            <li>Las palabras y expresiones que siempre deben anonimizarse pueden introducirse manualmente para documentos donde las reglas normales no detectan todo.</li>
             <li>Se pueden añadir patrones regex personalizados desde la UI para números de caso internos, códigos de proyecto u otros formatos específicos de la organización.</li>
-            <li>Los perfiles de redaction permiten elegir entre análisis normal, estricto o más conservador.</li>
+            <li>Los candidatos descartados se muestran por separado y aun así pueden seleccionarse para anonimización si un postfiltro fue demasiado estricto.</li>
             <li>Las etiquetas Microsoft 365 y los labels de sensibilidad/retención pueden leerse, sugerirse y escribirse cuando Graph está configurado, con mapping local del nivel de semáforo al label objetivo.</li>
             <li>Una API local con página Swagger/OpenAPI permite crear otros frontends, por ejemplo Power Apps, sin cambiar la aplicación desktop.</li>
             <li>La app puede comprobar GitHub para nuevas versiones, descargar el instalador correcto para el sistema operativo y mostrar scripts de instalación cuando corresponda.</li>
@@ -7460,11 +7470,7 @@
       return cats;
     }
 
-    // Velg alle / fjern alle for scan-cat
-    document.getElementById("scan-sel-all").addEventListener("click", () =>
-      { document.querySelectorAll(".scan-cat").forEach(cb => cb.checked = true); saveSettings(); });
-    document.getElementById("scan-sel-none").addEventListener("click", () =>
-      { document.querySelectorAll(".scan-cat").forEach(cb => cb.checked = false); saveSettings(); });
+    // Standardvalg for scan-cat
     document.getElementById("scan-sel-default").addEventListener("click", _setDefaultScanCategories);
 
     function _rescanLastDocument() {

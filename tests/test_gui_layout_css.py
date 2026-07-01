@@ -696,6 +696,8 @@ def test_scan_categories_are_persisted_and_default_button_is_wired():
     html = HTML.read_text(encoding="utf-8")
 
     assert 'id="scan-sel-default"' in html
+    assert 'id="scan-sel-all"' not in html
+    assert 'id="scan-sel-none"' not in html
     assert 'data-i18n="selDefault"' in html
     assert "const DEFAULT_SCAN_CATEGORIES = [" in html
     assert '"medisinsk"' not in html.split("const DEFAULT_SCAN_CATEGORIES = [", 1)[1].split("];", 1)[0]
@@ -705,6 +707,8 @@ def test_scan_categories_are_persisted_and_default_button_is_wired():
     assert "if (Array.isArray(s.scanCategories)) _applyScanCategories(s.scanCategories);" in html
     assert "scanCategories: _selectedScanCategories()" in html
     assert 'document.querySelectorAll(".scan-cat").forEach(cb => cb.addEventListener("change", saveSettings));' in html
+    assert 'document.getElementById("scan-sel-all").addEventListener("click"' not in html
+    assert 'document.getElementById("scan-sel-none").addEventListener("click"' not in html
     assert 'document.getElementById("scan-sel-default").addEventListener("click", _setDefaultScanCategories);' in html
     assert html.count("selDefault:") == 6
 
@@ -1137,3 +1141,13 @@ def test_about_text_documents_recent_features_in_all_languages():
         assert "Swagger/OpenAPI" in section
         assert "Power Apps" in section
         assert "regex" in section.lower()
+        assert "Redaction profiles" not in section
+        assert "Redaction-profiler" not in section
+        assert "Redaction-Profile" not in section
+        assert "profils de redaction" not in section
+        assert "perfiles de redaction" not in section
+
+    assert "Automatic scan mode" in html
+    assert "OCR can misread text" in html
+    assert "redacted image PDF" in html
+    assert "Suppressed candidates" in html
