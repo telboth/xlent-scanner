@@ -1540,6 +1540,11 @@
           <label for="stripAnnotations" data-i18n="stripAnnotationsLabel">Fjern kommentarer og speaker notes ved anonymisering</label>
         </div>
         <div class="settings-note" data-i18n="stripAnnotationsNote">Gjelder støttede originalformater: DOCX-kommentarer, PPTX speaker notes/kommentarer, XLSX-kommentarer og PDF-annotasjoner.</div>
+        <div class="settings-row" style="margin-top:12px;">
+          <input type="checkbox" id="auto-ocr" checked />
+          <label for="auto-ocr" data-i18n="autoOcrLabel">Kjør automatisk OCR på skannede dokumenter og bildefiler</label>
+        </div>
+        <div class="settings-note" data-i18n="autoOcrNote">Når en PDF eller bildefil mangler maskinlesbar tekst, starter OCR automatisk.</div>
       </details>
 
       <!-- API docs -->
@@ -1894,6 +1899,8 @@
         settingsRedactionTitle: "Redaction",
         stripAnnotationsLabel: "Fjern kommentarer og speaker notes ved anonymisering",
         stripAnnotationsNote: "Gjelder støttede originalformater: DOCX-kommentarer, PPTX speaker notes/kommentarer, XLSX-kommentarer og PDF-annotasjoner.",
+        autoOcrLabel: "Kjør automatisk OCR på skannede dokumenter og bildefiler",
+        autoOcrNote: "Når en PDF eller bildefil mangler maskinlesbar tekst, starter OCR automatisk.",
         settingsFilterTitle: "Filtrering",
         settingsWhitelistTitle: "Hviteliste",
         whitelistPersonalNote: "Denne hvitelisten er personlig og bygges opp av den enkelte bruker.",
@@ -2202,6 +2209,7 @@
         ocrRescanBtn:        "Kjør OCR-skann",
         ocrRescanTooltip:    "Kjører OCR for å hente tekst fra bildebaserte PDF-er og bildefiler. Dette kan ta tid og bør brukes når vanlig tekstuttrekk finner lite eller ingen tekst.",
         ocrRunning:          "Kjører OCR-skann…",
+        autoOcrRunning:      "Dokumentet ser ut til å være skannet eller bildebasert. OCR startes automatisk…",
         ocrResultNotice:     "Resultatet er basert på OCR. OCR kan feiltolke tegn og layout, så kontroller funn og anonymisert fil ekstra nøye.",
         saveOcrPdf:          "Lagre anonymisert OCR-PDF",
         saveImagePdf:        "Lagre anonymisert bilde-PDF",
@@ -2320,6 +2328,8 @@
         settingsRedactionTitle: "Redigering",
         stripAnnotationsLabel: "Ta bort kommentarer och speaker notes vid redigering",
         stripAnnotationsNote: "Gäller stödda originalformat: DOCX-kommentarer, PPTX speaker notes/kommentarer, XLSX-kommentarer och PDF-annoteringar.",
+        autoOcrLabel: "Kör OCR automatiskt på skannade dokument och bildfiler",
+        autoOcrNote: "När en PDF eller bildfil saknar maskinläsbar text startar OCR automatiskt.",
         settingsFilterTitle: "Filtrering",
         settingsWhitelistTitle: "Vitlista",
         whitelistPersonalNote: "Denna vitlista är personlig och byggs upp av varje enskild användare.",
@@ -2618,6 +2628,7 @@
         ocrRescanBtn:        "Kör OCR-skanning",
         ocrRescanTooltip:    "Kör OCR för att hämta text från bildbaserade PDF:er och bildfiler. Detta kan ta tid och bör användas när vanlig textextraktion hittar lite eller ingen text.",
         ocrRunning:          "Kör OCR-skanning…",
+        autoOcrRunning:      "Dokumentet verkar vara skannat eller bildbaserat. OCR startar automatiskt…",
         ocrResultNotice:     "Resultatet bygger på OCR. OCR kan feltolka tecken och layout, så kontrollera fynd och anonymiserad fil extra noggrant.",
         saveOcrPdf:          "Spara anonymiserad OCR-PDF",
         saveImagePdf:        "Spara anonymiserad bild-PDF",
@@ -2736,6 +2747,8 @@
         settingsRedactionTitle: "Redaction",
         stripAnnotationsLabel: "Remove comments and speaker notes during redaction",
         stripAnnotationsNote: "Applies to supported original formats: DOCX comments, PPTX speaker notes/comments, XLSX comments and PDF annotations.",
+        autoOcrLabel: "Run OCR automatically on scanned documents and image files",
+        autoOcrNote: "When a PDF or image file has no machine-readable text, OCR starts automatically.",
         settingsFilterTitle: "Filtering",
         settingsWhitelistTitle: "Whitelist",
         whitelistPersonalNote: "This whitelist is personal and built by each individual user.",
@@ -3039,6 +3052,7 @@
         ocrRescanBtn:        "Run OCR scan",
         ocrRescanTooltip:    "Runs OCR to extract text from image-based PDFs and image files. This can take time and should be used when normal text extraction finds little or no text.",
         ocrRunning:          "Running OCR scan…",
+        autoOcrRunning:      "The document appears to be scanned or image-based. OCR is starting automatically…",
         ocrResultNotice:     "This result is based on OCR. OCR can misread characters and layout, so verify findings and the redacted file carefully.",
         saveOcrPdf:          "Save redacted OCR PDF",
         saveImagePdf:        "Save redacted image PDF",
@@ -3149,6 +3163,8 @@
         settingsRedactionTitle: "Redaktion",
         stripAnnotationsLabel: "Kommentare und Sprechernotizen bei der Redaktion entfernen",
         stripAnnotationsNote: "Gilt für unterstützte Originalformate: DOCX-Kommentare, PPTX-Sprechernotizen/Kommentare, XLSX-Kommentare und PDF-Anmerkungen.",
+        autoOcrLabel: "OCR für gescannte Dokumente und Bilddateien automatisch ausführen",
+        autoOcrNote: "Wenn eine PDF- oder Bilddatei keinen maschinenlesbaren Text enthält, startet OCR automatisch.",
         ignoreXlent:         "Interne Begriffe filtern",
         ignoreHint:          "Domainnamen, interne E-Mails und Namen werden herausgefiltert.",
         settingsWhitelistTitle:"Whitelist",
@@ -3387,6 +3403,7 @@
         ocrRescanBtn:        "OCR-Scan starten",
         ocrRescanTooltip:    "Führt OCR aus, um Text aus bildbasierten PDFs und Bilddateien zu extrahieren. Dies kann Zeit benötigen und sollte genutzt werden, wenn die normale Textextraktion wenig oder keinen Text findet.",
         ocrRunning:          "OCR-Scan läuft…",
+        autoOcrRunning:      "Das Dokument scheint gescannt oder bildbasiert zu sein. OCR startet automatisch…",
         ocrResultNotice:     "Dieses Ergebnis basiert auf OCR. OCR kann Zeichen und Layout falsch erkennen; prüfen Sie Treffer und anonymisierte Datei besonders sorgfältig.",
         saveOcrPdf:          "Anonymisierte OCR-PDF speichern",
         saveImagePdf:        "Anonymisierte Bild-PDF speichern",
@@ -3580,6 +3597,8 @@
         settingsRedactionTitle: "Biffage",
         stripAnnotationsLabel: "Supprimer les commentaires et notes de présentation lors du biffage",
         stripAnnotationsNote: "S’applique aux formats originaux pris en charge : commentaires DOCX, notes/commentaires PPTX, commentaires XLSX et annotations PDF.",
+        autoOcrLabel: "Lancer automatiquement l’OCR sur les documents scannés et fichiers image",
+        autoOcrNote: "Lorsqu’un PDF ou fichier image ne contient pas de texte lisible par machine, l’OCR démarre automatiquement.",
         ignoreXlent:         "Filtrer les termes internes",
         ignoreHint:          "Les noms de domaine, e-mails internes et noms sont filtrés.",
         settingsWhitelistTitle:"Liste blanche",
@@ -3818,6 +3837,7 @@
         ocrRescanBtn:        "Lancer l’OCR",
         ocrRescanTooltip:    "Lance l’OCR pour extraire le texte des PDF basés sur des images et des fichiers image. Cela peut prendre du temps et doit être utilisé lorsque l’extraction normale trouve peu ou pas de texte.",
         ocrRunning:          "OCR en cours…",
+        autoOcrRunning:      "Le document semble scanné ou basé sur des images. L’OCR démarre automatiquement…",
         ocrResultNotice:     "Ce résultat est basé sur l’OCR. L’OCR peut mal interpréter les caractères et la mise en page ; vérifiez soigneusement les résultats et le fichier anonymisé.",
         saveOcrPdf:          "Enregistrer le PDF OCR anonymisé",
         saveImagePdf:        "Enregistrer le PDF image anonymisé",
@@ -4011,6 +4031,8 @@
         settingsRedactionTitle: "Redacción",
         stripAnnotationsLabel: "Eliminar comentarios y notas del presentador durante la redacción",
         stripAnnotationsNote: "Se aplica a formatos originales compatibles: comentarios DOCX, notas/comentarios PPTX, comentarios XLSX y anotaciones PDF.",
+        autoOcrLabel: "Ejecutar OCR automáticamente en documentos escaneados y archivos de imagen",
+        autoOcrNote: "Cuando un PDF o archivo de imagen no tiene texto legible por máquina, OCR se inicia automáticamente.",
         ignoreXlent:         "Filtrar términos internos",
         ignoreHint:          "Los nombres de dominio, correos internos y nombres se filtran.",
         settingsWhitelistTitle:"Lista blanca",
@@ -4249,6 +4271,7 @@
         ocrRescanBtn:        "Ejecutar OCR",
         ocrRescanTooltip:    "Ejecuta OCR para extraer texto de PDF basados en imágenes y archivos de imagen. Puede tardar y debe usarse cuando la extracción normal encuentra poco o ningún texto.",
         ocrRunning:          "Ejecutando OCR…",
+        autoOcrRunning:      "El documento parece escaneado o basado en imágenes. OCR se inicia automáticamente…",
         ocrResultNotice:     "Este resultado se basa en OCR. El OCR puede interpretar mal caracteres y diseño, así que verifique cuidadosamente los hallazgos y el archivo anonimizado.",
         saveOcrPdf:          "Guardar PDF OCR anonimizado",
         saveImagePdf:        "Guardar PDF de imagen anonimizado",
@@ -5540,6 +5563,36 @@
       return reason.replaceAll("_", " ");
     }
 
+    function _autoOcrEnabled() {
+      return document.getElementById("auto-ocr")?.checked !== false;
+    }
+
+    function _isOcrCandidateResult(r, ext) {
+      return (ext === "pdf" || IMAGE_EXT.has(ext)) && lastScan
+        && (r.warning_code === "no_text_extracted" || r.warning_code === "little_text_extracted");
+    }
+
+    function _shouldAutoOcr(r, ext) {
+      return _autoOcrEnabled()
+        && _isOcrCandidateResult(r, ext)
+        && !lastScan?.ocr
+        && !r.ocr_used;
+    }
+
+    function _runOcrForLastScan() {
+      if (!lastScan) return;
+      if (lastScan.type === "path") scanPath(lastScan.path, { ocr: true });
+      else if (lastScan.type === "upload") scanUpload(lastScan.file, lastScan.name, { ocr: true });
+    }
+
+    function _maybeRunAutoOcr(r, ext) {
+      if (!_shouldAutoOcr(r, ext)) return false;
+      setStatus(t("autoOcrRunning"));
+      setOcrProgress(true);
+      setTimeout(() => _runOcrForLastScan(), 50);
+      return true;
+    }
+
     function renderResult(r) {
       lastResult = r;
       _aiFindingsData = [];
@@ -5568,9 +5621,9 @@
 
       const warning = warningText(r);
       // OCR-tilbud: bilde-PDF/bildefil uten tekst kan re-skannes med OCR
-      const canOcr = (ext === "pdf" || IMAGE_EXT.has(ext)) && lastScan
-        && (r.warning_code === "no_text_extracted" || r.warning_code === "little_text_extracted");
-      const ocrBtnHtml = canOcr
+      const canOcr = _isOcrCandidateResult(r, ext);
+      const shouldAutoOcr = _shouldAutoOcr(r, ext);
+      const ocrBtnHtml = canOcr && !shouldAutoOcr
         ? ` <button id="btn-ocr-rescan" class="ctrl-btn ctrl-btn-outline-primary"
               style="margin-left:10px;font-size:12px;"
               title="${escapeHtml(t("ocrRescanTooltip"))}">${t("ocrRescanBtn")}</button>`
@@ -5637,13 +5690,12 @@
 
       // OCR re-skann av bilde-PDF (knappen finnes kun når canOcr var sann)
       document.getElementById("btn-ocr-rescan")?.addEventListener("click", () => {
-        if (!lastScan) return;
         const btn = document.getElementById("btn-ocr-rescan");
         if (btn) btn.disabled = true;
-        if (lastScan.type === "path") scanPath(lastScan.path, { ocr: true });
-        else if (lastScan.type === "upload") scanUpload(lastScan.file, lastScan.name, { ocr: true });
+        _runOcrForLastScan();
       });
       renderSeveritySummary();
+      const autoOcrStarted = _maybeRunAutoOcr(r, ext);
 
       // Oppdater re-skann-knapp nå som lastResult er satt
       { const rb = document.getElementById("ai-rescan-btn");
@@ -5656,7 +5708,7 @@
         _resetAiProgressMeter();
         document.getElementById("ai-findings-area").innerHTML = "";
         document.getElementById("ai-anon-bar").style.display = "none";
-        autoAiScan();
+        if (!autoOcrStarted) autoAiScan();
       } else {
         document.getElementById("ai-scan-status").style.display = "none";
         _resetAiProgressMeter();
@@ -6561,6 +6613,8 @@
         if (Array.isArray(s.scanCategories)) _applyScanCategories(s.scanCategories);
         const sa = document.getElementById("stripAnnotations");
         if (sa) sa.checked = s.stripAnnotations === true;
+        const autoOcr = document.getElementById("auto-ocr");
+        if (autoOcr) autoOcr.checked = s.autoOcr !== false;
         const m365Fields = {
           "m365-drive-id": "m365_drive_id",
           "m365-item-id": "m365_item_id",
@@ -6587,6 +6641,7 @@
           language:    document.getElementById("langSelect").value,
           scanCategories: _selectedScanCategories(),
           stripAnnotations: document.getElementById("stripAnnotations").checked,
+          autoOcr: document.getElementById("auto-ocr")?.checked !== false,
           theme:       normalizeTheme(document.getElementById("themeSelect").value),
           m365_drive_id: document.getElementById("m365-drive-id")?.value || "",
           m365_item_id: document.getElementById("m365-item-id")?.value || "",
@@ -6610,6 +6665,7 @@
     document.getElementById("langSelect").addEventListener("change", saveSettings);
     document.querySelectorAll(".scan-cat").forEach(cb => cb.addEventListener("change", saveSettings));
     document.getElementById("stripAnnotations").addEventListener("change", saveSettings);
+    document.getElementById("auto-ocr")?.addEventListener("change", saveSettings);
     document.getElementById("manual-redaction-terms")?.addEventListener("input", () => {
       updateManualRedactionPreview();
       updateRedactionReport(_currentResultExt());

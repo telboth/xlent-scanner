@@ -591,7 +591,7 @@ def test_guard_watch_custom_patterns_and_ocr_ui_are_wired():
         'fd.append("ocr", "true")',
         'ocr: true',
         'const IMAGE_EXT   = new Set(["png","jpg","jpeg","bmp","tif","tiff","webp"]);',
-        'const canOcr = (ext === "pdf" || IMAGE_EXT.has(ext)) && lastScan',
+        'function _isOcrCandidateResult(r, ext)',
         '.png,.jpg,.jpeg,.bmp,.tif,.tiff,.webp',
     ]:
         assert snippet in html
@@ -646,6 +646,9 @@ def test_guard_watch_custom_patterns_and_ocr_ui_are_wired():
         "ocrRescanBtn",
         "ocrRescanTooltip",
         "ocrRunning",
+        "autoOcrRunning",
+        "autoOcrLabel",
+        "autoOcrNote",
         "ocrResultNotice",
         "saveOcrPdf",
         "saveImagePdf",
@@ -704,6 +707,23 @@ def test_scan_categories_are_persisted_and_default_button_is_wired():
     assert 'document.querySelectorAll(".scan-cat").forEach(cb => cb.addEventListener("change", saveSettings));' in html
     assert 'document.getElementById("scan-sel-default").addEventListener("click", _setDefaultScanCategories);' in html
     assert html.count("selDefault:") == 6
+
+
+def test_auto_ocr_setting_defaults_on_and_is_wired():
+    html = HTML.read_text(encoding="utf-8")
+
+    assert 'id="auto-ocr" checked' in html
+    assert 'data-i18n="autoOcrLabel"' in html
+    assert 'data-i18n="autoOcrNote"' in html
+    assert "if (autoOcr) autoOcr.checked = s.autoOcr !== false;" in html
+    assert 'autoOcr: document.getElementById("auto-ocr")?.checked !== false' in html
+    assert 'document.getElementById("auto-ocr")?.addEventListener("change", saveSettings);' in html
+    assert "function _maybeRunAutoOcr(r, ext)" in html
+    assert "function _runOcrForLastScan()" in html
+    assert "setTimeout(() => _runOcrForLastScan(), 50);" in html
+    assert "&& !lastScan?.ocr" in html
+    assert "&& !r.ocr_used" in html
+    assert "if (!autoOcrStarted) autoAiScan();" in html
 
 
 def test_scan_strategy_is_shown_in_timing_diagnostics():
