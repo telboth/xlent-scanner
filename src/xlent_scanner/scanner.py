@@ -7,6 +7,7 @@ import tempfile
 import time
 import warnings
 from collections.abc import Iterable
+from contextvars import ContextVar
 from pathlib import Path
 
 import fitz  # type: ignore[import-untyped]  # fallback PDF-parser
@@ -19,6 +20,7 @@ _DOCLING_TABLE_IMAGE_DEPRECATION = (
     r"`TableItem\.get_image\(\)` to extract table images from page images\."
 )
 _DOCLING_IMAGE_PLACEHOLDER_RE = re.compile(r"(?is)<!--\s*image\s*-->")
+_extraction_metadata: ContextVar[dict[str, str]] = ContextVar("xlent_scanner_extraction_metadata", default={})
 
 from xlent_scanner.detectors.clients import detect_clients
 from xlent_scanner.detectors.creditcards import detect_creditcards
@@ -123,6 +125,14 @@ def normalise_pdf_mode(pdf_mode: str | None) -> str:
     return mode if mode in {"fast", "auto", "advanced"} else "fast"
 
 
+def _set_extraction_metadata(**values: str) -> None:
+    _extraction_metadata.set({key: value for key, value in values.items() if value})
+
+
+def _current_extraction_metadata() -> dict[str, str]:
+    return dict(_extraction_metadata.get() or {})
+
+
 def reset_ignore_cache() -> None:
     global _ignore_list
     _ignore_list = None
@@ -222,6 +232,45 @@ def _meaningful_extracted_text(text: str) -> str:
     return _DOCLING_IMAGE_PLACEHOLDER_RE.sub(" ", text).strip()
 
 
+_TABLE_KEYWORD_RE = re.compile(
+    r"(?i)\b("
+    r"unit\s+price|quantity|qty|description|invoice|subtotal|total|vat|amount|"
+    r"table\s+\d+|kolonne|beløp|sum|mva|antall|enhetspris"
+    r")\b"
+)
+_MULTISPACE_COLUMN_RE = re.compile(r"\S\s{2,}\S")
+_NUMERIC_CELL_RE = re.compile(r"(?:\b\d{1,3}(?:[ .,\t]\d{3})+(?:[,.]\d{1,2})?\b|\b\d+[,.]\d{2}\b|\b\d+\s*(?:kr|nok|eur|usd|%|\$|€)\b)", re.I)
+
+
+def _looks_like_table_text(text: str) -> bool:
+    """Heuristikk for PDF-tekst som trolig representerer tabeller/kolonner.
+
+    Brukes kun i PDF auto-modus som signal for å prøve Docling. Terskelen er
+    konservativ for å unngå at vanlige avsnitt sender alle PDF-er gjennom
+    tyngre layout-parser.
+    """
+    lines = [line.strip() for line in str(text or "").splitlines() if line.strip()]
+    if len(lines) < 3:
+        return False
+
+    column_like = 0
+    numeric_dense = 0
+    keyword_hits = 0
+    for line in lines[:300]:
+        if _MULTISPACE_COLUMN_RE.search(line) or line.count("\t") >= 2 or line.count("|") >= 2:
+            column_like += 1
+        if len(_NUMERIC_CELL_RE.findall(line)) >= 2:
+            numeric_dense += 1
+        if _TABLE_KEYWORD_RE.search(line):
+            keyword_hits += 1
+
+    return (
+        column_like >= 4
+        or (column_like >= 2 and (numeric_dense >= 2 or keyword_hits >= 2))
+        or (numeric_dense >= 4 and keyword_hits >= 1)
+    )
+
+
 def _extract_text_pdf(path: Path, ocr: bool = False, pdf_mode: str = "fast") -> str:
     """Ekstraherer tekst fra PDF.
 
@@ -232,6 +281,7 @@ def _extract_text_pdf(path: Path, ocr: bool = False, pdf_mode: str = "fast") -> 
     feil propageres som RuntimeError med forklarende melding i stedet.
     """
     if ocr:
+        _set_extraction_metadata(scan_strategy="advanced", scan_strategy_reason="ocr")
         try:
             with warnings.catch_warnings():
                 _ignore_docling_table_image_deprecation()
@@ -247,9 +297,17 @@ def _extract_text_pdf(path: Path, ocr: bool = False, pdf_mode: str = "fast") -> 
     mode = normalise_pdf_mode(pdf_mode)
     fitz_text = _extract_text_pdf_fitz(path)
     if mode == "fast":
+        _set_extraction_metadata(scan_strategy="fast", scan_strategy_reason="explicit_fast")
         return fitz_text
-    if mode == "auto" and len(_meaningful_extracted_text(fitz_text)) >= TEXT_WARNING_MIN_CHARS:
-        return fitz_text
+    meaningful_fitz_len = len(_meaningful_extracted_text(fitz_text))
+    table_like = _looks_like_table_text(fitz_text)
+    if mode == "auto":
+        if meaningful_fitz_len >= TEXT_WARNING_MIN_CHARS and not table_like:
+            _set_extraction_metadata(scan_strategy="fast", scan_strategy_reason="auto_fast")
+            return fitz_text
+        docling_reason = "table_layout" if table_like else "little_text"
+    else:
+        docling_reason = "explicit_advanced"
 
     try:
         with warnings.catch_warnings():
@@ -257,10 +315,13 @@ def _extract_text_pdf(path: Path, ocr: bool = False, pdf_mode: str = "fast") -> 
             converter = _get_pdf_converter()
             docling_text = converter.convert(str(path)).document.export_to_markdown()
     except Exception:
+        _set_extraction_metadata(scan_strategy="fast", scan_strategy_reason=f"{docling_reason}_fallback")
         return fitz_text
 
     if len(_meaningful_extracted_text(docling_text)) > len(_meaningful_extracted_text(fitz_text)):
+        _set_extraction_metadata(scan_strategy="advanced", scan_strategy_reason=docling_reason)
         return docling_text
+    _set_extraction_metadata(scan_strategy="fast", scan_strategy_reason=f"{docling_reason}_not_better")
     return fitz_text
 
 
@@ -315,7 +376,9 @@ def _extract_text_image(path: Path, ocr: bool = False, pdf_mode: str = "fast") -
                 except OSError:
                     pass
     if not ocr:
+        _set_extraction_metadata(scan_strategy="fast", scan_strategy_reason="image_no_ocr")
         return ""
+    _set_extraction_metadata(scan_strategy="fast", scan_strategy_reason="ocr")
     try:
         result = _get_image_ocr_engine()(path)
     except Exception as exc:
@@ -851,6 +914,7 @@ def scan_file(
         )
     suffix = p.suffix.lower()
     scan_mode = normalise_pdf_mode(pdf_mode)
+    _set_extraction_metadata()
     advanced_image_ocr = suffix in IMAGE_SUFFIXES and scan_mode == "advanced"
     if suffix not in SUPPORTED_SUFFIXES:
         return ScanResult(
@@ -894,6 +958,7 @@ def scan_file(
             scan_status="failed",
         )
 
+    extraction_metadata = _current_extraction_metadata()
     preview = text
 
     warning: str | None = None
@@ -962,6 +1027,8 @@ def scan_file(
             "scan_profile": scan_profile,
             "pdf_mode": scan_mode if suffix == ".pdf" else "",
             "scan_mode": scan_mode if suffix == ".pdf" or suffix in IMAGE_SUFFIXES else "",
+            "scan_strategy": extraction_metadata.get("scan_strategy", ""),
+            "scan_strategy_reason": extraction_metadata.get("scan_strategy_reason", ""),
         },
     )
     return assess(result)

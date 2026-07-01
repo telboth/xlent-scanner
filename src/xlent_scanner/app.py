@@ -697,8 +697,8 @@ def _api_openapi_spec() -> dict:
     scan_mode_property = {
         "type": "string",
         "enum": ["fast", "auto", "advanced"],
-        "default": "fast",
-        "description": "Scan-modus: fast=PyMuPDF for PDF/RapidOCR for bilder, auto=Docling ved lite PDF-tekst, advanced=Docling for PDF og bildefiler for bedre struktur/layout.",
+        "default": "auto",
+        "description": "Scan-modus: fast=PyMuPDF for PDF/RapidOCR for bilder, auto=Docling ved lite PDF-tekst eller tabell-/layoutsignaler, advanced=Docling for PDF og bildefiler for bedre struktur/layout.",
     }
     pdf_mode_property = {
         **scan_mode_property,

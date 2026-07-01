@@ -659,7 +659,6 @@ def test_guard_watch_custom_patterns_and_ocr_ui_are_wired():
         "folderRedactSelectedTooltip",
         "updateRunScriptTooltip",
         "m365WriteMetadataTooltip",
-        "scanModeAdvancedHint",
     ]:
         assert html.count(f"{key}:") == 6
 
@@ -667,7 +666,6 @@ def test_guard_watch_custom_patterns_and_ocr_ui_are_wired():
 def test_tooltips_exist_for_expensive_or_external_actions():
     html = HTML.read_text(encoding="utf-8")
 
-    assert 'data-i18n-title="pdfModeTooltip"' in html
     assert 'data-i18n-title="aiToggleTooltip"' in html
     assert 'data-i18n-title="folderRecursiveTooltip"' in html
     assert 'data-i18n-title="m365WriteMetadataTooltip"' in html
@@ -678,24 +676,62 @@ def test_tooltips_exist_for_expensive_or_external_actions():
     assert "el.title = t(el.dataset.i18nTitle);" in html
 
 
-def test_scan_mode_tooltip_explains_modes_and_layout_tradeoff():
+def test_scan_mode_selector_is_removed_and_frontend_uses_auto_scan_mode():
     html = HTML.read_text(encoding="utf-8")
 
-    norwegian_tooltip = (
-        "Rask: PyMuPDF for PDF og RapidOCR for bilder. Auto: bruker Docling bare når PDF-en har lite tekst. "
-        "Avansert: bruker Docling for PDF-er og bildefiler, og beholder formatering, tabeller og struktur mye bedre"
-    )
-    english_tooltip = (
-        "Fast: PyMuPDF for PDFs and RapidOCR for images. Auto: uses Docling only when the PDF has little text. "
-        "Advanced: uses Docling for PDFs and image files, and preserves formatting, tables, and structure much better"
-    )
-    assert "Scan-modus" in html
-    assert "Scan mode" in html
-    assert 'id="scan-mode-hint"' in html
-    assert 'function updateScanModeHint()' in html
-    assert 'mode === "advanced"' in html
-    assert norwegian_tooltip in html
-    assert english_tooltip in html
+    assert 'id="pdf-mode"' not in html
+    assert 'data-i18n="pdfMode"' not in html
+    assert 'id="scan-mode-hint"' not in html
+    assert "function updateScanModeHint" not in html
+    assert 'pdf_mode:     "auto"' in html
+    assert 'scan_mode:    "auto"' in html
+    assert "pdfMode:" not in html
+    assert "scanModeAdvancedHint:" not in html
+
+
+def test_scan_categories_are_persisted_and_default_button_is_wired():
+    html = HTML.read_text(encoding="utf-8")
+
+    assert 'id="scan-sel-default"' in html
+    assert 'data-i18n="selDefault"' in html
+    assert "const DEFAULT_SCAN_CATEGORIES = [" in html
+    assert '"medisinsk"' not in html.split("const DEFAULT_SCAN_CATEGORIES = [", 1)[1].split("];", 1)[0]
+    assert "function _selectedScanCategories()" in html
+    assert "function _applyScanCategories(categories)" in html
+    assert "function _setDefaultScanCategories()" in html
+    assert "if (Array.isArray(s.scanCategories)) _applyScanCategories(s.scanCategories);" in html
+    assert "scanCategories: _selectedScanCategories()" in html
+    assert 'document.querySelectorAll(".scan-cat").forEach(cb => cb.addEventListener("change", saveSettings));' in html
+    assert 'document.getElementById("scan-sel-default").addEventListener("click", _setDefaultScanCategories);' in html
+    assert html.count("selDefault:") == 6
+
+
+def test_scan_strategy_is_shown_in_timing_diagnostics():
+    html = HTML.read_text(encoding="utf-8")
+
+    assert "timings.scan_strategy" in html
+    assert "timings.scan_strategy_reason" in html
+    assert "function _scanStrategyLabel(value)" in html
+    assert "function _scanStrategyReasonLabel(value)" in html
+    for key in [
+        "scanStrategyFast",
+        "scanStrategyAdvanced",
+        "scanStrategyReasonAutoFast",
+        "scanStrategyReasonLittleText",
+        "scanStrategyReasonTableLayout",
+        "scanStrategyReasonOcr",
+        "scanStrategyReasonExplicitFast",
+        "scanStrategyReasonExplicitAdvanced",
+        "scanStrategyReasonFallback",
+    ]:
+        assert html.count(f"{key}:") == 6
+
+
+def test_suppressed_candidate_note_warns_to_select_only_sensitive_items():
+    html = HTML.read_text(encoding="utf-8")
+
+    assert "Huk av bare hvis dette faktisk er sensitiv informasjon" in html
+    assert "Select only if this is actually sensitive information" in html
 
 
 def test_ocr_rescan_shows_progress_indicator():

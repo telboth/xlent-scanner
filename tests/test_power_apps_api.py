@@ -198,6 +198,30 @@ def test_api_scan_file_accepts_pdf_mode(monkeypatch):
     assert captured["pdf_mode"] == "advanced"
 
 
+def test_api_scan_file_defaults_to_auto_scan_mode(monkeypatch):
+    monkeypatch.delenv("XLENT_SCANNER_API_KEY", raising=False)
+    captured = {}
+
+    def fake_scan_file(*args, **kwargs):
+        captured.update(kwargs)
+        return _fake_result()
+
+    monkeypatch.setattr(app_module, "scan_file", fake_scan_file)
+    app_module.app_state.api_scan_results.clear()
+    client = app_module.flask_app.test_client()
+
+    response = client.post(
+        "/api/scan-file",
+        json={
+            "file_name": "kunde.pdf",
+            "content_base64": base64.b64encode(b"%PDF-1.4").decode("ascii"),
+        },
+    )
+
+    assert response.status_code == 200
+    assert captured["pdf_mode"] == "auto"
+
+
 def test_api_scan_file_accepts_scan_mode_alias(monkeypatch):
     monkeypatch.delenv("XLENT_SCANNER_API_KEY", raising=False)
     captured = {}

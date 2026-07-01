@@ -826,19 +826,9 @@
         <div class="scan-opts-head">
           <span class="scan-opts-label" data-i18n="scanOptsTitle">Hva vil du finne?</span>
           <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
-            <label style="font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px;"
-                   data-i18n-title="pdfModeTooltip"
-                   title="Rask: PyMuPDF for PDF og RapidOCR for bilder. Auto: bruker Docling bare når PDF-en har lite tekst. Avansert: bruker Docling for PDF-er og bildefiler, og beholder formatering, tabeller og struktur mye bedre, men tar lengre tid.">
-              <span data-i18n="pdfMode">Scan-modus</span>
-              <select id="pdf-mode" style="font-size:11px;padding:2px 6px;">
-                <option value="fast" data-i18n="pdfModeFast">Rask</option>
-                <option value="auto" data-i18n="pdfModeAuto">Auto</option>
-                <option value="advanced" data-i18n="pdfModeAdvanced">Avansert</option>
-              </select>
-            </label>
-            <span id="scan-mode-hint" style="display:none;font-size:11px;color:#b45309;background:#fff7ed;border:1px solid #fed7aa;border-radius:999px;padding:2px 8px;" data-i18n="scanModeAdvancedHint">Avansert kan ta lengre tid, men bevarer layout og tabeller bedre.</span>
             <button class="ctrl-btn" id="scan-sel-all" style="font-size:11px;padding:2px 8px;" data-i18n="selAll">Velg alle</button>
             <button class="ctrl-btn" id="scan-sel-none" style="font-size:11px;padding:2px 8px;" data-i18n="selNone">Fjern alle</button>
+            <button class="ctrl-btn" id="scan-sel-default" style="font-size:11px;padding:2px 8px;" data-i18n="selDefault">Standardvalg</button>
           </div>
         </div>
         <div class="scan-cat-grid">
@@ -1869,8 +1859,18 @@
         whyWhitelistExplanation:"Funnets tekst finnes i hvitelisten og vises derfor som godkjent/grønn.",
         whyNoContext: "Ingen kontekst lagret.",
         suppressedTitle:"Forkastede kandidater ({n})",
-        suppressedNote:"Disse kandidatene ble funnet av en detektor, men forkastet av et postfilter.",
+        suppressedNote:"Disse kandidatene ble funnet av en detektor, men forkastet av et postfilter. Huk av bare hvis dette faktisk er sensitiv informasjon som skal fjernes.",
         suppressedUseCandidate:"Fjern likevel",
+        selDefault:"Standardvalg",
+        scanStrategyFast:"rask",
+        scanStrategyAdvanced:"avansert",
+        scanStrategyReasonAutoFast:"vanlig tekst",
+        scanStrategyReasonLittleText:"lite tekst",
+        scanStrategyReasonTableLayout:"tabell-/layoutsignaler",
+        scanStrategyReasonOcr:"OCR",
+        scanStrategyReasonExplicitFast:"eksplisitt rask",
+        scanStrategyReasonExplicitAdvanced:"eksplisitt avansert",
+        scanStrategyReasonFallback:"fallback",
         suppressedMore:"+ {n} flere forkastede kandidater",
         exportJson:   "Eksporter JSON",
         exportCsv:    "Eksporter CSV",
@@ -2133,12 +2133,6 @@
         folderLevel:        "Nivå",
         folderFile:         "Fil",
         scanOptsTitle:       "Hva vil du finne?",
-        pdfMode:             "Scan-modus",
-        pdfModeFast:         "Rask",
-        pdfModeAuto:         "Auto",
-        pdfModeAdvanced:     "Avansert",
-        pdfModeTooltip:      "Rask: PyMuPDF for PDF og RapidOCR for bilder. Auto: bruker Docling bare når PDF-en har lite tekst. Avansert: bruker Docling for PDF-er og bildefiler, og beholder formatering, tabeller og struktur mye bedre, men tar lengre tid.",
-        scanModeAdvancedHint:"Avansert kan ta lengre tid, men bevarer layout og tabeller bedre.",
         scanTimingLabel:     "Tidsbruk",
         scanCatId:           "Personnummer / ID",
         scanCatAdresse:      "Fysisk adresse",
@@ -2291,8 +2285,18 @@
         whyWhitelistExplanation:"Fyndets text finns i vitlistan och visas därför som godkänd/grön.",
         whyNoContext: "Ingen kontext sparad.",
         suppressedTitle:"Avvisade kandidater ({n})",
-        suppressedNote:"Dessa kandidater hittades av en detektor men avvisades av ett efterfilter.",
+        suppressedNote:"Dessa kandidater hittades av en detektor men avvisades av ett efterfilter. Markera bara om detta faktiskt är känslig information som ska tas bort.",
         suppressedUseCandidate:"Ta bort ändå",
+        selDefault:"Standardval",
+        scanStrategyFast:"snabb",
+        scanStrategyAdvanced:"avancerad",
+        scanStrategyReasonAutoFast:"vanlig text",
+        scanStrategyReasonLittleText:"lite text",
+        scanStrategyReasonTableLayout:"tabell-/layoutsignaler",
+        scanStrategyReasonOcr:"OCR",
+        scanStrategyReasonExplicitFast:"explicit snabb",
+        scanStrategyReasonExplicitAdvanced:"explicit avancerad",
+        scanStrategyReasonFallback:"fallback",
         suppressedMore:"+ {n} fler avvisade kandidater",
         exportJson:   "Exportera JSON",
         exportCsv:    "Exportera CSV",
@@ -2545,12 +2549,6 @@
         folderLevel:        "Nivå",
         folderFile:         "Fil",
         scanOptsTitle:       "Vad vill du hitta?",
-        pdfMode:             "Skanningsläge",
-        pdfModeFast:         "Snabb",
-        pdfModeAuto:         "Auto",
-        pdfModeAdvanced:     "Avancerad",
-        pdfModeTooltip:      "Snabb: PyMuPDF för PDF och RapidOCR för bilder. Auto: använder Docling bara när PDF:en har lite text. Avancerad: använder Docling för PDF:er och bildfiler och bevarar formatering, tabeller och struktur mycket bättre, men tar längre tid.",
-        scanModeAdvancedHint:"Avancerad kan ta längre tid men bevarar layout och tabeller bättre.",
         scanTimingLabel:     "Tidsåtgång",
         scanCatId:           "Personnummer / ID",
         scanCatAdresse:      "Fysisk adress",
@@ -2703,8 +2701,18 @@
         whyWhitelistExplanation:"The finding text is in the whitelist and is therefore shown as approved/green.",
         whyNoContext: "No context stored.",
         suppressedTitle:"Suppressed candidates ({n})",
-        suppressedNote:"These candidates were found by a detector but rejected by a post-filter.",
+        suppressedNote:"These candidates were found by a detector but rejected by a post-filter. Select only if this is actually sensitive information that should be removed.",
         suppressedUseCandidate:"Remove anyway",
+        selDefault:"Default",
+        scanStrategyFast:"fast",
+        scanStrategyAdvanced:"advanced",
+        scanStrategyReasonAutoFast:"regular text",
+        scanStrategyReasonLittleText:"little text",
+        scanStrategyReasonTableLayout:"table/layout signals",
+        scanStrategyReasonOcr:"OCR",
+        scanStrategyReasonExplicitFast:"explicit fast",
+        scanStrategyReasonExplicitAdvanced:"explicit advanced",
+        scanStrategyReasonFallback:"fallback",
         suppressedMore:"+ {n} more suppressed candidates",
         exportJson:   "Export JSON",
         exportCsv:    "Export CSV",
@@ -2962,12 +2970,6 @@
         folderLevel:        "Level",
         folderFile:         "File",
         scanOptsTitle:       "What do you want to find?",
-        pdfMode:             "Scan mode",
-        pdfModeFast:         "Fast",
-        pdfModeAuto:         "Auto",
-        pdfModeAdvanced:     "Advanced",
-        pdfModeTooltip:      "Fast: PyMuPDF for PDFs and RapidOCR for images. Auto: uses Docling only when the PDF has little text. Advanced: uses Docling for PDFs and image files, and preserves formatting, tables, and structure much better, but takes longer.",
-        scanModeAdvancedHint:"Advanced can take longer, but preserves layout and tables better.",
         scanTimingLabel:     "Timing",
         scanCatId:           "National / personal ID numbers",
         scanCatAdresse:      "Physical address",
@@ -3123,8 +3125,18 @@
         whyWhitelistExplanation:"Der Treffertext steht in der Whitelist und wird deshalb als freigegeben/grün angezeigt.",
         whyNoContext:        "Kein Kontext gespeichert.",
         suppressedTitle:     "Verworfene Kandidaten ({n})",
-        suppressedNote:      "Diese Kandidaten wurden von einem Detektor gefunden, aber durch einen Nachfilter verworfen.",
+        suppressedNote:      "Diese Kandidaten wurden von einem Detektor gefunden, aber durch einen Nachfilter verworfen. Nur auswählen, wenn es tatsächlich sensible Informationen sind, die entfernt werden sollen.",
         suppressedUseCandidate:"Trotzdem entfernen",
+        selDefault:          "Standardauswahl",
+        scanStrategyFast:    "schnell",
+        scanStrategyAdvanced:"erweitert",
+        scanStrategyReasonAutoFast:"normaler Text",
+        scanStrategyReasonLittleText:"wenig Text",
+        scanStrategyReasonTableLayout:"Tabellen-/Layoutsignale",
+        scanStrategyReasonOcr:"OCR",
+        scanStrategyReasonExplicitFast:"explizit schnell",
+        scanStrategyReasonExplicitAdvanced:"explizit erweitert",
+        scanStrategyReasonFallback:"Fallback",
         suppressedMore:      "+ {n} weitere verworfene Kandidaten",
         pdfCaveat:           "PDF-Direktbearbeitung: Text wird in Suchschichten ersetzt.",
         warnNoText:          "Im Dokument wurde kein Text gefunden. Die Datei kann bildbasiert oder gescannt sein. Inhalte in Bildern können ohne OCR nicht zuverlässig geprüft werden.",
@@ -3391,12 +3403,6 @@
         dstCatBankkonto:     "Bankkonto",
         dstHwReq:            "⚠ Tiefenscan läuft lokal und kann mehrere Minuten dauern. Empfohlen: mind. 16 GB RAM. GPU-Beschleunigung wird automatisch genutzt.",
         scanOptsTitle:       "Was soll gesucht werden?",
-        pdfMode:             "Scan-Modus",
-        pdfModeFast:         "Schnell",
-        pdfModeAuto:         "Auto",
-        pdfModeAdvanced:     "Erweitert",
-        pdfModeTooltip:      "Schnell: PyMuPDF für PDFs und RapidOCR für Bilder. Auto: nutzt Docling nur, wenn die PDF wenig Text enthält. Erweitert: nutzt Docling für PDFs und Bilddateien und erhält Formatierung, Tabellen und Struktur deutlich besser, dauert aber länger.",
-        scanModeAdvancedHint:"Erweitert kann länger dauern, erhält Layout und Tabellen aber besser.",
         scanTimingLabel:     "Zeitmessung",
         scanCatId:           "Personennummer / ID",
         scanCatAdresse:      "Physische Adresse",
@@ -3550,8 +3556,18 @@
         whyWhitelistExplanation:"Le texte du résultat figure dans la liste blanche et s’affiche donc comme approuvé/vert.",
         whyNoContext:        "Aucun contexte enregistré.",
         suppressedTitle:     "Candidats rejetés ({n})",
-        suppressedNote:      "Ces candidats ont été trouvés par un détecteur puis rejetés par un post-filtre.",
+        suppressedNote:      "Ces candidats ont été trouvés par un détecteur puis rejetés par un post-filtre. Sélectionnez uniquement s’il s’agit réellement d’informations sensibles à supprimer.",
         suppressedUseCandidate:"Supprimer quand même",
+        selDefault:          "Valeurs par défaut",
+        scanStrategyFast:    "rapide",
+        scanStrategyAdvanced:"avancé",
+        scanStrategyReasonAutoFast:"texte normal",
+        scanStrategyReasonLittleText:"peu de texte",
+        scanStrategyReasonTableLayout:"signaux tableau/mise en page",
+        scanStrategyReasonOcr:"OCR",
+        scanStrategyReasonExplicitFast:"rapide explicite",
+        scanStrategyReasonExplicitAdvanced:"avancé explicite",
+        scanStrategyReasonFallback:"fallback",
         suppressedMore:      "+ {n} autres candidats rejetés",
         pdfCaveat:           "Édition PDF directe : le texte est remplacé dans les calques de recherche.",
         warnNoText:          "Aucun texte n’a été trouvé dans le document. Le fichier peut être basé sur des images ou scanné. Le contenu des images ne peut pas être vérifié de manière fiable sans OCR.",
@@ -3818,12 +3834,6 @@
         dstCatBankkonto:     "Compte bancaire",
         dstHwReq:            "⚠ L'analyse approfondie s'exécute localement et peut prendre plusieurs minutes. Recommandé : au moins 16 Go de RAM. L'accélération GPU est utilisée automatiquement.",
         scanOptsTitle:       "Que rechercher ?",
-        pdfMode:             "Mode de scan",
-        pdfModeFast:         "Rapide",
-        pdfModeAuto:         "Auto",
-        pdfModeAdvanced:     "Avancé",
-        pdfModeTooltip:      "Rapide : PyMuPDF pour les PDF et RapidOCR pour les images. Auto : utilise Docling seulement si le PDF contient peu de texte. Avancé : utilise Docling pour les PDF et les fichiers image et conserve beaucoup mieux la mise en forme, les tableaux et la structure, mais prend plus de temps.",
-        scanModeAdvancedHint:"Avancé peut prendre plus de temps, mais conserve mieux la mise en page et les tableaux.",
         scanTimingLabel:     "Temps",
         scanCatId:           "Numéro d'identité / ID",
         scanCatAdresse:      "Adresse physique",
@@ -3977,8 +3987,18 @@
         whyWhitelistExplanation:"El texto del hallazgo está en la lista blanca y por eso se muestra como aprobado/verde.",
         whyNoContext:        "No hay contexto guardado.",
         suppressedTitle:     "Candidatos descartados ({n})",
-        suppressedNote:      "Estos candidatos fueron encontrados por un detector, pero descartados por un postfiltro.",
+        suppressedNote:      "Estos candidatos fueron encontrados por un detector, pero descartados por un postfiltro. Seleccione solo si realmente es información sensible que debe eliminarse.",
         suppressedUseCandidate:"Eliminar de todos modos",
+        selDefault:          "Valores predeterminados",
+        scanStrategyFast:    "rápido",
+        scanStrategyAdvanced:"avanzado",
+        scanStrategyReasonAutoFast:"texto normal",
+        scanStrategyReasonLittleText:"poco texto",
+        scanStrategyReasonTableLayout:"señales de tabla/diseño",
+        scanStrategyReasonOcr:"OCR",
+        scanStrategyReasonExplicitFast:"rápido explícito",
+        scanStrategyReasonExplicitAdvanced:"avanzado explícito",
+        scanStrategyReasonFallback:"fallback",
         suppressedMore:      "+ {n} candidatos descartados más",
         pdfCaveat:           "Edición directa de PDF: el texto se reemplaza en capas de búsqueda.",
         warnNoText:          "No se encontró texto en el documento. El archivo puede estar basado en imágenes o escaneado. El contenido de las imágenes no puede comprobarse de forma fiable sin OCR.",
@@ -4245,12 +4265,6 @@
         dstCatBankkonto:     "Cuenta bancaria",
         dstHwReq:            "⚠ El escaneo profundo se ejecuta localmente y puede tardar varios minutos. Recomendado: al menos 16 GB de RAM. La aceleración GPU se usa automáticamente.",
         scanOptsTitle:       "¿Qué buscar?",
-        pdfMode:             "Modo de escaneo",
-        pdfModeFast:         "Rápido",
-        pdfModeAuto:         "Auto",
-        pdfModeAdvanced:     "Avanzado",
-        pdfModeTooltip:      "Rápido: PyMuPDF para PDF y RapidOCR para imágenes. Auto: usa Docling solo cuando el PDF tiene poco texto. Avanzado: usa Docling para PDF y archivos de imagen, y conserva mucho mejor el formato, las tablas y la estructura, pero tarda más.",
-        scanModeAdvancedHint:"Avanzado puede tardar más, pero conserva mejor el diseño y las tablas.",
         scanTimingLabel:     "Tiempo",
         scanCatId:           "Número de identidad / ID",
         scanCatAdresse:      "Dirección física",
@@ -4399,14 +4413,6 @@
     }
     function setStatus(msg) { statusEl.textContent = msg; }
 
-    function updateScanModeHint() {
-      const hint = document.getElementById("scan-mode-hint");
-      const mode = document.getElementById("pdf-mode")?.value || "fast";
-      if (!hint) return;
-      hint.textContent = t("scanModeAdvancedHint");
-      hint.style.display = mode === "advanced" ? "" : "none";
-    }
-
     function setOcrProgress(active) {
       const box = document.getElementById("ocr-scan-status");
       const progress = document.getElementById("ocr-progress");
@@ -4497,7 +4503,6 @@
       document.querySelectorAll("[data-i18n-title]").forEach(el => {
         el.title = t(el.dataset.i18nTitle);
       });
-      updateScanModeHint();
 
       // Update confidence select options (dybdeskann tab + AI-scan panel)
       document.querySelectorAll("#dst-confidence-select option[data-i18n], #ai-conf-select option[data-i18n]").forEach(el => {
@@ -5507,10 +5512,32 @@
       if (Number.isFinite(Number(timings.total_seconds))) parts.push(`total ${Number(timings.total_seconds).toFixed(2)}s`);
       if (Number.isFinite(Number(timings.extract_seconds))) parts.push(`tekst ${Number(timings.extract_seconds).toFixed(2)}s`);
       if (Number.isFinite(Number(timings.detectors_seconds))) parts.push(`detektorer ${Number(timings.detectors_seconds).toFixed(2)}s`);
-      if (timings.scan_mode) parts.push(`Scan ${timings.scan_mode}`);
+      if (timings.scan_strategy) {
+        const strategy = _scanStrategyLabel(timings.scan_strategy);
+        const reason = _scanStrategyReasonLabel(timings.scan_strategy_reason);
+        parts.push(`Scan ${strategy}${reason ? ` (${reason})` : ""}`);
+      } else if (timings.scan_mode) parts.push(`Scan ${timings.scan_mode}`);
       else if (timings.pdf_mode) parts.push(`Scan ${timings.pdf_mode}`);
       if (!parts.length) return "";
       return `<div style="font-size:11px;color:var(--muted);margin-top:3px;">${escapeHtml(t("scanTimingLabel"))}: ${escapeHtml(parts.join(" · "))}</div>`;
+    }
+
+    function _scanStrategyLabel(value) {
+      const key = String(value || "").toLowerCase() === "advanced" ? "scanStrategyAdvanced" : "scanStrategyFast";
+      return t(key);
+    }
+
+    function _scanStrategyReasonLabel(value) {
+      const reason = String(value || "").toLowerCase();
+      if (!reason) return "";
+      if (reason.includes("fallback")) return t("scanStrategyReasonFallback");
+      if (reason === "auto_fast") return t("scanStrategyReasonAutoFast");
+      if (reason === "little_text") return t("scanStrategyReasonLittleText");
+      if (reason === "table_layout") return t("scanStrategyReasonTableLayout");
+      if (reason === "ocr") return t("scanStrategyReasonOcr");
+      if (reason === "explicit_fast") return t("scanStrategyReasonExplicitFast");
+      if (reason === "explicit_advanced") return t("scanStrategyReasonExplicitAdvanced");
+      return reason.replaceAll("_", " ");
     }
 
     function renderResult(r) {
@@ -5680,6 +5707,26 @@
           ${more}
         </div>
       </details>`;
+    }
+
+    const DEFAULT_SCAN_CATEGORIES = [
+      "navn", "epost", "telefon", "fodselsdato", "id", "klient", "orgnummer",
+      "nettadresse", "konto", "kredittkort", "hemmeligheter", "finansielt",
+      "konfidensielt", "adresse",
+    ];
+
+    function _selectedScanCategories() {
+      return [...document.querySelectorAll(".scan-cat:checked")].map(cb => cb.value);
+    }
+
+    function _applyScanCategories(categories) {
+      const selected = new Set(Array.isArray(categories) ? categories.map(String) : DEFAULT_SCAN_CATEGORIES);
+      document.querySelectorAll(".scan-cat").forEach(cb => { cb.checked = selected.has(cb.value); });
+    }
+
+    function _setDefaultScanCategories() {
+      _applyScanCategories(DEFAULT_SCAN_CATEGORIES);
+      saveSettings();
     }
 
     function buildFindingsHtml(sorted, canPatch, ext) {
@@ -6351,9 +6398,9 @@
         ignore_xlent: document.getElementById("ignoreXlent").checked,
         language:     document.getElementById("langSelect").value,
         scan_profile: "auto",
-        pdf_mode:     document.getElementById("pdf-mode")?.value || "fast",
-        scan_mode:    document.getElementById("pdf-mode")?.value || "fast",
-        categories:   [...document.querySelectorAll(".scan-cat:checked")].map(cb => cb.value),
+        pdf_mode:     "auto",
+        scan_mode:    "auto",
+        categories:   _selectedScanCategories(),
       };
     }
 
@@ -6511,9 +6558,7 @@
         // language: default "auto"
         const ls = document.getElementById("langSelect");
         if (ls && s.language) ls.value = s.language;
-        const pm = document.getElementById("pdf-mode");
-        if (pm && s.pdfMode) pm.value = s.pdfMode;
-        updateScanModeHint();
+        if (Array.isArray(s.scanCategories)) _applyScanCategories(s.scanCategories);
         const sa = document.getElementById("stripAnnotations");
         if (sa) sa.checked = s.stripAnnotations === true;
         const m365Fields = {
@@ -6540,7 +6585,7 @@
         localStorage.setItem("xlentScannerSettings", JSON.stringify({
           ignoreXlent: document.getElementById("ignoreXlent").checked,
           language:    document.getElementById("langSelect").value,
-          pdfMode: document.getElementById("pdf-mode")?.value || "fast",
+          scanCategories: _selectedScanCategories(),
           stripAnnotations: document.getElementById("stripAnnotations").checked,
           theme:       normalizeTheme(document.getElementById("themeSelect").value),
           m365_drive_id: document.getElementById("m365-drive-id")?.value || "",
@@ -6563,7 +6608,7 @@
     });
     document.getElementById("ignoreXlent").addEventListener("change", saveSettings);
     document.getElementById("langSelect").addEventListener("change", saveSettings);
-    document.getElementById("pdf-mode")?.addEventListener("change", () => { updateScanModeHint(); saveSettings(); });
+    document.querySelectorAll(".scan-cat").forEach(cb => cb.addEventListener("change", saveSettings));
     document.getElementById("stripAnnotations").addEventListener("change", saveSettings);
     document.getElementById("manual-redaction-terms")?.addEventListener("input", () => {
       updateManualRedactionPreview();
@@ -7361,9 +7406,10 @@
 
     // Velg alle / fjern alle for scan-cat
     document.getElementById("scan-sel-all").addEventListener("click", () =>
-      document.querySelectorAll(".scan-cat").forEach(cb => cb.checked = true));
+      { document.querySelectorAll(".scan-cat").forEach(cb => cb.checked = true); saveSettings(); });
     document.getElementById("scan-sel-none").addEventListener("click", () =>
-      document.querySelectorAll(".scan-cat").forEach(cb => cb.checked = false));
+      { document.querySelectorAll(".scan-cat").forEach(cb => cb.checked = false); saveSettings(); });
+    document.getElementById("scan-sel-default").addEventListener("click", _setDefaultScanCategories);
 
     function _rescanLastDocument() {
       if (!lastScan) return;

@@ -42,6 +42,69 @@ def test_pdf_extraction_tries_docling_when_fitz_text_is_too_short(monkeypatch, t
     assert scanner._extract_text_pdf(pdf, pdf_mode="auto") == docling_text
 
 
+def test_pdf_auto_extraction_tries_docling_for_table_like_text(monkeypatch, tmp_path: Path):
+    pdf = tmp_path / "table.pdf"
+    pdf.write_bytes(b"%PDF-1.4")
+    fitz_text = "\n".join(
+        [
+            "Description        Quantity        Unit Price        Total",
+            "Consulting         2               1 500,00          3 000,00",
+            "License            4               250,00            1 000,00",
+            "VAT                25 %            1 000,00          1 000,00",
+        ]
+    )
+    docling_text = fitz_text + "\nDocling preserved table structure."
+
+    class FakeDocument:
+        def export_to_markdown(self):
+            return docling_text
+
+    class FakeConversion:
+        document = FakeDocument()
+
+    class FakeConverter:
+        def convert(self, path):
+            return FakeConversion()
+
+    monkeypatch.setattr(scanner, "_extract_text_pdf_fitz", lambda path: fitz_text)
+    monkeypatch.setattr(scanner, "_get_pdf_converter", lambda ocr=False: FakeConverter())
+
+    assert scanner._extract_text_pdf(pdf, pdf_mode="auto") == docling_text
+
+
+def test_scan_file_reports_auto_table_strategy(monkeypatch, tmp_path: Path):
+    pdf = tmp_path / "table.pdf"
+    pdf.write_bytes(b"%PDF-1.4")
+    fitz_text = "\n".join(
+        [
+            "Description        Quantity        Unit Price        Total",
+            "Consulting         2               1 500,00          3 000,00",
+            "License            4               250,00            1 000,00",
+            "VAT                25 %            1 000,00          1 000,00",
+        ]
+    )
+    docling_text = fitz_text + "\nDocling preserved table structure."
+
+    class FakeDocument:
+        def export_to_markdown(self):
+            return docling_text
+
+    class FakeConversion:
+        document = FakeDocument()
+
+    class FakeConverter:
+        def convert(self, path):
+            return FakeConversion()
+
+    monkeypatch.setattr(scanner, "_extract_text_pdf_fitz", lambda path: fitz_text)
+    monkeypatch.setattr(scanner, "_get_pdf_converter", lambda ocr=False: FakeConverter())
+
+    result = scanner.scan_file(pdf, language="en", pdf_mode="auto", categories=["epost"])
+
+    assert result.scan_timings["scan_strategy"] == "advanced"
+    assert result.scan_timings["scan_strategy_reason"] == "table_layout"
+
+
 def test_pdf_fast_mode_does_not_try_docling_for_sparse_text(monkeypatch, tmp_path: Path):
     pdf = tmp_path / "sparse.pdf"
     pdf.write_bytes(b"%PDF-1.4")

@@ -123,7 +123,7 @@ def _api_scan_profile(value) -> str:
 
 
 def _api_pdf_mode(value) -> str:
-    mode = str(value or "fast").strip().lower()
+    mode = str(value or "auto").strip().lower()
     if mode not in {"fast", "auto", "advanced"}:
         raise ValueError("Ugyldig pdf_mode. Bruk fast, auto eller advanced.")
     return mode

@@ -109,7 +109,7 @@ def scan():
         language = data.get("language", "auto")
         ocr = bool(data.get("ocr", False))
         scan_profile = data.get("scan_profile", "normal")
-        pdf_mode = data.get("scan_mode", data.get("pdf_mode", "fast"))
+        pdf_mode = data.get("scan_mode", data.get("pdf_mode", "auto"))
         categories = _request_categories(data.get("categories"))
         LOGGER.info(
             "scan request path=%s lang=%s profile=%s pdf_mode=%s ignore_xlent=%s ocr=%s categories=%s",
@@ -154,7 +154,7 @@ def scan_upload():
         language = request.form.get("language", "auto")
         ocr = request.form.get("ocr", "false").lower() == "true"
         scan_profile = request.form.get("scan_profile", "normal")
-        pdf_mode = request.form.get("scan_mode") or request.form.get("pdf_mode", "fast")
+        pdf_mode = request.form.get("scan_mode") or request.form.get("pdf_mode", "auto")
         categories = _request_categories(request.form.get("categories"))
         original_name = uploaded.filename or "ukjent"
         suffix = Path(original_name).suffix.lower()
