@@ -829,7 +829,12 @@ def test_medical_filter_accepts_exact_high_confidence_source_finding():
         source=source,
     )
 
-    assert filtered == findings
+    assert filtered == [{
+        "category": "Medisinsk opplysning",
+        "text": "Zorvex",
+        "context": "",
+        "confidence": "high",
+    }]
 
 
 def test_medical_filter_rejects_unknown_medium_confidence_without_context():
@@ -1055,3 +1060,168 @@ def test_financial_table_supplement_only_runs_when_financial_category_selected(m
     deep_scanner._run_deep_scan(text, "llama3.2:3b", "en", job_id, ["navn"])
 
     assert deep_scanner.get_deep_scan_status(job_id)["findings"] == []
+
+
+def test_prompt_includes_semantic_sensitive_ai_categories():
+    prompt = deep_scanner._build_prompt(
+        ["sensitiv_personkontekst", "personalsak", "juridisk", "barn_skole"],
+        "Anne Hansen is under investigation.",
+        "en",
+    )
+
+    assert "Sensitive person context" in prompt
+    assert "HR/personnel case" in prompt
+    assert "Legal/criminal matter" in prompt
+    assert "Child/student information" in prompt
+
+
+def test_deep_scan_keeps_semantic_sensitive_person_context(monkeypatch):
+    text = "Anne Hansen is under investigation after a whistleblowing complaint."
+    monkeypatch.setattr(
+        deep_scanner,
+        "_call_ollama",
+        lambda model, prompt: [
+            {
+                "category": "Sensitive person context",
+                "text": text,
+                "context": text,
+                "confidence": "high",
+            }
+        ],
+    )
+    deep_scanner._jobs.clear()
+    job_id = "semantic01"
+    deep_scanner._jobs[job_id] = {
+        "job_id": job_id,
+        "status": "running",
+        "progress": "",
+        "findings": [],
+        "cancelled": False,
+        "started_at": time.time(),
+    }
+
+    deep_scanner._run_deep_scan(text, "llama3.2:3b", "en", job_id, ["sensitiv_personkontekst"])
+
+    findings = deep_scanner.get_deep_scan_status(job_id)["findings"]
+    assert findings == [{
+        "category": "🤖 Sensitiv personkontekst",
+        "text": text,
+        "context": text,
+        "confidence": "high",
+    }]
+
+
+def test_deep_scan_filters_generic_sensitive_context_false_positives(monkeypatch):
+    text = "The European Patent Office classified documents by technical readiness."
+    monkeypatch.setattr(
+        deep_scanner,
+        "_call_ollama",
+        lambda model, prompt: [
+            {
+                "category": "Legal matter",
+                "text": "European Patent Office",
+                "context": text,
+                "confidence": "high",
+            },
+            {
+                "category": "Sensitive person context",
+                "text": "classified documents",
+                "context": text,
+                "confidence": "high",
+            },
+        ],
+    )
+    deep_scanner._jobs.clear()
+    job_id = "semantic02"
+    deep_scanner._jobs[job_id] = {
+        "job_id": job_id,
+        "status": "running",
+        "progress": "",
+        "findings": [],
+        "cancelled": False,
+        "started_at": time.time(),
+    }
+
+    deep_scanner._run_deep_scan(
+        text,
+        "llama3.2:3b",
+        "en",
+        job_id,
+        ["sensitiv_personkontekst", "juridisk"],
+    )
+
+    assert deep_scanner.get_deep_scan_status(job_id)["findings"] == []
+
+
+def test_deep_scan_keeps_personnel_legal_and_child_school_findings(monkeypatch):
+    text = "\n".join([
+        "Written warning to John Smith was documented by HR.",
+        "Police report against Anne Hansen was sent yesterday.",
+        "The pupil requires special education and the parents were informed.",
+    ])
+    monkeypatch.setattr(
+        deep_scanner,
+        "_call_ollama",
+        lambda model, prompt: [
+            {
+                "category": "HR/personnel case",
+                "text": "Written warning to John Smith",
+                "context": "Written warning to John Smith was documented by HR.",
+                "confidence": "high",
+            },
+            {
+                "category": "Legal/criminal matter",
+                "text": "Police report against Anne Hansen",
+                "context": "Police report against Anne Hansen was sent yesterday.",
+                "confidence": "high",
+            },
+            {
+                "category": "Child/student information",
+                "text": "The pupil requires special education",
+                "context": "The pupil requires special education and the parents were informed.",
+                "confidence": "high",
+            },
+        ],
+    )
+    deep_scanner._jobs.clear()
+    job_id = "semantic03"
+    deep_scanner._jobs[job_id] = {
+        "job_id": job_id,
+        "status": "running",
+        "progress": "",
+        "findings": [],
+        "cancelled": False,
+        "started_at": time.time(),
+    }
+
+    deep_scanner._run_deep_scan(
+        text,
+        "llama3.2:3b",
+        "en",
+        job_id,
+        ["personalsak", "juridisk", "barn_skole"],
+    )
+
+    findings = deep_scanner.get_deep_scan_status(job_id)["findings"]
+    assert {f["category"] for f in findings} == {
+        "🤖 Personalsak",
+        "🤖 Juridisk forhold",
+        "🤖 Barn/elevopplysning",
+    }
+
+
+def test_confidential_scan_category_maps_to_semantic_ai_categories():
+    from xlent_scanner.scan_categories import categories_payload
+
+    payload = categories_payload()
+    confidential = next(
+        category for category in payload["categories"] if category["key"] == "konfidensielt"
+    )
+
+    assert confidential["regex_covered_for_ai"] is False
+    assert confidential["ai_categories"] == [
+        "sensitiv_personkontekst",
+        "personalsak",
+        "juridisk",
+        "barn_skole",
+    ]

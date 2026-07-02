@@ -37,6 +37,7 @@ SCAN_CATEGORIES: tuple[ScanCategory, ...] = (
         "mulig personnummer",
         "passnummer",
         "tax identification number",
+        "imei",
     )),
     ScanCategory("klient", "scanCatKlient", ai_categories=("selskapsnavn",), match_prefixes=("kundenavn",)),
     ScanCategory("orgnummer", "scanCatOrgnummer", regex_covered_for_ai=True, match_prefixes=("organisasjonsnummer",)),
@@ -65,6 +66,7 @@ SCAN_CATEGORIES: tuple[ScanCategory, ...] = (
         "rabatt",
         "budsjett",
         "lønn",
+        "personalsak",
     )),
     ScanCategory("medisinsk", "dstCatMedisinsk", default_checked=False, ai_categories=("medisinsk",), match_prefixes=(
         "medisinsk",
@@ -75,9 +77,21 @@ SCAN_CATEGORIES: tuple[ScanCategory, ...] = (
         "legemiddel",
         "läkemedel",
         "medication",
+        "medisinsk opplysning",
     )),
-    ScanCategory("konfidensielt", "scanCatKonfidensielt", regex_covered_for_ai=True, match_prefixes=("konfidensielt dokument",)),
-    ScanCategory("adresse", "scanCatAdresse", ai_categories=("adresse",), match_prefixes=("fysisk adresse",)),
+    ScanCategory("konfidensielt", "scanCatKonfidensielt", ai_categories=(
+        "sensitiv_personkontekst",
+        "personalsak",
+        "juridisk",
+        "barn_skole",
+    ), match_prefixes=(
+        "konfidensielt dokument",
+        "sensitiv personkontekst",
+        "juridisk forhold",
+        "dokumentmetadata",
+        "barn/elevopplysning",
+    )),
+    ScanCategory("adresse", "scanCatAdresse", ai_categories=("adresse",), match_prefixes=("fysisk adresse", "lokasjonsdata", "mac-adresse")),
 )
 
 _CATEGORY_BY_KEY = {category.key: category for category in SCAN_CATEGORIES}

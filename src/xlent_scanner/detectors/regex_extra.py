@@ -8,8 +8,16 @@ Kategorier:
   - Dato med fødselsdato-kontekst   → gul   (personopplysning)
   - Kjøretøyregistrering (NO)       → gul   (kan knyttes til person)
   - Lønn/salary med beløp           → gul   (forretningssensitivt)
+  - HR-/personalsaksverdier          → rød/gul (lønn, sykefravær, oppsigelse m.m.)
+  - Juridiske/strafferettslige felt  → rød
+  - Barn-/elevopplysninger           → rød
+  - Lokasjon/device-ID               → gul/rød (GPS, MAC, IMEI)
+  - Bank routing/sort code           → svart
+  - Medisinske felt uten AI          → rød
   - Telefon/fax etter eksplisitt label → gul
   - PO Box-adresse                  → gul
+  - Konfidensielle rene label-linjer → rød
+  - Dokumentmetadata-felt            → gul
 """
 from __future__ import annotations
 
@@ -164,6 +172,13 @@ _TAX_ID_RE = re.compile(
     r"(?i)\b(?:"
     r"tax\s*(?:id|identification\s*number|number|no\.?)"
     r"|tin"
+    r"|ssn|social\s*security\s*(?:number|no\.?)"
+    r"|national\s*insurance\s*(?:number|no\.?)|nino"
+    r"|passport\s*(?:no\.?|number)"
+    r"|driver'?s?\s*licen[cs]e(?:\s*(?:no\.?|number))?"
+    r"|id\s*(?:no\.?|number)"
+    r"|personal\s*id"
+    r"|resident\s*id"
     r"|vat\s*(?:id|number|no\.?)"
     r")\b\s*[:#.]?\s*"
     r"([A-Z]{0,3}[\s-]*\d[A-Z0-9][A-Z0-9\s./-]{3,28}[A-Z0-9])"
@@ -248,6 +263,170 @@ def find_salary(text: str) -> Iterator[Finding]:
                 _ctx(text, m.start(), m.end()),
                 severity="gul",
             )
+
+
+# ── HR-/personalsak ─────────────────────────────────────────────────────────
+# Krever eksplisitt HR-ledetekst. Beløp går som "lønn"; øvrige HR-verdier
+# flagges som personalsak for å dekke oppsigelse, fravær, varsel m.m.
+_HR_AMOUNT_RE = re.compile(
+    r"(?i)\b(?:salary|annual\s*salary|monthly\s*salary|bonus|compensation|severance|sluttpakke|etterl[øo]nn|"
+    r"overtime\s*pay|variable\s*pay)\b\s*[:#-]?\s*"
+    + _CCY + r"?\s*"
+    r"(\d{1,3}(?:[., \t]\d{3})*(?:[.,]\d{1,2})?)(?:\s*" + _CCY + r")?",
+)
+
+_HR_FIELD_RE = re.compile(
+    r"(?i)\b(?:"
+    r"sick\s*leave|absence\s*rate|sykefrav[æa]r|frav[æa]rsprosent|"
+    r"termination|notice\s*period|oppsigelse|oppsigelsestid|"
+    r"disciplinary\s*warning|written\s*warning|advarsel|"
+    r"performance\s*review|medarbeidersamtale|employee\s*review"
+    r")\b\s*[:#-]?\s*([^.\n\r;]{2,80})",
+)
+
+
+def find_hr_personnel_data(text: str) -> Iterator[Finding]:
+    for m in _HR_AMOUNT_RE.finditer(text):
+        amount = m.group(1).strip()
+        yield Finding("lønn", amount, _ctx(text, m.start(), m.end()), severity="gul")
+
+    for m in _HR_FIELD_RE.finditer(text):
+        value = m.group(1).strip(" \t\r\n,;:.")
+        if not value:
+            continue
+        yield Finding("personalsak", value, _ctx(text, m.start(), m.end()), severity="rød")
+
+
+# ── Juridiske/strafferettslige felt ─────────────────────────────────────────
+_LEGAL_FIELD_RE = re.compile(
+    r"(?i)\b(?:"
+    r"criminal\s*case|court\s*case|police\s*report|disciplinary\s*case|"
+    r"whistleblowing\s*case|investigation|charged\s*with|convicted\s*of|"
+    r"case\s*(?:no\.?|number)|matter\s*(?:no\.?|number)|incident\s*(?:no\.?|number)|"
+    r"saksnummer|sak\s*nr\.?|straffesak|politisak|domfelt|siktet|tiltalt|gransking|varslingssak"
+    r")\b\s*[:#-]?\s*([A-ZÆØÅÄÖÜ0-9][A-ZÆØÅÄÖÜa-zæøåäöü0-9 _/-]{2,80})",
+)
+
+
+def find_legal_case_data(text: str) -> Iterator[Finding]:
+    for m in _LEGAL_FIELD_RE.finditer(text):
+        value = m.group(1).strip(" \t\r\n,;:.")
+        if not value:
+            continue
+        yield Finding("juridisk forhold", value, _ctx(text, m.start(), m.end()), severity="rød")
+
+
+# ── Barn/skole/elev ─────────────────────────────────────────────────────────
+_CHILD_SCHOOL_RE = re.compile(
+    r"(?i)\b(?:"
+    r"student|pupil|child|guardian|parent|school|class|iep|special\s*education|"
+    r"elev|foresatt|klasse|skole|barnehage|barnevern|ppt|iop|spesialundervisning"
+    r")\b\s*[:#-]?\s*("
+    r"[A-ZÆØÅÄÖÜ][A-Za-zÆØÅæøåÄÖäöÜüÉéÈèÁáÀàÓóÒòÍíÌìÑñß '-]{2,50}"
+    r"|\d{1,2}[A-ZÆØÅ]?"
+    r")",
+)
+
+
+def find_child_school_data(text: str) -> Iterator[Finding]:
+    for m in _CHILD_SCHOOL_RE.finditer(text):
+        value = m.group(1).strip(" \t\r\n,;:.")
+        if not value:
+            continue
+        yield Finding("barn/elevopplysning", value, _ctx(text, m.start(), m.end()), severity="rød")
+
+
+# ── Lokasjon og device-identifikatorer ──────────────────────────────────────
+_GPS_RE = re.compile(
+    r"(?i)\b(?:gps|coordinates?|koordinater|location|lokasjon)\s*[:#-]?\s*"
+    r"([-+]?(?:[1-8]?\d(?:\.\d+)?|90(?:\.0+)?))\s*,\s*"
+    r"([-+]?(?:1[0-7]\d(?:\.\d+)?|[1-9]?\d(?:\.\d+)?|180(?:\.0+)?))\b"
+)
+
+_MAC_RE = re.compile(
+    r"(?i)\b(?:mac(?:\s*address)?|device\s*mac)\s*[:#-]?\s*"
+    r"((?:[0-9A-F]{2}[:-]){5}[0-9A-F]{2})\b"
+)
+
+_IMEI_RE = re.compile(r"(?i)\b(?:imei|device\s*id)\s*[:#-]?\s*(\d{15})\b")
+
+
+def find_location_device_ids(text: str) -> Iterator[Finding]:
+    for m in _GPS_RE.finditer(text):
+        value = f"{m.group(1)}, {m.group(2)}"
+        yield Finding("lokasjonsdata", value, _ctx(text, m.start(), m.end()), severity="gul")
+    for m in _MAC_RE.finditer(text):
+        yield Finding("mac-adresse", m.group(1), _ctx(text, m.start(), m.end()), severity="gul")
+    for m in _IMEI_RE.finditer(text):
+        yield Finding("imei", m.group(1), _ctx(text, m.start(), m.end()), severity="rød")
+
+
+# ── Bank routing / sort code / account label ────────────────────────────────
+_BANK_ROUTING_RE = re.compile(
+    r"(?i)\b(?:routing\s*number|sort\s*code|aba|ach|"
+    r"beneficiary\s*account|account\s*(?:no\.?|number))\b\s*[:#-]?\s*"
+    r"([0-9][0-9 -]{5,25}[0-9])"
+)
+
+
+def find_bank_routing_details(text: str) -> Iterator[Finding]:
+    for m in _BANK_ROUTING_RE.finditer(text):
+        value = " ".join(m.group(1).strip(" \t\r\n,;:.").split())
+        digits = re.sub(r"\D", "", value)
+        if not (6 <= len(digits) <= 24):
+            continue
+        yield Finding("kontonummer", value, _ctx(text, m.start(), m.end()), severity="svart")
+
+
+# ── Medisinske felt uten AI ─────────────────────────────────────────────────
+_MEDICAL_FIELD_RE = re.compile(
+    r"(?i)\b(?:"
+    r"diagnosis|diagnose|medication|medicine|prescription|"
+    r"patient\s*id|journal\s*(?:no\.?|number)|medical\s*record\s*number|mrn|"
+    r"legemiddel|medisin|resept|pasient\s*id|journal\s*nr\.?"
+    r")\b\s*[:#-]?\s*([^,.\n\r;]{2,80})"
+)
+
+
+def find_medical_fields(text: str) -> Iterator[Finding]:
+    for m in _MEDICAL_FIELD_RE.finditer(text):
+        value = m.group(1).strip(" \t\r\n,;:.")
+        if not value:
+            continue
+        yield Finding("medisinsk opplysning", value, _ctx(text, m.start(), m.end()), severity="rød")
+
+
+# ── Konfidensiell ren label-linje ───────────────────────────────────────────
+_CONFIDENTIAL_LABEL_LINE_RE = re.compile(
+    r"(?im)^\s*(confidential|strictly\s+confidential|internal\s+only|"
+    r"restricted|secret|classified|konfidensielt|fortrolig|internt)\s*[:\-]?\s*$"
+)
+
+
+def find_confidential_label_lines(text: str) -> Iterator[Finding]:
+    for m in _CONFIDENTIAL_LABEL_LINE_RE.finditer(text):
+        yield Finding(
+            "konfidensielt dokument (overskrift)",
+            m.group(1),
+            _ctx(text, m.start(1), m.end(1)),
+            severity="rød",
+        )
+
+
+# ── Dokumentmetadata-felt i tekstuttrekk/eksport ────────────────────────────
+_METADATA_FIELD_RE = re.compile(
+    r"(?im)^\s*(?:author|creator|producer|company|manager|"
+    r"last\s*modified\s*by|modified\s*by|forfatter|opprettet\s*av|firma)\s*[:=]\s*"
+    r"([^\n\r;]{2,80})\s*$"
+)
+
+
+def find_document_metadata_fields(text: str) -> Iterator[Finding]:
+    for m in _METADATA_FIELD_RE.finditer(text):
+        value = m.group(1).strip(" \t\r\n,;:.")
+        if not value or value.lower() in {"unknown", "none", "n/a"}:
+            continue
+        yield Finding("dokumentmetadata", value, _ctx(text, m.start(), m.end()), severity="gul")
 
 
 # ── Telefon/fax etter eksplisitt label ───────────────────────────────────────
@@ -436,6 +615,10 @@ def detect_extra(text: str) -> list[Finding]:
     findings: list[Finding] = []
     for fn in (find_ipv4, find_ipv6, find_swift,
                find_passport, find_tax_id, find_vehicle_reg, find_salary,
+               find_hr_personnel_data, find_legal_case_data,
+               find_child_school_data, find_location_device_ids,
+               find_bank_routing_details, find_medical_fields,
+               find_confidential_label_lines, find_document_metadata_fields,
                find_labeled_phone_or_fax, find_po_box_address,
                find_street_address, find_date_of_birth):
         findings.extend(fn(text))

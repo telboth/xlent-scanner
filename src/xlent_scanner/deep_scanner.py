@@ -54,6 +54,10 @@ CATEGORIES: dict[str, str] = {
     "budsjett_tall": "pengebeløp MED valutasymbol/-kode: kr, NOK, EUR, USD, $, € (ikke tidsuttrykk eller tall uten valuta)",
     "nettadresse":   "nettadresser/URL-er som begynner med http://, https:// eller www.",
     "medisinsk":     "medisinske opplysninger – sykdommer, diagnoser, symptomer, behandlinger og legemidler når de gjelder en person",
+    "sensitiv_personkontekst": "sensitive opplysninger om navngitte personer – helse, etterforskning, varsling, oppsigelse, disiplinærsak eller sårbar situasjon",
+    "personalsak":    "personalsensitive arbeidsforhold – oppsigelse, sykefravær, disiplinær/advarsel, varsling, prestasjonsvurdering eller sluttpakke",
+    "juridisk":       "juridiske eller strafferettslige forhold – politisak, etterforskning, siktelse, domfellelse, rettssak eller varslingssak",
+    "barn_skole":     "opplysninger om barn, elever, foresatte, skole, klasse, barnevern, PPT/IEP/IOP eller spesialundervisning",
 }
 DEFAULT_CATEGORIES: tuple[str, ...] = tuple(c for c in CATEGORIES if c != "medisinsk")
 
@@ -422,6 +426,26 @@ Pengebeløp – beløp med valutasymbol/-kode ELLER tall i en tydelig budsjettko
 Nettadresse – URL som begynner med http://, https:// eller www.:
   ✅ «www.vg.no»  ✅ «https://xlent.no»  ✅ «http://intern.firma.com/dokument»
   ❌ e-postadresser  ❌ fil-stier  ❌ domenenavn uten protokoll eller www.
+
+Sensitiv personkontekst – navn eller tydelig person koblet til sensitiv hendelse:
+  ✅ «Anne Hansen er under etterforskning»  ✅ «Jens Olsen er varsler»  ✅ «Maria Hansen er sykmeldt på grunn av depresjon»
+  ✅ «Per Nilsen mottar spesialundervisning»  ✅ «Kari Lund fikk skriftlig advarsel»
+  ❌ generelle roller uten navn  ❌ rene stillingstitler  ❌ organisasjoner  ❌ faglige beskrivelser uten person
+
+Personalsak – arbeidsforhold med sensitiv HR-kontekst:
+  ✅ «oppsigelse av Anne Hansen»  ✅ «skriftlig advarsel til Per Nilsen»  ✅ «sykefravær 45 % for Kari Lund»
+  ✅ «sluttpakke NOK 250 000»  ✅ «varsling mot leder»
+  ❌ generelle HR-policyer  ❌ stillingsannonser  ❌ løse ord som «ansatt» uten sensitiv hendelse
+
+Juridisk forhold – juridiske/strafferettslige forhold om person eller sak:
+  ✅ «politianmeldelse mot Anne Hansen»  ✅ «siktet for bedrageri»  ✅ «domfelt i tingretten»
+  ✅ «sak nr. 24-123456TVI» når saken gjelder person/personalsak
+  ❌ patentkontor  ❌ akademiske referanser  ❌ generelle juridiske begreper uten konkret sak/person
+
+Barn/elevopplysning – opplysninger om barn, elev, foresatt eller skoleoppfølging:
+  ✅ «eleven trenger spesialundervisning»  ✅ «foresatte ble kontaktet»  ✅ «IOP for klasse 5B»
+  ✅ «barnevernet er koblet inn»  ✅ «PPT vurderer tiltak»
+  ❌ generelle skolefag  ❌ navn på universitet  ❌ tabelloverskrifter uten person/elev
 """
 
 _RULES_SV = """\
@@ -468,6 +492,22 @@ Penningbelopp – belopp med valutasymbol/-kod ELLER tal i tydlig budgetkontext:
 Webbadress – URL som börjar med http://, https:// eller www.:
   ✅ «www.vg.no»  ✅ «https://xlent.se»  ✅ «http://intern.foretag.se/dokument»
   ❌ e-postadresser  ❌ filsökvägar  ❌ domännamn utan protokoll eller www.
+
+Känslig personkontext – namn eller tydlig person kopplad till känslig händelse:
+  ✅ «Anna Svensson är under utredning»  ✅ «Erik Lindqvist är visselblåsare»  ✅ «sjukskriven för depression»
+  ❌ generella roller utan namn  ❌ organisationer  ❌ tekniska/fackliga beskrivningar utan person
+
+Personalärende – känslig HR-kontext:
+  ✅ «uppsägning av Anna Svensson»  ✅ «skriftlig varning till Erik Lindqvist»  ✅ «sjukfrånvaro 45 %»
+  ❌ generella HR-policyer  ❌ jobbannonser  ❌ lösa ord som «anställd» utan känslig händelse
+
+Juridiskt förhållande – juridiska/straffrättsliga förhållanden om person eller konkret ärende:
+  ✅ «polisanmälan mot Anna Svensson»  ✅ «åtalad för bedrägeri»  ✅ «dömd i tingsrätten»
+  ❌ patentkontor  ❌ akademiska referenser  ❌ generella juridiska begrepp utan konkret ärende/person
+
+Barn/elevuppgift – uppgifter om barn, elev, vårdnadshavare eller skoluppföljning:
+  ✅ «eleven behöver särskilt stöd»  ✅ «vårdnadshavare kontaktades»  ✅ «IEP/åtgärdsprogram»
+  ❌ generella skolämnen  ❌ universitet  ❌ tabellrubriker utan person/elev
 """
 
 _RULES_EN = """\
@@ -515,6 +555,26 @@ Monetary amount – amounts with a currency symbol/code OR numbers in a clear bu
 Web address – URL starting with http://, https:// or www.:
   ✅ «www.vg.no»  ✅ «https://xlent.com»  ✅ «http://internal.company.com/doc»
   ❌ email addresses  ❌ file paths  ❌ domain names without a protocol or www.
+
+Sensitive person context – a name or clear person linked to a sensitive event:
+  ✅ «Anne Hansen is under investigation»  ✅ «John Smith is a whistleblower»  ✅ «Maria Hansen is on sick leave due to depression»
+  ✅ «Peter Nielsen receives special education»  ✅ «Kari Lund received a written warning»
+  ❌ generic roles without a named/clear person  ❌ job titles  ❌ organizations  ❌ technical descriptions without a person
+
+HR/personnel case – sensitive employment context:
+  ✅ «termination of Anne Hansen»  ✅ «written warning to John Smith»  ✅ «sick leave 45 % for Kari Lund»
+  ✅ «severance NOK 250 000»  ✅ «whistleblowing complaint against manager»
+  ❌ generic HR policies  ❌ job ads  ❌ isolated words such as «employee» without a sensitive event
+
+Legal/criminal matter – legal or criminal matter about a person or concrete case:
+  ✅ «police report against Anne Hansen»  ✅ «charged with fraud»  ✅ «convicted in court»
+  ✅ «case no. 24-123456» when it concerns a person/personnel case
+  ❌ patent offices  ❌ academic references  ❌ generic legal terms without a concrete case/person
+
+Child/student information – information about children, pupils, guardians, school follow-up, IEP or special education:
+  ✅ «the pupil requires special education»  ✅ «the parents were informed»  ✅ «IEP for class 5B»
+  ✅ «child welfare was notified»  ✅ «PPT/school support assessed measures»
+  ❌ general school subjects  ❌ university names  ❌ table headers without a person/student
 """
 
 _MEDICAL_RULES_NB = """\
@@ -951,6 +1011,77 @@ def _is_medical_category(category: str) -> bool:
     return key in _MEDICAL_CATEGORIES or any(key.startswith(prefix) for prefix in _MEDICAL_CATEGORIES)
 
 
+_SENSITIVE_PERSON_CONTEXT_CATEGORIES = {
+    "sensitiv personkontekst",
+    "sensitive person context",
+    "sensitive personal context",
+    "känslig personkontext",
+    "person context",
+}
+
+
+def _is_sensitive_person_context_category(category: str) -> bool:
+    key = _category_key(category)
+    return key in _SENSITIVE_PERSON_CONTEXT_CATEGORIES or (
+        "person" in key and any(marker in key for marker in ("sensitiv", "sensitive", "känslig"))
+    )
+
+
+_PERSONNEL_CASE_CATEGORIES = {
+    "personalsak",
+    "hr/personnel case",
+    "personnel case",
+    "hr case",
+    "personalärende",
+    "employment matter",
+}
+
+
+def _is_personnel_case_category(category: str) -> bool:
+    key = _category_key(category)
+    return key in _PERSONNEL_CASE_CATEGORIES or any(
+        marker in key
+        for marker in ("personalsak", "personalärende", "personnel", "hr case", "employment matter")
+    )
+
+
+_LEGAL_CASE_CATEGORIES = {
+    "juridisk",
+    "juridisk forhold",
+    "legal",
+    "legal matter",
+    "criminal matter",
+    "juridiskt förhållande",
+}
+
+
+def _is_legal_case_category(category: str) -> bool:
+    key = _category_key(category)
+    return key in _LEGAL_CASE_CATEGORIES or any(
+        marker in key
+        for marker in ("juridisk", "legal", "criminal", "straff", "police", "court")
+    )
+
+
+_CHILD_SCHOOL_CATEGORIES = {
+    "barn/elevopplysning",
+    "barn_skole",
+    "barn/elev",
+    "child/student information",
+    "child school",
+    "student information",
+    "elevuppgift",
+}
+
+
+def _is_child_school_category(category: str) -> bool:
+    key = _category_key(category)
+    return key in _CHILD_SCHOOL_CATEGORIES or any(
+        marker in key
+        for marker in ("barn", "elev", "child", "student", "pupil", "guardian", "school")
+    )
+
+
 _FINANCIAL_CATEGORY_MARKERS = (
     "budsjett",
     "budget",
@@ -1036,6 +1167,98 @@ def _looks_like_medical_information(value: str, context: str = "") -> bool:
     if _GENERIC_MEDICAL_FALSE_POSITIVE_RE.search(combined):
         return False
     return bool(_MEDICAL_CONTEXT_RE.search(combined))
+
+
+_PERSON_CONTEXT_RE = re.compile(
+    r"\b("
+    r"under\s+etterforskning|under\s+investigation|investigated|etterforskes|"
+    r"varsler|whistleblower|whistleblowing|"
+    r"sykmeldt|sick\s+leave|sickness\s+absence|"
+    r"oppsigelse|terminated|termination|dismissed|written\s+warning|skriftlig\s+advarsel|"
+    r"diagnose|diagnosis|depresjon|depression|diabetes|adhd|"
+    r"spesialundervisning|special\s+education|special\s+needs|"
+    r"barnevern|child\s+welfare|foresatt|guardian"
+    r")\b",
+    re.IGNORECASE,
+)
+
+_PERSONNEL_CONTEXT_RE = re.compile(
+    r"\b("
+    r"oppsigelse|oppsagt|termination|terminated|dismissed|"
+    r"skriftlig\s+advarsel|written\s+warning|disciplinary|disiplinær|"
+    r"sykefravær|sick\s+leave|sickness\s+absence|absence\s+rate|"
+    r"varsling|whistleblowing|whistleblower|"
+    r"sluttpakke|severance|etterlønn|"
+    r"performance\s+review|prestasjonsvurdering|medarbeidersamtale"
+    r")\b",
+    re.IGNORECASE,
+)
+
+_LEGAL_CONTEXT_RE = re.compile(
+    r"\b("
+    r"politisak|politianmeldelse|police\s+report|criminal\s+case|straffesak|"
+    r"siktet|tiltalt|charged|indicted|convicted|domfelt|"
+    r"rettssak|court\s+case|lawsuit|tingrett|district\s+court|"
+    r"etterforskning|investigation|fraud|bedrageri|"
+    r"case\s*(?:no|number)|saksnummer|sak\s*nr"
+    r")\b",
+    re.IGNORECASE,
+)
+
+_CHILD_SCHOOL_CONTEXT_RE = re.compile(
+    r"\b("
+    r"barn|child|minor|elev|pupil|student|foresatt|guardian|parent|"
+    r"skole|school|klasse|class|barnehage|kindergarten|"
+    r"spesialundervisning|special\s+education|special\s+needs|"
+    r"iop|iep|ppt|barnevern|child\s+welfare"
+    r")\b",
+    re.IGNORECASE,
+)
+
+_GENERIC_CASE_FALSE_POSITIVE_RE = re.compile(
+    r"\b("
+    r"patent\s+office|european\s+patent\s+office|"
+    r"academic\s+reference|doi|isbn|issn|"
+    r"machine\s+learning|neural\s+network|technical\s+report"
+    r")\b",
+    re.IGNORECASE,
+)
+
+
+_NAME_SIGNAL_RE = re.compile(r"\b[A-ZÆØÅÄÖ][a-zæøåäöéèêëáàâãíìîïóòôõúùûüçñ'-]{2,}\s+[A-ZÆØÅÄÖ][A-Za-zÆØÅæøåÄÖäöéèêëáàâãíìîïóòôõúùûüçñ'-]{2,}\b")
+
+
+def _has_person_signal(value: str) -> bool:
+    return bool(
+        looks_like_person_name(value)
+        or _NAME_SIGNAL_RE.search(value)
+        or re.search(
+            r"\b(he|she|han|hun|employee|ansatt|patient|pasient|pupil|student|elev)\b",
+            value,
+            re.IGNORECASE,
+        )
+    )
+
+
+def _looks_like_semantic_sensitive_context(
+    value: str,
+    context: str = "",
+    marker_re: re.Pattern[str] | None = None,
+    *,
+    require_person_signal: bool = False,
+) -> bool:
+    text = " ".join(str(value or "").strip().split())
+    ctx = " ".join(str(context or "").strip().split())
+    combined = f"{text} {ctx}".strip()
+    if not text or len(text) > 260:
+        return False
+    if _GENERIC_CASE_FALSE_POSITIVE_RE.search(combined):
+        return False
+    if marker_re and not marker_re.search(combined):
+        return False
+    if require_person_signal and not _has_person_signal(combined):
+        return False
+    return True
 
 
 def _valid_bank_account_text(value: str) -> str | None:
@@ -1189,6 +1412,49 @@ def _filter_llm_findings_by_category_precision(
             if not medically_supported and not exact_high_confidence:
                 removed += 1
                 continue
+            f = dict(f)
+            f["category"] = "Medisinsk opplysning"
+        elif _is_sensitive_person_context_category(cat):
+            if not _looks_like_semantic_sensitive_context(
+                raw_text,
+                str(f.get("context") or ""),
+                _PERSON_CONTEXT_RE,
+                require_person_signal=True,
+            ):
+                removed += 1
+                continue
+            f = dict(f)
+            f["category"] = "Sensitiv personkontekst"
+        elif _is_personnel_case_category(cat):
+            if not _looks_like_semantic_sensitive_context(
+                raw_text,
+                str(f.get("context") or ""),
+                _PERSONNEL_CONTEXT_RE,
+            ):
+                removed += 1
+                continue
+            f = dict(f)
+            f["category"] = "Personalsak"
+        elif _is_legal_case_category(cat):
+            if not _looks_like_semantic_sensitive_context(
+                raw_text,
+                str(f.get("context") or ""),
+                _LEGAL_CONTEXT_RE,
+            ):
+                removed += 1
+                continue
+            f = dict(f)
+            f["category"] = "Juridisk forhold"
+        elif _is_child_school_category(cat):
+            if not _looks_like_semantic_sensitive_context(
+                raw_text,
+                str(f.get("context") or ""),
+                _CHILD_SCHOOL_CONTEXT_RE,
+            ):
+                removed += 1
+                continue
+            f = dict(f)
+            f["category"] = "Barn/elevopplysning"
         result.append(f)
     if removed:
         LOGGER.info("AI-presisjonsfilter: fjernet %d ugyldige AI-funn", removed)

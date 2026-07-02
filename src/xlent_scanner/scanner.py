@@ -692,6 +692,8 @@ def _run_detectors(
         "telefon",
         "adresse",
         "finansielt",
+        "medisinsk",
+        "konfidensielt",
     ):
         _run(detect_extra, text)
     _run(detect_custom_patterns, text)

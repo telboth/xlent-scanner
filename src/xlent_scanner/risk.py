@@ -44,6 +44,12 @@ _SEVERITY_MAP: list[tuple[str, str]] = [
     ("lægemiddel",                  "rød"),
     ("läkemedel",                   "rød"),
     ("medication",                  "rød"),
+    ("medisinsk opplysning",        "rød"),
+    ("sensitiv personkontekst",     "rød"),
+    ("personalsak",                 "rød"),
+    ("juridisk forhold",            "rød"),
+    ("barn/elevopplysning",         "rød"),
+    ("imei",                        "rød"),
     ("blacklist",                   "rød"),
 
     # ── GUL ────────────────────────────────────────────────────────────────
@@ -53,6 +59,9 @@ _SEVERITY_MAP: list[tuple[str, str]] = [
     ("swift/bic",                   "gul"),
     ("kjøretøyregistrering",        "gul"),
     ("lønn",                        "gul"),
+    ("lokasjonsdata",               "gul"),
+    ("mac-adresse",                 "gul"),
+    ("dokumentmetadata",            "gul"),
     ("fødselsdato",                 "gul"),
     ("e-post",                      "gul"),
     ("telefonnummer",               "gul"),
