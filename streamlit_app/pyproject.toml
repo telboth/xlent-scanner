@@ -1,0 +1,16 @@
+[project]
+name = "xlent-scanner-streamlit"
+version = "0.1.0"
+description = "Streamlit-frontend for XLENT Compliance-scanner"
+requires-python = ">=3.13"
+dependencies = [
+    "streamlit>=1.40",
+    "pandas>=2.0",
+    "xlent-scanner",
+]
+
+[tool.uv.sources]
+xlent-scanner = { path = "..", editable = true }
+
+[tool.uv]
+link-mode = "copy"

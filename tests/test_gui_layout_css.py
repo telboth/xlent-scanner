@@ -69,6 +69,9 @@ def test_light_theme_has_non_white_header_for_white_logo():
     assert "background: var(--header-bg); color: var(--header-text);" in html
     assert ".app-version {" in html
     assert "color: var(--header-text);" in html
+    assert "app-updated" not in html
+    assert "__APP_STARTED__" not in html
+    assert "Oppdatert __APP_STARTED__" not in html
 
 
 def test_header_uses_redaction_scanner_title():
@@ -87,7 +90,7 @@ def test_scan_category_grid_order_matches_requested_columns():
     block = html[start:end]
 
     assert "grid-auto-flow: column;" in html
-    assert "grid-template-rows: repeat(5, auto);" in html
+    assert "grid-template-rows: repeat(4, auto);" in html
     assert "manual-redaction" not in block
     values = []
     for fragment in block.split('class="scan-cat" value="')[1:]:
@@ -198,6 +201,8 @@ def test_top_update_check_button_is_wired():
     assert 'id="top-menu"' in html
     assert ".top-menu {" in html
     assert ".top-menu-body {" in html
+    assert "background: var(--panel2); color: var(--text);" in html
+    assert ".top-menu[open] summary { border-color: var(--accent); color: var(--accent); }" in html
     assert ".top-update-btn {" in html
     assert "margin-left: auto;" in html
     assert 'const topUpdateCheckBtnEl = document.getElementById("btn-check-updates-top");' in html

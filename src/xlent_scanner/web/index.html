@@ -81,13 +81,6 @@
       white-space: nowrap;
       text-align: right;
     }
-    .app-updated {
-      display: block;
-      font-size: 10px;
-      font-weight: 400;
-      color: var(--header-muted);
-      opacity: 0.75;
-    }
     .update-banner {
       display: none;
       align-items: center;
@@ -146,12 +139,12 @@
       width: 32px; height: 28px;
       display: flex; align-items: center; justify-content: center;
       border: 1px solid var(--border); border-radius: 6px;
-      background: transparent; color: var(--header-text);
+      background: var(--panel2); color: var(--text);
       cursor: pointer; user-select: none;
       font-size: 20px; line-height: 1;
     }
     .top-menu summary::-webkit-details-marker { display: none; }
-    .top-menu[open] summary { background: var(--panel2); }
+    .top-menu[open] summary { border-color: var(--accent); color: var(--accent); }
     .top-menu-body {
       position: absolute; right: 0; top: calc(100% + 7px); z-index: 50;
       min-width: 230px; padding: 10px;
@@ -298,7 +291,7 @@
     }
     .scan-cat-grid {
       display: grid; grid-template-columns: 1fr 1fr 1fr;
-      grid-template-rows: repeat(5, auto); grid-auto-flow: column;
+      grid-template-rows: repeat(4, auto); grid-auto-flow: column;
       gap: 5px 14px; margin-bottom: 8px;
     }
     .folder-options {
@@ -821,7 +814,7 @@
       <h1>Compliance redaction scanner</h1>
       <div class="sub" data-i18n="subtitle">Sjekker og anonymiserer dokumenter for sensitiv informasjon</div>
     </div>
-    <span class="app-version">v__APP_VERSION__<span class="app-updated"> · Oppdatert __APP_STARTED__</span></span>
+    <span class="app-version">v__APP_VERSION__</span>
   </header>
 
   <nav class="tab-nav">

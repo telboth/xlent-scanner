@@ -164,10 +164,8 @@ def index():
     LOGGER.debug("Serving %s (mtime %.0f)", idx, idx.stat().st_mtime)
     html = idx.read_text("utf-8")
     # Injiser port slik at JS kan bruke absolutte URL-er
-    from datetime import datetime  # noqa: PLC0415
     html = html.replace("__API_BASE__", f"http://127.0.0.1:{app_state.port}")
     html = html.replace("__APP_VERSION__", __version__)
-    html = html.replace("__APP_STARTED__", datetime.now().strftime("%d.%m.%Y %H:%M"))
     html = html.replace('"__LOG_PATH__"', json.dumps(str(LOG_PATH)))
     html = html.replace('"__APP_PLATFORM__"', json.dumps(sys.platform))
     return html, 200, {"Content-Type": "text/html; charset=utf-8", **_NO_CACHE}
