@@ -13,6 +13,7 @@ import json
 import logging
 import os
 import platform
+import shlex
 import socket
 import subprocess
 import sys
@@ -377,13 +378,31 @@ def _launch_update_script(script_path: Path) -> subprocess.Popen:
 
     if sys.platform == "darwin":
         script_path.chmod(script_path.stat().st_mode | 0o755)
-        quoted = str(script_path).replace("\\", "\\\\").replace('"', '\\"')
-        # Terminal gjør installasjonen synlig, inkludert eventuelle macOS-prompter.
-        return subprocess.Popen([
-            "osascript",
-            "-e",
-            f'tell application "Terminal" to do script "/bin/bash \\"{quoted}\\""',
-        ])
+        command_path = script_path.with_name("run_install_macos.command")
+        quoted_script = shlex.quote(str(script_path))
+        command_path.write_text(
+            "#!/bin/bash\n"
+            "clear\n"
+            "echo 'XLENT Scanner macOS-installasjon'\n"
+            f"echo 'Kjører: {script_path.name}'\n"
+            "echo\n"
+            f"/bin/bash {quoted_script}\n"
+            "status=$?\n"
+            "echo\n"
+            "if [ \"$status\" -eq 0 ]; then\n"
+            "  echo 'Installasjonen er ferdig.'\n"
+            "else\n"
+            "  echo \"Installasjonen feilet med exit-kode $status.\"\n"
+            "fi\n"
+            "echo\n"
+            "echo 'Trykk Enter for å lukke dette vinduet.'\n"
+            "read -r _\n"
+            "exit \"$status\"\n",
+            encoding="utf-8",
+        )
+        command_path.chmod(command_path.stat().st_mode | 0o755)
+        # Åpne .command-filen direkte. Dette viser Terminal uten AppleScript/Apple Events.
+        return subprocess.Popen(["open", str(command_path)], cwd=str(script_path.parent))
 
     raise RuntimeError("Automatisk installasjonsscript støttes bare på Windows og macOS.")
 
@@ -1435,7 +1454,10 @@ def main() -> None:
     )
     threading.Thread(target=_force_fresh_load, daemon=True).start()
     LOGGER.info("Window created. API base: http://127.0.0.1:%s", app_state.port)
-    webview.start(debug=False, storage_path=webview_cache)
+    webview_gui = os.environ.get("PYWEBVIEW_GUI") or None
+    if webview_gui:
+        LOGGER.info("PyWebView GUI backend forced by PYWEBVIEW_GUI=%s", webview_gui)
+    webview.start(gui=webview_gui, debug=False, storage_path=webview_cache)
 
 
 if __name__ == "__main__":

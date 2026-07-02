@@ -170,15 +170,15 @@ chmod +x xlent-scanner-linux-*-x86_64.AppImage
 ./xlent-scanner-linux-*-x86_64.AppImage
 ```
 
-AppImage-filen krever **ingen installasjon** og ingen root-rettigheter. Den kjører på Ubuntu 20.04+, Fedora 36+, Debian 11+ og de fleste andre moderne distros.
+AppImage-filen krever **ingen installasjon** og ingen root-rettigheter. Linux-pakken bruker Qt-backend for det innebygde webvinduet, slik at WebKit2GTK ikke må installeres separat. Den kjører på Ubuntu 22.04+, Fedora 36+, Debian 12+ og de fleste andre moderne distros.
 
-**Systemkrav:** `libwebkit2gtk-4.0` — er vanligvis allerede installert, men kan installeres med:
+Hvis AppImage stopper med en Qt/xcb-melding på en minimal Linux-installasjon, installer vanlig Qt/XCB-runtime:
 ```bash
 # Ubuntu/Debian:
-sudo apt install libwebkit2gtk-4.0-dev
+sudo apt install libxcb-cursor0
 
 # Fedora:
-sudo dnf install webkit2gtk4.0
+sudo dnf install xcb-util-cursor
 ```
 
 > For tekniske brukere: `uv sync && uv run xlent-scanner` fra kildekoden er et godt alternativ (krever Python 3.13).
@@ -358,7 +358,7 @@ bash scripts/package_linux.sh
 ```
 Resultater: `artifacts/linux/installer/xlent-scanner-linux-<versjon>-x86_64.AppImage`
 
-Krever `libwebkit2gtk-4.0-dev` og `libfuse2` installert lokalt (GitHub Actions installerer disse automatisk).
+Krever `libfuse2` og Qt/XCB-runtime lokalt for bygg/test av AppImage. GitHub Actions installerer dette automatisk. Buildscriptet installerer `pywebview[qt]` i build-miljøet slik at Qt-backend pakkes inn i AppImage.
 
 ---
 

@@ -34,7 +34,10 @@ def test_update_install_script_backend_runs_without_shell_eval() -> None:
     assert '"powershell.exe",' in app
     assert '"-ExecutionPolicy",' in app
     assert '"Bypass",' in app
-    assert '"osascript",' in app
-    assert 'tell application "Terminal" to do script' in app
+    assert 'command_path = script_path.with_name("run_install_macos.command")' in app
+    assert 'command_path.write_text(' in app
+    assert 'return subprocess.Popen(["open", str(command_path)], cwd=str(script_path.parent))' in app
+    assert '"osascript",' not in app
+    assert 'tell application "Terminal" to do script' not in app
     assert "shell=True" not in app
     assert "shell=True" not in diagnostics

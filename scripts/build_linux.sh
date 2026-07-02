@@ -49,9 +49,10 @@ if __name__ == "__main__":
     main()
 PY
 
-uv pip install --python "$PYTHON_EXE" "pyinstaller>=6.0.0" "pyinstaller-hooks-contrib>=2024.0"
+uv pip install --python "$PYTHON_EXE" "pyinstaller>=6.0.0" "pyinstaller-hooks-contrib>=2024.0" "pywebview[qt]>=5.3.0"
 
-# Linux-AppImage må holdes under GitHub sin 2GB-grense.
+# Linux-AppImage bruker Qt-backend for pywebview. Det gir en mer komplett
+# AppImage enn GTK/WebKit, som ofte krever distro-spesifikke systempakker.
 # Docling er valgfri for PDF (scanner.py faller tilbake til PyMuPDF ved feil),
 # derfor unngår vi å bundle hele Docling/torch-stacken i Linux-pakken.
 "$PYTHON_EXE" -m PyInstaller \
@@ -68,7 +69,15 @@ uv pip install --python "$PYTHON_EXE" "pyinstaller>=6.0.0" "pyinstaller-hooks-co
   --collect-all rapidocr \
   --collect-all onnxruntime \
   \
-  --hidden-import "webview.platforms.gtk" \
+  --collect-all PyQt6 \
+  \
+  --hidden-import "webview.platforms.qt" \
+  --hidden-import "qtpy" \
+  --hidden-import "PyQt6" \
+  --hidden-import "PyQt6.QtCore" \
+  --hidden-import "PyQt6.QtGui" \
+  --hidden-import "PyQt6.QtWidgets" \
+  --hidden-import "PyQt6.QtWebEngineWidgets" \
   \
   --hidden-import "docx" \
   --hidden-import "docx.oxml" \

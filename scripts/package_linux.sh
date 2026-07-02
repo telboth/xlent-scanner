@@ -77,6 +77,7 @@ cat > "$APPDIR/AppRun" <<'APPRUN'
 #!/bin/bash
 # AppRun – starter XLENTScanner fra AppImage
 SELF_DIR="$(dirname "$(readlink -f "$0")")"
+export PYWEBVIEW_GUI="${PYWEBVIEW_GUI:-qt}"
 exec "$SELF_DIR/usr/bin/XLENTScanner" "$@"
 APPRUN
 chmod +x "$APPDIR/AppRun"
