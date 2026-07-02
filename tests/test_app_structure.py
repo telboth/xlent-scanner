@@ -62,15 +62,19 @@ def test_scan_categories_endpoint_exposes_backend_category_order():
         "id",
         "konto",
         "hemmeligheter",
-        "konfidensielt",
-        "orgnummer",
+        "klient",
     ]
 
 
 def test_legacy_scan_category_keys_map_to_merged_categories():
     from xlent_scanner.scan_categories import normalise_scan_categories
 
-    assert normalise_scan_categories(["fodselsdato", "kredittkort"]) == frozenset({"id", "konto"})
+    assert normalise_scan_categories(["fodselsdato", "kredittkort", "orgnummer", "konfidensielt"]) == frozenset({
+        "id",
+        "konto",
+        "klient",
+        "hemmeligheter",
+    })
 
 
 def test_open_in_browser_endpoint_starts_separate_web_process_from_desktop(monkeypatch):

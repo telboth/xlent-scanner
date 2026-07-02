@@ -39,11 +39,15 @@ SCAN_CATEGORIES: tuple[ScanCategory, ...] = (
         "tax identification number",
         "imei",
     )),
-    ScanCategory("klient", "scanCatKlient", ai_categories=("selskapsnavn",), match_prefixes=("kundenavn",)),
-    ScanCategory("orgnummer", "scanCatOrgnummer", regex_covered_for_ai=True, match_prefixes=("organisasjonsnummer",)),
+    ScanCategory("klient", "scanCatKlient", ai_categories=("selskapsnavn",), match_prefixes=("kundenavn", "organisasjonsnummer")),
     ScanCategory("nettadresse", "dstCatNettadresse", regex_covered_for_ai=True, ai_categories=("nettadresse",), match_prefixes=("nettadresse", "ip-adresse")),
     ScanCategory("konto", "scanCatKonto", regex_covered_for_ai=True, ai_categories=("bankkonto", "swift"), match_prefixes=("kontonummer", "bankgiro", "plusgiro", "iban", "swift/bic", "kredittkort")),
-    ScanCategory("hemmeligheter", "scanCatHemmeligheter", match_prefixes=(
+    ScanCategory("hemmeligheter", "scanCatHemmeligheter", ai_categories=(
+        "sensitiv_personkontekst",
+        "personalsak",
+        "juridisk",
+        "barn_skole",
+    ), match_prefixes=(
         "openai",
         "anthropic",
         "github",
@@ -55,6 +59,11 @@ SCAN_CATEGORIES: tuple[ScanCategory, ...] = (
         "passord i konfig",
         "konfigurasjonsord",
         "høy-entropisteng",
+        "konfidensielt dokument",
+        "sensitiv personkontekst",
+        "juridisk forhold",
+        "dokumentmetadata",
+        "barn/elevopplysning",
     )),
     ScanCategory("finansielt", "scanCatFinansielt", ai_categories=("budsjett_tall", "lonn"), match_prefixes=(
         "timepris",
@@ -78,18 +87,6 @@ SCAN_CATEGORIES: tuple[ScanCategory, ...] = (
         "medication",
         "medisinsk opplysning",
     )),
-    ScanCategory("konfidensielt", "scanCatKonfidensielt", ai_categories=(
-        "sensitiv_personkontekst",
-        "personalsak",
-        "juridisk",
-        "barn_skole",
-    ), match_prefixes=(
-        "konfidensielt dokument",
-        "sensitiv personkontekst",
-        "juridisk forhold",
-        "dokumentmetadata",
-        "barn/elevopplysning",
-    )),
     ScanCategory("adresse", "scanCatAdresse", ai_categories=("adresse",), match_prefixes=("fysisk adresse", "lokasjonsdata", "mac-adresse")),
 )
 
@@ -98,13 +95,15 @@ _CATEGORY_ALIASES = {
     "fødselsdato": "id",
     "fødselsdata": "id",
     "kredittkort": "konto",
+    "orgnummer": "klient",
+    "konfidensielt": "hemmeligheter",
 }
 
 _CATEGORY_BY_KEY = {category.key: category for category in SCAN_CATEGORIES}
 SCAN_CATEGORY_KEYS = frozenset(_CATEGORY_BY_KEY)
 
 PROFILE_CATEGORIES: dict[str, tuple[str, ...]] = {
-    "lowfp": ("id", "konto", "hemmeligheter", "konfidensielt", "orgnummer"),
+    "lowfp": ("id", "konto", "hemmeligheter", "klient"),
     "normal": tuple(category.key for category in SCAN_CATEGORIES if category.default_checked and category.key != "medisinsk"),
     "strict": tuple(category.key for category in SCAN_CATEGORIES if category.default_checked or category.key == "medisinsk"),
 }

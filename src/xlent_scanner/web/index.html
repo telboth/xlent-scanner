@@ -63,9 +63,7 @@
     /* UI-språkvelger (i tab-raden, høyrejustert) */
     .ui-lang-sel {
       display: flex; align-items: center;
-      margin-left: 10px;
-      padding: 0 8px 0 16px;
-      border-left: 1px solid var(--border);
+      padding: 0;
     }
     .ui-lang-select {
       background: var(--panel2); color: var(--text);
@@ -132,7 +130,6 @@
     .tab-btn:hover { color: var(--text); }
     .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
     .top-update-btn {
-      margin-left: auto;
       white-space: nowrap;
       align-self: center;
     }
@@ -140,6 +137,30 @@
       white-space: nowrap;
       align-self: center;
     }
+    .top-menu {
+      position: relative;
+      margin-left: auto;
+    }
+    .top-menu summary {
+      list-style: none;
+      width: 32px; height: 28px;
+      display: flex; align-items: center; justify-content: center;
+      border: 1px solid var(--border); border-radius: 6px;
+      background: transparent; color: var(--header-text);
+      cursor: pointer; user-select: none;
+      font-size: 20px; line-height: 1;
+    }
+    .top-menu summary::-webkit-details-marker { display: none; }
+    .top-menu[open] summary { background: var(--panel2); }
+    .top-menu-body {
+      position: absolute; right: 0; top: calc(100% + 7px); z-index: 50;
+      min-width: 230px; padding: 10px;
+      display: flex; flex-direction: column; gap: 8px;
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 8px; box-shadow: 0 12px 30px rgba(0,0,0,.25);
+    }
+    .top-menu-body .ctrl-btn,
+    .top-menu-body .ui-lang-select { width: 100%; }
 
     /* ── Tab panels ─────────────────────────────────────────────────── */
     .tab-panel { display: none; flex-direction: column; flex: 1; min-height: 0; overflow-y: auto; }
@@ -807,18 +828,23 @@
     <button class="tab-btn active" data-tab="scanner" data-i18n="tabScanner">🔍 Scanner</button>
     <button class="tab-btn" data-tab="about" data-i18n="tabAbout">ℹ Om programmet</button>
     <button class="tab-btn" data-tab="settings" data-i18n="tabSettings">⚙️ Innstillinger</button>
-    <button class="ctrl-btn top-update-btn" id="btn-check-updates-top" data-i18n="updateCheckTop">Se etter oppdateringer</button>
-    <button class="ctrl-btn top-browser-btn" id="btn-open-in-browser-top" data-i18n="openInBrowserTop" data-i18n-title="openInBrowserTooltip" title="Åpner en egen nettleserversjon som fortsetter å fungere selv om desktopvinduet lukkes.">Åpne i nettleser</button>
-    <div class="ui-lang-sel">
-      <select id="ui-lang-select" class="ui-lang-select">
-        <option value="nb">🇳🇴 Norsk</option>
-        <option value="sv">🇸🇪 Svenska</option>
-        <option value="en">🇬🇧 English</option>
-        <option value="de">🇩🇪 Deutsch</option>
-        <option value="fr">🇫🇷 Français</option>
-        <option value="es">🇪🇸 Español</option>
-      </select>
-    </div>
+    <details class="top-menu" id="top-menu">
+      <summary aria-label="Meny" title="Meny">⋯</summary>
+      <div class="top-menu-body">
+        <button class="ctrl-btn top-update-btn" id="btn-check-updates-top" data-i18n="updateCheckTop">Se etter oppdateringer</button>
+        <button class="ctrl-btn top-browser-btn" id="btn-open-in-browser-top" data-i18n="openInBrowserTop" data-i18n-title="openInBrowserTooltip" title="Åpner en egen nettleserversjon som fortsetter å fungere selv om desktopvinduet lukkes.">Åpne i nettleser</button>
+        <div class="ui-lang-sel">
+          <select id="ui-lang-select" class="ui-lang-select">
+            <option value="nb">🇳🇴 Norsk</option>
+            <option value="sv">🇸🇪 Svenska</option>
+            <option value="en">🇬🇧 English</option>
+            <option value="de">🇩🇪 Deutsch</option>
+            <option value="fr">🇫🇷 Français</option>
+            <option value="es">🇪🇸 Español</option>
+          </select>
+        </div>
+      </div>
+    </details>
   </nav>
   <div id="update-banner" class="update-banner">
     <span class="msg" id="update-banner-msg"></span>
@@ -851,14 +877,12 @@
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="epost" checked> <span data-i18n="dstCatEpost">E-post</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="telefon" checked> <span data-i18n="dstCatTelefon">Telefon</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="id" checked> <span data-i18n="scanCatId">Personnummer / ID</span></label>
-          <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="klient" checked> <span data-i18n="scanCatKlient">Firmanavn</span></label>
-          <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="orgnummer" checked> <span data-i18n="scanCatOrgnummer">Org.nummer</span></label>
+          <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="klient" checked> <span data-i18n="scanCatKlient">Firma / org.nr.</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="nettadresse" checked> <span data-i18n="dstCatNettadresse">Nettadresser / IP</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="konto" checked> <span data-i18n="scanCatKonto">Bankdetaljer</span></label>
-          <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="hemmeligheter" checked> <span data-i18n="scanCatHemmeligheter">API-nøkler / secrets</span></label>
+          <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="hemmeligheter" checked> <span data-i18n="scanCatHemmeligheter">Hemmeligheter / konfidensielt</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="finansielt" checked> <span data-i18n="scanCatFinansielt">Finansielle nøkkeltall</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="medisinsk"> <span data-i18n="dstCatMedisinsk">Medisinsk</span></label>
-          <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="konfidensielt" checked> <span data-i18n="scanCatKonfidensielt">Konfidensielle ord</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="adresse" checked> <span data-i18n="scanCatAdresse">Fysisk adresse</span></label>
         </div>
         <details class="manual-redaction">
@@ -2176,11 +2200,9 @@
         scanCatKonto:        "Bankdetaljer",
         scanCatKredittkort:  "Kredittkort",
         scanCatNavn:         "Navn (person)",
-        scanCatHemmeligheter:"API-nøkler / secrets",
+        scanCatHemmeligheter:"Hemmeligheter / konfidensielt",
         scanCatFinansielt:   "Finansielle nøkkeltall",
-        scanCatKonfidensielt:"Konfidensielle ord",
-        scanCatKlient:       "Firmanavn",
-        scanCatOrgnummer:    "Org.nummer",
+        scanCatKlient:       "Firma / org.nr.",
         scanCatPassnummer:   "Passnummer",
         scanCatFodselsdato:  "Fødselsdata",
         scanCatLonn:         "Lønn / salary",
@@ -2600,11 +2622,9 @@
         scanCatKonto:        "Bankuppgifter",
         scanCatKredittkort:  "Kredittkort",
         scanCatNavn:         "Namn (person)",
-        scanCatHemmeligheter:"API-nycklar / secrets",
+        scanCatHemmeligheter:"Hemligheter / konfidentiellt",
         scanCatFinansielt:   "Finansiella nyckeltal",
-        scanCatKonfidensielt:"Konfidentiella ord",
-        scanCatKlient:       "Företagsnamn",
-        scanCatOrgnummer:    "Org.nummer",
+        scanCatKlient:       "Företag / org.nr.",
         scanCatPassnummer:   "Passnummer",
         scanCatFodselsdato:  "Födelsedatum",
         scanCatLonn:         "Lön / salary",
@@ -3029,11 +3049,9 @@
         scanCatKonto:        "Bank details",
         scanCatKredittkort:  "Credit cards",
         scanCatNavn:         "Person names",
-        scanCatHemmeligheter:"API keys / secrets",
+        scanCatHemmeligheter:"Secrets / confidential",
         scanCatFinansielt:   "Financial figures",
-        scanCatKonfidensielt:"Confidential keywords",
-        scanCatKlient:       "Company names",
-        scanCatOrgnummer:    "Organisation numbers",
+        scanCatKlient:       "Company / org. no.",
         scanCatPassnummer:   "Passport numbers",
         scanCatFodselsdato:  "Dates of birth",
         scanCatLonn:         "Salary / compensation",
@@ -3471,11 +3489,9 @@
         scanCatKonto:        "Bankdaten",
         scanCatKredittkort:  "Kreditkarte",
         scanCatNavn:         "Name (Person)",
-        scanCatHemmeligheter:"API-Schlüssel / Secrets",
+        scanCatHemmeligheter:"Secrets / vertraulich",
         scanCatFinansielt:   "Finanzkennzahlen",
-        scanCatKonfidensielt:"Vertrauliche Wörter",
-        scanCatKlient:       "Firmenname",
-        scanCatOrgnummer:    "Registernummer",
+        scanCatKlient:       "Firma / Registernr.",
         scanCatPassnummer:   "Reisepassnummer",
         scanCatFodselsdato:  "Geburtsdatum",
         scanCatLonn:         "Gehalt / Lohn",
@@ -3910,11 +3926,9 @@
         scanCatKonto:        "Coordonnées bancaires",
         scanCatKredittkort:  "Carte de crédit",
         scanCatNavn:         "Nom (personne)",
-        scanCatHemmeligheter:"Clés API / secrets",
+        scanCatHemmeligheter:"Secrets / confidentiel",
         scanCatFinansielt:   "Données financières",
-        scanCatKonfidensielt:"Mots confidentiels",
-        scanCatKlient:       "Nom de société",
-        scanCatOrgnummer:    "Numéro d'entreprise",
+        scanCatKlient:       "Société / n° org.",
         scanCatPassnummer:   "Numéro de passeport",
         scanCatFodselsdato:  "Date de naissance",
         scanCatLonn:         "Salaire",
@@ -4349,11 +4363,9 @@
         scanCatKonto:        "Datos bancarios",
         scanCatKredittkort:  "Tarjeta de crédito",
         scanCatNavn:         "Nombre (persona)",
-        scanCatHemmeligheter:"Claves API / secretos",
+        scanCatHemmeligheter:"Secretos / confidencial",
         scanCatFinansielt:   "Datos financieros",
-        scanCatKonfidensielt:"Palabras confidenciales",
-        scanCatKlient:       "Nombre de empresa",
-        scanCatOrgnummer:    "Número de registro",
+        scanCatKlient:       "Empresa / n.º org.",
         scanCatPassnummer:   "Número de pasaporte",
         scanCatFodselsdato:  "Fecha de nacimiento",
         scanCatLonn:         "Salario",
@@ -5836,9 +5848,9 @@
     }
 
     const DEFAULT_SCAN_CATEGORIES = [
-      "navn", "epost", "telefon", "id", "klient", "orgnummer",
+      "navn", "epost", "telefon", "id", "klient",
       "nettadresse", "konto", "hemmeligheter", "finansielt",
-      "konfidensielt", "adresse",
+      "adresse",
     ];
 
     function _selectedScanCategories() {
@@ -5846,7 +5858,7 @@
     }
 
     function _applyScanCategories(categories) {
-      const aliases = {"fodselsdato": "id", "fødselsdato": "id", "fødselsdata": "id", "kredittkort": "konto"};
+      const aliases = {"fodselsdato": "id", "fødselsdato": "id", "fødselsdata": "id", "kredittkort": "konto", "orgnummer": "klient", "konfidensielt": "hemmeligheter"};
       const raw = Array.isArray(categories) ? categories.map(String) : DEFAULT_SCAN_CATEGORIES;
       const selected = new Set(raw.map(value => aliases[value] || value));
       document.querySelectorAll(".scan-cat").forEach(cb => { cb.checked = selected.has(cb.value); });
@@ -7460,12 +7472,10 @@
       "konto":         c => ["kontonummer","bankgiro","plusgiro","iban","swift/bic","kredittkort"].some(p => c.startsWith(p)),
       "navn":          c => c.startsWith("navn (person)"),
       "nettadresse":   c => c.startsWith("nettadresse") || c.startsWith("ip-adresse"),
-      "hemmeligheter": c => ["openai","anthropic","github","jwt","bearer","aws","private key","azure storage","passord i konfig","konfigurasjonsord","høy-entropisteng"].some(p => c.startsWith(p)),
+      "hemmeligheter": c => ["openai","anthropic","github","jwt","bearer","aws","private key","azure storage","passord i konfig","konfigurasjonsord","høy-entropisteng","konfidensielt dokument","sensitiv personkontekst","juridisk forhold","dokumentmetadata","barn/elevopplysning"].some(p => c.startsWith(p)),
       "finansielt":    c => ["timepris","dagspris","prosjektsum","enhetspris","margin","rabatt","budsjett","lønn"].some(p => c.startsWith(p)),
       "medisinsk":     c => c.startsWith("medisinsk") || c.startsWith("medicinsk") || c.startsWith("medical") || c.startsWith("diagnose") || c.startsWith("diagnosis") || c.startsWith("legemiddel") || c.startsWith("läkemedel") || c.startsWith("medication"),
-      "konfidensielt": c => c.startsWith("konfidensielt dokument"),
-      "klient":        c => c.startsWith("kundenavn"),
-      "orgnummer":     c => c.startsWith("organisasjonsnummer"),
+      "klient":        c => c.startsWith("kundenavn") || c.startsWith("organisasjonsnummer"),
     };
 
     // Mapping: .scan-cat verdi → AI deep_scanner kategori-nøkkel
@@ -7479,6 +7489,7 @@
       "nettadresse": "nettadresse",
       "finansielt":  ["budsjett_tall", "lonn"],
       "klient":      "selskapsnavn",
+      "hemmeligheter": ["sensitiv_personkontekst", "personalsak", "juridisk", "barn_skole"],
       "medisinsk":   "medisinsk",
     };
 
@@ -7487,10 +7498,8 @@
       "epost",
       "nettadresse",
       "telefon",
-      "orgnummer",
       "id",
       "konto",
-      "konfidensielt",
     ]);
 
     async function loadScanCategoryConfig() {

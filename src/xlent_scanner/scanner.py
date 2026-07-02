@@ -641,7 +641,7 @@ def _run_detectors(
         finally:
             timings[fn.__name__] = round(timings.get(fn.__name__, 0.0) + time.perf_counter() - t0, 4)
 
-    if _category_enabled(selected_categories, "konfidensielt"):
+    if _category_enabled(selected_categories, "hemmeligheter"):
         _run(detect_keywords, text)
     if _category_enabled(selected_categories, "hemmeligheter"):
         _run(detect_secrets, text)
@@ -652,7 +652,7 @@ def _run_detectors(
     if lang in ("nb", "en", "da") and _category_enabled(
         selected_categories,
         "id",
-        "orgnummer",
+        "klient",
         "konto",
         "telefon",
     ):
@@ -660,7 +660,7 @@ def _run_detectors(
     if lang in ("sv", "en") and _category_enabled(
         selected_categories,
         "id",
-        "orgnummer",
+        "klient",
         "konto",
         "telefon",
     ):
@@ -692,7 +692,7 @@ def _run_detectors(
         "adresse",
         "finansielt",
         "medisinsk",
-        "konfidensielt",
+        "hemmeligheter",
     ):
         _run(detect_extra, text)
     _run(detect_custom_patterns, text)

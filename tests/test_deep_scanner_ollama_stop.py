@@ -1210,16 +1210,16 @@ def test_deep_scan_keeps_personnel_legal_and_child_school_findings(monkeypatch):
     }
 
 
-def test_confidential_scan_category_maps_to_semantic_ai_categories():
+def test_secrets_scan_category_maps_to_semantic_ai_categories():
     from xlent_scanner.scan_categories import categories_payload
 
     payload = categories_payload()
-    confidential = next(
-        category for category in payload["categories"] if category["key"] == "konfidensielt"
+    secrets = next(
+        category for category in payload["categories"] if category["key"] == "hemmeligheter"
     )
 
-    assert confidential["regex_covered_for_ai"] is False
-    assert confidential["ai_categories"] == [
+    assert secrets["regex_covered_for_ai"] is False
+    assert secrets["ai_categories"] == [
         "sensitiv_personkontekst",
         "personalsak",
         "juridisk",

@@ -98,13 +98,11 @@ def test_scan_category_grid_order_matches_requested_columns():
         "telefon",
         "id",
         "klient",
-        "orgnummer",
         "nettadresse",
         "konto",
         "hemmeligheter",
         "finansielt",
         "medisinsk",
-        "konfidensielt",
         "adresse",
     ]
 
@@ -119,8 +117,8 @@ def test_manual_redaction_terms_are_available_in_redaction_payload():
     ai_toggle = html.index("<!-- AI-dybdeskann toggle -->", grid_start)
     manual_panel = html.index('<details class="manual-redaction">', grid_end)
     manual_field = html.index('id="manual-redaction-terms"', manual_panel)
-    confidential_category = html.index('value="konfidensielt"', grid_start)
-    assert confidential_category < grid_end < manual_panel < manual_field < ai_toggle
+    secrets_category = html.index('value="hemmeligheter"', grid_start)
+    assert secrets_category < grid_end < manual_panel < manual_field < ai_toggle
     assert '<details class="manual-redaction" open' not in html
     assert ".scan-cat-grid .manual-redaction" not in html
     assert "function _manualRedactionTerms()" in html
@@ -196,6 +194,10 @@ def test_top_update_check_button_is_wired():
     assert 'id="btn-check-updates-top"' in html
     assert 'class="ctrl-btn top-update-btn"' in html
     assert 'data-i18n="updateCheckTop"' in html
+    assert 'class="top-menu"' in html
+    assert 'id="top-menu"' in html
+    assert ".top-menu {" in html
+    assert ".top-menu-body {" in html
     assert ".top-update-btn {" in html
     assert "margin-left: auto;" in html
     assert 'const topUpdateCheckBtnEl = document.getElementById("btn-check-updates-top");' in html
@@ -430,9 +432,7 @@ def test_scan_category_translations_exist_for_all_languages():
         "scanCatNavn",
         "scanCatHemmeligheter",
         "scanCatFinansielt",
-        "scanCatKonfidensielt",
         "scanCatKlient",
-        "scanCatOrgnummer",
         "scanCatPassnummer",
         "scanCatLonn",
         "dstCatMedisinsk",
@@ -542,17 +542,30 @@ def test_recursive_folder_scan_controls_are_wired():
     assert '_folderPost(url, { report_id: id })' in html
 
 
-def test_client_names_are_presented_as_company_names():
+def test_client_names_are_presented_as_company_and_org_number():
     html = HTML.read_text(encoding="utf-8")
 
-    assert 'scanCatKlient:       "Firmanavn"' in html
-    assert 'scanCatKlient:       "Företagsnamn"' in html
-    assert 'scanCatKlient:       "Company names"' in html
-    assert 'scanCatKlient:       "Firmenname"' in html
-    assert 'scanCatKlient:       "Nom de société"' in html
-    assert 'scanCatKlient:       "Nombre de empresa"' in html
+    assert 'scanCatKlient:       "Firma / org.nr."' in html
+    assert 'scanCatKlient:       "Företag / org.nr."' in html
+    assert 'scanCatKlient:       "Company / org. no."' in html
+    assert 'scanCatKlient:       "Firma / Registernr."' in html
+    assert 'scanCatKlient:       "Société / n° org."' in html
+    assert 'scanCatKlient:       "Empresa / n.º org."' in html
+    assert 'class="scan-cat" value="orgnummer"' not in html
     assert "Klientnavn" not in html
     assert "Client names" not in html
+
+
+def test_secrets_category_combines_confidential_keywords():
+    html = HTML.read_text(encoding="utf-8")
+
+    assert 'class="scan-cat" value="hemmeligheter" checked' in html
+    assert 'class="scan-cat" value="konfidensielt"' not in html
+    assert 'scanCatHemmeligheter:"Hemmeligheter / konfidensielt"' in html
+    assert 'scanCatHemmeligheter:"Secrets / confidential"' in html
+    assert '"konfidensielt": "hemmeligheter"' in html
+    assert '"orgnummer": "klient"' in html
+    assert '"hemmeligheter": ["sensitiv_personkontekst", "personalsak", "juridisk", "barn_skole"]' in html
 
 
 def test_empty_document_warning_translations_exist_for_all_languages():
@@ -1001,10 +1014,8 @@ def test_ai_deep_scan_skips_regex_covered_categories():
         '"epost"',
         '"nettadresse"',
         '"telefon"',
-        '"orgnummer"',
         '"id"',
         '"konto"',
-        '"konfidensielt"',
     ]:
         assert value in html
     assert "if (AI_REGEX_COVERED_SCAN_CATS.has(key)) continue;" in html
