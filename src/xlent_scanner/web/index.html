@@ -136,6 +136,10 @@
       white-space: nowrap;
       align-self: center;
     }
+    .top-browser-btn {
+      white-space: nowrap;
+      align-self: center;
+    }
 
     /* ── Tab panels ─────────────────────────────────────────────────── */
     .tab-panel { display: none; flex-direction: column; flex: 1; min-height: 0; overflow-y: auto; }
@@ -804,6 +808,7 @@
     <button class="tab-btn" data-tab="about" data-i18n="tabAbout">ℹ Om programmet</button>
     <button class="tab-btn" data-tab="settings" data-i18n="tabSettings">⚙️ Innstillinger</button>
     <button class="ctrl-btn top-update-btn" id="btn-check-updates-top" data-i18n="updateCheckTop">Se etter oppdateringer</button>
+    <button class="ctrl-btn top-browser-btn" id="btn-open-in-browser-top" data-i18n="openInBrowserTop">Åpne i browser</button>
     <div class="ui-lang-sel">
       <select id="ui-lang-select" class="ui-lang-select">
         <option value="nb">🇳🇴 Norsk</option>
@@ -845,16 +850,14 @@
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="navn" checked> <span data-i18n="scanCatNavn">Navn (person)</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="epost" checked> <span data-i18n="dstCatEpost">E-post</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="telefon" checked> <span data-i18n="dstCatTelefon">Telefon</span></label>
-          <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="fodselsdato" checked> <span data-i18n="scanCatFodselsdato">Fødselsdata</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="id" checked> <span data-i18n="scanCatId">Personnummer / ID</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="klient" checked> <span data-i18n="scanCatKlient">Firmanavn</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="orgnummer" checked> <span data-i18n="scanCatOrgnummer">Org.nummer</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="nettadresse" checked> <span data-i18n="dstCatNettadresse">Nettadresser / IP</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="konto" checked> <span data-i18n="scanCatKonto">Bankdetaljer</span></label>
-          <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="kredittkort" checked> <span data-i18n="scanCatKredittkort">Kredittkort</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="hemmeligheter" checked> <span data-i18n="scanCatHemmeligheter">API-nøkler / secrets</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="finansielt" checked> <span data-i18n="scanCatFinansielt">Finansielle nøkkeltall</span></label>
-          <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="medisinsk"> <span data-i18n="dstCatMedisinsk">Medisinsk (kun dybdeskann)</span></label>
+          <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="medisinsk"> <span data-i18n="dstCatMedisinsk">Medisinsk</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="konfidensielt" checked> <span data-i18n="scanCatKonfidensielt">Konfidensielle ord</span></label>
           <label class="dst-cat-label"><input type="checkbox" class="scan-cat" value="adresse" checked> <span data-i18n="scanCatAdresse">Fysisk adresse</span></label>
         </div>
@@ -2090,6 +2093,8 @@
         imagePdfMasks:      "masker lagt på",
         imagePdfUnmatched:  "valgte verdier ikke funnet av OCR",
         updateCheckTop: "Se etter oppdateringer",
+        openInBrowserTop: "Åpne i browser",
+        openInBrowserFailed: "Kunne ikke åpne nettleser.",
         updateCheckNow: "Se etter oppdateringer nå",
         updateNoUpdate: "Du har nyeste versjon.",
         updateCheckFailed: "Kunne ikke sjekke oppdateringer.",
@@ -2107,7 +2112,7 @@
         dstCatEpost:        "E-post",
         dstCatTelefon:      "Telefon",
         dstCatSelskapsnavn:  "Selskapsnavn",
-        dstCatMedisinsk:     "Medisinsk (kun dybdeskann)",
+        dstCatMedisinsk:     "Medisinsk",
         dstCatNettadresse:   "Nettadresser",
         dstSelectOne:       "Velg minst ett funn å anonymisere.",
         dstHwReq:           "⚠ Dybdeskanning kjøres lokalt og kan ta opptil flere minutter, avhengig av dokumentstørrelse og maskinvare. Anbefalt: minst 16 GB RAM og en relativt moderne CPU. GPU-akselerasjon (NVIDIA/AMD) brukes automatisk og gir vesentlig kortere analysetid.",
@@ -2509,6 +2514,8 @@
         imagePdfMasks:      "masker lades till",
         imagePdfUnmatched:  "valda värden hittades inte av OCR",
         updateCheckTop: "Sök efter uppdateringar",
+        openInBrowserTop: "Öppna i webbläsare",
+        openInBrowserFailed: "Kunde inte öppna webbläsare.",
         updateCheckNow: "Sök efter uppdateringar nu",
         updateNoUpdate: "Du har senaste versionen.",
         updateCheckFailed: "Kunde inte kontrollera uppdateringar.",
@@ -2526,7 +2533,7 @@
         dstCatEpost:        "E-post",
         dstCatTelefon:      "Telefon",
         dstCatSelskapsnavn:  "Företagsnamn",
-        dstCatMedisinsk:     "Medicinskt (endast djupskanning)",
+        dstCatMedisinsk:     "Medicinskt",
         dstCatNettadresse:   "Webbadresser",
         dstSelectOne:       "Välj minst ett fynd att anonymisera.",
         dstHwReq:           "⚠ Djupskanning körs lokalt och kan ta upp till flera minuter beroende på dokumentstorlek och hårdvara. Rekommenderat: minst 16 GB RAM och en relativt modern CPU. GPU-acceleration (NVIDIA/AMD) används automatiskt och ger avsevärt kortare analystid.",
@@ -2933,6 +2940,8 @@
         imagePdfMasks:      "masks applied",
         imagePdfUnmatched:  "selected values not found by OCR",
         updateCheckTop: "Check for updates",
+        openInBrowserTop: "Open in browser",
+        openInBrowserFailed: "Could not open browser.",
         updateCheckNow: "Check for updates now",
         updateNoUpdate: "You already have the latest version.",
         updateCheckFailed: "Could not check for updates.",
@@ -2950,7 +2959,7 @@
         dstCatEpost:        "Email addresses",
         dstCatTelefon:      "Phone numbers",
         dstCatSelskapsnavn:  "Company names",
-        dstCatMedisinsk:     "Medical (deep scan only)",
+        dstCatMedisinsk:     "Medical",
         dstCatNettadresse:   "Web addresses",
         dstSelectOne:       "Select at least one finding to redact.",
         dstHwReq:           "⚠ Deep scanning runs locally and may take several minutes depending on document size and hardware. Recommended: at least 16 GB RAM and a relatively modern CPU. GPU acceleration (NVIDIA/AMD) is used automatically and significantly reduces analysis time.",
@@ -3265,6 +3274,8 @@
         updateChecking:      "Prüfe auf Updates…",
         updateCheckBtn:      "Auf Updates prüfen",
         updateCheckTop:      "Auf Updates prüfen",
+        openInBrowserTop:    "Im Browser öffnen",
+        openInBrowserFailed: "Browser konnte nicht geöffnet werden.",
         updateCheckNow:      "Jetzt auf Updates prüfen",
         updateCheckFailed:   "Updates konnten nicht geprüft werden.",
         manualRedactionLabel:"Zusätzlicher Text zur Anonymisierung",
@@ -3435,7 +3446,7 @@
         dstCatAdresse:       "Adresse",
         dstCatNettadresse:   "Webadressen / IP",
         dstCatSelskapsnavn:  "Firmenname",
-        dstCatMedisinsk:     "Medizinisch (nur Tiefenscan)",
+        dstCatMedisinsk:     "Medizinisch",
         dstCatBudsjett:      "Budget / Betrag",
         dstCatNavn:          "Name",
         dstCatPersonnummer:  "Personennummer",
@@ -3699,6 +3710,8 @@
         updateChecking:      "Vérification des mises à jour…",
         updateCheckBtn:      "Vérifier les mises à jour",
         updateCheckTop:      "Vérifier les mises à jour",
+        openInBrowserTop:    "Ouvrir dans le navigateur",
+        openInBrowserFailed: "Impossible d’ouvrir le navigateur.",
         updateCheckNow:      "Vérifier les mises à jour maintenant",
         updateCheckFailed:   "Impossible de vérifier les mises à jour.",
         manualRedactionLabel:"Texte supplémentaire à anonymiser",
@@ -3869,7 +3882,7 @@
         dstCatAdresse:       "Adresse",
         dstCatNettadresse:   "Adresses web / IP",
         dstCatSelskapsnavn:  "Nom de société",
-        dstCatMedisinsk:     "Médical (analyse approfondie uniquement)",
+        dstCatMedisinsk:     "Médical",
         dstCatBudsjett:      "Budget / montant",
         dstCatNavn:          "Nom",
         dstCatPersonnummer:  "Numéro de sécurité sociale",
@@ -4133,6 +4146,8 @@
         updateChecking:      "Comprobando actualizaciones…",
         updateCheckBtn:      "Buscar actualizaciones",
         updateCheckTop:      "Buscar actualizaciones",
+        openInBrowserTop:    "Abrir en navegador",
+        openInBrowserFailed: "No se pudo abrir el navegador.",
         updateCheckNow:      "Buscar actualizaciones ahora",
         updateCheckFailed:   "No se pudieron comprobar las actualizaciones.",
         manualRedactionLabel:"Texto adicional para anonimizar",
@@ -4303,7 +4318,7 @@
         dstCatAdresse:       "Dirección",
         dstCatNettadresse:   "Direcciones web / IP",
         dstCatSelskapsnavn:  "Nombre de empresa",
-        dstCatMedisinsk:     "Médico (solo escaneo profundo)",
+        dstCatMedisinsk:     "Médico",
         dstCatBudsjett:      "Presupuesto / importe",
         dstCatNavn:          "Nombre",
         dstCatPersonnummer:  "Número de identidad",
@@ -4656,6 +4671,19 @@
       if (!topUpdateCheckBtnEl) return;
       topUpdateCheckBtnEl.disabled = busy;
       topUpdateCheckBtnEl.textContent = busy ? t("processing") : t("updateCheckTop");
+    }
+
+    async function openInSystemBrowser() {
+      const btn = document.getElementById("btn-open-in-browser-top");
+      if (btn) btn.disabled = true;
+      try {
+        const d = await (await fetch(`${API}/open-in-browser`, { method: "POST" })).json();
+        if (!d.ok) setStatus(`${t("openInBrowserFailed")} ${d.error || ""}`.trim());
+      } catch (e) {
+        setStatus(`${t("openInBrowserFailed")} ${String(e)}`);
+      } finally {
+        if (btn) btn.disabled = false;
+      }
     }
 
     function canRunInstallScript() {
@@ -5788,8 +5816,8 @@
     }
 
     const DEFAULT_SCAN_CATEGORIES = [
-      "navn", "epost", "telefon", "fodselsdato", "id", "klient", "orgnummer",
-      "nettadresse", "konto", "kredittkort", "hemmeligheter", "finansielt",
+      "navn", "epost", "telefon", "id", "klient", "orgnummer",
+      "nettadresse", "konto", "hemmeligheter", "finansielt",
       "konfidensielt", "adresse",
     ];
 
@@ -5798,7 +5826,9 @@
     }
 
     function _applyScanCategories(categories) {
-      const selected = new Set(Array.isArray(categories) ? categories.map(String) : DEFAULT_SCAN_CATEGORIES);
+      const aliases = {"fodselsdato": "id", "fødselsdato": "id", "fødselsdata": "id", "kredittkort": "konto"};
+      const raw = Array.isArray(categories) ? categories.map(String) : DEFAULT_SCAN_CATEGORIES;
+      const selected = new Set(raw.map(value => aliases[value] || value));
       document.querySelectorAll(".scan-cat").forEach(cb => { cb.checked = selected.has(cb.value); });
     }
 
@@ -6711,6 +6741,7 @@
     });
     document.getElementById("btn-check-updates").addEventListener("click", () => runUpdateCheck(true));
     document.getElementById("btn-check-updates-top").addEventListener("click", () => runUpdateCheck(true));
+    document.getElementById("btn-open-in-browser-top").addEventListener("click", openInSystemBrowser);
     document.getElementById("btn-run-install-script").addEventListener("click", runInstallScript);
     document.getElementById("btn-open-web-mode").addEventListener("click", startWebMode);
     document.getElementById("btn-install-mac-quick-action").addEventListener("click", installMacQuickAction);
@@ -7405,10 +7436,8 @@
       "epost":         c => c.startsWith("e-post"),
       "telefon":       c => c.startsWith("telefonnummer"),
       "adresse":       c => c.startsWith("fysisk adresse"),
-      "id":            c => ["fødselsnummer","d-nummer","personnummer","samordningsnummer","cpr-nummer","uk national insurance","us social security","mulig personnummer","passnummer"].some(p => c.startsWith(p)),
-      "fodselsdato":   c => c.startsWith("fødselsdato"),
-      "konto":         c => ["kontonummer","bankgiro","plusgiro","iban","swift/bic"].some(p => c.startsWith(p)),
-      "kredittkort":   c => c.startsWith("kredittkort"),
+      "id":            c => ["fødselsdato","fødselsnummer","d-nummer","personnummer","samordningsnummer","cpr-nummer","uk national insurance","us social security","mulig personnummer","passnummer"].some(p => c.startsWith(p)),
+      "konto":         c => ["kontonummer","bankgiro","plusgiro","iban","swift/bic","kredittkort"].some(p => c.startsWith(p)),
       "navn":          c => c.startsWith("navn (person)"),
       "nettadresse":   c => c.startsWith("nettadresse") || c.startsWith("ip-adresse"),
       "hemmeligheter": c => ["openai","anthropic","github","jwt","bearer","aws","private key","azure storage","passord i konfig","konfigurasjonsord","høy-entropisteng"].some(p => c.startsWith(p)),
@@ -7425,7 +7454,6 @@
       "telefon":     "telefon",
       "adresse":     "adresse",
       "id":          ["personnummer", "passnummer"],
-      "fodselsdato": "fodselsdato",
       "konto":       ["bankkonto", "swift"],
       "navn":        "navn",
       "nettadresse": "nettadresse",
@@ -7441,7 +7469,7 @@
       "telefon",
       "orgnummer",
       "id",
-      "kredittkort",
+      "konto",
       "konfidensielt",
     ]);
 

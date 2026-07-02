@@ -173,6 +173,18 @@ def index():
     return html, 200, {"Content-Type": "text/html; charset=utf-8", **_NO_CACHE}
 
 
+@flask_app.post("/open-in-browser")
+def open_in_browser():
+    """Åpne gjeldende lokale app-URL i systemets standardnettleser."""
+    url = f"http://127.0.0.1:{app_state.port}"
+    try:
+        webbrowser.open(url)
+        return jsonify({"ok": True, "url": url})
+    except Exception as exc:
+        LOGGER.warning("Could not open browser for %s: %s", url, exc)
+        return jsonify({"ok": False, "url": url, "error": str(exc)})
+
+
 def _downloads_dir() -> Path:
     downloads = Path.home() / "Downloads"
     if not downloads.exists():

@@ -129,3 +129,19 @@ class TestNoWebAddressFalsePositive:
         email_texts = _category_texts(scan_result, "e-post")
         assert not any("www." in e for e in email_texts), \
             f"www.* skal ikke matchet som e-post: {email_texts}"
+
+
+def test_merged_id_category_includes_birth_date():
+    from xlent_scanner.scanner import scan_text
+
+    result = scan_text("Fødselsdato: 01.02.1980", language="nb", categories=["id"])
+
+    assert ("fødselsdato", "01.02.1980") in [(f.category, f.text) for f in result.findings]
+
+
+def test_merged_bank_category_includes_credit_cards():
+    from xlent_scanner.scanner import scan_text
+
+    result = scan_text("Kort: 4532015112830002", language="nb", categories=["konto"])
+
+    assert any(f.category.startswith("kredittkort") for f in result.findings)

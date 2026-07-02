@@ -25,8 +25,8 @@ SCAN_CATEGORIES: tuple[ScanCategory, ...] = (
     ScanCategory("navn", "scanCatNavn", ai_categories=("navn",), match_prefixes=("navn (person)",)),
     ScanCategory("epost", "dstCatEpost", regex_covered_for_ai=True, ai_categories=("epost",), match_prefixes=("e-post",)),
     ScanCategory("telefon", "dstCatTelefon", regex_covered_for_ai=True, ai_categories=("telefon",), match_prefixes=("telefonnummer",)),
-    ScanCategory("fodselsdato", "scanCatFodselsdato", match_prefixes=("fødselsdato",)),
     ScanCategory("id", "scanCatId", regex_covered_for_ai=True, ai_categories=("personnummer", "passnummer"), match_prefixes=(
+        "fødselsdato",
         "fødselsnummer",
         "d-nummer",
         "personnummer",
@@ -42,8 +42,7 @@ SCAN_CATEGORIES: tuple[ScanCategory, ...] = (
     ScanCategory("klient", "scanCatKlient", ai_categories=("selskapsnavn",), match_prefixes=("kundenavn",)),
     ScanCategory("orgnummer", "scanCatOrgnummer", regex_covered_for_ai=True, match_prefixes=("organisasjonsnummer",)),
     ScanCategory("nettadresse", "dstCatNettadresse", regex_covered_for_ai=True, ai_categories=("nettadresse",), match_prefixes=("nettadresse", "ip-adresse")),
-    ScanCategory("konto", "scanCatKonto", ai_categories=("bankkonto", "swift"), match_prefixes=("kontonummer", "bankgiro", "plusgiro", "iban", "swift/bic")),
-    ScanCategory("kredittkort", "scanCatKredittkort", regex_covered_for_ai=True, match_prefixes=("kredittkort",)),
+    ScanCategory("konto", "scanCatKonto", regex_covered_for_ai=True, ai_categories=("bankkonto", "swift"), match_prefixes=("kontonummer", "bankgiro", "plusgiro", "iban", "swift/bic", "kredittkort")),
     ScanCategory("hemmeligheter", "scanCatHemmeligheter", match_prefixes=(
         "openai",
         "anthropic",
@@ -94,11 +93,18 @@ SCAN_CATEGORIES: tuple[ScanCategory, ...] = (
     ScanCategory("adresse", "scanCatAdresse", ai_categories=("adresse",), match_prefixes=("fysisk adresse", "lokasjonsdata", "mac-adresse")),
 )
 
+_CATEGORY_ALIASES = {
+    "fodselsdato": "id",
+    "fødselsdato": "id",
+    "fødselsdata": "id",
+    "kredittkort": "konto",
+}
+
 _CATEGORY_BY_KEY = {category.key: category for category in SCAN_CATEGORIES}
 SCAN_CATEGORY_KEYS = frozenset(_CATEGORY_BY_KEY)
 
 PROFILE_CATEGORIES: dict[str, tuple[str, ...]] = {
-    "lowfp": ("id", "konto", "kredittkort", "hemmeligheter", "konfidensielt", "orgnummer"),
+    "lowfp": ("id", "konto", "hemmeligheter", "konfidensielt", "orgnummer"),
     "normal": tuple(category.key for category in SCAN_CATEGORIES if category.default_checked and category.key != "medisinsk"),
     "strict": tuple(category.key for category in SCAN_CATEGORIES if category.default_checked or category.key == "medisinsk"),
 }
@@ -112,11 +118,13 @@ def normalise_scan_categories(categories: Iterable[str] | None) -> frozenset[str
     """
     if categories is None:
         return None
-    return frozenset(
-        str(category).strip().lower()
-        for category in categories
-        if str(category).strip().lower() in SCAN_CATEGORY_KEYS
-    )
+    normalized: set[str] = set()
+    for category in categories:
+        key = str(category).strip().lower()
+        key = _CATEGORY_ALIASES.get(key, key)
+        if key in SCAN_CATEGORY_KEYS:
+            normalized.add(key)
+    return frozenset(normalized)
 
 
 def category_enabled(selected: frozenset[str] | None, *keys: str) -> bool:

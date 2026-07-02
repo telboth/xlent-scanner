@@ -677,7 +677,7 @@ def _run_detectors(
         _run(detect_es_specific, text)
     if _category_enabled(selected_categories, "konto"):
         _run(detect_iban, text)
-    if _category_enabled(selected_categories, "kredittkort"):
+    if _category_enabled(selected_categories, "konto"):
         _run(detect_creditcards, text)
     if _category_enabled(selected_categories, "finansielt"):
         _run(detect_financials, text)
@@ -685,7 +685,6 @@ def _run_detectors(
         _run(detect_clients, text)
     if _category_enabled(
         selected_categories,
-        "fodselsdato",
         "id",
         "konto",
         "nettadresse",

@@ -55,14 +55,31 @@ def test_scan_categories_endpoint_exposes_backend_category_order():
         "navn",
         "epost",
         "telefon",
-        "fodselsdato",
         "id",
+        "klient",
     ]
     assert data["profiles"]["lowfp"] == [
         "id",
         "konto",
-        "kredittkort",
         "hemmeligheter",
         "konfidensielt",
         "orgnummer",
     ]
+
+
+def test_legacy_scan_category_keys_map_to_merged_categories():
+    from xlent_scanner.scan_categories import normalise_scan_categories
+
+    assert normalise_scan_categories(["fodselsdato", "kredittkort"]) == frozenset({"id", "konto"})
+
+
+def test_open_in_browser_endpoint_opens_current_local_url(monkeypatch):
+    opened = []
+    monkeypatch.setattr(app_module.app_state, "port", 51291)
+    monkeypatch.setattr(app_module.webbrowser, "open", lambda url: opened.append(url) or True)
+
+    response = app_module.flask_app.test_client().post("/open-in-browser")
+
+    assert response.status_code == 200
+    assert response.get_json() == {"ok": True, "url": "http://127.0.0.1:51291"}
+    assert opened == ["http://127.0.0.1:51291"]

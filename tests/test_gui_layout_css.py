@@ -96,13 +96,11 @@ def test_scan_category_grid_order_matches_requested_columns():
         "navn",
         "epost",
         "telefon",
-        "fodselsdato",
         "id",
         "klient",
         "orgnummer",
         "nettadresse",
         "konto",
-        "kredittkort",
         "hemmeligheter",
         "finansielt",
         "medisinsk",
@@ -206,6 +204,20 @@ def test_top_update_check_button_is_wired():
     assert html.count("updateCheckTop:") == 6
     assert html.count("updateCheckNow:") == 6
     assert html.count("updateCheckFailed:") == 6
+
+
+def test_open_in_browser_top_button_is_wired():
+    html = HTML.read_text(encoding="utf-8")
+
+    assert 'id="btn-open-in-browser-top"' in html
+    assert 'class="ctrl-btn top-browser-btn"' in html
+    assert 'data-i18n="openInBrowserTop"' in html
+    assert ".top-browser-btn {" in html
+    assert "async function openInSystemBrowser()" in html
+    assert 'fetch(`${API}/open-in-browser`, { method: "POST" })' in html
+    assert 'document.getElementById("btn-open-in-browser-top").addEventListener("click", openInSystemBrowser);' in html
+    assert html.count("openInBrowserTop:") == 6
+    assert html.count("openInBrowserFailed:") == 6
 
 
 def test_diagnostics_controls_exist_for_all_languages():
@@ -408,7 +420,6 @@ def test_scan_category_translations_exist_for_all_languages():
     for key in [
         "scanCatId",
         "scanCatKonto",
-        "scanCatKredittkort",
         "scanCatNavn",
         "scanCatHemmeligheter",
         "scanCatFinansielt",
@@ -416,7 +427,6 @@ def test_scan_category_translations_exist_for_all_languages():
         "scanCatKlient",
         "scanCatOrgnummer",
         "scanCatPassnummer",
-        "scanCatFodselsdato",
         "scanCatLonn",
         "dstCatMedisinsk",
     ]:
@@ -428,24 +438,26 @@ def test_bank_details_category_combines_account_iban_and_swift():
 
     assert 'class="scan-cat" value="konto" checked' in html
     assert 'class="scan-cat" value="swift"' not in html
+    assert 'class="scan-cat" value="kredittkort"' not in html
     assert 'scanCatKonto:        "Bankdetaljer"' in html
     assert 'scanCatKonto:        "Bankuppgifter"' in html
     assert 'scanCatKonto:        "Bank details"' in html
     assert 'scanCatKonto:        "Bankdaten"' in html
     assert 'scanCatKonto:        "Coordonnées bancaires"' in html
     assert 'scanCatKonto:        "Datos bancarios"' in html
-    assert '"konto":         c => ["kontonummer","bankgiro","plusgiro","iban","swift/bic"].some(p => c.startsWith(p))' in html
+    assert '"konto":         c => ["kontonummer","bankgiro","plusgiro","iban","swift/bic","kredittkort"].some(p => c.startsWith(p))' in html
     assert '"konto":       ["bankkonto", "swift"]' in html
 
 
-def test_scan_menu_combines_passport_and_salary_categories():
+def test_scan_menu_combines_birthdate_passport_creditcard_and_salary_categories():
     html = HTML.read_text(encoding="utf-8")
 
+    assert 'class="scan-cat" value="fodselsdato"' not in html
     assert 'class="scan-cat" value="passnummer"' not in html
     assert 'class="scan-cat" value="lonn"' not in html
     assert 'class="scan-cat" value="id" checked' in html
     assert 'class="scan-cat" value="finansielt" checked' in html
-    assert '"id":            c => ["fødselsnummer","d-nummer","personnummer","samordningsnummer","cpr-nummer","uk national insurance","us social security","mulig personnummer","passnummer"].some(p => c.startsWith(p))' in html
+    assert '"id":            c => ["fødselsdato","fødselsnummer","d-nummer","personnummer","samordningsnummer","cpr-nummer","uk national insurance","us social security","mulig personnummer","passnummer"].some(p => c.startsWith(p))' in html
     assert '"finansielt":    c => ["timepris","dagspris","prosjektsum","enhetspris","margin","rabatt","budsjett","lønn"].some(p => c.startsWith(p))' in html
     assert '"id":          ["personnummer", "passnummer"]' in html
     assert '"finansielt":  ["budsjett_tall", "lonn"]' in html
@@ -917,8 +929,8 @@ def test_medical_ai_category_is_available_but_default_off():
     assert 'class="scan-cat" value="medisinsk"' in html
     assert 'class="scan-cat" value="medisinsk" checked' not in html
     assert 'data-i18n="dstCatMedisinsk"' in html
-    assert "Medisinsk (kun dybdeskann)" in html
-    assert "Medical (deep scan only)" in html
+    assert 'dstCatMedisinsk:     "Medisinsk"' in html
+    assert 'dstCatMedisinsk:     "Medical"' in html
     assert '"medisinsk":   "medisinsk"' in html
 
 
@@ -984,7 +996,7 @@ def test_ai_deep_scan_skips_regex_covered_categories():
         '"telefon"',
         '"orgnummer"',
         '"id"',
-        '"kredittkort"',
+        '"konto"',
         '"konfidensielt"',
     ]:
         assert value in html
