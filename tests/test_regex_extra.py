@@ -193,6 +193,23 @@ def test_child_school_fields_are_detected_with_explicit_context() -> None:
     ]
 
 
+def test_hr_legal_and_child_school_regex_reject_academic_running_text() -> None:
+    samples = [
+        "Conference on Environmental and Engineering Geophysics, IOP Publishing, 012054. (doi:10.1088/1742-6596/2651/1/012054).",
+        "The load is a matching termination to the line’s characteristic impedance.",
+        "An ideal −1 termination reduces to log-of-unity.",
+        "Further investigation showed that the device was more capable than expected.",
+        "There was no further investigation into the lower limit.",
+        "TABLE 3.6: Inputs and algorithm class of the four permittivity-extraction methods.",
+        "Method Standards consumed Reference ε∗used Algorithm class Scalar C0 open none direct admittance.",
+    ]
+
+    for sample in samples:
+        assert list(find_child_school_data(sample)) == []
+        assert list(find_hr_personnel_data(sample)) == []
+        assert list(find_legal_case_data(sample)) == []
+
+
 def test_location_and_device_ids_require_labels() -> None:
     text = "GPS: 59.9139, 10.7522. MAC address: AA:BB:CC:DD:EE:FF. IMEI: 490154203237518."
 

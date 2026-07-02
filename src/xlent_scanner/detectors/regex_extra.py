@@ -281,7 +281,7 @@ _HR_FIELD_RE = re.compile(
     r"termination|notice\s*period|oppsigelse|oppsigelsestid|"
     r"disciplinary\s*warning|written\s*warning|advarsel|"
     r"performance\s*review|medarbeidersamtale|employee\s*review"
-    r")\b\s*[:#-]?\s*([^.\n\r;]{2,80})",
+    r")\b\s*[:#]\s*([^.\n\r;]{2,80})",
 )
 
 
@@ -301,15 +301,25 @@ def find_hr_personnel_data(text: str) -> Iterator[Finding]:
 _LEGAL_FIELD_RE = re.compile(
     r"(?i)\b(?:"
     r"criminal\s*case|court\s*case|police\s*report|disciplinary\s*case|"
-    r"whistleblowing\s*case|investigation|charged\s*with|convicted\s*of|"
+    r"whistleblowing\s*case|investigation|"
     r"case\s*(?:no\.?|number)|matter\s*(?:no\.?|number)|incident\s*(?:no\.?|number)|"
     r"saksnummer|sak\s*nr\.?|straffesak|politisak|domfelt|siktet|tiltalt|gransking|varslingssak"
-    r")\b\s*[:#-]?\s*([A-ZÆØÅÄÖÜ0-9][A-ZÆØÅÄÖÜa-zæøåäöü0-9 _/-]{2,80})",
+    r")\b\s*[:#]\s*([A-ZÆØÅÄÖÜ0-9][A-ZÆØÅÄÖÜa-zæøåäöü0-9 _/-]{2,80})",
+)
+
+_LEGAL_PERSON_PHRASE_RE = re.compile(
+    r"(?i)\b(?:charged\s*with|convicted\s*of|siktet\s+for|tiltalt\s+for|domfelt\s+for)\s+"
+    r"([A-ZÆØÅÄÖÜa-zæøåäöü0-9 _/-]{3,80})"
 )
 
 
 def find_legal_case_data(text: str) -> Iterator[Finding]:
     for m in _LEGAL_FIELD_RE.finditer(text):
+        value = m.group(1).strip(" \t\r\n,;:.")
+        if not value:
+            continue
+        yield Finding("juridisk forhold", value, _ctx(text, m.start(), m.end()), severity="rød")
+    for m in _LEGAL_PERSON_PHRASE_RE.finditer(text):
         value = m.group(1).strip(" \t\r\n,;:.")
         if not value:
             continue
@@ -321,7 +331,7 @@ _CHILD_SCHOOL_RE = re.compile(
     r"(?i)\b(?:"
     r"student|pupil|child|guardian|parent|school|class|iep|special\s*education|"
     r"elev|foresatt|klasse|skole|barnehage|barnevern|ppt|iop|spesialundervisning"
-    r")\b\s*[:#-]?\s*("
+    r")\b\s*[:#]\s*("
     r"[A-ZÆØÅÄÖÜ][A-Za-zÆØÅæøåÄÖäöÜüÉéÈèÁáÀàÓóÒòÍíÌìÑñß '-]{2,50}"
     r"|\d{1,2}[A-ZÆØÅ]?"
     r")",
