@@ -212,11 +212,18 @@ def test_open_in_browser_top_button_is_wired():
     assert 'id="btn-open-in-browser-top"' in html
     assert 'class="ctrl-btn top-browser-btn"' in html
     assert 'data-i18n="openInBrowserTop"' in html
+    assert 'data-i18n-title="openInBrowserTooltip"' in html
+    assert "Åpne i nettleser" in html
     assert ".top-browser-btn {" in html
     assert "async function openInSystemBrowser()" in html
+    assert 'setStatus(t("openInBrowserStarting"));' in html
+    assert 'if (d.ok) setStatus(t("openInBrowserStarted"));' in html
     assert 'fetch(`${API}/open-in-browser`, { method: "POST" })' in html
     assert 'document.getElementById("btn-open-in-browser-top").addEventListener("click", openInSystemBrowser);' in html
     assert html.count("openInBrowserTop:") == 6
+    assert html.count("openInBrowserTooltip:") == 6
+    assert html.count("openInBrowserStarting:") == 6
+    assert html.count("openInBrowserStarted:") == 6
     assert html.count("openInBrowserFailed:") == 6
 
 

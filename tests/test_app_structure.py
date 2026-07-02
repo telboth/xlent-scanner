@@ -73,13 +73,33 @@ def test_legacy_scan_category_keys_map_to_merged_categories():
     assert normalise_scan_categories(["fodselsdato", "kredittkort"]) == frozenset({"id", "konto"})
 
 
-def test_open_in_browser_endpoint_opens_current_local_url(monkeypatch):
+def test_open_in_browser_endpoint_starts_separate_web_process_from_desktop(monkeypatch):
+    class Process:
+        pid = 12345
+
+    calls = []
+    monkeypatch.setattr(app_module.app_state, "window", object())
+    monkeypatch.setattr(app_module, "_launch_web_mode_process", lambda: calls.append("start") or Process())
+
+    response = app_module.flask_app.test_client().post("/open-in-browser")
+
+    assert response.status_code == 200
+    assert response.get_json() == {"ok": True, "mode": "web-process", "pid": 12345}
+    assert calls == ["start"]
+
+
+def test_open_in_browser_endpoint_opens_current_local_url_in_web_mode(monkeypatch):
     opened = []
+    monkeypatch.setattr(app_module.app_state, "window", None)
     monkeypatch.setattr(app_module.app_state, "port", 51291)
     monkeypatch.setattr(app_module.webbrowser, "open", lambda url: opened.append(url) or True)
 
     response = app_module.flask_app.test_client().post("/open-in-browser")
 
     assert response.status_code == 200
-    assert response.get_json() == {"ok": True, "url": "http://127.0.0.1:51291"}
+    assert response.get_json() == {
+        "ok": True,
+        "mode": "same-process",
+        "url": "http://127.0.0.1:51291",
+    }
     assert opened == ["http://127.0.0.1:51291"]

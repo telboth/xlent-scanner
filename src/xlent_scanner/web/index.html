@@ -808,7 +808,7 @@
     <button class="tab-btn" data-tab="about" data-i18n="tabAbout">ℹ Om programmet</button>
     <button class="tab-btn" data-tab="settings" data-i18n="tabSettings">⚙️ Innstillinger</button>
     <button class="ctrl-btn top-update-btn" id="btn-check-updates-top" data-i18n="updateCheckTop">Se etter oppdateringer</button>
-    <button class="ctrl-btn top-browser-btn" id="btn-open-in-browser-top" data-i18n="openInBrowserTop">Åpne i browser</button>
+    <button class="ctrl-btn top-browser-btn" id="btn-open-in-browser-top" data-i18n="openInBrowserTop" data-i18n-title="openInBrowserTooltip" title="Åpner en egen nettleserversjon som fortsetter å fungere selv om desktopvinduet lukkes.">Åpne i nettleser</button>
     <div class="ui-lang-sel">
       <select id="ui-lang-select" class="ui-lang-select">
         <option value="nb">🇳🇴 Norsk</option>
@@ -2093,7 +2093,10 @@
         imagePdfMasks:      "masker lagt på",
         imagePdfUnmatched:  "valgte verdier ikke funnet av OCR",
         updateCheckTop: "Se etter oppdateringer",
-        openInBrowserTop: "Åpne i browser",
+        openInBrowserTop: "Åpne i nettleser",
+        openInBrowserTooltip: "Åpner en egen nettleserversjon som fortsetter å fungere selv om desktopvinduet lukkes.",
+        openInBrowserStarting: "Starter nettleserversjon…",
+        openInBrowserStarted: "Nettleserversjon startet.",
         openInBrowserFailed: "Kunne ikke åpne nettleser.",
         updateCheckNow: "Se etter oppdateringer nå",
         updateNoUpdate: "Du har nyeste versjon.",
@@ -2515,6 +2518,9 @@
         imagePdfUnmatched:  "valda värden hittades inte av OCR",
         updateCheckTop: "Sök efter uppdateringar",
         openInBrowserTop: "Öppna i webbläsare",
+        openInBrowserTooltip: "Öppnar en separat webbläsarversion som fortsätter fungera även om desktopfönstret stängs.",
+        openInBrowserStarting: "Startar webbläsarversion…",
+        openInBrowserStarted: "Webbläsarversion startad.",
         openInBrowserFailed: "Kunde inte öppna webbläsare.",
         updateCheckNow: "Sök efter uppdateringar nu",
         updateNoUpdate: "Du har senaste versionen.",
@@ -2941,6 +2947,9 @@
         imagePdfUnmatched:  "selected values not found by OCR",
         updateCheckTop: "Check for updates",
         openInBrowserTop: "Open in browser",
+        openInBrowserTooltip: "Opens a separate browser version that keeps working even if the desktop window is closed.",
+        openInBrowserStarting: "Starting browser version…",
+        openInBrowserStarted: "Browser version started.",
         openInBrowserFailed: "Could not open browser.",
         updateCheckNow: "Check for updates now",
         updateNoUpdate: "You already have the latest version.",
@@ -3275,6 +3284,9 @@
         updateCheckBtn:      "Auf Updates prüfen",
         updateCheckTop:      "Auf Updates prüfen",
         openInBrowserTop:    "Im Browser öffnen",
+        openInBrowserTooltip:"Öffnet eine separate Browserversion, die weiter funktioniert, wenn das Desktopfenster geschlossen wird.",
+        openInBrowserStarting:"Browserversion wird gestartet…",
+        openInBrowserStarted:"Browserversion gestartet.",
         openInBrowserFailed: "Browser konnte nicht geöffnet werden.",
         updateCheckNow:      "Jetzt auf Updates prüfen",
         updateCheckFailed:   "Updates konnten nicht geprüft werden.",
@@ -3711,6 +3723,9 @@
         updateCheckBtn:      "Vérifier les mises à jour",
         updateCheckTop:      "Vérifier les mises à jour",
         openInBrowserTop:    "Ouvrir dans le navigateur",
+        openInBrowserTooltip:"Ouvre une version navigateur séparée qui continue de fonctionner même si la fenêtre desktop est fermée.",
+        openInBrowserStarting:"Démarrage de la version navigateur…",
+        openInBrowserStarted:"Version navigateur démarrée.",
         openInBrowserFailed: "Impossible d’ouvrir le navigateur.",
         updateCheckNow:      "Vérifier les mises à jour maintenant",
         updateCheckFailed:   "Impossible de vérifier les mises à jour.",
@@ -4147,6 +4162,9 @@
         updateCheckBtn:      "Buscar actualizaciones",
         updateCheckTop:      "Buscar actualizaciones",
         openInBrowserTop:    "Abrir en navegador",
+        openInBrowserTooltip:"Abre una versión independiente en el navegador que sigue funcionando aunque se cierre la ventana de escritorio.",
+        openInBrowserStarting:"Iniciando versión en navegador…",
+        openInBrowserStarted:"Versión en navegador iniciada.",
         openInBrowserFailed: "No se pudo abrir el navegador.",
         updateCheckNow:      "Buscar actualizaciones ahora",
         updateCheckFailed:   "No se pudieron comprobar las actualizaciones.",
@@ -4676,9 +4694,11 @@
     async function openInSystemBrowser() {
       const btn = document.getElementById("btn-open-in-browser-top");
       if (btn) btn.disabled = true;
+      setStatus(t("openInBrowserStarting"));
       try {
         const d = await (await fetch(`${API}/open-in-browser`, { method: "POST" })).json();
-        if (!d.ok) setStatus(`${t("openInBrowserFailed")} ${d.error || ""}`.trim());
+        if (d.ok) setStatus(t("openInBrowserStarted"));
+        else setStatus(`${t("openInBrowserFailed")} ${d.error || ""}`.trim());
       } catch (e) {
         setStatus(`${t("openInBrowserFailed")} ${String(e)}`);
       } finally {

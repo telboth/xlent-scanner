@@ -175,11 +175,19 @@ def index():
 
 @flask_app.post("/open-in-browser")
 def open_in_browser():
-    """Åpne gjeldende lokale app-URL i systemets standardnettleser."""
+    """Åpne appen i systemets standardnettleser.
+
+    Fra desktop/PyWebView startes en separat webmodus-prosess. Da fortsetter
+    backend å leve selv om brukeren lukker desktopvinduet etterpå. Fra allerede
+    nettleserbasert webmodus åpnes bare gjeldende URL på nytt.
+    """
     url = f"http://127.0.0.1:{app_state.port}"
     try:
+        if app_state.window is not None:
+            process = _launch_web_mode_process()
+            return jsonify({"ok": True, "mode": "web-process", "pid": process.pid})
         webbrowser.open(url)
-        return jsonify({"ok": True, "url": url})
+        return jsonify({"ok": True, "mode": "same-process", "url": url})
     except Exception as exc:
         LOGGER.warning("Could not open browser for %s: %s", url, exc)
         return jsonify({"ok": False, "url": url, "error": str(exc)})
