@@ -935,7 +935,7 @@
       <!-- Fil-modus -->
       <div id="dropzone">
         <p class="big" data-i18n="dropTitle">Dra og slipp et dokument her</p>
-        <p class="muted" data-i18n="dropFormats">PDF · DOCX · PPTX · XLSX · TXT · MD · HTML · bilder</p>
+        <p class="muted" data-i18n="dropFormats">PDF · DOCX · PPTX · XLSX · TXT · MD · HTML · CSV · EML · RTF · ODT · PNG · JPG · TIFF · ZIP</p>
         <button id="browse" data-i18n="dropBrowse">…eller velg fil</button>
       </div>
 
@@ -1057,10 +1057,11 @@
       <!-- Norwegian -->
       <div class="about-content" id="about-nb">
         <h2>XLENT Compliance-scanner</h2>
-        <p class="tagline">Beskytt sensitive kundedata — sjekk dokumentet <em>før</em> du limer inn i ChatGPT, Claude eller Copilot.</p>
+        <p class="tagline">Beskytt sensitive data — sjekk og anonymiser dokumenter før deling, lagring, innsyn eller gjenbruk.</p>
         <div class="about-section">
           <h3>Hva gjør verktøyet?</h3>
-          <p>Compliance-scanner analyserer dokumenter automatisk og leter etter sensitiv informasjon som personnumre, navn, API-nøkler, kommersielt sensitive tall (timespriser, dagspriser, prosjektsummer, marginer og rabatter) og konfidensielle nøkkelord. Funnene presenteres som et trafikklysnivå slik at du raskt ser om dokumentet er trygt å dele.</p>
+          <p>Compliance-scanner analyserer dokumenter automatisk og leter etter sensitiv informasjon som personnumre, navn, API-nøkler, kommersielt sensitive tall (timespriser, dagspriser, prosjektsummer, marginer og rabatter) og konfidensielle nøkkelord. Funnene presenteres som et trafikklysnivå slik at du raskt ser hva som bør fjernes eller vurderes før dokumentet deles, lagres eller gjenbrukes.</p>
+          <p>Verktøyet er laget for mer enn opplasting til AI-tjenester. Det kan brukes til å redusere mengden personopplysninger virksomheten lagrer, støtte GDPR-arbeid når informasjon må slettes eller minimeres, og redigere bort sensitive opplysninger ved innsynsbegjæringer. Det er også nyttig når en gammel kontrakt, avtale eller mal skal gjenbrukes: sensitivt innhold kan blankes ut, mens struktur og formuleringer beholdes.</p>
         </div>
         <div class="about-section">
           <div class="local-badge"><span class="icon">🔒</span><span><strong>100 % lokal kjøring</strong> — ingen dokumenter, tekst eller funn sendes over internett.<br>Filen forlater aldri maskinen din.</span></div>
@@ -1136,10 +1137,11 @@
       <!-- Swedish -->
       <div class="about-content" id="about-sv">
         <h2>XLENT Compliance-scanner</h2>
-        <p class="tagline">Skydda känsliga kunduppgifter — kontrollera dokumentet <em>innan</em> du klistrar in i ChatGPT, Claude eller Copilot.</p>
+        <p class="tagline">Skydda känsliga data — kontrollera och anonymisera dokument före delning, lagring, insyn eller återanvändning.</p>
         <div class="about-section">
           <h3>Vad gör verktyget?</h3>
-          <p>Compliance-scanner analyserar dokument automatiskt och letar efter känslig information som personnummer, namn, API-nycklar, kommersiellt känsliga siffror (timpriser, dagspriser, projektsummor, marginaler och rabatter) och konfidentiella nyckelord. Fynden presenteras som en trafikljusnivå.</p>
+          <p>Compliance-scanner analyserar dokument automatiskt och letar efter känslig information som personnummer, namn, API-nycklar, kommersiellt känsliga siffror (timpriser, dagspriser, projektsummor, marginaler och rabatter) och konfidentiella nyckelord. Fynden presenteras som en trafikljusnivå så att du snabbt ser vad som bör tas bort eller bedömas innan dokumentet delas, lagras eller återanvänds.</p>
+          <p>Verktyget är gjort för mer än uppladdning till AI-tjänster. Det kan användas för att minska mängden personuppgifter verksamheten lagrar, stödja GDPR-arbete när information måste raderas eller minimeras, och maskera känsliga uppgifter vid begäran om insyn. Det är också användbart när ett gammalt avtal, kontrakt eller en mall ska återanvändas: känsligt innehåll kan blankas ut medan struktur och formuleringar bevaras.</p>
         </div>
         <div class="about-section">
           <div class="local-badge"><span class="icon">🔒</span><span><strong>100 % lokal körning</strong> — inga dokument, ingen text och inga fynd skickas via internet.<br>Filen lämnar aldrig din dator.</span></div>
@@ -1182,7 +1184,7 @@
         <div class="about-section">
           <h3>Arbetsflöden och övervakning</h3>
           <ul>
-            <li><strong>Fil, klistra in och mapp:</strong> Skanna enskilda filer, flera filer via drag-and-drop, text från urklipp eller hela mappar. Mappskanning kan köras rekursivt med max antal filer, max djup, tabellvy, tooltip per fil, full rapport vid klick, filter, sortering, export och batch-redaction av valda filer.</li>
+            <li><strong>Fil, klistra in, ZIP och mapp:</strong> Skanna enskilda filer, ZIP-arkiv, flera filer via drag-and-drop, text från urklipp eller hela mappar. ZIP packas upp till en tillfällig lokal mapp och visas som en batchrapport. Mappskanning kan köras rekursivt med max antal filer, max djup, tabellvy, tooltip per fil, full rapport vid klick, filter, sortering, export och batch-redaction av valda filer.</li>
             <li><strong>Mappvakt:</strong> Upp till tre valda mappar, till exempel Downloads, övervakas lokalt. Nya och ändrade filer skannas när de är färdigskrivna, och resultaten visas i historiken och bakgrundsstatusen.</li>
             <li><strong>Urklippsvakt:</strong> Varnar lokalt om du kopierar rött eller svart innehåll innan det klistras in i ett annat verktyg. Innehållet sparas inte.</li>
             <li><strong>Automatiskt skanningsläge:</strong> Appen väljer snabb eller avancerad dokumentläsning automatiskt. Tabeller, lite text eller bildbaserat innehåll skickas till avancerad behandling.</li>
@@ -1215,10 +1217,11 @@
       <!-- English -->
       <div class="about-content" id="about-en">
         <h2>XLENT Compliance-scanner</h2>
-        <p class="tagline">Protect sensitive client data — check the document <em>before</em> pasting into ChatGPT, Claude, or Copilot.</p>
+        <p class="tagline">Protect sensitive data — check and anonymize documents before sharing, storing, disclosure, or reuse.</p>
         <div class="about-section">
           <h3>What does it do?</h3>
-          <p>Compliance-scanner automatically analyses documents and searches for sensitive information such as national ID numbers, personal names, API keys, commercially sensitive figures (hourly rates, daily rates, project totals, margins, and discounts), and confidential keywords. Findings are shown as a traffic-light risk level.</p>
+          <p>Compliance-scanner automatically analyses documents and searches for sensitive information such as national ID numbers, personal names, API keys, commercially sensitive figures (hourly rates, daily rates, project totals, margins, and discounts), and confidential keywords. Findings are shown as a traffic-light risk level so you can quickly see what should be removed or reviewed before a document is shared, stored, or reused.</p>
+          <p>The tool is designed for more than uploads to AI services. It can help reduce the amount of personal data an organisation stores, support GDPR work when information must be deleted or minimized, and redact sensitive information for access-to-information or disclosure requests. It is also useful when an old contract, agreement, or template should be reused: sensitive content can be blanked out while the structure and wording are preserved.</p>
         </div>
         <div class="about-section">
           <div class="local-badge"><span class="icon">🔒</span><span><strong>100% local processing</strong> — no documents, no text, and no findings are ever sent over the internet.<br>The file never leaves your machine.</span></div>
@@ -1261,7 +1264,7 @@
         <div class="about-section">
           <h3>Workflows and monitoring</h3>
           <ul>
-            <li><strong>File, paste, and folder:</strong> Scan single files, multiple files via drag-and-drop, pasted text, or whole folders. Folder scans can run recursively with maximum file count, maximum depth, table view, per-file tooltips, full report on click, filtering, sorting, export, and batch redaction of selected files.</li>
+            <li><strong>File, paste, ZIP, and folder:</strong> Scan single files, ZIP archives, multiple files via drag-and-drop, pasted text, or whole folders. ZIP archives are extracted to a temporary local folder and shown as a batch report. Folder scans can run recursively with maximum file count, maximum depth, table view, per-file tooltips, full report on click, filtering, sorting, export, and batch redaction of selected files.</li>
             <li><strong>Folder watch:</strong> Up to three selected folders, for example Downloads, are monitored locally. New and changed files are scanned once they are stable, and results appear in history and the background status panel.</li>
             <li><strong>Clipboard guard:</strong> Warns locally if you copy red or black content before pasting it into another tool. Clipboard content is not stored.</li>
             <li><strong>Automatic scan mode:</strong> The app chooses fast or advanced document reading automatically. Tables, little text, or image-based content are sent through advanced processing.</li>
@@ -1294,10 +1297,11 @@
       <!-- German -->
       <div class="about-content" id="about-de">
         <h2>XLENT Compliance-scanner</h2>
-        <p class="tagline">Schützen Sie sensible Kundendaten — prüfen Sie das Dokument, <em>bevor</em> Sie es in ChatGPT, Claude oder Copilot einfügen.</p>
+        <p class="tagline">Schützen Sie sensible Daten — prüfen und anonymisieren Sie Dokumente vor Weitergabe, Speicherung, Auskunft oder Wiederverwendung.</p>
         <div class="about-section">
           <h3>Was macht das Tool?</h3>
-          <p>Der Compliance-Scanner analysiert Dokumente automatisch und sucht nach sensiblen Informationen wie Personenkennzahlen, Namen, API-Schlüsseln, geschäftskritischen Kennzahlen (Stundensätze, Tagessätze, Projektsummen, Margen und Rabatte) sowie vertraulichen Schlüsselwörtern. Die Treffer werden als Ampel-Risikostufe dargestellt.</p>
+          <p>Der Compliance-Scanner analysiert Dokumente automatisch und sucht nach sensiblen Informationen wie Personenkennzahlen, Namen, API-Schlüsseln, geschäftskritischen Kennzahlen (Stundensätze, Tagessätze, Projektsummen, Margen und Rabatte) sowie vertraulichen Schlüsselwörtern. Die Treffer werden als Ampel-Risikostufe dargestellt, damit Sie schnell sehen, was vor Weitergabe, Speicherung oder Wiederverwendung entfernt oder geprüft werden sollte.</p>
+          <p>Das Tool ist für mehr als Uploads zu KI-Diensten gedacht. Es kann helfen, die Menge gespeicherter personenbezogener Daten zu reduzieren, GDPR-/DSGVO-Arbeit zu unterstützen, wenn Informationen gelöscht oder minimiert werden müssen, und sensible Informationen bei Auskunfts- oder Offenlegungsanfragen zu schwärzen. Es ist auch nützlich, wenn ein alter Vertrag, eine Vereinbarung oder eine Vorlage wiederverwendet werden soll: sensible Inhalte können ausgeblendet werden, während Struktur und Formulierungen erhalten bleiben.</p>
         </div>
         <div class="about-section">
           <div class="local-badge"><span class="icon">🔒</span><span><strong>100 % lokal</strong> — keine Dokumente, keine Texte und keine Treffer werden über das Internet gesendet.<br>Die Datei verlässt Ihren Rechner nie.</span></div>
@@ -1340,7 +1344,7 @@
         <div class="about-section">
           <h3>Arbeitsabläufe und Überwachung</h3>
           <ul>
-            <li><strong>Datei, Einfügen und Ordner:</strong> Scannen Sie einzelne Dateien, mehrere Dateien per Drag-and-drop, eingefügten Text oder ganze Ordner. Ordnerscans können rekursiv mit maximaler Dateianzahl, maximaler Tiefe, Tabellenansicht, Tooltip pro Datei, vollständigem Bericht per Klick, Filter, Sortierung, Export und Batch-Redaction ausgewählter Dateien laufen.</li>
+            <li><strong>Datei, Einfügen, ZIP und Ordner:</strong> Scannen Sie einzelne Dateien, ZIP-Archive, mehrere Dateien per Drag-and-drop, eingefügten Text oder ganze Ordner. ZIP-Archive werden in einen temporären lokalen Ordner entpackt und als Batchbericht angezeigt. Ordnerscans können rekursiv mit maximaler Dateianzahl, maximaler Tiefe, Tabellenansicht, Tooltip pro Datei, vollständigem Bericht per Klick, Filter, Sortierung, Export und Batch-Redaction ausgewählter Dateien laufen.</li>
             <li><strong>Ordnerwächter:</strong> Bis zu drei ausgewählte Ordner, zum Beispiel Downloads, werden lokal überwacht. Neue und geänderte Dateien werden nach stabilem Schreibzustand gescannt und im Verlauf sowie im Hintergrundstatus angezeigt.</li>
             <li><strong>Zwischenablage-Wächter:</strong> Warnt lokal, wenn Sie roten oder schwarzen Inhalt kopieren, bevor er in ein anderes Tool eingefügt wird. Der Inhalt wird nicht gespeichert.</li>
             <li><strong>Automatischer Scanmodus:</strong> Die App wählt schnelle oder erweiterte Dokumentlesung automatisch. Tabellen, wenig Text oder bildbasierte Inhalte werden erweitert verarbeitet.</li>
@@ -1373,10 +1377,11 @@
       <!-- French -->
       <div class="about-content" id="about-fr">
         <h2>XLENT Compliance-scanner</h2>
-        <p class="tagline">Protégez les données sensibles des clients — vérifiez le document <em>avant</em> de le coller dans ChatGPT, Claude ou Copilot.</p>
+        <p class="tagline">Protégez les données sensibles — vérifiez et anonymisez les documents avant partage, stockage, demande d’accès ou réutilisation.</p>
         <div class="about-section">
           <h3>Que fait l’outil ?</h3>
-          <p>Le scanner de conformité analyse automatiquement les documents et recherche des informations sensibles comme les identifiants personnels, les noms, les clés API, les chiffres commerciaux sensibles (taux horaire, taux journalier, total projet, marge et remise) et des mots-clés confidentiels. Les résultats sont présentés sous forme de niveau de risque type feu tricolore.</p>
+          <p>Le scanner de conformité analyse automatiquement les documents et recherche des informations sensibles comme les identifiants personnels, les noms, les clés API, les chiffres commerciaux sensibles (taux horaire, taux journalier, total projet, marge et remise) et des mots-clés confidentiels. Les résultats sont présentés sous forme de niveau de risque type feu tricolore afin de voir rapidement ce qui doit être supprimé ou vérifié avant qu’un document soit partagé, stocké ou réutilisé.</p>
+          <p>L’outil ne sert pas seulement aux téléversements vers des services d’IA. Il peut aider à réduire la quantité de données personnelles conservées par une organisation, soutenir le travail de conformité GDPR/RGPD lorsque des informations doivent être supprimées ou minimisées, et masquer des informations sensibles lors de demandes d’accès ou de communication de documents. Il est aussi utile lorsqu’un ancien contrat, accord ou modèle doit être réutilisé : le contenu sensible peut être occulté tout en conservant la structure et les formulations.</p>
         </div>
         <div class="about-section">
           <div class="local-badge"><span class="icon">🔒</span><span><strong>100 % local</strong> — aucun document, aucun texte et aucun résultat n’est envoyé sur Internet.<br>Le fichier ne quitte jamais votre machine.</span></div>
@@ -1419,7 +1424,7 @@
         <div class="about-section">
           <h3>Flux de travail et surveillance</h3>
           <ul>
-            <li><strong>Fichier, collage et dossier :</strong> analysez des fichiers seuls, plusieurs fichiers par glisser-déposer, du texte collé ou des dossiers entiers. L’analyse de dossier peut être récursive avec un nombre maximal de fichiers, une profondeur maximale, une vue tableau, des infobulles par fichier, un rapport complet au clic, filtres, tri, export et redaction batch des fichiers sélectionnés.</li>
+            <li><strong>Fichier, collage, ZIP et dossier :</strong> analysez des fichiers seuls, des archives ZIP, plusieurs fichiers par glisser-déposer, du texte collé ou des dossiers entiers. Les archives ZIP sont extraites dans un dossier local temporaire et affichées comme rapport batch. L’analyse de dossier peut être récursive avec un nombre maximal de fichiers, une profondeur maximale, une vue tableau, des infobulles par fichier, un rapport complet au clic, filtres, tri, export et redaction batch des fichiers sélectionnés.</li>
             <li><strong>Surveillance de dossier :</strong> jusqu’à trois dossiers choisis, par exemple Téléchargements, sont surveillés localement. Les fichiers nouveaux ou modifiés sont analysés lorsqu’ils sont stables, puis affichés dans l’historique et le statut d’arrière-plan.</li>
             <li><strong>Surveillance du presse-papiers :</strong> avertit localement si vous copiez du contenu rouge ou noir avant de le coller dans un autre outil. Le contenu n’est pas stocké.</li>
             <li><strong>Mode de scan automatique :</strong> l’application choisit automatiquement la lecture rapide ou avancée. Les tableaux, le faible volume de texte ou le contenu basé sur des images passent par le traitement avancé.</li>
@@ -1452,10 +1457,11 @@
       <!-- Spanish -->
       <div class="about-content" id="about-es">
         <h2>XLENT Compliance-scanner</h2>
-        <p class="tagline">Proteja los datos sensibles de clientes — revise el documento <em>antes</em> de pegarlo en ChatGPT, Claude o Copilot.</p>
+        <p class="tagline">Proteja datos sensibles — revise y anonimice documentos antes de compartirlos, almacenarlos, responder solicitudes de acceso o reutilizarlos.</p>
         <div class="about-section">
           <h3>¿Qué hace la herramienta?</h3>
-          <p>El escáner de cumplimiento analiza documentos automáticamente y busca información sensible como números de identificación personal, nombres, claves API, métricas comerciales sensibles (tarifa por hora, tarifa diaria, total de proyecto, margen y descuento) y palabras clave confidenciales. Los hallazgos se muestran como nivel de riesgo tipo semáforo.</p>
+          <p>El escáner de cumplimiento analiza documentos automáticamente y busca información sensible como números de identificación personal, nombres, claves API, métricas comerciales sensibles (tarifa por hora, tarifa diaria, total de proyecto, margen y descuento) y palabras clave confidenciales. Los hallazgos se muestran como nivel de riesgo tipo semáforo para que pueda ver rápidamente qué debe eliminarse o revisarse antes de compartir, almacenar o reutilizar un documento.</p>
+          <p>La herramienta sirve para más que cargar documentos en servicios de IA. Puede ayudar a reducir la cantidad de datos personales que almacena una organización, apoyar el trabajo de cumplimiento GDPR/RGPD cuando la información debe eliminarse o minimizarse, y redactar información sensible en solicitudes de acceso o divulgación. También es útil cuando se quiere reutilizar un contrato, acuerdo o plantilla antiguos: el contenido sensible puede ocultarse mientras se conserva la estructura y la redacción.</p>
         </div>
         <div class="about-section">
           <div class="local-badge"><span class="icon">🔒</span><span><strong>Ejecución 100 % local</strong> — no se envían documentos, texto ni hallazgos por Internet.<br>El archivo nunca sale de su equipo.</span></div>
@@ -1498,7 +1504,7 @@
         <div class="about-section">
           <h3>Flujos de trabajo y supervisión</h3>
           <ul>
-            <li><strong>Archivo, pegar y carpeta:</strong> escanee archivos individuales, varios archivos mediante arrastrar y soltar, texto pegado o carpetas completas. El escaneo de carpetas puede ejecutarse recursivamente con número máximo de archivos, profundidad máxima, vista de tabla, tooltip por archivo, informe completo al hacer clic, filtros, ordenación, exportación y redaction batch de archivos seleccionados.</li>
+            <li><strong>Archivo, pegar, ZIP y carpeta:</strong> escanee archivos individuales, archivos ZIP, varios archivos mediante arrastrar y soltar, texto pegado o carpetas completas. Los ZIP se extraen a una carpeta local temporal y se muestran como informe batch. El escaneo de carpetas puede ejecutarse recursivamente con número máximo de archivos, profundidad máxima, vista de tabla, tooltip por archivo, informe completo al hacer clic, filtros, ordenación, exportación y redaction batch de archivos seleccionados.</li>
             <li><strong>Vigilancia de carpeta:</strong> hasta tres carpetas elegidas, por ejemplo Descargas, se supervisan localmente. Los archivos nuevos o modificados se escanean cuando están estables y los resultados aparecen en el historial y el estado de fondo.</li>
             <li><strong>Vigilancia del portapapeles:</strong> avisa localmente si copia contenido rojo o negro antes de pegarlo en otra herramienta. El contenido no se guarda.</li>
             <li><strong>Modo de escaneo automático:</strong> la app elige automáticamente lectura rápida o avanzada. Tablas, poco texto o contenido basado en imágenes pasan por procesamiento avanzado.</li>
@@ -1833,7 +1839,7 @@
         tabScanner:   "🔍 Scanner",
         tabAbout:     "ℹ Om programmet",
         dropTitle:    "Dra og slipp et dokument her",
-        dropFormats:  "PDF · DOCX · PPTX · XLSX · TXT · MD · HTML · CSV · EML · RTF · ODT · PNG · JPG · TIFF",
+        dropFormats:  "PDF · DOCX · PPTX · XLSX · TXT · MD · HTML · CSV · EML · RTF · ODT · PNG · JPG · TIFF · ZIP",
         dropBrowse:   "…eller velg fil",
         ignoreLabel:  "Ignorer XLENT-interne (ansattes navn og @xlent.no / @xlent.se)",
         ignoreReload: "Last inn",
@@ -2214,6 +2220,11 @@
         copiedToClipboard:   "✓ Kopiert til utklippstavle",
         batchScanning:       "Skanner {n} filer…",
         batchTitle:          "Skanneresultat ({n} filer)",
+        zipScanTitle:         "ZIP-skann",
+        zipSupportedFiles:    "støttede filer",
+        zipIgnoredFiles:      "ignorert",
+        zipIgnoredDetails:    "Ignorerte filer i ZIP",
+        zipScanning:          "Skanner ZIP-arkiv. Store arkiver kan ta tid …",
         backgroundTitle:     "Bakgrunnsjobber",
         backgroundWatch:     "Mappevakt",
         backgroundClipboard: "Utklippstavle",
@@ -2265,7 +2276,7 @@
         tabScanner:   "🔍 Scanner",
         tabAbout:     "ℹ Om programmet",
         dropTitle:    "Dra och släpp ett dokument här",
-        dropFormats:  "PDF · DOCX · PPTX · XLSX · TXT · MD · HTML · CSV · EML · RTF · ODT · PNG · JPG · TIFF",
+        dropFormats:  "PDF · DOCX · PPTX · XLSX · TXT · MD · HTML · CSV · EML · RTF · ODT · PNG · JPG · TIFF · ZIP",
         dropBrowse:   "…eller välj fil",
         ignoreLabel:  "Ignorera XLENT-interna (anställdas namn och @xlent.no / @xlent.se)",
         ignoreReload: "Ladda in",
@@ -2636,6 +2647,11 @@
         copiedToClipboard:   "✓ Kopierat till urklipp",
         batchScanning:       "Skannar {n} filer…",
         batchTitle:          "Skanningsresultat ({n} filer)",
+        zipScanTitle:         "ZIP-skanning",
+        zipSupportedFiles:    "filer som stöds",
+        zipIgnoredFiles:      "ignorerade",
+        zipIgnoredDetails:    "Ignorerade filer i ZIP",
+        zipScanning:          "Skannar ZIP-arkiv. Stora arkiv kan ta tid …",
         backgroundTitle:     "Bakgrundsjobb",
         backgroundWatch:     "Mappvakt",
         backgroundClipboard: "Urklipp",
@@ -2687,7 +2703,7 @@
         tabScanner:   "🔍 Scanner",
         tabAbout:     "ℹ About",
         dropTitle:    "Drag and drop a document here",
-        dropFormats:  "PDF · DOCX · PPTX · XLSX · TXT · MD · HTML · CSV · EML · RTF · ODT · PNG · JPG · TIFF",
+        dropFormats:  "PDF · DOCX · PPTX · XLSX · TXT · MD · HTML · CSV · EML · RTF · ODT · PNG · JPG · TIFF · ZIP",
         dropBrowse:   "…or browse for file",
         ignoreLabel:  "Ignore XLENT-internal (employee names and @xlent.no / @xlent.se)",
         ignoreReload: "Reload",
@@ -3063,6 +3079,11 @@
         copiedToClipboard:   "✓ Copied to clipboard",
         batchScanning:       "Scanning {n} files…",
         batchTitle:          "Scan results ({n} files)",
+        zipScanTitle:         "ZIP scan",
+        zipSupportedFiles:    "supported files",
+        zipIgnoredFiles:      "ignored",
+        zipIgnoredDetails:    "Ignored files in ZIP",
+        zipScanning:          "Scanning ZIP archive. Large archives may take time …",
         backgroundTitle:     "Background jobs",
         backgroundWatch:     "Folder watch",
         backgroundClipboard: "Clipboard",
@@ -3125,7 +3146,7 @@
         statusScan:          "Wird gescannt…",
         statusUp:            "Datei wird hochgeladen…",
         dropTitle:           "Datei hier ablegen",
-        dropFormats:         "PDF · DOCX · PPTX · XLSX · TXT · MD · HTML · CSV · EML · RTF · ODT · PNG · JPG · TIFF",
+        dropFormats:         "PDF · DOCX · PPTX · XLSX · TXT · MD · HTML · CSV · EML · RTF · ODT · PNG · JPG · TIFF · ZIP",
         dropBrowse:          "…oder Datei auswählen",
         dlgErr:              "Dialogfehler:",
         dragErr:             "Upload-Fehler:",
@@ -3419,6 +3440,11 @@
         copiedToClipboard:   "✓ In die Zwischenablage kopiert",
         batchScanning:       "Scanne {n} Dateien…",
         batchTitle:          "Scan-Ergebnisse ({n} Dateien)",
+        zipScanTitle:         "ZIP-Scan",
+        zipSupportedFiles:    "unterstützte Dateien",
+        zipIgnoredFiles:      "ignoriert",
+        zipIgnoredDetails:    "Ignorierte Dateien im ZIP",
+        zipScanning:          "ZIP-Archiv wird gescannt. Große Archive können Zeit benötigen …",
         backgroundTitle:     "Hintergrundjobs",
         backgroundWatch:     "Ordnerwächter",
         backgroundClipboard: "Zwischenablage",
@@ -3562,7 +3588,7 @@
         statusScan:          "Analyse en cours…",
         statusUp:            "Téléversement en cours…",
         dropTitle:           "Déposez un fichier ici",
-        dropFormats:         "PDF · DOCX · PPTX · XLSX · TXT · MD · HTML · CSV · EML · RTF · ODT · PNG · JPG · TIFF",
+        dropFormats:         "PDF · DOCX · PPTX · XLSX · TXT · MD · HTML · CSV · EML · RTF · ODT · PNG · JPG · TIFF · ZIP",
         dropBrowse:          "…ou choisir un fichier",
         dlgErr:              "Erreur de dialogue :",
         dragErr:             "Erreur de téléversement :",
@@ -3856,6 +3882,11 @@
         copiedToClipboard:   "✓ Copié dans le presse-papiers",
         batchScanning:       "Analyse de {n} fichiers…",
         batchTitle:          "Résultats d'analyse ({n} fichiers)",
+        zipScanTitle:         "Analyse ZIP",
+        zipSupportedFiles:    "fichiers pris en charge",
+        zipIgnoredFiles:      "ignorés",
+        zipIgnoredDetails:    "Fichiers ignorés dans le ZIP",
+        zipScanning:          "Analyse de l’archive ZIP. Les grandes archives peuvent prendre du temps …",
         backgroundTitle:     "Tâches en arrière-plan",
         backgroundWatch:     "Surveillance dossier",
         backgroundClipboard: "Presse-papiers",
@@ -3999,7 +4030,7 @@
         statusScan:          "Escaneando…",
         statusUp:            "Subiendo archivo…",
         dropTitle:           "Suelte un archivo aquí",
-        dropFormats:         "PDF · DOCX · PPTX · XLSX · TXT · MD · HTML · CSV · EML · RTF · ODT · PNG · JPG · TIFF",
+        dropFormats:         "PDF · DOCX · PPTX · XLSX · TXT · MD · HTML · CSV · EML · RTF · ODT · PNG · JPG · TIFF · ZIP",
         dropBrowse:          "…o seleccionar archivo",
         dlgErr:              "Error de diálogo:",
         dragErr:             "Error al subir:",
@@ -4293,6 +4324,11 @@
         copiedToClipboard:   "✓ Copiado al portapapeles",
         batchScanning:       "Escaneando {n} archivos…",
         batchTitle:          "Resultados del escaneo ({n} archivos)",
+        zipScanTitle:         "Escaneo ZIP",
+        zipSupportedFiles:    "archivos compatibles",
+        zipIgnoredFiles:      "ignorados",
+        zipIgnoredDetails:    "Archivos ignorados en el ZIP",
+        zipScanning:          "Escaneando archivo ZIP. Los archivos grandes pueden tardar …",
         backgroundTitle:     "Tareas en segundo plano",
         backgroundWatch:     "Vigilancia carpeta",
         backgroundClipboard: "Portapapeles",
@@ -6554,13 +6590,13 @@
       resultEl.classList.add("show");
       document.getElementById("result-header").style.display = "flex";
       document.getElementById("btn-copy-findings").style.display = "none";
-      const summary = `${escapeHtml(r.file_name || fallbackName || "ZIP")} · ${Number(r.supported_files || 0)} støttede filer · ${Number(r.ignored_files || 0)} ignorert`;
+      const summary = `${escapeHtml(r.file_name || fallbackName || "ZIP")} · ${Number(r.supported_files || 0)} ${escapeHtml(t("zipSupportedFiles"))} · ${Number(r.ignored_files || 0)} ${escapeHtml(t("zipIgnoredFiles"))}`;
       document.getElementById("severity-summary").innerHTML =
-        `<span style="font-size:12px;color:var(--muted);font-weight:600;">ZIP-skann: ${summary}</span>`;
+        `<span style="font-size:12px;color:var(--muted);font-weight:600;">${escapeHtml(t("zipScanTitle"))}: ${summary}</span>`;
       const skipped = Array.isArray(r.skipped) ? r.skipped : [];
       const warning = r.warning ? `<div class="warn" style="margin-bottom:8px">${escapeHtml(r.warning)}</div>` : "";
       const skippedHtml = skipped.length ? `<details class="small-expander" style="margin-bottom:10px">
-        <summary>Ignorerte filer i ZIP (${skipped.length})</summary>
+        <summary>${escapeHtml(t("zipIgnoredDetails"))} (${skipped.length})</summary>
         <ul style="margin:8px 0 0 18px; padding:0; color:var(--muted); font-size:12px;">
           ${skipped.slice(0, 100).map(item => `<li>${escapeHtml(item.file || "")} — ${escapeHtml(item.reason || "")}</li>`).join("")}
         </ul>
@@ -6573,7 +6609,7 @@
     async function scanPath(path, extraOpts) {
       const isOcrScan = !!extraOpts?.ocr;
       const isZip = String(path || "").toLowerCase().endsWith(".zip");
-      setStatus(isZip ? "Skanner ZIP-arkiv. Store arkiver kan ta tid …" : (isOcrScan ? t("ocrRunning") : t("statusScan")));
+      setStatus(isZip ? t("zipScanning") : (isOcrScan ? t("ocrRunning") : t("statusScan")));
       setOcrProgress(isOcrScan);
       _clearTextPreview();
       resultEl.classList.remove("show");
@@ -6607,7 +6643,7 @@
     async function scanUpload(file, name, extraOpts) {
       const isOcrScan = !!extraOpts?.ocr;
       const isZip = String(name || "").toLowerCase().endsWith(".zip");
-      setStatus(isZip ? "Skanner ZIP-arkiv. Store arkiver kan ta tid …" : (isOcrScan ? t("ocrRunning") : t("statusUp")));
+      setStatus(isZip ? t("zipScanning") : (isOcrScan ? t("ocrRunning") : t("statusUp")));
       setOcrProgress(isOcrScan);
       _clearTextPreview();
       resultEl.classList.remove("show");

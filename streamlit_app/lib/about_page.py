@@ -11,7 +11,11 @@ def render_about() -> None:
     st.markdown(
         """
 XLENT Scanner er et **lokalt** verktøy som oppdager og anonymiserer sensitiv informasjon i
-dokumenter før deling, lagring eller opplasting til nettbaserte tjenester.
+dokumenter før deling, lagring, innsyn, gjenbruk eller opplasting til nettbaserte tjenester.
+
+Det kan brukes til å redusere mengden personopplysninger virksomheten lagrer, støtte GDPR-arbeid
+når informasjon må slettes eller minimeres, redigere bort sensitive opplysninger ved
+innsynsbegjæringer og klargjøre gamle kontrakter, avtaler eller maler for trygg gjenbruk.
 
 > 🔒 **Alt kjøres 100 % lokalt** — ingen dokumenter, tekst eller funn sendes over internett.
 """

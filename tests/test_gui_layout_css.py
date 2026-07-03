@@ -1202,3 +1202,20 @@ def test_about_text_documents_recent_features_in_all_languages():
     assert "OCR can misread text" in html
     assert "redacted image PDF" in html
     assert "Suppressed candidates" in html
+
+
+def test_zip_upload_texts_are_localized_for_all_languages():
+    html = HTML.read_text(encoding="utf-8")
+
+    assert "PDF · DOCX · PPTX · XLSX · TXT · MD · HTML · CSV · EML · RTF · ODT · PNG · JPG · TIFF · ZIP" in html
+    for key in [
+        "zipScanTitle",
+        "zipSupportedFiles",
+        "zipIgnoredFiles",
+        "zipIgnoredDetails",
+        "zipScanning",
+    ]:
+        assert html.count(f"{key}:") == 6
+        assert f't("{key}")' in html
+
+    assert 'setStatus(isZip ? t("zipScanning")' in html
