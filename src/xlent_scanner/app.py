@@ -71,6 +71,7 @@ from xlent_scanner.utils import open_path
 from xlent_scanner.whitelist import (
     get_whitelist_entries,
 )
+from xlent_scanner.zip_processing import cleanup_old_zip_temp_dirs
 
 # Docling gir UserWarning for bilder i PPTX-filer som mangler innebygd bildedata.
 # Dette er støy vi ikke kan gjøre noe med – demp det.
@@ -1224,6 +1225,7 @@ flask_app.register_blueprint(create_diagnostics_blueprint(
 def _run_web_mode() -> None:
     """Kjør lokal web-modus (Flask + standard nettleser), uten PyWebView."""
     _validate_runtime_dependencies()
+    cleanup_old_zip_temp_dirs()
     app_state.port = _free_port()
     url = f"http://127.0.0.1:{app_state.port}"
     LOGGER.info("Starting WEB mode on %s", url)
@@ -1276,6 +1278,7 @@ def _format_startup_file_args(paths: list[str]) -> str:
 def _run_api_mode() -> None:
     """Kjør bare lokal API-server for eksterne frontender, uten GUI."""
     _validate_runtime_dependencies()
+    cleanup_old_zip_temp_dirs()
     raw_port = _arg_value("--port", str(_API_DEFAULT_PORT))
     host = _arg_value("--host", _API_DEFAULT_HOST).strip() or _API_DEFAULT_HOST
     try:
@@ -1441,6 +1444,7 @@ def main() -> None:
     )
     LOGGER.info("PyWebView version=%s", getattr(webview, "__version__", "unknown"))
     _validate_runtime_dependencies()
+    cleanup_old_zip_temp_dirs()
 
     # Start IPC-server (enkel-instans-støtte for kontekstmeny-åpning)
     _ipc_start_server()

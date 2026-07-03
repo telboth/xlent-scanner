@@ -58,12 +58,12 @@ dokumenter før deling, lagring eller opplasting til nettbaserte tjenester.
         """
 ### 🗂 Fanene
 - **Fil / Tekst** — skann enkeltdokumenter eller innlimt tekst
-- **Mappe** — skann alle støttede filer i en mappe, med eksport, audit-rapport og batch-anonymisering
+- **ZIP / Mappe** — ZIP pakkes ut lokalt til en midlertidig mappe og skannes som batch. Mappefanen skanner alle støttede filer i en mappe, med eksport, audit-rapport og batch-anonymisering.
 - **Innstillinger** — hviteliste, blacklist, egne regex-mønstre, ignore-liste, spaCy-modeller og import/eksport av profil
 - **Bakgrunnsvakt** — overvåk utklippstavlen og mapper automatisk
 
 ### 📂 Støttede filformater
-`.pdf` · `.docx` · `.pptx` · `.xlsx` · `.txt` · `.md` · `.html` · `.csv` · `.eml` · `.rtf` · `.odt`
+`.pdf` · `.docx` · `.pptx` · `.xlsx` · `.txt` · `.md` · `.html` · `.csv` · `.eml` · `.rtf` · `.odt` · `.png` · `.jpg` · `.webp` · `.zip`
 
 ### ❓ Tips
 - Endrer du en innstilling, skannes dokumentet automatisk på nytt.

@@ -17,7 +17,7 @@ from lib.about_page import render_about
 from lib.background_page import render_background
 from lib.branding import show_logo
 from lib.folder_scan import render_folder_scan
-from lib.scan_runner import run_file_scan, run_text_scan
+from lib.scan_runner import run_file_scan, run_text_scan, run_zip_scan
 from lib.scan_ui import render_result, settings_sidebar
 from lib.settings_page import render_settings
 
@@ -31,7 +31,7 @@ show_logo()
 
 SUPPORTED = [
     "pdf", "docx", "pptx", "xlsx", "txt", "md", "html", "csv", "eml", "rtf", "odt",
-    "png", "jpg", "jpeg", "bmp", "tif", "tiff", "webp",
+    "png", "jpg", "jpeg", "bmp", "tif", "tiff", "webp", "zip",
 ]
 
 st.markdown(
@@ -85,6 +85,39 @@ with tab_fil:
     if uploaded:
         for idx, up in enumerate(uploaded):
             suffix = Path(up.name).suffix.lower()
+            if suffix == ".zip":
+                with st.spinner(f"Skanner ZIP {up.name}…"):
+                    zip_result = run_zip_scan(
+                        up.getvalue(),
+                        file_name=up.name,
+                        language=settings.language,
+                        ignore_xlent=settings.ignore_xlent,
+                        ocr=settings.ocr,
+                        scan_profile=settings.scan_profile,
+                        categories=settings.categories or None,
+                        pdf_mode=settings.pdf_mode,
+                    )
+                st.markdown(
+                    f"**ZIP-skann:** {zip_result['supported_files']} støttede filer · "
+                    f"{zip_result['ignored_files']} ignorert"
+                )
+                if zip_result.get("warning"):
+                    st.warning(zip_result["warning"])
+                if zip_result.get("skipped"):
+                    with st.expander(f"Ignorerte filer i ZIP ({len(zip_result['skipped'])})", expanded=False):
+                        for item in zip_result["skipped"][:100]:
+                            st.caption(f"{item.get('file', '')} — {item.get('reason', '')}")
+                for r_idx, result in enumerate(zip_result["results"]):
+                    expanded = result.risk_level in ("rød", "svart")
+                    with st.expander(f"**{result.relative_path or result.file_name}** — {result.risk_level.upper()}", expanded=expanded):
+                        render_result(
+                            result, key_prefix=f"zip_{idx}_{r_idx}",
+                            source_suffix=Path(result.file_name).suffix.lower(),
+                            deep_scan=settings.deep_scan, ai_model=settings.ai_model,
+                            min_confidence=settings.min_confidence,
+                            anonymize_terms=settings.anonymize_terms,
+                        )
+                continue
             with st.spinner(f"Skanner {up.name}…"):
                 result = run_file_scan(
                     up.getvalue(), suffix,

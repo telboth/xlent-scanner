@@ -12,8 +12,15 @@ from flask import Blueprint, jsonify, request
 
 from xlent_scanner.app_state import app_state
 from xlent_scanner.history import add_history_entry
+from xlent_scanner.routes.folders import folder_result_row
 from xlent_scanner.scan_categories import categories_payload
-from xlent_scanner.scanner import scan_file, scan_text
+from xlent_scanner.scanner import build_folder_scan_plan, scan_file, scan_text
+from xlent_scanner.zip_processing import (
+    ZIP_LARGE_FILE_COUNT,
+    ZIP_LARGE_TOTAL_BYTES,
+    ZIP_SUFFIXES,
+    extract_zip_to_temp,
+)
 
 LOGGER = logging.getLogger("xlent_scanner")
 scanning_bp = Blueprint("scanning", __name__)
@@ -100,6 +107,101 @@ def _scan_text_compat(*args, scan_profile: str = "normal", **kwargs):
             return scan_text(*args, **legacy_kwargs)
 
 
+def _scan_zip_upload(
+    zip_path: Path,
+    original_name: str,
+    *,
+    ignore_xlent: bool,
+    language: str,
+    ocr: bool,
+    scan_profile: str,
+    pdf_mode: str,
+    categories: list[str] | None,
+) -> dict:
+    extracted = extract_zip_to_temp(zip_path)
+    plan = build_folder_scan_plan(extracted.root, recursive=True)
+    job_id = app_state.folder_job_manager.create({
+        "status": "running",
+        "folder": f"{original_name} (ZIP)",
+        "source": "zip",
+        "zip_name": original_name,
+        "zip_path": str(zip_path),
+        "extracted_folder": str(extracted.root),
+        "recursive": True,
+        "total": plan["file_count"],
+        "completed": 0,
+        "folder_count": plan["folder_count"],
+        "truncated": plan["truncated"],
+        "max_files": plan["max_files"],
+        "max_depth": plan["max_depth"],
+        "cancel_requested": False,
+        "error": "",
+        "files": [],
+    })
+    root = extracted.root
+    level_order = {"grønn": 0, "gul": 1, "rød": 2, "svart": 3}
+    aggregate_level = "grønn"
+    for file_path in plan["files"]:
+        result = _scan_file_compat(
+            file_path,
+            ignore_xlent=ignore_xlent,
+            language=language,
+            ocr=ocr,
+            scan_profile=scan_profile,
+            categories=categories,
+            pdf_mode=pdf_mode,
+        )
+        result.relative_path = str(Path(file_path).relative_to(root))
+        result.source_path = str(file_path)
+        if level_order.get(result.risk_level, 0) > level_order.get(aggregate_level, 0):
+            aggregate_level = result.risk_level
+        row = folder_result_row(result)
+        add_history_entry(
+            file_name=f"{original_name}/{result.relative_path or result.file_name}",
+            risk_level=result.risk_level,
+            finding_count=len(result.findings),
+            file_size=result.file_size,
+            source="batch",
+        )
+        with app_state.folder_job_manager.mutate(job_id) as job:
+            if job is None:
+                break
+            job["files"].append(row)
+            job["completed"] = len(job["files"])
+    app_state.folder_job_manager.update(job_id, status="completed")
+    zip_warning = ""
+    if (
+        extracted.total_files >= ZIP_LARGE_FILE_COUNT
+        or extracted.total_uncompressed_bytes >= ZIP_LARGE_TOTAL_BYTES
+    ):
+        zip_warning = (
+            "ZIP-arkivet er stort. Skanning kan ta tid, og store arkiver bør "
+            "kontrolleres før anonymisering."
+        )
+    return {
+        "ok": True,
+        "zip_scan": True,
+        "job_id": job_id,
+        "file_name": original_name,
+        "folder": f"{original_name} (ZIP)",
+        "total_files": extracted.total_files,
+        "supported_files": extracted.supported_files,
+        "ignored_files": extracted.ignored_files,
+        "total_uncompressed_bytes": extracted.total_uncompressed_bytes,
+        "skipped": extracted.skipped[:100],
+        "warning": zip_warning,
+        "files": app_state.folder_job_manager.snapshot(job_id).get("files", []),
+        "total": plan["file_count"],
+        "folder_count": plan["folder_count"],
+        "truncated": plan["truncated"],
+        "max_files": plan["max_files"],
+        "max_depth": plan["max_depth"],
+        "risk_level": aggregate_level,
+        "risk_summary": f"ZIP-skann: {plan['file_count']} støttede filer, {extracted.ignored_files} ignorert.",
+        "scan_status": "success",
+    }
+
+
 @scanning_bp.post("/scan")
 def scan():
     try:
@@ -121,6 +223,19 @@ def scan():
             ocr,
             categories,
         )
+        path_obj = Path(file_path) if file_path else None
+        if path_obj is not None and path_obj.suffix.lower() in ZIP_SUFFIXES:
+            payload = _scan_zip_upload(
+                path_obj,
+                path_obj.name,
+                ignore_xlent=ignore_xlent,
+                language=language,
+                ocr=ocr,
+                scan_profile=scan_profile,
+                categories=categories,
+                pdf_mode=pdf_mode,
+            )
+            return jsonify(payload)
         result = _scan_file_compat(
             file_path,
             ignore_xlent=ignore_xlent,
@@ -130,7 +245,7 @@ def scan():
             categories=categories,
             pdf_mode=pdf_mode,
         )
-        _remember_result(result, Path(file_path) if file_path else None)
+        _remember_result(result, path_obj)
         LOGGER.info(
             "scan result path=%s error=%s findings=%s",
             file_path,
@@ -181,6 +296,30 @@ def scan_upload():
         tmp_path = Path(tmp)
         os.close(fd)
         uploaded.save(str(tmp_path))
+        if suffix in ZIP_SUFFIXES:
+            payload = _scan_zip_upload(
+                tmp_path,
+                original_name,
+                ignore_xlent=ignore_xlent,
+                language=language,
+                ocr=ocr,
+                scan_profile=scan_profile,
+                categories=categories,
+                pdf_mode=pdf_mode,
+            )
+            app_state.last_tmp_path = tmp_path
+            app_state.last_result = None
+            app_state.last_path = None
+            app_state.clear_ai_findings()
+            app_state.clear_anonymized_file()
+            LOGGER.info(
+                "scan-upload ZIP result name=%s supported=%s ignored=%s job=%s",
+                original_name,
+                payload["supported_files"],
+                payload["ignored_files"],
+                payload["job_id"],
+            )
+            return jsonify(payload)
         result = _scan_file_compat(
             tmp_path,
             ignore_xlent=ignore_xlent,

@@ -1103,7 +1103,7 @@
         <div class="about-section">
           <h3>Arbeidsflyter og overvåking</h3>
           <ul>
-            <li><strong>Fil, lim inn og mappe:</strong> Skann enkeltfiler, flere filer via drag-and-drop, tekst fra utklippstavlen eller hele mapper. Mappeskann kan kjøres rekursivt med maks antall filer, maks dybde, tabellvisning, tooltip per fil, full rapport ved klikk, filter, sortering, eksport og batch-redaction av valgte filer.</li>
+            <li><strong>Fil, lim inn, ZIP og mappe:</strong> Skann enkeltfiler, ZIP-arkiver, flere filer via drag-and-drop, tekst fra utklippstavlen eller hele mapper. ZIP pakkes ut til en midlertidig lokal mappe og vises som en batchrapport. Mappeskann kan kjøres rekursivt med maks antall filer, maks dybde, tabellvisning, tooltip per fil, full rapport ved klikk, filter, sortering, eksport og batch-redaction av valgte filer.</li>
             <li><strong>Mappevakt:</strong> Opptil tre valgte mapper, for eksempel Downloads, overvåkes lokalt. Nye og endrede filer skannes når de er ferdig skrevet, og resultatene vises i historikken og bakgrunnsstatusen.</li>
             <li><strong>Utklippstavle-vakt:</strong> Varsler lokalt hvis du kopierer rødt eller svart innhold før det limes inn i et annet verktøy. Innholdet lagres ikke.</li>
             <li><strong>Automatisk scan-modus:</strong> Appen velger rask eller avansert dokumentlesing automatisk. Tabeller, lite tekst eller bildebasert innhold sendes til avansert behandling.</li>
@@ -6547,9 +6547,33 @@
       };
     }
 
+    function renderZipScanResult(r, fallbackName) {
+      _folderJobId = String(r.job_id || "");
+      _folderRows = Array.isArray(r.files) ? r.files : [];
+      lastResult = null; lastScan = null; _aiFindingsData = []; _aiDeepScanCompleted = false;
+      resultEl.classList.add("show");
+      document.getElementById("result-header").style.display = "flex";
+      document.getElementById("btn-copy-findings").style.display = "none";
+      const summary = `${escapeHtml(r.file_name || fallbackName || "ZIP")} · ${Number(r.supported_files || 0)} støttede filer · ${Number(r.ignored_files || 0)} ignorert`;
+      document.getElementById("severity-summary").innerHTML =
+        `<span style="font-size:12px;color:var(--muted);font-weight:600;">ZIP-skann: ${summary}</span>`;
+      const skipped = Array.isArray(r.skipped) ? r.skipped : [];
+      const warning = r.warning ? `<div class="warn" style="margin-bottom:8px">${escapeHtml(r.warning)}</div>` : "";
+      const skippedHtml = skipped.length ? `<details class="small-expander" style="margin-bottom:10px">
+        <summary>Ignorerte filer i ZIP (${skipped.length})</summary>
+        <ul style="margin:8px 0 0 18px; padding:0; color:var(--muted); font-size:12px;">
+          ${skipped.slice(0, 100).map(item => `<li>${escapeHtml(item.file || "")} — ${escapeHtml(item.reason || "")}</li>`).join("")}
+        </ul>
+      </details>` : "";
+      resultEl.innerHTML = `${warning}${skippedHtml}${_batchTableHtml(_folderRows)}`;
+      wireBatchTableEvents(resultEl);
+      loadHistoryFromApi();
+    }
+
     async function scanPath(path, extraOpts) {
       const isOcrScan = !!extraOpts?.ocr;
-      setStatus(isOcrScan ? t("ocrRunning") : t("statusScan"));
+      const isZip = String(path || "").toLowerCase().endsWith(".zip");
+      setStatus(isZip ? "Skanner ZIP-arkiv. Store arkiver kan ta tid …" : (isOcrScan ? t("ocrRunning") : t("statusScan")));
       setOcrProgress(isOcrScan);
       _clearTextPreview();
       resultEl.classList.remove("show");
@@ -6566,6 +6590,10 @@
         })).json();
         setStatus("");
         setOcrProgress(false);
+        if (r.zip_scan) {
+          renderZipScanResult(r, path);
+          return;
+        }
         renderResult(r);
         addToHistory(r, () => scanPath(path));
       } catch(e) {
@@ -6578,7 +6606,8 @@
 
     async function scanUpload(file, name, extraOpts) {
       const isOcrScan = !!extraOpts?.ocr;
-      setStatus(isOcrScan ? t("ocrRunning") : t("statusUp"));
+      const isZip = String(name || "").toLowerCase().endsWith(".zip");
+      setStatus(isZip ? "Skanner ZIP-arkiv. Store arkiver kan ta tid …" : (isOcrScan ? t("ocrRunning") : t("statusUp")));
       setOcrProgress(isOcrScan);
       _clearTextPreview();
       resultEl.classList.remove("show");
@@ -6602,6 +6631,10 @@
         const r = await (await fetch(`${API}/scan-upload`, { method:"POST", body: fd })).json();
         setStatus("");
         setOcrProgress(false);
+        if (r.zip_scan) {
+          renderZipScanResult(r, name);
+          return;
+        }
         renderResult(r);
         addToHistory(r, () => scanUpload(file, name));
       } catch(e) {
@@ -6653,7 +6686,7 @@
       const openBrowserFilePicker = () => {
         const input = document.createElement("input");
         input.type = "file";
-        input.accept = ".pdf,.docx,.pptx,.xlsx,.txt,.md,.html,.csv,.eml,.rtf,.odt,.png,.jpg,.jpeg,.bmp,.tif,.tiff,.webp";
+        input.accept = ".pdf,.docx,.pptx,.xlsx,.txt,.md,.html,.csv,.eml,.rtf,.odt,.png,.jpg,.jpeg,.bmp,.tif,.tiff,.webp,.zip";
         input.onchange = () => {
           const file = input.files && input.files[0];
           if (file) scanUpload(file, file.name);
