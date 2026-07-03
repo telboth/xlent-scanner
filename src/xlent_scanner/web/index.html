@@ -312,6 +312,14 @@
       background: var(--panel2); border: 1px solid var(--border);
       border-radius: 8px; padding: 8px; margin-bottom: 8px;
     }
+    .folder-more-actions { position: relative; }
+    .folder-more-actions summary { list-style: none; cursor: pointer; }
+    .folder-more-actions summary::-webkit-details-marker { display: none; }
+    .folder-more-actions-body {
+      display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;
+      padding: 8px; border: 1px solid var(--border); border-radius: 10px;
+      background: var(--panel);
+    }
     .folder-toolbar input[type="search"], .folder-toolbar select {
       padding: 5px 8px; border: 1px solid var(--border); border-radius: 6px;
       background: var(--panel); color: var(--text); font-size: 12px;
@@ -825,7 +833,6 @@
       <summary aria-label="Meny" title="Meny">⋯</summary>
       <div class="top-menu-body">
         <button class="ctrl-btn top-update-btn" id="btn-check-updates-top" data-i18n="updateCheckTop">Se etter oppdateringer</button>
-        <button id="btn-run-install-script" class="ctrl-btn ctrl-btn-outline-primary" data-i18n="updateRunScript" data-i18n-title="updateRunScriptTooltip" title="Laster ned riktig installasjonsscript for operativsystemet og starter installasjon lokalt. Kan trigge sikkerhetsdialoger i Windows eller macOS.">Last ned og kjør installasjonsscript</button>
         <button class="ctrl-btn top-browser-btn" id="btn-open-in-browser-top" data-i18n="openInBrowserTop" data-i18n-title="openInBrowserTooltip" title="Åpner en egen nettleserversjon som fortsetter å fungere selv om desktopvinduet lukkes.">Åpne i nettleser</button>
         <div class="ui-lang-sel">
           <select id="themeSelect" class="ui-lang-select" data-i18n-title="themeNote" title="Lys modus bruker en grå header slik at XLENT-logoen fortsatt er synlig.">
@@ -2140,8 +2147,8 @@
         folderRecursiveTooltip:"Skanner også alle støttede filer i undermapper. Bruk maks filer og maks dybde for å holde jobben kontrollert.",
         folderMaxFiles:     "Maks filer",
         folderMaxDepth:     "Maks dybde",
-        folderPreview:      "Fant {files} støttede filer i {folders} mapper. Starte skanning?",
-        folderPreviewTruncated:"Fant minst {files} støttede filer i {folders} mapper. Listen er avkortet ved maksgrensen. Starte skanning?",
+        folderPreview:      "Fant {files} støttede filer i {folders} mapper. Skanning startet.",
+        folderPreviewTruncated:"Fant minst {files} støttede filer i {folders} mapper. Listen er avkortet ved maksgrensen. Skanning startet.",
         folderTruncated:    "Avkortet ved maksgrensen ({n} filer).",
         folderTooltipTitle: "Funn i filen",
         folderTooltipNone:  "Ingen funn i denne filen.",
@@ -2153,12 +2160,14 @@
         folderFilterAll:    "Alle",
         folderOnlyFindings: "Kun funn",
         folderOnlyErrors:   "Kun feil",
+        folderMoreActions:  "Eksport og metadata",
+        folderClear:        "Tøm",
         folderExportJson:   "Eksporter JSON",
         folderExportCsv:    "Eksporter CSV",
-        folderAuditHtml:    "Audit HTML",
-        folderAuditPdf:     "Audit PDF",
-        folderRedactSelected:"Redact valgte",
-        folderRedactSelectedTooltip:"Lager redacted kopier av valgte filer fra mappeskann-resultatet. Kontroller resultatfilene før deling.",
+        folderAuditHtml:    "Åpne audit HTML",
+        folderAuditPdf:     "Åpne audit PDF",
+        folderRedactSelected:"Anonymiser valgte",
+        folderRedactSelectedTooltip:"Lager anonymiserte kopier av valgte filer fra mappeskann-resultatet. Kontroller resultatfilene før deling.",
         folderM365Metadata: "Skriv M365-metadata",
         folderNoSelection:  "Velg minst én fil.",
         folderOpenFile:     "Åpne",
@@ -2567,8 +2576,8 @@
         folderRecursiveTooltip:"Skannar även alla stödda filer i undermappar. Använd max antal filer och max djup för att hålla jobbet kontrollerat.",
         folderMaxFiles:     "Max filer",
         folderMaxDepth:     "Max djup",
-        folderPreview:      "Hittade {files} filer som stöds i {folders} mappar. Starta skanning?",
-        folderPreviewTruncated:"Hittade minst {files} filer som stöds i {folders} mappar. Listan är avkortad vid maxgränsen. Starta skanning?",
+        folderPreview:      "Hittade {files} filer som stöds i {folders} mappar. Skanning startad.",
+        folderPreviewTruncated:"Hittade minst {files} filer som stöds i {folders} mappar. Listan är avkortad vid maxgränsen. Skanning startad.",
         folderTruncated:    "Avkortad vid maxgränsen ({n} filer).",
         folderTooltipTitle: "Fynd i filen",
         folderTooltipNone:  "Inga fynd i den här filen.",
@@ -2580,12 +2589,14 @@
         folderFilterAll:    "Alla",
         folderOnlyFindings: "Endast fynd",
         folderOnlyErrors:   "Endast fel",
+        folderMoreActions:  "Export och metadata",
+        folderClear:        "Rensa",
         folderExportJson:   "Exportera JSON",
         folderExportCsv:    "Exportera CSV",
-        folderAuditHtml:    "Audit HTML",
-        folderAuditPdf:     "Audit PDF",
-        folderRedactSelected:"Redact valda",
-        folderRedactSelectedTooltip:"Skapar redacted kopior av valda filer från mappskanningsresultatet. Kontrollera resultatfilerna före delning.",
+        folderAuditHtml:    "Öppna audit HTML",
+        folderAuditPdf:     "Öppna audit PDF",
+        folderRedactSelected:"Anonymisera valda",
+        folderRedactSelectedTooltip:"Skapar anonymiserade kopior av valda filer från mappskanningsresultatet. Kontrollera resultatfilerna före delning.",
         folderM365Metadata: "Skriv M365-metadata",
         folderNoSelection:  "Välj minst en fil.",
         folderOpenFile:     "Öppna",
@@ -2999,8 +3010,8 @@
         folderRecursiveTooltip:"Also scans all supported files in subfolders. Use maximum files and maximum depth to keep the job controlled.",
         folderMaxFiles:     "Max files",
         folderMaxDepth:     "Max depth",
-        folderPreview:      "Found {files} supported files in {folders} folders. Start scan?",
-        folderPreviewTruncated:"Found at least {files} supported files in {folders} folders. The list is capped at the limit. Start scan?",
+        folderPreview:      "Found {files} supported files in {folders} folders. Scan started.",
+        folderPreviewTruncated:"Found at least {files} supported files in {folders} folders. The list is capped at the limit. Scan started.",
         folderTruncated:    "Capped at the max limit ({n} files).",
         folderTooltipTitle: "Findings in this file",
         folderTooltipNone:  "No findings in this file.",
@@ -3012,10 +3023,12 @@
         folderFilterAll:    "All",
         folderOnlyFindings: "Only findings",
         folderOnlyErrors:   "Only errors",
+        folderMoreActions:  "Export and metadata",
+        folderClear:        "Clear",
         folderExportJson:   "Export JSON",
         folderExportCsv:    "Export CSV",
-        folderAuditHtml:    "Audit HTML",
-        folderAuditPdf:     "Audit PDF",
+        folderAuditHtml:    "Open audit HTML",
+        folderAuditPdf:     "Open audit PDF",
         folderRedactSelected:"Redact selected",
         folderRedactSelectedTooltip:"Creates redacted copies of selected files from the folder scan result. Verify the output files before sharing.",
         folderM365Metadata: "Write M365 metadata",
@@ -3512,8 +3525,8 @@
         folderRecursiveTooltip:"Scannt auch alle unterstützten Dateien in Unterordnern. Verwenden Sie maximale Dateianzahl und maximale Tiefe, um den Job kontrolliert zu halten.",
         folderMaxFiles:      "Max. Dateien",
         folderMaxDepth:      "Max. Tiefe",
-        folderPreview:       "{files} unterstützte Dateien in {folders} Ordnern gefunden. Scan starten?",
-        folderPreviewTruncated:"Mindestens {files} unterstützte Dateien in {folders} Ordnern gefunden. Die Liste wurde am Limit gekürzt. Scan starten?",
+        folderPreview:       "{files} unterstützte Dateien in {folders} Ordnern gefunden. Scan gestartet.",
+        folderPreviewTruncated:"Mindestens {files} unterstützte Dateien in {folders} Ordnern gefunden. Die Liste wurde am Limit gekürzt. Scan gestartet.",
         folderTruncated:     "Am Maximalwert gekürzt ({n} Dateien).",
         folderTooltipTitle:  "Funde in dieser Datei",
         folderTooltipNone:   "Keine Funde in dieser Datei.",
@@ -3525,12 +3538,14 @@
         folderFilterAll:     "Alle",
         folderOnlyFindings:  "Nur Treffer",
         folderOnlyErrors:    "Nur Fehler",
+        folderMoreActions:   "Export und Metadaten",
+        folderClear:         "Leeren",
         folderExportJson:    "JSON exportieren",
         folderExportCsv:     "CSV exportieren",
-        folderAuditHtml:     "Audit HTML",
-        folderAuditPdf:      "Audit PDF",
-        folderRedactSelected:"Ausgewählte redigieren",
-        folderRedactSelectedTooltip:"Erstellt redigierte Kopien der ausgewählten Dateien aus dem Ordnerscan-Ergebnis. Prüfen Sie die Ergebnisdateien vor dem Teilen.",
+        folderAuditHtml:     "Audit HTML öffnen",
+        folderAuditPdf:      "Audit PDF öffnen",
+        folderRedactSelected:"Ausgewählte anonymisieren",
+        folderRedactSelectedTooltip:"Erstellt anonymisierte Kopien der ausgewählten Dateien aus dem Ordnerscan-Ergebnis. Prüfen Sie die Ergebnisdateien vor dem Teilen.",
         folderM365Metadata:  "M365-Metadaten schreiben",
         folderNoSelection:   "Wählen Sie mindestens eine Datei.",
         folderOpenFile:      "Öffnen",
@@ -3954,8 +3969,8 @@
         folderRecursiveTooltip:"Analyse aussi tous les fichiers pris en charge dans les sous-dossiers. Utilisez le nombre maximal de fichiers et la profondeur maximale pour garder la tâche maîtrisée.",
         folderMaxFiles:      "Fichiers max.",
         folderMaxDepth:      "Profondeur max.",
-        folderPreview:       "{files} fichiers pris en charge trouvés dans {folders} dossiers. Lancer l'analyse ?",
-        folderPreviewTruncated:"Au moins {files} fichiers pris en charge trouvés dans {folders} dossiers. La liste est limitée au maximum. Lancer l'analyse ?",
+        folderPreview:       "{files} fichiers pris en charge trouvés dans {folders} dossiers. Analyse lancée.",
+        folderPreviewTruncated:"Au moins {files} fichiers pris en charge trouvés dans {folders} dossiers. La liste est limitée au maximum. Analyse lancée.",
         folderTruncated:     "Limité au maximum ({n} fichiers).",
         folderTooltipTitle:  "Résultats dans ce fichier",
         folderTooltipNone:   "Aucun résultat dans ce fichier.",
@@ -3967,12 +3982,14 @@
         folderFilterAll:     "Tous",
         folderOnlyFindings:  "Résultats uniquement",
         folderOnlyErrors:    "Erreurs uniquement",
+        folderMoreActions:   "Export et métadonnées",
+        folderClear:         "Effacer",
         folderExportJson:    "Exporter JSON",
         folderExportCsv:     "Exporter CSV",
-        folderAuditHtml:     "Audit HTML",
-        folderAuditPdf:      "Audit PDF",
-        folderRedactSelected:"Redacter la sélection",
-        folderRedactSelectedTooltip:"Crée des copies expurgées/redacted des fichiers sélectionnés depuis le résultat d’analyse de dossier. Vérifiez les fichiers produits avant partage.",
+        folderAuditHtml:     "Ouvrir audit HTML",
+        folderAuditPdf:      "Ouvrir audit PDF",
+        folderRedactSelected:"Anonymiser la sélection",
+        folderRedactSelectedTooltip:"Crée des copies anonymisées des fichiers sélectionnés depuis le résultat d’analyse de dossier. Vérifiez les fichiers produits avant partage.",
         folderM365Metadata:  "Écrire les métadonnées M365",
         folderNoSelection:   "Sélectionnez au moins un fichier.",
         folderOpenFile:      "Ouvrir",
@@ -4396,8 +4413,8 @@
         folderRecursiveTooltip:"También escanea todos los archivos compatibles en subcarpetas. Use máximo de archivos y profundidad máxima para mantener el trabajo controlado.",
         folderMaxFiles:      "Máx. archivos",
         folderMaxDepth:      "Profundidad máx.",
-        folderPreview:       "Se encontraron {files} archivos compatibles en {folders} carpetas. ¿Iniciar escaneo?",
-        folderPreviewTruncated:"Se encontraron al menos {files} archivos compatibles en {folders} carpetas. La lista se limita al máximo. ¿Iniciar escaneo?",
+        folderPreview:       "Se encontraron {files} archivos compatibles en {folders} carpetas. Escaneo iniciado.",
+        folderPreviewTruncated:"Se encontraron al menos {files} archivos compatibles en {folders} carpetas. La lista se limita al máximo. Escaneo iniciado.",
         folderTruncated:     "Limitado al máximo ({n} archivos).",
         folderTooltipTitle:  "Hallazgos en este archivo",
         folderTooltipNone:   "No hay hallazgos en este archivo.",
@@ -4409,12 +4426,14 @@
         folderFilterAll:     "Todos",
         folderOnlyFindings:  "Solo hallazgos",
         folderOnlyErrors:    "Solo errores",
+        folderMoreActions:   "Exportación y metadatos",
+        folderClear:         "Limpiar",
         folderExportJson:    "Exportar JSON",
         folderExportCsv:     "Exportar CSV",
-        folderAuditHtml:     "Audit HTML",
-        folderAuditPdf:      "Audit PDF",
-        folderRedactSelected:"Redactar seleccionados",
-        folderRedactSelectedTooltip:"Crea copias redactadas/redacted de los archivos seleccionados del resultado de escaneo de carpeta. Verifique los archivos generados antes de compartirlos.",
+        folderAuditHtml:     "Abrir audit HTML",
+        folderAuditPdf:      "Abrir audit PDF",
+        folderRedactSelected:"Anonimizar seleccionados",
+        folderRedactSelectedTooltip:"Crea copias anonimizadas de los archivos seleccionados del resultado de escaneo de carpeta. Verifique los archivos generados antes de compartirlos.",
         folderM365Metadata:  "Escribir metadatos M365",
         folderNoSelection:   "Seleccione al menos un archivo.",
         folderOpenFile:      "Abrir",
@@ -6821,7 +6840,6 @@
     document.getElementById("btn-check-updates")?.addEventListener("click", () => runUpdateCheck(true));
     document.getElementById("btn-check-updates-top")?.addEventListener("click", () => runUpdateCheck(true));
     document.getElementById("btn-open-in-browser-top")?.addEventListener("click", openInSystemBrowser);
-    document.getElementById("btn-run-install-script")?.addEventListener("click", runInstallScript);
     document.getElementById("btn-open-web-mode")?.addEventListener("click", startWebMode);
     document.getElementById("btn-install-mac-quick-action").addEventListener("click", installMacQuickAction);
     document.getElementById("btn-load-log").addEventListener("click", loadLog);
@@ -8287,6 +8305,24 @@
       return [...document.querySelectorAll(".folder-row-cb:checked")].map(cb => cb.value).filter(Boolean);
     }
 
+    function clearFolderResults() {
+      _stopFolderPolling();
+      _folderRows = [];
+      _folderJobId = "";
+      _folderFilterText = "";
+      _folderFilterRisk = "";
+      _folderOnlyFindings = false;
+      _folderOnlyErrors = false;
+      const fs = document.getElementById("folder-status");
+      const fr = document.getElementById("folder-results");
+      const cancelBtn = document.getElementById("btn-cancel-folder");
+      if (fs) { fs.style.color = "var(--muted)"; fs.textContent = ""; }
+      if (fr) { fr.style.display = "none"; fr.innerHTML = ""; }
+      if (cancelBtn) cancelBtn.style.display = "none";
+      _setFolderProgress(false);
+      _setFolderAction("");
+    }
+
     document.getElementById("btn-cancel-folder")?.addEventListener("click", async () => {
       if (!_folderJobId) return;
       try { await _folderPost(`/scan-folder/cancel/${encodeURIComponent(_folderJobId)}`); }
@@ -8320,11 +8356,6 @@
         if (!preview.file_count) {
           fs.style.color = "var(--muted)"; fs.textContent = t("folderNoFiles"); return;
         }
-        if (!window.confirm(_folderPreviewText(preview))) {
-          fs.textContent = "";
-          return;
-        }
-
         const opts = getOpts();
         const started = await _folderPost("/scan-folder/start", {
           folder_path: dlg.path,
@@ -8341,7 +8372,7 @@
         }
         _folderJobId = String(started.job_id || "");
         fs.style.color = "var(--muted)";
-        fs.textContent = t("folderScanning");
+        fs.textContent = _folderPreviewText(preview);
         if (cancelBtn) cancelBtn.style.display = "";
         _setFolderProgress(true, t("folderProgress").replace("{done}", 0).replace("{total}", preview.file_count));
         renderFolderResults([]);
@@ -8426,12 +8457,18 @@
         <label><input type="checkbox" id="folder-only-findings" ${_folderOnlyFindings ? "checked" : ""}> ${escapeHtml(t("folderOnlyFindings"))}</label>
         <label><input type="checkbox" id="folder-only-errors" ${_folderOnlyErrors ? "checked" : ""}> ${escapeHtml(t("folderOnlyErrors"))}</label>
         <span class="ctrl-sep"></span>
-        <button type="button" class="ctrl-btn" id="folder-export-json">${escapeHtml(t("folderExportJson"))}</button>
-        <button type="button" class="ctrl-btn" id="folder-export-csv">${escapeHtml(t("folderExportCsv"))}</button>
-        <button type="button" class="ctrl-btn" id="folder-audit-html">${escapeHtml(t("folderAuditHtml"))}</button>
-        <button type="button" class="ctrl-btn" id="folder-audit-pdf">${escapeHtml(t("folderAuditPdf"))}</button>
-        <button type="button" class="ctrl-btn" id="folder-m365-metadata">${escapeHtml(t("folderM365Metadata"))}</button>
         <button type="button" class="ctrl-btn ctrl-btn-outline-accent" id="folder-redact-selected" title="${escapeHtml(t("folderRedactSelectedTooltip"))}">${escapeHtml(t("folderRedactSelected"))}</button>
+        ${_folderRows.length ? `<button type="button" class="ctrl-btn" id="folder-clear">${escapeHtml(t("folderClear"))}</button>` : ""}
+        <details class="folder-more-actions">
+          <summary class="ctrl-btn">${escapeHtml(t("folderMoreActions"))}</summary>
+          <div class="folder-more-actions-body">
+            <button type="button" class="ctrl-btn" id="folder-audit-html">${escapeHtml(t("folderAuditHtml"))}</button>
+            <button type="button" class="ctrl-btn" id="folder-audit-pdf">${escapeHtml(t("folderAuditPdf"))}</button>
+            <button type="button" class="ctrl-btn" id="folder-export-json">${escapeHtml(t("folderExportJson"))}</button>
+            <button type="button" class="ctrl-btn" id="folder-export-csv">${escapeHtml(t("folderExportCsv"))}</button>
+            <button type="button" class="ctrl-btn" id="folder-m365-metadata">${escapeHtml(t("folderM365Metadata"))}</button>
+          </div>
+        </details>
         <span id="folder-action-msg" class="folder-action-msg"></span>
       </div>`;
     }
@@ -8491,6 +8528,7 @@
       container.querySelector("#folder-audit-html")?.addEventListener("click", () => _folderRunOutputAction("/folder-audit/html", "folderActionDone", true));
       container.querySelector("#folder-audit-pdf")?.addEventListener("click", () => _folderRunOutputAction("/folder-audit/pdf", "folderActionDone", true));
       container.querySelector("#folder-m365-metadata")?.addEventListener("click", writeFolderM365Metadata);
+      container.querySelector("#folder-clear")?.addEventListener("click", clearFolderResults);
       container.querySelector("#folder-redact-selected")?.addEventListener("click", async () => {
         const ids = _selectedFolderReportIds();
         if (!ids.length) { _setFolderAction(t("folderNoSelection"), false); return; }
@@ -8671,10 +8709,6 @@
       const macQuickActionSection = document.getElementById("section-mac-quick-action");
       if (macQuickActionSection && APP_PLATFORM === "darwin") {
         macQuickActionSection.style.display = "";
-      }
-      const runInstallScriptBtn = document.getElementById("btn-run-install-script");
-      if (runInstallScriptBtn && !canRunInstallScript()) {
-        runInstallScriptBtn.style.display = "none";
       }
       loadWhitelistEditor();
       loadBlacklistEditor();

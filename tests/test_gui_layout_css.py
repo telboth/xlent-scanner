@@ -179,14 +179,13 @@ def test_update_install_script_controls_exist_for_supported_desktop_platforms():
     html = HTML.read_text(encoding="utf-8")
 
     assert 'id="update-banner-script-btn"' in html
-    assert 'id="btn-run-install-script"' in html
+    assert 'id="btn-run-install-script"' not in html
     assert 'id="update-install-script-msg"' in html
     assert 'fetch(`${API}/updates/install-script/run`, { method: "POST" })' in html
     assert 'function canRunInstallScript()' in html
     assert 'APP_PLATFORM === "darwin"' in html
     assert '.startsWith("win")' in html
     assert 'updateBannerScriptBtnEl.onclick = runInstallScript;' in html
-    assert 'document.getElementById("btn-run-install-script")?.addEventListener("click", runInstallScript);' in html
 
     for key in [
         "updateRunScript",
@@ -205,7 +204,6 @@ def test_top_update_check_button_is_wired():
     assert 'id="btn-check-updates-top"' in html
     assert 'class="ctrl-btn top-update-btn"' in html
     assert 'data-i18n="updateCheckTop"' in html
-    assert 'id="btn-run-install-script"' in html
     assert 'id="update-check-msg"' in html
     assert 'id="update-install-script-msg"' in html
     assert 'class="top-menu"' in html
@@ -507,6 +505,8 @@ def test_recursive_folder_scan_controls_are_wired():
         "folderFilterAll",
         "folderOnlyFindings",
         "folderOnlyErrors",
+        "folderMoreActions",
+        "folderClear",
         "folderExportJson",
         "folderExportCsv",
         "folderAuditHtml",
@@ -530,6 +530,8 @@ def test_recursive_folder_scan_controls_are_wired():
     assert 'id="folder-progress"' in html
     assert 'fetch(`${API}/scan-folder/preview`' in html
     assert '_folderPost("/scan-folder/start"' in html
+    assert "window.confirm(_folderPreviewText(preview))" not in html
+    assert "fs.textContent = _folderPreviewText(preview);" in html
     assert 'fetch(`${API}/scan-folder/status/${encodeURIComponent(jobId)}`)' in html
     assert '_folderPost(`/scan-folder/cancel/${encodeURIComponent(_folderJobId)}`)' in html
     assert "function getFolderOpts()" in html
@@ -549,11 +551,24 @@ def test_recursive_folder_scan_controls_are_wired():
     assert 'id="folder-audit-pdf"' in html
     assert 'id="folder-m365-metadata"' in html
     assert 'id="folder-redact-selected"' in html
+    assert 'id="folder-clear"' in html
+    assert 'class="folder-more-actions"' in html
+    assert 'class="folder-more-actions-body"' in html
+    assert html.index('id="folder-redact-selected"') < html.index('class="folder-more-actions"')
+    assert html.index('id="folder-audit-html"') > html.index('class="folder-more-actions-body"')
+    assert html.index('id="folder-audit-pdf"') > html.index('class="folder-more-actions-body"')
+    assert 'id="folder-clear">${escapeHtml(t("folderClear"))}</button>` : ""}' in html
+    assert 'folderMoreActions:  "Eksport og metadata"' in html
+    assert 'folderRedactSelected:"Anonymiser valgte"' in html
+    assert 'folderAuditHtml:    "Åpne audit HTML"' in html
+    assert 'folderAuditPdf:     "Åpne audit PDF"' in html
     assert 'class="folder-row-cb"' in html
     assert '_folderRunOutputAction("/folder-export/json", "folderActionDone")' in html
     assert '_folderRunOutputAction("/folder-export/csv", "folderActionDone")' in html
     assert '_folderRunOutputAction("/folder-audit/html", "folderActionDone", true)' in html
     assert '_folderRunOutputAction("/folder-audit/pdf", "folderActionDone", true)' in html
+    assert 'container.querySelector("#folder-clear")?.addEventListener("click", clearFolderResults);' in html
+    assert "function clearFolderResults()" in html
     assert "function writeFolderM365Metadata()" in html
     assert '_folderPost("/folder-redact"' in html
     assert '_folderPost(url, { report_id: id })' in html
@@ -721,7 +736,6 @@ def test_tooltips_exist_for_expensive_or_external_actions():
     assert 'data-i18n-title="aiToggleTooltip"' in html
     assert 'data-i18n-title="folderRecursiveTooltip"' in html
     assert 'data-i18n-title="m365WriteMetadataTooltip"' in html
-    assert 'data-i18n-title="updateRunScriptTooltip"' in html
     assert 'title="${escapeHtml(t("ocrRescanTooltip"))}"' in html
     assert 'title="${escapeHtml(t("folderRedactSelectedTooltip"))}"' in html
     assert 'document.querySelectorAll("[data-i18n-title]")' in html
