@@ -23,7 +23,7 @@ _COMPANY_SUFFIX_RE = re.compile(
     r"(?:\s+[A-ZÆØÅÄÖÜ][A-Za-zÆØÅæøåÄÖäöÜüÉéÈèÁáÀàÓóÒòÍíÌìÑñß0-9&.'-]{1,}){0,4}"
     r")"
     r"\s+"
-    r"(AS|ASA|LTD|LLC)"
+    r"(AS|ASA|AB|LTD|LLC)"
     r"\b",
 )
 

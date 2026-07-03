@@ -825,7 +825,9 @@
       <summary aria-label="Meny" title="Meny">⋯</summary>
       <div class="top-menu-body">
         <button class="ctrl-btn top-update-btn" id="btn-check-updates-top" data-i18n="updateCheckTop">Se etter oppdateringer</button>
+        <button id="btn-run-install-script" class="ctrl-btn ctrl-btn-outline-primary" data-i18n="updateRunScript" data-i18n-title="updateRunScriptTooltip" title="Laster ned riktig installasjonsscript for operativsystemet og starter installasjon lokalt. Kan trigge sikkerhetsdialoger i Windows eller macOS.">Last ned og kjør installasjonsscript</button>
         <button class="ctrl-btn top-browser-btn" id="btn-open-in-browser-top" data-i18n="openInBrowserTop" data-i18n-title="openInBrowserTooltip" title="Åpner en egen nettleserversjon som fortsetter å fungere selv om desktopvinduet lukkes.">Åpne i nettleser</button>
+        <button class="ctrl-btn" id="btn-open-about-top" data-i18n="tabAbout">ℹ Om programmet</button>
         <div class="ui-lang-sel">
           <select id="ui-lang-select" class="ui-lang-select">
             <option value="nb">🇳🇴 Norsk</option>
@@ -836,6 +838,8 @@
             <option value="es">🇪🇸 Español</option>
           </select>
         </div>
+        <div class="settings-note" id="update-check-msg"></div>
+        <div class="settings-note" id="update-install-script-msg"></div>
       </div>
     </details>
   </nav>
@@ -1787,18 +1791,6 @@
           <input type="file" id="settings-import-file" accept="application/json,.json" style="display:none" />
         </div>
         <div class="settings-note" id="settings-profile-msg"></div>
-      </details>
-
-      <details class="settings-section settings-expander" data-settings-key="updates">
-        <summary class="settings-section-title" data-i18n="settingsUpdateTitle">Oppdateringer</summary>
-        <div class="settings-row">
-          <button id="btn-check-updates" class="ctrl-btn" data-i18n="updateCheckNow">Se etter oppdateringer nå</button>
-          <button id="btn-run-install-script" class="ctrl-btn ctrl-btn-outline-primary" data-i18n="updateRunScript" data-i18n-title="updateRunScriptTooltip" title="Laster ned riktig installasjonsscript for operativsystemet og starter installasjon lokalt. Kan trigge sikkerhetsdialoger i Windows eller macOS.">Last ned og kjør installasjonsscript</button>
-          <button id="btn-open-web-mode" class="ctrl-btn" data-i18n="openWebModeBtn">Start web-modus i nettleser</button>
-        </div>
-        <div class="settings-note" id="update-check-msg"></div>
-        <div class="settings-note" id="update-install-script-msg"></div>
-        <div class="settings-note" id="web-mode-msg"></div>
       </details>
 
       <details class="settings-section settings-expander" id="section-mac-quick-action" data-settings-key="mac-quick-action" style="display:none;">
@@ -4716,6 +4708,7 @@
     }
 
     function setUpdateCheckMessage(msg, color = "var(--muted)") {
+      if (!updateCheckMsgEl) return;
       updateCheckMsgEl.textContent = msg;
       updateCheckMsgEl.style.color = color;
     }
@@ -6833,11 +6826,15 @@
     ["m365-drive-id", "m365-item-id", "m365-sync-root", "m365-sensitivity-label-id", "m365-retention-label-name", "m365-map-gronn", "m365-map-gul", "m365-map-rod", "m365-map-svart"].forEach(id => {
       document.getElementById(id)?.addEventListener("input", saveSettings);
     });
-    document.getElementById("btn-check-updates").addEventListener("click", () => runUpdateCheck(true));
-    document.getElementById("btn-check-updates-top").addEventListener("click", () => runUpdateCheck(true));
-    document.getElementById("btn-open-in-browser-top").addEventListener("click", openInSystemBrowser);
-    document.getElementById("btn-run-install-script").addEventListener("click", runInstallScript);
-    document.getElementById("btn-open-web-mode").addEventListener("click", startWebMode);
+    document.getElementById("btn-check-updates")?.addEventListener("click", () => runUpdateCheck(true));
+    document.getElementById("btn-check-updates-top")?.addEventListener("click", () => runUpdateCheck(true));
+    document.getElementById("btn-open-in-browser-top")?.addEventListener("click", openInSystemBrowser);
+    document.getElementById("btn-open-about-top")?.addEventListener("click", () => {
+      document.querySelector('[data-tab="about"]')?.click();
+      document.getElementById("top-menu")?.removeAttribute("open");
+    });
+    document.getElementById("btn-run-install-script")?.addEventListener("click", runInstallScript);
+    document.getElementById("btn-open-web-mode")?.addEventListener("click", startWebMode);
     document.getElementById("btn-install-mac-quick-action").addEventListener("click", installMacQuickAction);
     document.getElementById("btn-load-log").addEventListener("click", loadLog);
     document.getElementById("btn-open-log").addEventListener("click", openLog);
@@ -8287,10 +8284,10 @@
       return await r.json();
     }
 
-    async function _folderRunOutputAction(url, labelKey) {
+    async function _folderRunOutputAction(url, labelKey, openOutput = false) {
       if (!_folderJobId) { _setFolderAction(t("folderNoSelection"), false); return; }
       try {
-        const d = await _folderPost(url, { job_id: _folderJobId });
+        const d = await _folderPost(url, { job_id: _folderJobId, open: openOutput });
         if (d.ok) _setFolderAction(`${t(labelKey)} ${d.path || d.folder || ""}`);
         else _setFolderAction(`${t("folderActionFailed")} ${d.error || ""}`, false);
       } catch (e) {
@@ -8503,8 +8500,8 @@
       if (selectAll) selectAll.addEventListener("change", () => container.querySelectorAll(".folder-row-cb").forEach(cb => { cb.checked = selectAll.checked; }));
       container.querySelector("#folder-export-json")?.addEventListener("click", () => _folderRunOutputAction("/folder-export/json", "folderActionDone"));
       container.querySelector("#folder-export-csv")?.addEventListener("click", () => _folderRunOutputAction("/folder-export/csv", "folderActionDone"));
-      container.querySelector("#folder-audit-html")?.addEventListener("click", () => _folderRunOutputAction("/folder-audit/html", "folderActionDone"));
-      container.querySelector("#folder-audit-pdf")?.addEventListener("click", () => _folderRunOutputAction("/folder-audit/pdf", "folderActionDone"));
+      container.querySelector("#folder-audit-html")?.addEventListener("click", () => _folderRunOutputAction("/folder-audit/html", "folderActionDone", true));
+      container.querySelector("#folder-audit-pdf")?.addEventListener("click", () => _folderRunOutputAction("/folder-audit/pdf", "folderActionDone", true));
       container.querySelector("#folder-m365-metadata")?.addEventListener("click", writeFolderM365Metadata);
       container.querySelector("#folder-redact-selected")?.addEventListener("click", async () => {
         const ids = _selectedFolderReportIds();

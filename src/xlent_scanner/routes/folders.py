@@ -488,9 +488,12 @@ def folder_export_csv_endpoint():
 @folders_bp.post("/folder-audit/html")
 def folder_audit_html_endpoint():
     try:
-        job_id, job = folder_job_from_request(request.get_json(force=True) or {})
+        data = request.get_json(force=True) or {}
+        job_id, job = folder_job_from_request(data)
         out = _unique_download_path(f"xlent-folder-audit-{job_id[:8]}", ".html")
         out.write_text(_folder_audit_html(job_id, job), encoding="utf-8")
+        if data.get("open") is True:
+            _open_path(out)
         return jsonify({"ok": True, "path": str(out)})
     except Exception as exc:
         return jsonify({"ok": False, "error": str(exc)})
@@ -499,7 +502,8 @@ def folder_audit_html_endpoint():
 @folders_bp.post("/folder-audit/pdf")
 def folder_audit_pdf_endpoint():
     try:
-        job_id, job = folder_job_from_request(request.get_json(force=True) or {})
+        data = request.get_json(force=True) or {}
+        job_id, job = folder_job_from_request(data)
         lines = [
             "XLENT mappeskann-rapport",
             f"Jobb: {job_id}",
@@ -517,6 +521,8 @@ def folder_audit_pdf_endpoint():
                 lines.append(f"  Feil: {row['error']}")
         out = _unique_download_path(f"xlent-folder-audit-{job_id[:8]}", ".pdf")
         write_text_pdf("\n".join(lines), out, title="XLENT mappeskann-rapport")
+        if data.get("open") is True:
+            _open_path(out)
         return jsonify({"ok": True, "path": str(out)})
     except Exception as exc:
         LOGGER.error("folder-audit/pdf failed: %s", traceback.format_exc())

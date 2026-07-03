@@ -3,6 +3,7 @@ import time
 
 from xlent_scanner import app as app_module
 from xlent_scanner import scanner
+from xlent_scanner.routes import folders as folder_routes
 from xlent_scanner.models import Finding, ScanResult
 
 
@@ -216,6 +217,42 @@ def test_folder_export_and_audit_endpoints_write_files(monkeypatch, tmp_path: Pa
         assert data["ok"] is True
         assert data["path"].endswith(suffix)
         assert Path(data["path"]).exists()
+
+
+def test_folder_audit_endpoints_can_open_created_files(monkeypatch, tmp_path: Path):
+    result = ScanResult(
+        file_name="root.txt",
+        relative_path="root.txt",
+        source_path=str(tmp_path / "root.txt"),
+        file_size=12,
+        text_length=12,
+        text_preview="Kontakt person@example.com",
+        findings=[Finding(category="e-post", text="person@example.com", context="", severity="gul")],
+        risk_level="gul",
+    )
+    row = app_module._folder_result_row(result, report_id="report-1")
+    job_id = "job-audit-open"
+    with app_module.app_state.folder_jobs_lock:
+        app_module.app_state.folder_jobs[job_id] = {
+            "status": "completed",
+            "folder": str(tmp_path),
+            "recursive": True,
+            "total": 1,
+            "completed": 1,
+            "truncated": False,
+            "files": [row],
+        }
+    opened: list[Path] = []
+    monkeypatch.setattr(app_module, "_downloads_dir", lambda: tmp_path)
+    monkeypatch.setattr(folder_routes, "_open_path", lambda path: opened.append(Path(path)))
+    client = app_module.flask_app.test_client()
+
+    html = client.post("/folder-audit/html", json={"job_id": job_id, "open": True}).get_json()
+    pdf = client.post("/folder-audit/pdf", json={"job_id": job_id, "open": True}).get_json()
+
+    assert html["ok"] is True
+    assert pdf["ok"] is True
+    assert [path.suffix for path in opened] == [".html", ".pdf"]
 
 
 def test_folder_redact_endpoint_patches_selected_files(monkeypatch, tmp_path: Path):

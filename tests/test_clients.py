@@ -3,12 +3,13 @@ from xlent_scanner.scanner import scan_text
 
 
 def test_company_suffix_names_are_detected_before_legal_suffixes():
-    text = "Invoice to Example Consulting AS, Global Shipping LTD and Northwind LLC."
+    text = "Invoice to Example Consulting AS, Volvo Cars AB, Global Shipping LTD and Northwind LLC."
 
     findings = list(find_company_suffix_names(text))
 
     assert [(f.category, f.text) for f in findings] == [
         ("kundenavn", "Example Consulting AS"),
+        ("kundenavn", "Volvo Cars AB"),
         ("kundenavn", "Global Shipping LTD"),
         ("kundenavn", "Northwind LLC"),
     ]

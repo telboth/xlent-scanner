@@ -178,7 +178,7 @@ def test_update_install_script_controls_exist_for_supported_desktop_platforms():
     assert 'APP_PLATFORM === "darwin"' in html
     assert '.startsWith("win")' in html
     assert 'updateBannerScriptBtnEl.onclick = runInstallScript;' in html
-    assert 'document.getElementById("btn-run-install-script").addEventListener("click", runInstallScript);' in html
+    assert 'document.getElementById("btn-run-install-script")?.addEventListener("click", runInstallScript);' in html
 
     for key in [
         "updateRunScript",
@@ -197,6 +197,9 @@ def test_top_update_check_button_is_wired():
     assert 'id="btn-check-updates-top"' in html
     assert 'class="ctrl-btn top-update-btn"' in html
     assert 'data-i18n="updateCheckTop"' in html
+    assert 'id="btn-run-install-script"' in html
+    assert 'id="update-check-msg"' in html
+    assert 'id="update-install-script-msg"' in html
     assert 'class="top-menu"' in html
     assert 'id="top-menu"' in html
     assert ".top-menu {" in html
@@ -207,7 +210,7 @@ def test_top_update_check_button_is_wired():
     assert "margin-left: auto;" in html
     assert 'const topUpdateCheckBtnEl = document.getElementById("btn-check-updates-top");' in html
     assert "function setTopUpdateCheckBusy(busy)" in html
-    assert 'document.getElementById("btn-check-updates-top").addEventListener("click", () => runUpdateCheck(true));' in html
+    assert 'document.getElementById("btn-check-updates-top")?.addEventListener("click", () => runUpdateCheck(true));' in html
     assert html.count("updateCheckTop:") == 6
     assert html.count("updateCheckNow:") == 6
     assert html.count("updateCheckFailed:") == 6
@@ -217,6 +220,7 @@ def test_open_in_browser_top_button_is_wired():
     html = HTML.read_text(encoding="utf-8")
 
     assert 'id="btn-open-in-browser-top"' in html
+    assert 'id="btn-open-about-top"' in html
     assert 'class="ctrl-btn top-browser-btn"' in html
     assert 'data-i18n="openInBrowserTop"' in html
     assert 'data-i18n-title="openInBrowserTooltip"' in html
@@ -226,7 +230,8 @@ def test_open_in_browser_top_button_is_wired():
     assert 'setStatus(t("openInBrowserStarting"));' in html
     assert 'if (d.ok) setStatus(t("openInBrowserStarted"));' in html
     assert 'fetch(`${API}/open-in-browser`, { method: "POST" })' in html
-    assert 'document.getElementById("btn-open-in-browser-top").addEventListener("click", openInSystemBrowser);' in html
+    assert 'document.getElementById("btn-open-in-browser-top")?.addEventListener("click", openInSystemBrowser);' in html
+    assert 'document.getElementById("btn-open-about-top")?.addEventListener("click", () => {' in html
     assert html.count("openInBrowserTop:") == 6
     assert html.count("openInBrowserTooltip:") == 6
     assert html.count("openInBrowserStarting:") == 6
@@ -540,8 +545,8 @@ def test_recursive_folder_scan_controls_are_wired():
     assert 'class="folder-row-cb"' in html
     assert '_folderRunOutputAction("/folder-export/json", "folderActionDone")' in html
     assert '_folderRunOutputAction("/folder-export/csv", "folderActionDone")' in html
-    assert '_folderRunOutputAction("/folder-audit/html", "folderActionDone")' in html
-    assert '_folderRunOutputAction("/folder-audit/pdf", "folderActionDone")' in html
+    assert '_folderRunOutputAction("/folder-audit/html", "folderActionDone", true)' in html
+    assert '_folderRunOutputAction("/folder-audit/pdf", "folderActionDone", true)' in html
     assert "function writeFolderM365Metadata()" in html
     assert '_folderPost("/folder-redact"' in html
     assert '_folderPost(url, { report_id: id })' in html
@@ -901,8 +906,8 @@ def test_settings_sections_are_closed_expanders_by_default():
     end = html.index('<div class="settings-note" data-i18n="settingsPersistNote"', start)
     settings_sections = html[start:end]
 
-    assert settings_sections.count('<details class="settings-section settings-expander') == 17
-    assert settings_sections.count('<summary class="settings-section-title"') == 17
+    assert settings_sections.count('<details class="settings-section settings-expander') == 16
+    assert settings_sections.count('<summary class="settings-section-title"') == 16
     assert 'id="settings-search"' in html
     assert 'data-i18n-placeholder="settingsSearchPlaceholder"' in html
     assert "sessionStorage.getItem(\"xlent_settings_open_sections\")" in html
