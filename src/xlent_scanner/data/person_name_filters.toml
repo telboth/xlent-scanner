@@ -84,6 +84,7 @@ generic_title_case_words = [
   "physically", "seismic", "sensitivity", "sensor", "signal", "simulation",
   "size", "software", "spec", "specification", "survey", "thin", "tool", "training",
   "uncertainty", "velocity", "version", "wave", "waves", "workflow",
+  "augmented", "generation", "retrieval",
   "ocean", "freight",
   "bachelor", "course", "curriculum", "dissertation", "lecture", "master",
   "amount", "budget", "cost", "description", "discount", "invoice", "line",
@@ -97,7 +98,7 @@ generic_title_case_words = [
   "oppgave", "oppsummering", "oversikt", "pris", "prosjekt", "rapport",
   "referanse", "referanser", "resultat", "resultater", "risiko", "sammendrag",
   "seksjon", "studie", "tabell", "undersøkelse", "utkast", "vedlegg",
-  "vurdering",
+  "vurdering", "digitale", "gardermoen",
 ]
 
 technical_title_case_words = [
@@ -107,7 +108,7 @@ technical_title_case_words = [
   "amount", "description", "discount", "line", "net", "office", "order",
   "patent", "physically", "price", "purchase", "python", "quantity", "size",
   "range", "solver", "sparse", "spec", "subtotal", "tax", "thin", "tool",
-  "total", "transformer", "unit", "vat",
+  "total", "transformer", "unit", "vat", "augmented", "generation", "retrieval",
 ]
 
 place_or_thing_preceders = [

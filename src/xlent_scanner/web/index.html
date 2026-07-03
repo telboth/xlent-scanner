@@ -827,7 +827,12 @@
         <button class="ctrl-btn top-update-btn" id="btn-check-updates-top" data-i18n="updateCheckTop">Se etter oppdateringer</button>
         <button id="btn-run-install-script" class="ctrl-btn ctrl-btn-outline-primary" data-i18n="updateRunScript" data-i18n-title="updateRunScriptTooltip" title="Laster ned riktig installasjonsscript for operativsystemet og starter installasjon lokalt. Kan trigge sikkerhetsdialoger i Windows eller macOS.">Last ned og kjør installasjonsscript</button>
         <button class="ctrl-btn top-browser-btn" id="btn-open-in-browser-top" data-i18n="openInBrowserTop" data-i18n-title="openInBrowserTooltip" title="Åpner en egen nettleserversjon som fortsetter å fungere selv om desktopvinduet lukkes.">Åpne i nettleser</button>
-        <button class="ctrl-btn" id="btn-open-about-top" data-i18n="tabAbout">ℹ Om programmet</button>
+        <div class="ui-lang-sel">
+          <select id="themeSelect" class="ui-lang-select" data-i18n-title="themeNote" title="Lys modus bruker en grå header slik at XLENT-logoen fortsatt er synlig.">
+            <option value="light" data-i18n="themeLight">Lys modus</option>
+            <option value="dark" data-i18n="themeDark">Mørk modus</option>
+          </select>
+        </div>
         <div class="ui-lang-sel">
           <select id="ui-lang-select" class="ui-lang-select">
             <option value="nb">🇳🇴 Norsk</option>
@@ -1552,19 +1557,6 @@
           placeholder="Søk i innstillinger…" autocomplete="off">
         <div id="settings-search-count" class="settings-search-count"></div>
       </div>
-
-      <!-- Tema -->
-      <details class="settings-section settings-expander" data-settings-key="theme">
-        <summary class="settings-section-title" data-i18n="settingsThemeTitle">Utseende</summary>
-        <div class="settings-row">
-          <label for="themeSelect" data-i18n="themeLabel">Tema:</label>
-          <select id="themeSelect">
-            <option value="light" data-i18n="themeLight">Lys modus</option>
-            <option value="dark" data-i18n="themeDark">Mørk modus</option>
-          </select>
-        </div>
-        <div class="settings-note" data-i18n="themeNote">Lys modus bruker en grå header slik at XLENT-logoen fortsatt er synlig.</div>
-      </details>
 
       <!-- Dokumentspråk -->
       <details class="settings-section settings-expander" data-settings-key="document-language">
@@ -6829,10 +6821,6 @@
     document.getElementById("btn-check-updates")?.addEventListener("click", () => runUpdateCheck(true));
     document.getElementById("btn-check-updates-top")?.addEventListener("click", () => runUpdateCheck(true));
     document.getElementById("btn-open-in-browser-top")?.addEventListener("click", openInSystemBrowser);
-    document.getElementById("btn-open-about-top")?.addEventListener("click", () => {
-      document.querySelector('[data-tab="about"]')?.click();
-      document.getElementById("top-menu")?.removeAttribute("open");
-    });
     document.getElementById("btn-run-install-script")?.addEventListener("click", runInstallScript);
     document.getElementById("btn-open-web-mode")?.addEventListener("click", startWebMode);
     document.getElementById("btn-install-mac-quick-action").addEventListener("click", installMacQuickAction);

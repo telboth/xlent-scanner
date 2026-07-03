@@ -39,15 +39,23 @@ def test_pywebview_background_is_not_default_white():
     assert "background_color=\"#eef2f6\"" in app
 
 
-def test_theme_selector_is_available_in_settings():
+def test_theme_selector_is_available_in_top_menu():
     html = HTML.read_text(encoding="utf-8")
 
+    top_menu_start = html.index('id="top-menu"')
+    top_menu_end = html.index("</details>", top_menu_start)
+    top_menu = html[top_menu_start:top_menu_end]
+    settings_start = html.index('id="panel-settings"')
+    settings_end = html.index('<div class="settings-note" data-i18n="settingsPersistNote"', settings_start)
+    settings_panel = html[settings_start:settings_end]
+
     assert 'id="themeSelect"' in html
+    assert 'id="themeSelect"' in top_menu
+    assert 'id="themeSelect"' not in settings_panel
     assert 'value="dark" data-i18n="themeDark"' in html
     assert 'value="light" data-i18n="themeLight"' in html
     assert html.index('value="light" data-i18n="themeLight"') < html.index('value="dark" data-i18n="themeDark"')
-    assert 'data-i18n="settingsThemeTitle"' in html
-    assert 'data-i18n="themeNote"' in html
+    assert 'data-i18n-title="themeNote"' in top_menu
 
 
 def test_light_theme_is_default():
@@ -220,7 +228,6 @@ def test_open_in_browser_top_button_is_wired():
     html = HTML.read_text(encoding="utf-8")
 
     assert 'id="btn-open-in-browser-top"' in html
-    assert 'id="btn-open-about-top"' in html
     assert 'class="ctrl-btn top-browser-btn"' in html
     assert 'data-i18n="openInBrowserTop"' in html
     assert 'data-i18n-title="openInBrowserTooltip"' in html
@@ -231,7 +238,7 @@ def test_open_in_browser_top_button_is_wired():
     assert 'if (d.ok) setStatus(t("openInBrowserStarted"));' in html
     assert 'fetch(`${API}/open-in-browser`, { method: "POST" })' in html
     assert 'document.getElementById("btn-open-in-browser-top")?.addEventListener("click", openInSystemBrowser);' in html
-    assert 'document.getElementById("btn-open-about-top")?.addEventListener("click", () => {' in html
+    assert 'id="btn-open-about-top"' not in html
     assert html.count("openInBrowserTop:") == 6
     assert html.count("openInBrowserTooltip:") == 6
     assert html.count("openInBrowserStarting:") == 6
@@ -906,8 +913,8 @@ def test_settings_sections_are_closed_expanders_by_default():
     end = html.index('<div class="settings-note" data-i18n="settingsPersistNote"', start)
     settings_sections = html[start:end]
 
-    assert settings_sections.count('<details class="settings-section settings-expander') == 16
-    assert settings_sections.count('<summary class="settings-section-title"') == 16
+    assert settings_sections.count('<details class="settings-section settings-expander') == 15
+    assert settings_sections.count('<summary class="settings-section-title"') == 15
     assert 'id="settings-search"' in html
     assert 'data-i18n-placeholder="settingsSearchPlaceholder"' in html
     assert "sessionStorage.getItem(\"xlent_settings_open_sections\")" in html
