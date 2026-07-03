@@ -31,6 +31,12 @@ def _clean_amount(s: str) -> str:
     return s.strip().rstrip(".,")
 
 
+_MONEY_AMOUNT_RE = re.compile(
+    r"(?:NOK|SEK|DKK|EUR|USD|GBP|CHF|£|kr|€|\$)?\s*"
+    r"(\d{1,7}(?:[., \t]\d{3})*(?:[.,]\d{1,2})?)"
+)
+
+
 # ── A: Beløp / enhet  (høyest presisjon) ──────────────────────────────────────
 # Matcher:  "1 850 kr/time",  "NOK 2 200/h",  "1850,-/t",  "1 500 per dag"
 _TIME_UNITS = r"time?r?|t(?:\.|imen?s?)?|h(?:\.|our)?s?|tim(?:e|mar)?|timme[rn]?"
@@ -104,6 +110,10 @@ _UNIT_PRICE_RE = re.compile(
     re.IGNORECASE,
 )
 
+_TOTAL_ROW_RE = re.compile(
+    r"(?im)^\s*\|?\s*total\b[^\n]*"
+)
+
 
 # ── E: Margin / rabatt / påslag (prosentsats) ─────────────────────────────────
 # Matcher:  "Margin: 35%",  "Rabatt 20 %",  "Påslag: 12,5%",  "discount: 15%"
@@ -148,8 +158,26 @@ def find_financial_data(text: str) -> Iterator[Finding]:
             seen.add(key)
             yield Finding(cat, amount, _ctx(text, m.start(), m.end()), severity="gul")
 
+    # C0: OCR-/markdown-tabellrad med totalsummer.
+    # Eksempel: "| Total | $29,97 | $3,00 | $32,97 |". I slike rader er
+    # siste beløp normalt gross/total, mens tidligere beløp er netto/VAT.
+    total_row_spans: list[tuple[int, int]] = []
+    for m in _TOTAL_ROW_RE.finditer(text):
+        line = m.group(0)
+        amounts = [_clean_amount(a.group(1)) for a in _MONEY_AMOUNT_RE.finditer(line)]
+        if len(amounts) < 2:
+            continue
+        amount = amounts[-1]
+        key = ("prosjektsum", amount)
+        total_row_spans.append(m.span())
+        if key not in seen:
+            seen.add(key)
+            yield Finding("prosjektsum", amount, _ctx(text, m.start(), m.end()), severity="gul")
+
     # C: prosjektsum
     for m in _SUM_KW_RE.finditer(text):
+        if any(start <= m.start() < end for start, end in total_row_spans):
+            continue
         amount = _clean_amount(m.group(1))
         key    = ("prosjektsum", amount)
         if key not in seen:

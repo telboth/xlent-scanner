@@ -91,6 +91,9 @@ def test_tax_id_after_label_is_detected_as_person_id() -> None:
         "Tax ID: 123-45-6789",
         "Tax Id: 996-90-5190",
         "Tax Id 987654321",
+        "Taxld:973-86-4868",
+        "Taxld:973-86-4868  IBAN:GB15SYHN68815141579564",
+        "Tax1d:987-99-8588",
         "tax identification number: AB-123456789",
         "TIN: 12 345 678",
         "SSN: 123-45-6789",
@@ -104,6 +107,9 @@ def test_tax_id_after_label_is_detected_as_person_id() -> None:
         ("tax identification number", "123-45-6789"),
         ("tax identification number", "996-90-5190"),
         ("tax identification number", "987654321"),
+        ("tax identification number", "973-86-4868"),
+        ("tax identification number", "973-86-4868"),
+        ("tax identification number", "987-99-8588"),
         ("tax identification number", "AB-123456789"),
         ("tax identification number", "12 345 678"),
         ("tax identification number", "123-45-6789"),
@@ -126,6 +132,8 @@ def test_street_addresses_are_detected_across_languages() -> None:
             "FR: Rue de Rivoli 99.",
             "ES: Calle Mayor 12.",
             "US: 8041 Hawkins Village Suite 621.",
+            "OCR: 4332TinaLakesSuite445 Chrisburgh,WV43352",
+            "OCR: 15760FreemanSpurApt.935 SouthTimothyhaven,DE52742",
         ]
     )
 
@@ -139,6 +147,10 @@ def test_street_addresses_are_detected_across_languages() -> None:
         ("fysisk adresse", "Rue de Rivoli 99"),
         ("fysisk adresse", "Calle Mayor 12"),
         ("fysisk adresse", "8041 Hawkins Village Suite 621"),
+        ("fysisk adresse", "4332TinaLakesSuite445"),
+        ("fysisk adresse", "Chrisburgh,WV43352"),
+        ("fysisk adresse", "15760FreemanSpurApt.935"),
+        ("fysisk adresse", "SouthTimothyhaven,DE52742"),
     ]
 
 

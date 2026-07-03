@@ -239,6 +239,12 @@ _CHART_AXIS_CONTEXT_RE = re.compile(
     r"\[(?:s|m|hz|degrees?|deg)\]"
     r")"
 )
+_INVOICE_NUMBER_CONTEXT_RE = re.compile(
+    r"(?i)(?:"
+    r"\b(?:invoice|faktura)\s*(?:no|nr|number|nummer)?"
+    r"|invoiceno|invoicenumber|fakturanr|fakturanummer"
+    r")\s*[:#-]?\s*$"
+)
 
 
 def _valid_date(year: int, month: int, day: int) -> bool:
@@ -283,6 +289,11 @@ def _has_chart_axis_context(text: str, start: int, end: int) -> bool:
     left = max(0, start - _PHONE_CONTEXT_WINDOW)
     right = min(len(text), end + _PHONE_CONTEXT_WINDOW)
     return bool(_CHART_AXIS_CONTEXT_RE.search(text[left:right]))
+
+
+def _has_invoice_number_context(text: str, start: int) -> bool:
+    before = text[max(0, start - 40):start]
+    return bool(_INVOICE_NUMBER_CONTEXT_RE.search(before))
 
 
 def _is_regular_numeric_sequence(values: list[int], *, min_len: int) -> bool:
@@ -371,6 +382,9 @@ def find_telefon(text: str, *, scan_profile: str = "normal") -> Iterator[Finding
             continue
         if _looks_like_compact_date(raw):
             record_suppressed("telefonnummer", raw, context, "kompakt dato")
+            continue
+        if _has_invoice_number_context(text, m.start()):
+            record_suppressed("telefonnummer", raw, context, "faktura-/invoice-nummer")
             continue
         if _looks_like_numeric_axis_sequence(
             text,

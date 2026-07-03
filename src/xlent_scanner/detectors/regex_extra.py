@@ -170,7 +170,7 @@ def find_passport(text: str) -> Iterator[Finding]:
 # labelen. Kategorien går under Personnummer / ID i scan_categories.py.
 _TAX_ID_RE = re.compile(
     r"(?i)\b(?:"
-    r"tax\s*(?:id|identification\s*number|number|no\.?)"
+    r"tax\s*(?:id|l[dD]|1d|identification\s*number|number|no\.?)"
     r"|tin"
     r"|ssn|social\s*security\s*(?:number|no\.?)"
     r"|national\s*insurance\s*(?:number|no\.?)|nino"
@@ -189,6 +189,12 @@ def find_tax_id(text: str) -> Iterator[Finding]:
     seen: set[str] = set()
     for m in _TAX_ID_RE.finditer(text):
         raw_value = re.split(r"[.;,]\s+[A-ZÆØÅÄÖÜ]", m.group(1), maxsplit=1)[0]
+        raw_value = re.split(
+            r"\s+(?=(?:IBAN|VAT|TIN|SSN|TAX|ITEMS|CLIENT|SELLER)\b)",
+            raw_value,
+            maxsplit=1,
+            flags=re.IGNORECASE,
+        )[0]
         value = " ".join(raw_value.strip(" \t\r\n,;:.").split())
         compact = re.sub(r"\s+", "", value).upper()
         digits = re.sub(r"\D", "", value)
@@ -551,6 +557,19 @@ _SUITE_ADDRESS_RE = re.compile(
     rf"(?![\w@])",
 )
 
+_OCR_COMPACT_SUITE_ADDRESS_RE = re.compile(
+    r"(?<![\w@])"
+    r"(\d{1,5}(?:[A-Z][a-z]{1,}){1,6}?"
+    r"(?:Suite|Ste\.?|Unit|Apt\.?|Apartment)\s*\.?\s*\d{1,5})"
+    r"(?![\w@])",
+)
+
+_US_CITY_STATE_ZIP_RE = re.compile(
+    r"(?<![\w@])"
+    r"([A-Z][A-Za-z.'-]{2,}(?:\s+[A-Z][A-Za-z.'-]{1,}){0,3},\s*[A-Z]{2}\s*\d{5}(?:-\d{4})?)"
+    r"(?![\w@])",
+)
+
 
 def find_street_address(text: str) -> Iterator[Finding]:
     seen: set[tuple[int, int]] = set()
@@ -561,6 +580,8 @@ def find_street_address(text: str) -> Iterator[Finding]:
         _COMPOUND_STREET_BEFORE_NUMBER_RE,
         _STREET_WORD_BEFORE_NAME_RE,
         _SUITE_ADDRESS_RE,
+        _OCR_COMPACT_SUITE_ADDRESS_RE,
+        _US_CITY_STATE_ZIP_RE,
     ):
         for m in pattern.finditer(text):
             span = m.span(1)

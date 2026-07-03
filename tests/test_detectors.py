@@ -153,6 +153,14 @@ class TestTelefon:
         f = list(find_telefon("Saksnr 2026-0011, 2026-0002 og 2025-0010"))
         assert f == []
 
+    def test_no_false_positive_on_invoice_number(self):
+        for text in (
+            "Invoiceno:70284416",
+            "Invoice no: 70284416",
+            "Fakturanr: 70284416",
+        ):
+            assert list(find_telefon(text)) == []
+
 
 class TestEmail:
     def test_simple_email(self):
@@ -459,6 +467,18 @@ class TestFinancials:
         f = list(find_financial_data("Prosjektsum: 4 500 000 NOK"))
         cats = _cats(f)
         assert "prosjektsum" in cats
+
+    def test_invoice_total_markdown_table_row_prefers_gross_total(self):
+        text = "| Total | $29,97 | $3,00 | $32,97 |"
+        f = list(find_financial_data(text))
+
+        assert ("prosjektsum", "32,97") in [(x.category, x.text) for x in f]
+
+    def test_invoice_total_plain_ocr_row_prefers_last_amount(self):
+        text = "Total $29,97 $3,00 $32,97"
+        f = list(find_financial_data(text))
+
+        assert ("prosjektsum", "32,97") in [(x.category, x.text) for x in f]
 
     def test_kontraktsverdi(self):
         f = list(find_financial_data("kontraktsverdi: NOK 2 200 000"))
