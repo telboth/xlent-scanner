@@ -798,7 +798,8 @@ def test_auto_ocr_setting_defaults_on_and_is_wired():
     assert '${_sortButton("access", t("folderAccess"))}' in html
     assert html.count("folderAccess:") == 6
     assert html.count("folderAccessBroad:") == 6
-    assert html.count("folderAccessNoBroad:") == 6
+    assert html.count("folderAccessSharedLocal:") == 6
+    assert html.count("folderAccessRestricted:") == 6
     assert html.count("folderAccessUnavailable:") == 6
     assert html.count("folderAccessNotChecked:") == 6
     assert html.count("accessCheckLabel:") == 6

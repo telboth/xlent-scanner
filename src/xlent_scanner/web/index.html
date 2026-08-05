@@ -703,6 +703,7 @@
     .batch-table tr:hover td { background: rgba(138,150,168,.05); }
     .folder-access-status { display:inline-block; font-size:11px; font-weight:600; white-space:nowrap; cursor:help; }
     .folder-access-broad { color:var(--danger); }
+    .folder-access-shared { color:var(--warn); }
     .folder-access-ok { color:var(--ok); }
     .folder-access-muted { color:var(--muted); }
     .batch-file-wrap { position: relative; display: inline-flex; align-items: center; gap: 5px; max-width: min(620px, 68vw); }
@@ -2198,7 +2199,8 @@
         folderFile:         "Fil",
         folderAccess:       "Tilgang",
         folderAccessBroad:  "Bred tilgang",
-        folderAccessNoBroad:"Ingen bred tilgang funnet",
+        folderAccessSharedLocal:"Delt lokalt",
+        folderAccessRestricted:"Begrenset",
         folderAccessUnavailable:"Ikke tilgjengelig",
         folderAccessNotChecked:"Ikke kontrollert",
         scanOptsTitle:       "Hva vil du finne?",
@@ -2634,7 +2636,8 @@
         folderFile:         "Fil",
         folderAccess:       "Åtkomst",
         folderAccessBroad:  "Bred åtkomst",
-        folderAccessNoBroad:"Ingen bred åtkomst hittades",
+        folderAccessSharedLocal:"Delad lokalt",
+        folderAccessRestricted:"Begränsad",
         folderAccessUnavailable:"Inte tillgänglig",
         folderAccessNotChecked:"Inte kontrollerad",
         scanOptsTitle:       "Vad vill du hitta?",
@@ -3075,7 +3078,8 @@
         folderFile:         "File",
         folderAccess:       "Access",
         folderAccessBroad:  "Broad access",
-        folderAccessNoBroad:"No broad access found",
+        folderAccessSharedLocal:"Shared locally",
+        folderAccessRestricted:"Restricted",
         folderAccessUnavailable:"Unavailable",
         folderAccessNotChecked:"Not checked",
         scanOptsTitle:       "What do you want to find?",
@@ -3553,7 +3557,8 @@
         folderLevel:         "Risikostufe",
         folderAccess:        "Zugriff",
         folderAccessBroad:   "Breiter Zugriff",
-        folderAccessNoBroad: "Kein breiter Zugriff gefunden",
+        folderAccessSharedLocal: "Lokal geteilt",
+        folderAccessRestricted: "Eingeschränkt",
         folderAccessUnavailable:"Nicht verfügbar",
         folderAccessNotChecked:"Nicht geprüft",
         folderError:         "Fehler beim Ordner-Scan:",
@@ -4004,7 +4009,8 @@
         folderLevel:         "Niveau de risque",
         folderAccess:        "Accès",
         folderAccessBroad:   "Accès étendu",
-        folderAccessNoBroad: "Aucun accès étendu détecté",
+        folderAccessSharedLocal: "Partagé localement",
+        folderAccessRestricted: "Restreint",
         folderAccessUnavailable:"Indisponible",
         folderAccessNotChecked:"Non vérifié",
         folderError:         "Erreur lors de l'analyse du dossier :",
@@ -4455,7 +4461,8 @@
         folderLevel:         "Nivel de riesgo",
         folderAccess:        "Acceso",
         folderAccessBroad:   "Acceso amplio",
-        folderAccessNoBroad: "No se detectó acceso amplio",
+        folderAccessSharedLocal: "Compartido localmente",
+        folderAccessRestricted: "Restringido",
         folderAccessUnavailable:"No disponible",
         folderAccessNotChecked:"No comprobado",
         folderError:         "Error al escanear la carpeta:",
@@ -8548,7 +8555,7 @@
         if (_folderSortKey === "findings") return dir * ((Number(a.finding_count || 0)) - (Number(b.finding_count || 0)));
         if (_folderSortKey === "size") return dir * ((Number(a.file_size || 0)) - (Number(b.file_size || 0)));
         if (_folderSortKey === "access") {
-          const accessScore = f => !f.access_summary ? -1 : !f.access_summary.available ? 0 : f.access_summary.broad_access ? 2 : 1;
+          const accessScore = f => !f.access_summary ? -1 : !f.access_summary.available ? 0 : f.access_summary.broad_access ? 3 : f.access_summary.shared_local_access ? 2 : 1;
           return dir * (accessScore(a) - accessScore(b));
         }
         return dir * ((ord[a.risk_level] || 0) - (ord[b.risk_level] || 0));
@@ -8569,7 +8576,8 @@
       const entryLines = entries.slice(0, 12).map(entry => {
         const identity = String(entry.identity || "");
         const rights = String(entry.rights || "");
-        return rights ? `${identity}: ${rights}` : identity;
+        const effect = entry.effect === "deny" ? " [DENY]" : "";
+        return rights ? `${identity}: ${rights}${effect}` : `${identity}${effect}`;
       }).filter(Boolean);
       const details = [access.reason, access.scope_note, access.person_count_note, ...entryLines]
         .filter(Boolean).join("\n");
@@ -8580,7 +8588,10 @@
       if (access.broad_access) {
         return `<span class="folder-access-status folder-access-broad"${title}>${escapeHtml(t("folderAccessBroad"))}</span>`;
       }
-      return `<span class="folder-access-status folder-access-ok"${title}>${escapeHtml(t("folderAccessNoBroad"))}</span>`;
+      if (access.shared_local_access) {
+        return `<span class="folder-access-status folder-access-shared"${title}>${escapeHtml(t("folderAccessSharedLocal"))}</span>`;
+      }
+      return `<span class="folder-access-status folder-access-ok"${title}>${escapeHtml(t("folderAccessRestricted"))}</span>`;
     }
 
     function wireBatchTableEvents(container) {

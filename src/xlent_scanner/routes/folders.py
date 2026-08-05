@@ -183,6 +183,13 @@ def folder_result_for_report_id(report_id: str) -> ScanResult:
 def _folder_export_rows(job: dict) -> list[dict]:
     rows = []
     for row in job.get("files", []):
+        access = row.get("access_summary") or {}
+        access_level = access.get("access_level", "")
+        access_status = {
+            "broad": "Bred tilgang",
+            "shared_local": "Delt lokalt",
+            "restricted": "Begrenset",
+        }.get(access_level, "Ikke tilgjengelig" if access and not access.get("available") else "Ikke kontrollert")
         rows.append({
             "relative_path": row.get("relative_path", ""),
             "file_name": row.get("file_name", ""),
@@ -193,9 +200,12 @@ def _folder_export_rows(job: dict) -> list[dict]:
             "text_length": row.get("text_length", 0),
             "error": row.get("error") or "",
             "warning": row.get("warning") or "",
-            "access_source": (row.get("access_summary") or {}).get("source", ""),
-            "access_entries": (row.get("access_summary") or {}).get("entries_total", ""),
-            "access_broad": ", ".join((row.get("access_summary") or {}).get("broad_identities", []) or []),
+            "access_source": access.get("source", ""),
+            "access_level": access_level,
+            "access_status": access_status,
+            "access_entries": access.get("entries_total", ""),
+            "access_broad": ", ".join(access.get("broad_identities", []) or []),
+            "access_shared": ", ".join(access.get("shared_identities", []) or []),
             "top_findings": "; ".join(
                 f"{finding.get('category', '')}: {finding.get('text', '')}"
                 for finding in (row.get("findings_summary") or [])
@@ -218,7 +228,9 @@ def _folder_audit_html(job_id: str, job: dict) -> str:
             f"<td>{html.escape(str(row['relative_path']))}</td>"
             f"<td>{html.escape(str(row['risk_level']))}</td>"
             f"<td>{html.escape(str(row['finding_count']))}</td>"
-            f"<td>{html.escape(str(row['access_broad']))}</td>"
+            f"<td>{html.escape(str(row['access_status']))}"
+            f"{': ' if row['access_broad'] or row['access_shared'] else ''}"
+            f"{html.escape(str(row['access_broad'] or row['access_shared']))}</td>"
             f"<td>{html.escape(str(row['top_findings']))}</td>"
             f"<td>{html.escape(str(row['error']))}</td>"
             "</tr>"
@@ -247,7 +259,7 @@ def _folder_audit_html(job_id: str, job: dict) -> str:
     <div>Status: {html.escape(str(job.get("status", "")))}</div>
   </div>
   <table>
-    <thead><tr><th>Fil</th><th>Risiko</th><th>Funn</th><th>Bred tilgang</th><th>Toppfunn</th><th>Feil</th></tr></thead>
+    <thead><tr><th>Fil</th><th>Risiko</th><th>Funn</th><th>Tilgang</th><th>Toppfunn</th><th>Feil</th></tr></thead>
     <tbody>{''.join(table_rows)}</tbody>
   </table>
 </body>

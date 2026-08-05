@@ -1,5 +1,7 @@
 import io
+import stat
 from pathlib import Path
+from types import SimpleNamespace
 
 from xlent_scanner import app as app_module
 from xlent_scanner import scanner
@@ -9,7 +11,7 @@ from xlent_scanner.models import ScanResult
 import xlent_scanner.routes.scanning as scanning_routes
 
 
-def test_parse_icacls_output_marks_broad_and_inherited_entries():
+def test_parse_icacls_output_marks_local_group_as_shared_not_broad():
     output = "\n".join([
         r"C:\tmp\doc.txt BUILTIN\Users:(I)(RX)",
         r"               DOMAIN\Ola:(F)",
@@ -21,8 +23,32 @@ def test_parse_icacls_output_marks_broad_and_inherited_entries():
     assert summary["entries_total"] == 2
     assert summary["direct_entries"] == 1
     assert summary["inherited_entries"] == 1
+    assert summary["broad_access"] is False
+    assert summary["shared_local_access"] is True
+    assert summary["shared_identities"] == [r"BUILTIN\Users"]
+    assert summary["access_level"] == "shared_local"
+
+
+def test_parse_icacls_output_does_not_treat_deny_as_granted_access():
+    output = r"C:\tmp\doc.txt Everyone:(I)(CI)(DENY)(DC)"
+
+    summary = _parse_icacls_output(output, r"C:\tmp\doc.txt")
+
+    assert summary["broad_access"] is False
+    assert summary["shared_local_access"] is False
+    assert summary["access_level"] == "restricted"
+    assert summary["entries"][0]["effect"] == "deny"
+    assert summary["entries"][0]["grants_access"] is False
+
+
+def test_parse_icacls_output_keeps_everyone_read_as_broad_access():
+    output = r"C:\tmp\doc.txt Everyone:(I)(RX)"
+
+    summary = _parse_icacls_output(output, r"C:\tmp\doc.txt")
+
     assert summary["broad_access"] is True
-    assert summary["broad_identities"] == [r"BUILTIN\Users"]
+    assert summary["broad_identities"] == ["Everyone"]
+    assert summary["access_level"] == "broad"
 
 
 def test_audit_path_access_never_fails_for_existing_file(tmp_path: Path):
@@ -36,15 +62,20 @@ def test_audit_path_access_never_fails_for_existing_file(tmp_path: Path):
     assert summary.get("person_count_estimate") is None or summary["available"] is False
 
 
-def test_posix_group_permissions_are_reported_as_broad_access(tmp_path: Path):
-    file_path = tmp_path / "doc.txt"
-    file_path.write_text("ok", encoding="utf-8")
-    file_path.chmod(0o640)
+def test_posix_group_permissions_are_reported_as_shared_not_broad():
+    class FakePosixPath:
+        def stat(self):
+            return SimpleNamespace(st_mode=stat.S_IFREG | 0o640, st_uid=1000, st_gid=100)
 
-    summary = _posix_access_audit(file_path)
+        def is_dir(self):
+            return False
 
-    assert summary["broad_access"] is True
-    assert any(identity.startswith("group:") for identity in summary["broad_identities"])
+    summary = _posix_access_audit(FakePosixPath())
+
+    assert summary["broad_access"] is False
+    assert summary["shared_local_access"] is True
+    assert any(identity.startswith("group:") for identity in summary["shared_identities"])
+    assert summary["access_level"] == "shared_local"
 
 
 def test_scan_file_adds_access_summary_only_when_requested(monkeypatch, tmp_path: Path):

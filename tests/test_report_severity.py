@@ -246,11 +246,14 @@ class TestReport:
             "entries_total": 2,
             "direct_entries": 1,
             "inherited_entries": 1,
-            "broad_access": True,
-            "broad_identities": ["BUILTIN\\Users"],
+            "broad_access": False,
+            "broad_identities": [],
+            "shared_local_access": True,
+            "shared_identities": ["BUILTIN\\Users"],
+            "access_level": "shared_local",
             "person_count_note": "Ikke beregnet.",
             "entries": [
-                {"identity": "BUILTIN\\Users", "rights": "(I)(RX)", "inherited": True, "broad": True},
+                {"identity": "BUILTIN\\Users", "rights": "(I)(RX)", "inherited": True, "broad": False, "shared": True, "effect": "allow"},
             ],
             "scope_note": "Mappeskann: vurderingen gjelder rettighetene til filens inneholdende mappe.",
         }
@@ -261,3 +264,4 @@ class TestReport:
         assert "Mappeskann: vurderingen gjelder" in html
         assert "local_windows_acl" in html
         assert "BUILTIN\\Users" in html
+        assert "Delt lokalt" in html

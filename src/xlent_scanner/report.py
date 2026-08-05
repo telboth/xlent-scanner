@@ -122,6 +122,7 @@ _TEMPLATE = _JINJA_ENV.from_string("""<!DOCTYPE html>
                   font-size: 12px; color: var(--muted); line-height: 1.6; }
   .access-audit strong { color: var(--text); }
   .access-broad { color: var(--gul); font-weight: 600; }
+  .access-shared { color: var(--muted); font-weight: 600; }
   footer { margin-top: 32px; color: var(--muted); font-size: 12px;
            border-top: 1px solid var(--border); padding-top: 16px; }
 </style>
@@ -195,8 +196,10 @@ _TEMPLATE = _JINJA_ENV.from_string("""<!DOCTYPE html>
     ({{ access.get("direct_entries", 0) }} direkte, {{ access.get("inherited_entries", 0) }} arvet).
     {% if access.get("broad_access") %}
       <span class="access-broad">Bred tilgang: {{ access.get("broad_identities", [])|join(", ") }}</span>.
+    {% elif access.get("shared_local_access") %}
+      <span class="access-shared">Delt lokalt: {{ access.get("shared_identities", [])|join(", ") }}</span>.
     {% else %}
-      Ingen bred tilgang oppdaget i lokal sjekk.
+      Begrenset tilgang: ingen offentlig eller lokal brukergruppe med tildelte rettigheter ble oppdaget.
     {% endif %}
     {% if access.get("scope_note") %}<br>{{ access.get("scope_note") }}{% endif %}
     <br>{{ access.get("person_count_note", "Personantall er ikke beregnet.") }}
@@ -208,7 +211,7 @@ _TEMPLATE = _JINJA_ENV.from_string("""<!DOCTYPE html>
           <tr>
             <td>{{ entry.get("identity", "") }}</td>
             <td>{{ entry.get("rights", "") }}</td>
-            <td>{% if entry.get("inherited") %}arvet{% else %}direkte{% endif %}{% if entry.get("broad") %}, bred{% endif %}</td>
+            <td>{% if entry.get("inherited") %}arvet{% else %}direkte{% endif %}{% if entry.get("effect") == "deny" %}, nektet{% elif entry.get("broad") %}, bred{% elif entry.get("shared") %}, delt lokalt{% endif %}</td>
           </tr>
         {% endfor %}
         </tbody>
