@@ -117,6 +117,36 @@ def test_scan_folder_reuses_access_check_per_containing_folder(monkeypatch, tmp_
     assert all(result.access_summary["scope"] == "containing_folder" for result in results)
 
 
+def test_scan_folder_keeps_local_and_sharepoint_access_separate(monkeypatch, tmp_path: Path):
+    (tmp_path / "one.txt").write_text("ok", encoding="utf-8")
+
+    def fake_scan(path, **kwargs):
+        p = Path(path)
+        return ScanResult(file_name=p.name, file_size=2, text_length=2, text_preview="ok")
+
+    monkeypatch.setattr(scanner, "scan_file", fake_scan)
+    monkeypatch.setattr(
+        access_audit,
+        "audit_path_access",
+        lambda path: {"available": True, "access_level": "restricted", "source": "local_windows_acl"},
+    )
+    monkeypatch.setattr(
+        scanner,
+        "sharepoint_access_for_local_path",
+        lambda path, **kwargs: {"available": False, "access_level": "not_checked", "source": "sharepoint_graph"},
+    )
+
+    results = scanner.scan_folder(
+        tmp_path,
+        include_access_check=True,
+        graph_drive_id="drive",
+        graph_sync_root=str(tmp_path),
+    )
+
+    assert results[0].access_summary["access_level"] == "restricted"
+    assert results[0].sharepoint_access_summary["access_level"] == "not_checked"
+
+
 def test_uploaded_file_does_not_report_temporary_file_permissions(monkeypatch):
     observed: dict = {}
 

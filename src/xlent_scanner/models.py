@@ -49,3 +49,4 @@ class ScanResult:
     scan_status: str = "success"      # success / partial / failed
     scan_timings: dict = field(default_factory=dict)
     access_summary: dict | None = None
+    sharepoint_access_summary: dict | None = None

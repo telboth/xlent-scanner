@@ -224,6 +224,25 @@ _TEMPLATE = _JINJA_ENV.from_string("""<!DOCTYPE html>
 </div>
 {% endif %}
 
+{% if result.sharepoint_access_summary %}
+{% set cloud = result.sharepoint_access_summary %}
+<div class="access-audit">
+  <strong>SharePoint-tilgang:</strong>
+  {% if cloud.get("available") %}
+    {% set cloud_labels = {"public": "offentlig lenke", "organization": "hele organisasjonen", "group": "delt med gruppe", "specific": "bestemte personer", "restricted": "begrenset"} %}
+    {{ cloud_labels.get(cloud.get("access_level"), cloud.get("access_level", "ukjent")) }} ·
+    {{ cloud.get("entries_total", 0) }} tillatelser
+    ({{ cloud.get("direct_entries", 0) }} direkte, {{ cloud.get("inherited_entries", 0) }} arvet).
+    {% if cloud.get("group_identities") %}<br>Grupper: {{ cloud.get("group_identities")|join(", ") }}.{% endif %}
+    {% if cloud.get("person_identities") %}<br>Personer: {{ cloud.get("person_identities")|join(", ") }}.{% endif %}
+    {% if cloud.get("scope_note") %}<br>{{ cloud.get("scope_note") }}{% endif %}
+    <br>{{ cloud.get("person_count_note", "Personantall er ikke beregnet.") }}
+  {% else %}
+    {{ cloud.get("reason", "SharePoint-tilgang er ikke kontrollert.") }}
+  {% endif %}
+</div>
+{% endif %}
+
 {% if redaction_audit and redaction_audit.get("selected_findings") %}
 <h2>Faktisk anonymiserte funn ({{ redaction_audit.get("selected_findings")|length }})</h2>
 <table>

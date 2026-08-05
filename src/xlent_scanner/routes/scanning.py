@@ -50,6 +50,7 @@ def _error_payload(message: str) -> dict:
         "error": message,
         "scan_status": "failed",
         "access_summary": None,
+        "sharepoint_access_summary": None,
     }
 
 
@@ -86,6 +87,8 @@ def _scan_file_compat(*args, scan_profile: str = "normal", **kwargs):
         legacy_kwargs = dict(kwargs)
         legacy_kwargs.pop("categories", None)
         legacy_kwargs.pop("include_access_check", None)
+        legacy_kwargs.pop("graph_drive_id", None)
+        legacy_kwargs.pop("graph_sync_root", None)
         try:
             return scan_file(*args, scan_profile=scan_profile, **legacy_kwargs)
         except TypeError as exc2:
@@ -232,6 +235,8 @@ def scan():
         pdf_mode = data.get("scan_mode", data.get("pdf_mode", "auto"))
         categories = _request_categories(data.get("categories"))
         include_access_check = bool(data.get("access_check", data.get("include_access_check", False)))
+        graph_drive_id = str(data.get("graph_drive_id") or data.get("drive_id") or "").strip()
+        graph_sync_root = str(data.get("graph_sync_root") or data.get("sync_root") or "").strip()
         LOGGER.info(
             "scan request path=%s lang=%s profile=%s pdf_mode=%s ignore_xlent=%s ocr=%s categories=%s",
             file_path,
@@ -265,6 +270,8 @@ def scan():
             categories=categories,
             pdf_mode=pdf_mode,
             include_access_check=include_access_check,
+            graph_drive_id=graph_drive_id or None,
+            graph_sync_root=graph_sync_root or None,
         )
         _remember_result(result, path_obj)
         LOGGER.info(

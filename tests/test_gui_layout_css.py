@@ -795,6 +795,9 @@ def test_auto_ocr_setting_defaults_on_and_is_wired():
     assert 'fd.append("access_check", opts.access_check ? "true" : "false");' in html
     assert "access_check: opts.access_check," in html
     assert "function _folderAccessHtml(file)" in html
+    assert "function _folderSharePointAccessHtml(file)" in html
+    assert "graph_drive_id: opts.graph_drive_id" in html
+    assert "graph_sync_root: opts.graph_sync_root" in html
     assert '${_sortButton("access", t("folderAccess"))}' in html
     assert html.count("folderAccess:") == 6
     assert html.count("folderAccessBroad:") == 6
@@ -802,6 +805,7 @@ def test_auto_ocr_setting_defaults_on_and_is_wired():
     assert html.count("folderAccessRestricted:") == 6
     assert html.count("folderAccessUnavailable:") == 6
     assert html.count("folderAccessNotChecked:") == 6
+    assert html.count("folderSharePointAccess:") == 6
     assert html.count("accessCheckLabel:") == 6
     assert html.count("accessCheckNote:") == 6
     assert "function _maybeRunAutoOcr(r, ext)" in html

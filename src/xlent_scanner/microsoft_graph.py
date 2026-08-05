@@ -162,6 +162,28 @@ def _relative_to_any_root(local_path: Path, roots: list[Path]) -> tuple[Path, Pa
     raise GraphConfigError(f"Lokal fil er ikke under konfigurert sync-root. Fil: {resolved}. Sync-root: {root_text}.")
 
 
+def detect_cloud_sync_context(
+    local_path: str | Path,
+    sync_root: str | None = None,
+) -> dict[str, Any] | None:
+    """Finn Microsoft 365-synkkontekst uten å lese filinnhold eller kontakte Graph."""
+    roots = configured_sync_roots(sync_root)
+    if not roots:
+        return None
+    try:
+        root, rel = _relative_to_any_root(Path(local_path), roots)
+    except GraphConfigError:
+        return None
+    relative_path = "/".join(rel.parts)
+    first_part = rel.parts[0].casefold() if rel.parts else ""
+    return {
+        "provider": "microsoft_365",
+        "sync_root": str(root),
+        "relative_path": relative_path,
+        "shortcut_candidate": first_part in {"shortcuts", "snarveier"},
+    }
+
+
 def resolve_local_drive_item(
     local_path: str | Path,
     drive_id: str | None = None,
@@ -181,18 +203,159 @@ def resolve_local_drive_item(
         raise GraphConfigError("Lokal sti peker på sync-root, ikke en fil under sync-root.")
     item = _graph_request(
         "GET",
-        _drive_root_path(drive, item_path, "?$select=id,name,webUrl,parentReference,sharepointIds"),
+        _drive_root_path(drive, item_path, "?$select=id,name,webUrl,parentReference,sharepointIds,remoteItem"),
     )
-    item_id = str(item.get("id") or "").strip()
+    remote = item.get("remoteItem") if isinstance(item.get("remoteItem"), dict) else {}
+    remote_parent = remote.get("parentReference") if isinstance(remote.get("parentReference"), dict) else {}
+    effective_drive = str(remote_parent.get("driveId") or drive).strip()
+    item_id = str(remote.get("id") or item.get("id") or "").strip()
     if not item_id:
         raise GraphRequestError("GET", _graph_url(_drive_root_path(drive, item_path)), 404, "Graph-respons manglet item id.")
     return {
-        "drive_id": drive,
+        "drive_id": effective_drive,
         "item_id": item_id,
+        "source_drive_id": drive,
+        "shortcut_resolved": bool(remote),
         "sync_root": str(root),
         "relative_path": item_path,
         "item": item,
     }
+
+
+def read_drive_item_permissions(drive_id: str, item_id: str) -> dict[str, Any]:
+    """Les alle tilgjengelige tillatelsessider for et driveItem."""
+    path = _drive_item_path(drive_id, item_id, "/permissions")
+    values: list[dict[str, Any]] = []
+    pages = 0
+    while path and pages < 20:
+        page = _graph_request("GET", path)
+        values.extend(value for value in page.get("value", []) if isinstance(value, dict))
+        path = str(page.get("@odata.nextLink") or "")
+        pages += 1
+    return {"value": values, "pages": pages}
+
+
+def _permission_identity(permission: dict[str, Any]) -> tuple[str, str] | None:
+    containers: list[dict[str, Any]] = []
+    for key in ("grantedToV2", "grantedTo"):
+        value = permission.get(key)
+        if isinstance(value, dict):
+            containers.append(value)
+    for key in ("grantedToIdentitiesV2", "grantedToIdentities"):
+        value = permission.get(key)
+        if isinstance(value, list):
+            containers.extend(item for item in value if isinstance(item, dict))
+    invitation = permission.get("invitation")
+    if isinstance(invitation, dict) and invitation.get("email"):
+        return "person", str(invitation["email"])
+    for container in containers:
+        for kind in ("user", "group", "siteUser", "siteGroup", "application"):
+            identity = container.get(kind)
+            if not isinstance(identity, dict):
+                continue
+            name = str(identity.get("displayName") or identity.get("email") or identity.get("id") or "").strip()
+            if name:
+                return ("group" if "group" in kind.casefold() else "person"), name
+    return None
+
+
+def summarise_sharepoint_permissions(payload: dict[str, Any]) -> dict[str, Any]:
+    """Normaliser Graph permissions til en liten, stabil rapportmodell."""
+    permissions = [value for value in payload.get("value", []) if isinstance(value, dict)]
+    entries: list[dict[str, Any]] = []
+    people: set[str] = set()
+    groups: set[str] = set()
+    public_link = False
+    organization_access = False
+    for permission in permissions:
+        link = permission.get("link") if isinstance(permission.get("link"), dict) else {}
+        link_scope = str(link.get("scope") or "").casefold()
+        public_link = public_link or link_scope == "anonymous"
+        organization_access = organization_access or link_scope == "organization"
+        identity = _permission_identity(permission)
+        if identity:
+            (groups if identity[0] == "group" else people).add(identity[1])
+        entries.append({
+            "id": str(permission.get("id") or ""),
+            "roles": [str(role) for role in permission.get("roles", [])],
+            "link_scope": link_scope,
+            "identity_type": identity[0] if identity else "",
+            "identity": identity[1] if identity else "",
+            "inherited": isinstance(permission.get("inheritedFrom"), dict),
+        })
+    level = (
+        "public" if public_link else
+        "organization" if organization_access else
+        "group" if groups else
+        "specific" if people else
+        "restricted"
+    )
+    inherited = sum(1 for entry in entries if entry["inherited"])
+    return {
+        "available": True,
+        "ok": True,
+        "source": "sharepoint_graph",
+        "access_level": level,
+        "public_link": public_link,
+        "organization_access": organization_access,
+        "group_identities": sorted(groups),
+        "person_identities": sorted(people),
+        "entries_total": len(entries),
+        "direct_entries": len(entries) - inherited,
+        "inherited_entries": inherited,
+        "entries": entries[:30],
+        "truncated": len(entries) > 30,
+        "person_count_estimate": None,
+        "person_count_note": (
+            "Ikke beregnet: SharePoint-grupper er ikke ekspandert. Graph kan dessuten vise "
+            "bare tillatelser som gjelder innlogget bruker dersom brukeren ikke er eier."
+        ),
+    }
+
+
+def sharepoint_access_for_local_path(
+    local_path: str | Path,
+    drive_id: str | None = None,
+    sync_root: str | None = None,
+    cache: dict[str, dict[str, Any] | None] | None = None,
+) -> dict[str, Any] | None:
+    """Returner SharePoint-tilgang for en synkronisert sti, ellers ``None``."""
+    context = detect_cloud_sync_context(local_path, sync_root=sync_root)
+    if context is None:
+        return None
+    cache_key = f"{context['sync_root']}|{context['relative_path']}|{drive_id or ''}".casefold()
+    if cache is not None and cache_key in cache:
+        return cache[cache_key]
+    try:
+        token = graph_token()
+        drive = configured_drive_id(drive_id)
+        del token
+        resolved = resolve_local_drive_item(local_path, drive_id=drive, sync_root=context["sync_root"])
+        summary = summarise_sharepoint_permissions(
+            read_drive_item_permissions(resolved["drive_id"], resolved["item_id"])
+        )
+        summary.update({
+            "scope": "sharepoint_item",
+            "scope_path": context["relative_path"],
+            "sync_root": context["sync_root"],
+            "shortcut_resolved": resolved["shortcut_resolved"],
+            "web_url": str((resolved.get("item") or {}).get("webUrl") or ""),
+        })
+    except (GraphConfigError, GraphRequestError, OSError, ValueError) as exc:
+        summary = {
+            "available": False,
+            "ok": False,
+            "source": "sharepoint_graph",
+            "access_level": "not_checked",
+            "reason": f"SharePoint-tilgang er ikke kontrollert: {exc}",
+            "scope": "sharepoint_item",
+            "scope_path": context["relative_path"],
+            "sync_root": context["sync_root"],
+            "shortcut_candidate": context["shortcut_candidate"],
+        }
+    if cache is not None:
+        cache[cache_key] = summary
+    return summary
 
 
 def read_document_tags_for_local_path(

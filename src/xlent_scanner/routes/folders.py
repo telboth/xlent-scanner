@@ -24,6 +24,7 @@ from xlent_scanner.anonymize import build_replacements
 from xlent_scanner.app_state import app_state
 from xlent_scanner.history import add_history_entry
 from xlent_scanner.models import ScanResult
+from xlent_scanner.microsoft_graph import sharepoint_access_for_local_path
 from xlent_scanner.patch import SUPPORTED_PATCH_SUFFIXES
 from xlent_scanner.report import generate_html
 from xlent_scanner.routes.reports import write_text_pdf
@@ -132,6 +133,7 @@ def folder_result_row(result: ScanResult, report_id: str | None = None) -> dict:
         "warning": result.warning,
         "warning_code": result.warning_code,
         "access_summary": result.access_summary,
+        "sharepoint_access_summary": result.sharepoint_access_summary,
     }
 
 
@@ -184,6 +186,7 @@ def _folder_export_rows(job: dict) -> list[dict]:
     rows = []
     for row in job.get("files", []):
         access = row.get("access_summary") or {}
+        sharepoint = row.get("sharepoint_access_summary") or {}
         access_level = access.get("access_level", "")
         access_status = {
             "broad": "Bred tilgang",
@@ -206,6 +209,19 @@ def _folder_export_rows(job: dict) -> list[dict]:
             "access_entries": access.get("entries_total", ""),
             "access_broad": ", ".join(access.get("broad_identities", []) or []),
             "access_shared": ", ".join(access.get("shared_identities", []) or []),
+            "sharepoint_access_level": sharepoint.get("access_level", ""),
+            "sharepoint_access_status": {
+                "public": "Offentlig lenke",
+                "organization": "Hele organisasjonen",
+                "group": "Delt med gruppe",
+                "specific": "Bestemte personer",
+                "restricted": "Begrenset",
+                "not_checked": "Ikke kontrollert",
+            }.get(sharepoint.get("access_level", ""), "Ikke relevant" if not sharepoint else "Ukjent"),
+            "sharepoint_identities": ", ".join(
+                (sharepoint.get("group_identities", []) or []) +
+                (sharepoint.get("person_identities", []) or [])
+            ),
             "top_findings": "; ".join(
                 f"{finding.get('category', '')}: {finding.get('text', '')}"
                 for finding in (row.get("findings_summary") or [])
@@ -231,6 +247,9 @@ def _folder_audit_html(job_id: str, job: dict) -> str:
             f"<td>{html.escape(str(row['access_status']))}"
             f"{': ' if row['access_broad'] or row['access_shared'] else ''}"
             f"{html.escape(str(row['access_broad'] or row['access_shared']))}</td>"
+            f"<td>{html.escape(str(row['sharepoint_access_status']))}"
+            f"{': ' if row['sharepoint_identities'] else ''}"
+            f"{html.escape(str(row['sharepoint_identities']))}</td>"
             f"<td>{html.escape(str(row['top_findings']))}</td>"
             f"<td>{html.escape(str(row['error']))}</td>"
             "</tr>"
@@ -259,7 +278,7 @@ def _folder_audit_html(job_id: str, job: dict) -> str:
     <div>Status: {html.escape(str(job.get("status", "")))}</div>
   </div>
   <table>
-    <thead><tr><th>Fil</th><th>Risiko</th><th>Funn</th><th>Tilgang</th><th>Toppfunn</th><th>Feil</th></tr></thead>
+    <thead><tr><th>Fil</th><th>Risiko</th><th>Funn</th><th>Lokal tilgang</th><th>SharePoint-tilgang</th><th>Toppfunn</th><th>Feil</th></tr></thead>
     <tbody>{''.join(table_rows)}</tbody>
   </table>
 </body>
@@ -275,6 +294,8 @@ def _run_folder_scan_job(
     pdf_mode: str,
     categories: list[str] | None,
     include_access_check: bool,
+    graph_drive_id: str,
+    graph_sync_root: str,
     opts: dict,
 ) -> None:
     try:
@@ -291,6 +312,7 @@ def _run_folder_scan_job(
         })
         root = Path(folder_path)
         access_cache: dict[str, dict] = {}
+        sharepoint_cache: dict[str, dict | None] = {}
         for file_path in plan["files"]:
             with app_state.folder_job_manager.mutate(job_id) as job:
                 if job is None or job.get("cancel_requested"):
@@ -313,6 +335,25 @@ def _run_folder_scan_job(
                 result = _scan_file(file_path, ignore_xlent=ignore_xlent, language=language)
             if include_access_check:
                 result.access_summary = audit_containing_folder_access(file_path, access_cache)
+                result.sharepoint_access_summary = sharepoint_access_for_local_path(
+                    Path(file_path).parent,
+                    drive_id=graph_drive_id or None,
+                    sync_root=graph_sync_root or None,
+                    cache=sharepoint_cache,
+                )
+                if result.sharepoint_access_summary is not None:
+                    result.sharepoint_access_summary = {
+                        **result.sharepoint_access_summary,
+                        "scope": "containing_folder",
+                        "scope_note": "Gjelder inneholdende SharePoint-mappe; unike filtillatelser er ikke kontrollert.",
+                    }
+                    result.access_summary = {
+                        **result.access_summary,
+                        "scope_note": (
+                            result.access_summary.get("scope_note", "") +
+                            " Dette er rettighetene til den lokale synkroniserte kopien, ikke SharePoint."
+                        ).strip(),
+                    }
             result.relative_path = str(Path(file_path).relative_to(root))
             result.source_path = str(file_path)
             row = folder_result_row(result)
@@ -378,6 +419,8 @@ def scan_folder_endpoint():
         pdf_mode = data.get("scan_mode", data.get("pdf_mode", "auto"))
         categories = data.get("categories") if isinstance(data.get("categories"), list) else None
         include_access_check = _request_bool(data, "access_check", _request_bool(data, "include_access_check", False))
+        graph_drive_id = str(data.get("graph_drive_id") or data.get("drive_id") or "").strip()
+        graph_sync_root = str(data.get("graph_sync_root") or data.get("sync_root") or "").strip()
         opts = _folder_scan_options(data)
         plan = build_folder_scan_plan(folder_path, **opts)
         results = _scan_folder(
@@ -388,6 +431,8 @@ def scan_folder_endpoint():
             pdf_mode=pdf_mode,
             categories=categories,
             include_access_check=include_access_check,
+            graph_drive_id=graph_drive_id or None,
+            graph_sync_root=graph_sync_root or None,
             **opts,
         )
         summary = []
@@ -425,6 +470,8 @@ def scan_folder_start_endpoint():
         pdf_mode = data.get("scan_mode", data.get("pdf_mode", "auto"))
         categories = data.get("categories") if isinstance(data.get("categories"), list) else None
         include_access_check = _request_bool(data, "access_check", _request_bool(data, "include_access_check", False))
+        graph_drive_id = str(data.get("graph_drive_id") or data.get("drive_id") or "").strip()
+        graph_sync_root = str(data.get("graph_sync_root") or data.get("sync_root") or "").strip()
         opts = _folder_scan_options(data)
         job_id = app_state.folder_job_manager.create({
             "status": "queued",
@@ -442,7 +489,7 @@ def scan_folder_start_endpoint():
         })
         threading.Thread(
             target=_run_folder_scan_job,
-            args=(job_id, folder_path, ignore_xlent, language, scan_profile, pdf_mode, categories, include_access_check, opts),
+            args=(job_id, folder_path, ignore_xlent, language, scan_profile, pdf_mode, categories, include_access_check, graph_drive_id, graph_sync_root, opts),
             daemon=True,
             name=f"folder-scan-{job_id[:8]}",
         ).start()
@@ -505,7 +552,8 @@ def folder_export_csv_endpoint():
         buf = io.StringIO()
         fieldnames = [
             "relative_path", "risk_level", "scan_status", "finding_count",
-            "file_size", "text_length", "error", "warning", "top_findings",
+            "file_size", "text_length", "access_status", "sharepoint_access_status",
+            "sharepoint_identities", "error", "warning", "top_findings",
         ]
         writer = csv.DictWriter(buf, fieldnames=fieldnames, extrasaction="ignore")
         writer.writeheader()
@@ -548,7 +596,8 @@ def folder_audit_pdf_endpoint():
         for row in _folder_export_rows(job):
             lines.append(
                 f"{row['risk_level'].upper()} | {row['relative_path']} | "
-                f"{row['finding_count']} funn | {row['top_findings']}"
+                f"{row['finding_count']} funn | Lokal tilgang: {row['access_status']} | "
+                f"SharePoint: {row['sharepoint_access_status']} | {row['top_findings']}"
             )
             if row["error"]:
                 lines.append(f"  Feil: {row['error']}")

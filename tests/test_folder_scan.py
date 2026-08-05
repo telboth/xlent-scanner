@@ -184,6 +184,7 @@ def test_scan_folder_start_endpoint_tracks_background_progress(monkeypatch, tmp_
 def test_scan_folder_start_includes_requested_access_check(monkeypatch, tmp_path: Path):
     _write(tmp_path / "root.txt")
     observed_access_flags = []
+    observed_sharepoint = []
 
     def fake_scan_file(path, **kwargs):
         observed_access_flags.append(kwargs.get("include_access_check"))
@@ -205,13 +206,27 @@ def test_scan_folder_start_includes_requested_access_check(monkeypatch, tmp_path
             "entries": [{"identity": "Everyone", "rights": "RX"}],
         },
     )
+    monkeypatch.setattr(
+        folder_routes,
+        "sharepoint_access_for_local_path",
+        lambda path, **kwargs: observed_sharepoint.append(kwargs) or {
+            "available": False,
+            "source": "sharepoint_graph",
+            "access_level": "not_checked",
+        },
+    )
     with app_module.app_state.folder_jobs_lock:
         app_module.app_state.folder_jobs.clear()
     client = app_module.flask_app.test_client()
 
     started = client.post(
         "/scan-folder/start",
-        json={"folder_path": str(tmp_path), "access_check": True},
+        json={
+            "folder_path": str(tmp_path),
+            "access_check": True,
+            "graph_drive_id": "drive-id",
+            "graph_sync_root": str(tmp_path),
+        },
     ).get_json()
 
     job_id = started["job_id"]
@@ -223,7 +238,10 @@ def test_scan_folder_start_includes_requested_access_check(monkeypatch, tmp_path
         time.sleep(0.05)
 
     assert observed_access_flags == [False]
+    assert observed_sharepoint[0]["drive_id"] == "drive-id"
+    assert observed_sharepoint[0]["sync_root"] == str(tmp_path)
     assert status["files"][0]["access_summary"]["broad_identities"] == ["Everyone"]
+    assert status["files"][0]["sharepoint_access_summary"]["access_level"] == "not_checked"
 
 
 def test_folder_export_and_audit_endpoints_write_files(monkeypatch, tmp_path: Path):

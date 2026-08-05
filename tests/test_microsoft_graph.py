@@ -6,6 +6,93 @@ from xlent_scanner.routes import microsoft as microsoft_routes
 from xlent_scanner.models import Finding, ScanResult
 
 
+def test_detect_cloud_sync_context_recognises_onedrive_shortcut(tmp_path):
+    sync_root = tmp_path / "OneDrive - XLENT"
+    local_folder = sync_root / "Shortcuts" / "XCG AI Report" / "Report development"
+    local_folder.mkdir(parents=True)
+
+    context = graph.detect_cloud_sync_context(local_folder, sync_root=str(sync_root))
+
+    assert context is not None
+    assert context["provider"] == "microsoft_365"
+    assert context["relative_path"] == "Shortcuts/XCG AI Report/Report development"
+    assert context["shortcut_candidate"] is True
+
+
+def test_resolve_local_drive_item_follows_remote_item_for_shortcut(monkeypatch, tmp_path):
+    sync_root = tmp_path / "OneDrive - XLENT"
+    local_file = sync_root / "Shortcuts" / "Team" / "doc.docx"
+    local_file.parent.mkdir(parents=True)
+    local_file.write_text("x", encoding="utf-8")
+
+    monkeypatch.setattr(
+        graph,
+        "_graph_request",
+        lambda *args, **kwargs: {
+            "id": "shortcut-item",
+            "name": "doc.docx",
+            "remoteItem": {
+                "id": "sharepoint-item",
+                "parentReference": {"driveId": "sharepoint-drive"},
+                "webUrl": "https://tenant.sharepoint.com/doc.docx",
+            },
+        },
+    )
+
+    resolved = graph.resolve_local_drive_item(local_file, drive_id="onedrive", sync_root=str(sync_root))
+
+    assert resolved["drive_id"] == "sharepoint-drive"
+    assert resolved["item_id"] == "sharepoint-item"
+    assert resolved["shortcut_resolved"] is True
+    assert resolved["source_drive_id"] == "onedrive"
+
+
+def test_summarise_sharepoint_permissions_distinguishes_cloud_scopes():
+    summary = graph.summarise_sharepoint_permissions({
+        "value": [
+            {"id": "public", "roles": ["read"], "link": {"scope": "anonymous"}},
+            {"id": "org", "roles": ["read"], "link": {"scope": "organization"}},
+            {
+                "id": "group",
+                "roles": ["write"],
+                "grantedToV2": {"group": {"displayName": "Prosjektgruppen", "id": "g1"}},
+                "inheritedFrom": {"id": "parent"},
+            },
+            {
+                "id": "person",
+                "roles": ["read"],
+                "grantedToV2": {"user": {"displayName": "Ola Nordmann", "id": "u1"}},
+            },
+        ]
+    })
+
+    assert summary["available"] is True
+    assert summary["access_level"] == "public"
+    assert summary["public_link"] is True
+    assert summary["organization_access"] is True
+    assert summary["group_identities"] == ["Prosjektgruppen"]
+    assert summary["person_identities"] == ["Ola Nordmann"]
+    assert summary["direct_entries"] == 3
+    assert summary["inherited_entries"] == 1
+    assert summary["person_count_estimate"] is None
+
+
+def test_sharepoint_access_reports_not_checked_for_synced_path_without_config(monkeypatch, tmp_path):
+    sync_root = tmp_path / "OneDrive - XLENT"
+    local_folder = sync_root / "Team"
+    local_folder.mkdir(parents=True)
+    for name in (*graph.TOKEN_ENV_NAMES, *graph.DRIVE_ID_ENV_NAMES):
+        monkeypatch.delenv(name, raising=False)
+
+    summary = graph.sharepoint_access_for_local_path(local_folder, sync_root=str(sync_root))
+
+    assert summary is not None
+    assert summary["available"] is False
+    assert summary["source"] == "sharepoint_graph"
+    assert summary["access_level"] == "not_checked"
+    assert "ikke kontrollert" in summary["reason"].casefold()
+
+
 def test_read_document_tags_extracts_labels_and_red_policy_warning(monkeypatch):
     calls: list[tuple[str, str, dict | None]] = []
 

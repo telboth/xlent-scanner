@@ -39,6 +39,7 @@ from xlent_scanner.detectors.regex_sv import detect_sv_specific
 from xlent_scanner.detectors.regex_url import detect_urls
 from xlent_scanner.detectors.secrets import detect_secrets
 from xlent_scanner.access_audit import audit_containing_folder_access, audit_path_access
+from xlent_scanner.microsoft_graph import sharepoint_access_for_local_path
 from xlent_scanner.ignore import filter_findings, load_ignore_list
 from xlent_scanner.language import resolve_language
 from xlent_scanner.models import Finding, ScanResult  # noqa: F401
@@ -866,6 +867,8 @@ def scan_folder(
     categories: Iterable[str] | None = None,
     pdf_mode: str = "fast",
     include_access_check: bool = False,
+    graph_drive_id: str | None = None,
+    graph_sync_root: str | None = None,
 ) -> list[ScanResult]:
     """Skann alle støttede filer i en mappe. Returnerer resultater sortert etter risikonivå."""
     plan = build_folder_scan_plan(
@@ -877,6 +880,7 @@ def scan_folder(
     root = Path(folder)
     results = []
     access_cache: dict[str, dict] = {}
+    sharepoint_cache: dict[str, dict | None] = {}
     for f in plan["files"]:
         try:
             result = scan_file(
@@ -894,6 +898,28 @@ def scan_folder(
             result = scan_file(f, ignore_xlent=ignore_xlent, language=language)
         if include_access_check:
             result.access_summary = audit_containing_folder_access(f, access_cache)
+            result.sharepoint_access_summary = sharepoint_access_for_local_path(
+                Path(f).parent,
+                drive_id=graph_drive_id,
+                sync_root=graph_sync_root,
+                cache=sharepoint_cache,
+            )
+            if result.sharepoint_access_summary is not None:
+                result.sharepoint_access_summary = {
+                    **result.sharepoint_access_summary,
+                    "scope": "containing_folder",
+                    "scope_note": (
+                        "Mappeskann: SharePoint-vurderingen gjelder filens inneholdende mappe. "
+                        "Unike tillatelser på selve filen er ikke kontrollert."
+                    ),
+                }
+                result.access_summary = {
+                    **result.access_summary,
+                    "scope_note": (
+                        result.access_summary.get("scope_note", "") +
+                        " Dette er rettighetene til den lokale synkroniserte kopien, ikke SharePoint."
+                    ).strip(),
+                }
         result.relative_path = str(Path(f).relative_to(root))
         result.source_path = str(f)
         results.append(result)
@@ -911,6 +937,8 @@ def scan_file(
     categories: Iterable[str] | None = None,
     pdf_mode: str = "fast",
     include_access_check: bool = False,
+    graph_drive_id: str | None = None,
+    graph_sync_root: str | None = None,
 ) -> ScanResult:
     total_t0 = time.perf_counter()
     p = Path(path)
@@ -1011,6 +1039,18 @@ def scan_file(
         )
         detector_seconds = round(time.perf_counter() - detector_t0, 4)
 
+    local_access = audit_path_access(p) if include_access_check else None
+    sharepoint_access = (
+        sharepoint_access_for_local_path(p, drive_id=graph_drive_id, sync_root=graph_sync_root)
+        if include_access_check else None
+    )
+    if local_access is not None and sharepoint_access is not None:
+        local_access = {
+            **local_access,
+            "scope": "local_copy",
+            "scope_note": "Dette er rettighetene til den lokale synkroniserte kopien, ikke SharePoint.",
+        }
+
     result = ScanResult(
         file_name=p.name,
         file_size=p.stat().st_size,
@@ -1038,6 +1078,7 @@ def scan_file(
             "scan_strategy": extraction_metadata.get("scan_strategy", ""),
             "scan_strategy_reason": extraction_metadata.get("scan_strategy_reason", ""),
         },
-        access_summary=audit_path_access(p) if include_access_check else None,
+        access_summary=local_access,
+        sharepoint_access_summary=sharepoint_access,
     )
     return assess(result)

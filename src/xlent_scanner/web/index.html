@@ -1603,9 +1603,9 @@
         <div class="settings-note" data-i18n="autoOcrNote">Når en PDF eller bildefil mangler maskinlesbar tekst, starter OCR automatisk.</div>
         <div class="settings-row" style="margin-top:12px;">
           <input type="checkbox" id="access-check" checked />
-          <label for="access-check" data-i18n="accessCheckLabel">Ta med lokal tilgangssjekk i rapporter</label>
+          <label for="access-check" data-i18n="accessCheckLabel">Ta med tilgangssjekk i rapporter</label>
         </div>
-        <div class="settings-note" data-i18n="accessCheckNote">På som standard. Viser lokale filrettigheter/ACL-er, men beregner ikke nøyaktig antall personer fordi grupper ikke ekspanderes. For opplastede filer er original tilgang ikke tilgjengelig; bruk mappeskanning.</div>
+        <div class="settings-note" data-i18n="accessCheckNote">På som standard. Viser lokal tilgang separat fra SharePoint-tilgang. SharePoint krever Graph-token, Drive ID og sync-root. Grupper ekspanderes ikke til et nøyaktig personantall.</div>
       </details>
 
       <!-- API docs -->
@@ -1950,8 +1950,8 @@
         stripAnnotationsNote: "Gjelder støttede originalformater: DOCX-kommentarer, PPTX speaker notes/kommentarer, XLSX-kommentarer og PDF-annotasjoner.",
         autoOcrLabel: "Kjør automatisk OCR på skannede dokumenter og bildefiler",
         autoOcrNote: "Når en PDF eller bildefil mangler maskinlesbar tekst, starter OCR automatisk.",
-        accessCheckLabel: "Ta med lokal tilgangssjekk i rapporter",
-        accessCheckNote: "På som standard. Viser lokale filrettigheter/ACL-er, men beregner ikke nøyaktig antall personer fordi grupper ikke ekspanderes. For opplastede filer er original tilgang ikke tilgjengelig; bruk mappeskanning.",
+        accessCheckLabel: "Ta med tilgangssjekk i rapporter",
+        accessCheckNote: "På som standard. Viser lokal tilgang separat fra SharePoint-tilgang. SharePoint krever Graph-token, Drive ID og sync-root. Grupper ekspanderes ikke til et nøyaktig personantall.",
         settingsFilterTitle: "Filtrering",
         settingsWhitelistTitle: "Hviteliste",
         whitelistPersonalNote: "Denne hvitelisten er personlig og bygges opp av den enkelte bruker.",
@@ -2197,7 +2197,13 @@
         confidenceLow:      "Lav (alle funn)",
         folderLevel:        "Nivå",
         folderFile:         "Fil",
-        folderAccess:       "Tilgang",
+        folderAccess:       "Lokal tilgang",
+        folderSharePointAccess:"SharePoint-tilgang",
+        folderSharePointPublic:"Offentlig lenke",
+        folderSharePointOrganization:"Hele organisasjonen",
+        folderSharePointGroup:"Delt med gruppe",
+        folderSharePointSpecific:"Bestemte personer",
+        folderSharePointNotRelevant:"Ikke relevant",
         folderAccessBroad:  "Bred tilgang",
         folderAccessSharedLocal:"Delt lokalt",
         folderAccessRestricted:"Begrenset",
@@ -2397,8 +2403,8 @@
         stripAnnotationsNote: "Gäller stödda originalformat: DOCX-kommentarer, PPTX speaker notes/kommentarer, XLSX-kommentarer och PDF-annoteringar.",
         autoOcrLabel: "Kör OCR automatiskt på skannade dokument och bildfiler",
         autoOcrNote: "När en PDF eller bildfil saknar maskinläsbar text startar OCR automatiskt.",
-        accessCheckLabel: "Ta med lokal åtkomstkontroll i rapporter",
-        accessCheckNote: "På som standard. Visar lokala filrättigheter/ACL:er, men beräknar inte exakt antal personer eftersom grupper inte expanderas. För uppladdade filer är originalets åtkomst inte tillgänglig; använd mappskanning.",
+        accessCheckLabel: "Ta med åtkomstkontroll i rapporter",
+        accessCheckNote: "På som standard. Visar lokal åtkomst separat från SharePoint-åtkomst. SharePoint kräver Graph-token, Drive ID och synkroniseringsrot. Grupper expanderas inte till ett exakt personantal.",
         settingsFilterTitle: "Filtrering",
         settingsWhitelistTitle: "Vitlista",
         whitelistPersonalNote: "Denna vitlista är personlig och byggs upp av varje enskild användare.",
@@ -2634,7 +2640,13 @@
         confidenceLow:      "Låg (alla fynd)",
         folderLevel:        "Nivå",
         folderFile:         "Fil",
-        folderAccess:       "Åtkomst",
+        folderAccess:       "Lokal åtkomst",
+        folderSharePointAccess:"SharePoint-åtkomst",
+        folderSharePointPublic:"Offentlig länk",
+        folderSharePointOrganization:"Hela organisationen",
+        folderSharePointGroup:"Delad med grupp",
+        folderSharePointSpecific:"Bestämda personer",
+        folderSharePointNotRelevant:"Inte relevant",
         folderAccessBroad:  "Bred åtkomst",
         folderAccessSharedLocal:"Delad lokalt",
         folderAccessRestricted:"Begränsad",
@@ -2834,8 +2846,8 @@
         stripAnnotationsNote: "Applies to supported original formats: DOCX comments, PPTX speaker notes/comments, XLSX comments and PDF annotations.",
         autoOcrLabel: "Run OCR automatically on scanned documents and image files",
         autoOcrNote: "When a PDF or image file has no machine-readable text, OCR starts automatically.",
-        accessCheckLabel: "Include local access check in reports",
-        accessCheckNote: "On by default. Shows local file permissions/ACLs, but does not calculate exact person counts because groups are not expanded. Original permissions are unavailable for uploaded files; use folder scanning.",
+        accessCheckLabel: "Include access check in reports",
+        accessCheckNote: "On by default. Shows local access separately from SharePoint access. SharePoint requires a Graph token, Drive ID and sync root. Groups are not expanded into an exact person count.",
         settingsFilterTitle: "Filtering",
         settingsWhitelistTitle: "Whitelist",
         whitelistPersonalNote: "This whitelist is personal and built by each individual user.",
@@ -3076,7 +3088,13 @@
         confidenceLow:      "Low (all findings)",
         folderLevel:        "Level",
         folderFile:         "File",
-        folderAccess:       "Access",
+        folderAccess:       "Local access",
+        folderSharePointAccess:"SharePoint access",
+        folderSharePointPublic:"Public link",
+        folderSharePointOrganization:"Entire organization",
+        folderSharePointGroup:"Shared with group",
+        folderSharePointSpecific:"Specific people",
+        folderSharePointNotRelevant:"Not applicable",
         folderAccessBroad:  "Broad access",
         folderAccessSharedLocal:"Shared locally",
         folderAccessRestricted:"Restricted",
@@ -3268,8 +3286,8 @@
         stripAnnotationsNote: "Gilt für unterstützte Originalformate: DOCX-Kommentare, PPTX-Sprechernotizen/Kommentare, XLSX-Kommentare und PDF-Anmerkungen.",
         autoOcrLabel: "OCR für gescannte Dokumente und Bilddateien automatisch ausführen",
         autoOcrNote: "Wenn eine PDF- oder Bilddatei keinen maschinenlesbaren Text enthält, startet OCR automatisch.",
-        accessCheckLabel: "Lokale Zugriffsprüfung in Berichte aufnehmen",
-        accessCheckNote: "Standardmäßig aktiviert. Zeigt lokale Dateiberechtigungen/ACLs, berechnet aber keine genaue Personenzahl, da Gruppen nicht expandiert werden. Bei hochgeladenen Dateien sind die ursprünglichen Rechte nicht verfügbar; verwenden Sie den Ordnerscan.",
+        accessCheckLabel: "Zugriffsprüfung in Berichte aufnehmen",
+        accessCheckNote: "Standardmäßig aktiviert. Zeigt lokalen und SharePoint-Zugriff getrennt. SharePoint benötigt Graph-Token, Drive ID und Synchronisierungsstamm. Gruppen werden nicht zu einer exakten Personenzahl erweitert.",
         ignoreXlent:         "Interne Begriffe filtern",
         ignoreHint:          "Domainnamen, interne E-Mails und Namen werden herausgefiltert.",
         settingsWhitelistTitle:"Whitelist",
@@ -3555,7 +3573,13 @@
         metaLang:            "Sprache",
         folderFile:          "Datei",
         folderLevel:         "Risikostufe",
-        folderAccess:        "Zugriff",
+        folderAccess:        "Lokaler Zugriff",
+        folderSharePointAccess:"SharePoint-Zugriff",
+        folderSharePointPublic:"Öffentlicher Link",
+        folderSharePointOrganization:"Gesamte Organisation",
+        folderSharePointGroup:"Mit Gruppe geteilt",
+        folderSharePointSpecific:"Bestimmte Personen",
+        folderSharePointNotRelevant:"Nicht relevant",
         folderAccessBroad:   "Breiter Zugriff",
         folderAccessSharedLocal: "Lokal geteilt",
         folderAccessRestricted: "Eingeschränkt",
@@ -3720,8 +3744,8 @@
         stripAnnotationsNote: "S’applique aux formats originaux pris en charge : commentaires DOCX, notes/commentaires PPTX, commentaires XLSX et annotations PDF.",
         autoOcrLabel: "Lancer automatiquement l’OCR sur les documents scannés et fichiers image",
         autoOcrNote: "Lorsqu’un PDF ou fichier image ne contient pas de texte lisible par machine, l’OCR démarre automatiquement.",
-        accessCheckLabel: "Inclure la vérification locale des accès dans les rapports",
-        accessCheckNote: "Activé par défaut. Affiche les droits/ACL locaux, mais ne calcule pas le nombre exact de personnes car les groupes ne sont pas développés. Les droits d’origine ne sont pas disponibles pour les fichiers téléversés; utilisez l’analyse de dossier.",
+        accessCheckLabel: "Inclure la vérification des accès dans les rapports",
+        accessCheckNote: "Activé par défaut. Affiche séparément l’accès local et SharePoint. SharePoint nécessite un jeton Graph, un Drive ID et une racine de synchronisation. Les groupes ne sont pas développés en nombre exact de personnes.",
         ignoreXlent:         "Filtrer les termes internes",
         ignoreHint:          "Les noms de domaine, e-mails internes et noms sont filtrés.",
         settingsWhitelistTitle:"Liste blanche",
@@ -4007,7 +4031,13 @@
         metaLang:            "Langue",
         folderFile:          "Fichier",
         folderLevel:         "Niveau de risque",
-        folderAccess:        "Accès",
+        folderAccess:        "Accès local",
+        folderSharePointAccess:"Accès SharePoint",
+        folderSharePointPublic:"Lien public",
+        folderSharePointOrganization:"Toute l’organisation",
+        folderSharePointGroup:"Partagé avec un groupe",
+        folderSharePointSpecific:"Personnes spécifiques",
+        folderSharePointNotRelevant:"Sans objet",
         folderAccessBroad:   "Accès étendu",
         folderAccessSharedLocal: "Partagé localement",
         folderAccessRestricted: "Restreint",
@@ -4172,8 +4202,8 @@
         stripAnnotationsNote: "Se aplica a formatos originales compatibles: comentarios DOCX, notas/comentarios PPTX, comentarios XLSX y anotaciones PDF.",
         autoOcrLabel: "Ejecutar OCR automáticamente en documentos escaneados y archivos de imagen",
         autoOcrNote: "Cuando un PDF o archivo de imagen no tiene texto legible por máquina, OCR se inicia automáticamente.",
-        accessCheckLabel: "Incluir comprobación local de acceso en los informes",
-        accessCheckNote: "Activado por defecto. Muestra permisos/ACL locales, pero no calcula el número exacto de personas porque los grupos no se expanden. Los permisos originales no están disponibles para archivos subidos; use el escaneo de carpetas.",
+        accessCheckLabel: "Incluir comprobación de acceso en los informes",
+        accessCheckNote: "Activado por defecto. Muestra por separado el acceso local y el de SharePoint. SharePoint requiere token de Graph, Drive ID y raíz de sincronización. Los grupos no se expanden a un número exacto de personas.",
         ignoreXlent:         "Filtrar términos internos",
         ignoreHint:          "Los nombres de dominio, correos internos y nombres se filtran.",
         settingsWhitelistTitle:"Lista blanca",
@@ -4459,7 +4489,13 @@
         metaLang:            "Idioma",
         folderFile:          "Archivo",
         folderLevel:         "Nivel de riesgo",
-        folderAccess:        "Acceso",
+        folderAccess:        "Acceso local",
+        folderSharePointAccess:"Acceso de SharePoint",
+        folderSharePointPublic:"Enlace público",
+        folderSharePointOrganization:"Toda la organización",
+        folderSharePointGroup:"Compartido con grupo",
+        folderSharePointSpecific:"Personas específicas",
+        folderSharePointNotRelevant:"No aplicable",
         folderAccessBroad:   "Acceso amplio",
         folderAccessSharedLocal: "Compartido localmente",
         folderAccessRestricted: "Restringido",
@@ -6642,6 +6678,8 @@
         pdf_mode:     "auto",
         scan_mode:    "auto",
         access_check: document.getElementById("access-check")?.checked === true,
+        graph_drive_id: document.getElementById("m365-drive-id")?.value.trim() || "",
+        graph_sync_root: document.getElementById("m365-sync-root")?.value.trim() || "",
         categories:   _selectedScanCategories(),
       };
     }
@@ -8430,6 +8468,8 @@
           pdf_mode: opts.pdf_mode,
           categories: opts.categories,
           access_check: opts.access_check,
+          graph_drive_id: opts.graph_drive_id,
+          graph_sync_root: opts.graph_sync_root,
           ...folderOpts,
         });
         if (!started.ok) {
@@ -8594,6 +8634,35 @@
       return `<span class="folder-access-status folder-access-ok"${title}>${escapeHtml(t("folderAccessRestricted"))}</span>`;
     }
 
+    function _folderSharePointAccessHtml(file) {
+      const access = file?.sharepoint_access_summary;
+      if (!access) {
+        return `<span class="folder-access-status folder-access-muted">${escapeHtml(t("folderSharePointNotRelevant"))}</span>`;
+      }
+      const identities = [
+        ...(Array.isArray(access.group_identities) ? access.group_identities : []),
+        ...(Array.isArray(access.person_identities) ? access.person_identities : []),
+      ];
+      const details = [access.reason, access.scope_note, access.person_count_note, ...identities]
+        .filter(Boolean).join("\n");
+      const title = details ? ` title="${escapeHtml(details)}"` : "";
+      if (!access.available) {
+        return `<span class="folder-access-status folder-access-muted"${title}>${escapeHtml(t("folderAccessNotChecked"))}</span>`;
+      }
+      const labels = {
+        public: "folderSharePointPublic",
+        organization: "folderSharePointOrganization",
+        group: "folderSharePointGroup",
+        specific: "folderSharePointSpecific",
+        restricted: "folderAccessRestricted",
+      };
+      const key = labels[access.access_level] || "folderAccessUnavailable";
+      const cls = ["public", "organization"].includes(access.access_level)
+        ? "folder-access-broad"
+        : access.access_level === "group" ? "folder-access-shared" : "folder-access-ok";
+      return `<span class="folder-access-status ${cls}"${title}>${escapeHtml(t(key))}</span>`;
+    }
+
     function wireBatchTableEvents(container) {
       container.querySelectorAll(".batch-file-link").forEach(btn => {
         btn.addEventListener("click", () => {
@@ -8691,7 +8760,7 @@
           return `<tr>
             <td>${cb}</td>
             <td style="color:var(--danger)">${_batchFileNameHtml(f, "")}</td>
-            <td colspan="3" style="color:var(--muted);font-size:11px;">${escapeHtml(f.error)}</td>
+            <td colspan="4" style="color:var(--muted);font-size:11px;">${escapeHtml(f.error)}</td>
             <td>${actions}</td>
           </tr>`;
         }
@@ -8701,6 +8770,7 @@
           <td style="color:${rc};font-weight:600;white-space:nowrap">${String(f.risk_level || "").toUpperCase()}</td>
           <td style="color:var(--muted);text-align:right">${f.finding_count || 0} ${t("metaFindings")}</td>
           <td>${_folderAccessHtml(f)}</td>
+          <td>${_folderSharePointAccessHtml(f)}</td>
           <td>${actions}</td>
         </tr>`;
       }).join("");
@@ -8713,6 +8783,7 @@
               <th>${_sortButton("risk", t("folderLevel"))}</th>
               <th style="text-align:right">${_sortButton("findings", t("metaFindings"))}</th>
               <th>${_sortButton("access", t("folderAccess"))}</th>
+              <th>${escapeHtml(t("folderSharePointAccess"))}</th>
               <th style="text-align:right">${escapeHtml(t("folderActions"))}</th>
             </tr></thead>
             <tbody>${rows}</tbody>

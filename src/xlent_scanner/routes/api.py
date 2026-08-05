@@ -217,6 +217,7 @@ def _api_result_payload(
         "error": result.error,
         "scan_timings": getattr(result, "scan_timings", {}) or {},
         "access_summary": getattr(result, "access_summary", None),
+        "sharepoint_access_summary": getattr(result, "sharepoint_access_summary", None),
         "findings": [
             {
                 "category": finding.category,
