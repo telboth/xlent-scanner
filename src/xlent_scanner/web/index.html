@@ -701,6 +701,10 @@
     .batch-table th { text-align: left; padding: 5px 8px; color: var(--muted); font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
     .batch-table td { padding: 6px 8px; border-top: 1px solid var(--border); }
     .batch-table tr:hover td { background: rgba(138,150,168,.05); }
+    .folder-access-status { display:inline-block; font-size:11px; font-weight:600; white-space:nowrap; cursor:help; }
+    .folder-access-broad { color:var(--danger); }
+    .folder-access-ok { color:var(--ok); }
+    .folder-access-muted { color:var(--muted); }
     .batch-file-wrap { position: relative; display: inline-flex; align-items: center; gap: 5px; max-width: min(620px, 68vw); }
     .batch-file-link {
       border: 0; background: transparent; color: var(--text); padding: 0;
@@ -1597,10 +1601,10 @@
         </div>
         <div class="settings-note" data-i18n="autoOcrNote">Når en PDF eller bildefil mangler maskinlesbar tekst, starter OCR automatisk.</div>
         <div class="settings-row" style="margin-top:12px;">
-          <input type="checkbox" id="access-check" />
+          <input type="checkbox" id="access-check" checked />
           <label for="access-check" data-i18n="accessCheckLabel">Ta med lokal tilgangssjekk i rapporter</label>
         </div>
-        <div class="settings-note" data-i18n="accessCheckNote">Valgfritt og av som standard. Viser lokale filrettigheter/ACL-er, men beregner ikke nøyaktig antall personer fordi grupper ikke ekspanderes. For opplastede filer er original tilgang ikke tilgjengelig; bruk mappeskanning.</div>
+        <div class="settings-note" data-i18n="accessCheckNote">På som standard. Viser lokale filrettigheter/ACL-er, men beregner ikke nøyaktig antall personer fordi grupper ikke ekspanderes. For opplastede filer er original tilgang ikke tilgjengelig; bruk mappeskanning.</div>
       </details>
 
       <!-- API docs -->
@@ -1946,7 +1950,7 @@
         autoOcrLabel: "Kjør automatisk OCR på skannede dokumenter og bildefiler",
         autoOcrNote: "Når en PDF eller bildefil mangler maskinlesbar tekst, starter OCR automatisk.",
         accessCheckLabel: "Ta med lokal tilgangssjekk i rapporter",
-        accessCheckNote: "Valgfritt og av som standard. Viser lokale filrettigheter/ACL-er, men beregner ikke nøyaktig antall personer fordi grupper ikke ekspanderes. For opplastede filer er original tilgang ikke tilgjengelig; bruk mappeskanning.",
+        accessCheckNote: "På som standard. Viser lokale filrettigheter/ACL-er, men beregner ikke nøyaktig antall personer fordi grupper ikke ekspanderes. For opplastede filer er original tilgang ikke tilgjengelig; bruk mappeskanning.",
         settingsFilterTitle: "Filtrering",
         settingsWhitelistTitle: "Hviteliste",
         whitelistPersonalNote: "Denne hvitelisten er personlig og bygges opp av den enkelte bruker.",
@@ -2192,6 +2196,11 @@
         confidenceLow:      "Lav (alle funn)",
         folderLevel:        "Nivå",
         folderFile:         "Fil",
+        folderAccess:       "Tilgang",
+        folderAccessBroad:  "Bred tilgang",
+        folderAccessNoBroad:"Ingen bred tilgang funnet",
+        folderAccessUnavailable:"Ikke tilgjengelig",
+        folderAccessNotChecked:"Ikke kontrollert",
         scanOptsTitle:       "Hva vil du finne?",
         scanTimingLabel:     "Tidsbruk",
         scanCatId:           "Personnummer / ID",
@@ -2387,7 +2396,7 @@
         autoOcrLabel: "Kör OCR automatiskt på skannade dokument och bildfiler",
         autoOcrNote: "När en PDF eller bildfil saknar maskinläsbar text startar OCR automatiskt.",
         accessCheckLabel: "Ta med lokal åtkomstkontroll i rapporter",
-        accessCheckNote: "Valfritt och av som standard. Visar lokala filrättigheter/ACL:er, men beräknar inte exakt antal personer eftersom grupper inte expanderas. För uppladdade filer är originalets åtkomst inte tillgänglig; använd mappskanning.",
+        accessCheckNote: "På som standard. Visar lokala filrättigheter/ACL:er, men beräknar inte exakt antal personer eftersom grupper inte expanderas. För uppladdade filer är originalets åtkomst inte tillgänglig; använd mappskanning.",
         settingsFilterTitle: "Filtrering",
         settingsWhitelistTitle: "Vitlista",
         whitelistPersonalNote: "Denna vitlista är personlig och byggs upp av varje enskild användare.",
@@ -2623,6 +2632,11 @@
         confidenceLow:      "Låg (alla fynd)",
         folderLevel:        "Nivå",
         folderFile:         "Fil",
+        folderAccess:       "Åtkomst",
+        folderAccessBroad:  "Bred åtkomst",
+        folderAccessNoBroad:"Ingen bred åtkomst hittades",
+        folderAccessUnavailable:"Inte tillgänglig",
+        folderAccessNotChecked:"Inte kontrollerad",
         scanOptsTitle:       "Vad vill du hitta?",
         scanTimingLabel:     "Tidsåtgång",
         scanCatId:           "Personnummer / ID",
@@ -2818,7 +2832,7 @@
         autoOcrLabel: "Run OCR automatically on scanned documents and image files",
         autoOcrNote: "When a PDF or image file has no machine-readable text, OCR starts automatically.",
         accessCheckLabel: "Include local access check in reports",
-        accessCheckNote: "Optional and off by default. Shows local file permissions/ACLs, but does not calculate exact person counts because groups are not expanded. Original permissions are unavailable for uploaded files; use folder scanning.",
+        accessCheckNote: "On by default. Shows local file permissions/ACLs, but does not calculate exact person counts because groups are not expanded. Original permissions are unavailable for uploaded files; use folder scanning.",
         settingsFilterTitle: "Filtering",
         settingsWhitelistTitle: "Whitelist",
         whitelistPersonalNote: "This whitelist is personal and built by each individual user.",
@@ -3059,6 +3073,11 @@
         confidenceLow:      "Low (all findings)",
         folderLevel:        "Level",
         folderFile:         "File",
+        folderAccess:       "Access",
+        folderAccessBroad:  "Broad access",
+        folderAccessNoBroad:"No broad access found",
+        folderAccessUnavailable:"Unavailable",
+        folderAccessNotChecked:"Not checked",
         scanOptsTitle:       "What do you want to find?",
         scanTimingLabel:     "Timing",
         scanCatId:           "National / personal ID numbers",
@@ -3246,7 +3265,7 @@
         autoOcrLabel: "OCR für gescannte Dokumente und Bilddateien automatisch ausführen",
         autoOcrNote: "Wenn eine PDF- oder Bilddatei keinen maschinenlesbaren Text enthält, startet OCR automatisch.",
         accessCheckLabel: "Lokale Zugriffsprüfung in Berichte aufnehmen",
-        accessCheckNote: "Optional und standardmäßig aus. Zeigt lokale Dateiberechtigungen/ACLs, berechnet aber keine genaue Personenzahl, da Gruppen nicht expandiert werden. Bei hochgeladenen Dateien sind die ursprünglichen Rechte nicht verfügbar; verwenden Sie den Ordnerscan.",
+        accessCheckNote: "Standardmäßig aktiviert. Zeigt lokale Dateiberechtigungen/ACLs, berechnet aber keine genaue Personenzahl, da Gruppen nicht expandiert werden. Bei hochgeladenen Dateien sind die ursprünglichen Rechte nicht verfügbar; verwenden Sie den Ordnerscan.",
         ignoreXlent:         "Interne Begriffe filtern",
         ignoreHint:          "Domainnamen, interne E-Mails und Namen werden herausgefiltert.",
         settingsWhitelistTitle:"Whitelist",
@@ -3532,6 +3551,11 @@
         metaLang:            "Sprache",
         folderFile:          "Datei",
         folderLevel:         "Risikostufe",
+        folderAccess:        "Zugriff",
+        folderAccessBroad:   "Breiter Zugriff",
+        folderAccessNoBroad: "Kein breiter Zugriff gefunden",
+        folderAccessUnavailable:"Nicht verfügbar",
+        folderAccessNotChecked:"Nicht geprüft",
         folderError:         "Fehler beim Ordner-Scan:",
         folderNoFiles:       "Keine unterstützten Dateien gefunden.",
         folderRecursive:     "Auch Unterordner scannen",
@@ -3692,7 +3716,7 @@
         autoOcrLabel: "Lancer automatiquement l’OCR sur les documents scannés et fichiers image",
         autoOcrNote: "Lorsqu’un PDF ou fichier image ne contient pas de texte lisible par machine, l’OCR démarre automatiquement.",
         accessCheckLabel: "Inclure la vérification locale des accès dans les rapports",
-        accessCheckNote: "Optionnel et désactivé par défaut. Affiche les droits/ACL locaux, mais ne calcule pas le nombre exact de personnes car les groupes ne sont pas développés. Les droits d’origine ne sont pas disponibles pour les fichiers téléversés; utilisez l’analyse de dossier.",
+        accessCheckNote: "Activé par défaut. Affiche les droits/ACL locaux, mais ne calcule pas le nombre exact de personnes car les groupes ne sont pas développés. Les droits d’origine ne sont pas disponibles pour les fichiers téléversés; utilisez l’analyse de dossier.",
         ignoreXlent:         "Filtrer les termes internes",
         ignoreHint:          "Les noms de domaine, e-mails internes et noms sont filtrés.",
         settingsWhitelistTitle:"Liste blanche",
@@ -3978,6 +4002,11 @@
         metaLang:            "Langue",
         folderFile:          "Fichier",
         folderLevel:         "Niveau de risque",
+        folderAccess:        "Accès",
+        folderAccessBroad:   "Accès étendu",
+        folderAccessNoBroad: "Aucun accès étendu détecté",
+        folderAccessUnavailable:"Indisponible",
+        folderAccessNotChecked:"Non vérifié",
         folderError:         "Erreur lors de l'analyse du dossier :",
         folderNoFiles:       "Aucun fichier pris en charge trouvé.",
         folderRecursive:     "Analyser aussi les sous-dossiers",
@@ -4138,7 +4167,7 @@
         autoOcrLabel: "Ejecutar OCR automáticamente en documentos escaneados y archivos de imagen",
         autoOcrNote: "Cuando un PDF o archivo de imagen no tiene texto legible por máquina, OCR se inicia automáticamente.",
         accessCheckLabel: "Incluir comprobación local de acceso en los informes",
-        accessCheckNote: "Opcional y desactivado por defecto. Muestra permisos/ACL locales, pero no calcula el número exacto de personas porque los grupos no se expanden. Los permisos originales no están disponibles para archivos subidos; use el escaneo de carpetas.",
+        accessCheckNote: "Activado por defecto. Muestra permisos/ACL locales, pero no calcula el número exacto de personas porque los grupos no se expanden. Los permisos originales no están disponibles para archivos subidos; use el escaneo de carpetas.",
         ignoreXlent:         "Filtrar términos internos",
         ignoreHint:          "Los nombres de dominio, correos internos y nombres se filtran.",
         settingsWhitelistTitle:"Lista blanca",
@@ -4424,6 +4453,11 @@
         metaLang:            "Idioma",
         folderFile:          "Archivo",
         folderLevel:         "Nivel de riesgo",
+        folderAccess:        "Acceso",
+        folderAccessBroad:   "Acceso amplio",
+        folderAccessNoBroad: "No se detectó acceso amplio",
+        folderAccessUnavailable:"No disponible",
+        folderAccessNotChecked:"No comprobado",
         folderError:         "Error al escanear la carpeta:",
         folderNoFiles:       "No se encontraron archivos compatibles.",
         folderRecursive:     "Escanear también subcarpetas",
@@ -6799,7 +6833,7 @@
         const autoOcr = document.getElementById("auto-ocr");
         if (autoOcr) autoOcr.checked = s.autoOcr !== false;
         const accessCheck = document.getElementById("access-check");
-        if (accessCheck) accessCheck.checked = s.accessCheck === true;
+        if (accessCheck) accessCheck.checked = s.accessCheck !== false;
         const m365Fields = {
           "m365-drive-id": "m365_drive_id",
           "m365-item-id": "m365_item_id",
@@ -8388,6 +8422,7 @@
           scan_mode: opts.scan_mode,
           pdf_mode: opts.pdf_mode,
           categories: opts.categories,
+          access_check: opts.access_check,
           ...folderOpts,
         });
         if (!started.ok) {
@@ -8512,6 +8547,10 @@
         if (_folderSortKey === "file") return dir * String(a.relative_path || a.file_name || "").localeCompare(String(b.relative_path || b.file_name || ""));
         if (_folderSortKey === "findings") return dir * ((Number(a.finding_count || 0)) - (Number(b.finding_count || 0)));
         if (_folderSortKey === "size") return dir * ((Number(a.file_size || 0)) - (Number(b.file_size || 0)));
+        if (_folderSortKey === "access") {
+          const accessScore = f => !f.access_summary ? -1 : !f.access_summary.available ? 0 : f.access_summary.broad_access ? 2 : 1;
+          return dir * (accessScore(a) - accessScore(b));
+        }
         return dir * ((ord[a.risk_level] || 0) - (ord[b.risk_level] || 0));
       });
     }
@@ -8519,6 +8558,29 @@
     function _sortButton(key, label) {
       const arrow = _folderSortKey === key ? (_folderSortDir === "asc" ? " ↑" : " ↓") : "";
       return `<button type="button" class="folder-sort-btn" data-sort="${key}">${escapeHtml(label)}${arrow}</button>`;
+    }
+
+    function _folderAccessHtml(file) {
+      const access = file?.access_summary;
+      if (!access) {
+        return `<span class="folder-access-status folder-access-muted">${escapeHtml(t("folderAccessNotChecked"))}</span>`;
+      }
+      const entries = Array.isArray(access.entries) ? access.entries : [];
+      const entryLines = entries.slice(0, 12).map(entry => {
+        const identity = String(entry.identity || "");
+        const rights = String(entry.rights || "");
+        return rights ? `${identity}: ${rights}` : identity;
+      }).filter(Boolean);
+      const details = [access.reason, access.scope_note, access.person_count_note, ...entryLines]
+        .filter(Boolean).join("\n");
+      const title = details ? ` title="${escapeHtml(details)}"` : "";
+      if (!access.available) {
+        return `<span class="folder-access-status folder-access-muted"${title}>${escapeHtml(t("folderAccessUnavailable"))}</span>`;
+      }
+      if (access.broad_access) {
+        return `<span class="folder-access-status folder-access-broad"${title}>${escapeHtml(t("folderAccessBroad"))}</span>`;
+      }
+      return `<span class="folder-access-status folder-access-ok"${title}>${escapeHtml(t("folderAccessNoBroad"))}</span>`;
     }
 
     function wireBatchTableEvents(container) {
@@ -8618,7 +8680,7 @@
           return `<tr>
             <td>${cb}</td>
             <td style="color:var(--danger)">${_batchFileNameHtml(f, "")}</td>
-            <td colspan="2" style="color:var(--muted);font-size:11px;">${escapeHtml(f.error)}</td>
+            <td colspan="3" style="color:var(--muted);font-size:11px;">${escapeHtml(f.error)}</td>
             <td>${actions}</td>
           </tr>`;
         }
@@ -8627,6 +8689,7 @@
           <td>${_batchFileNameHtml(f, ic)}</td>
           <td style="color:${rc};font-weight:600;white-space:nowrap">${String(f.risk_level || "").toUpperCase()}</td>
           <td style="color:var(--muted);text-align:right">${f.finding_count || 0} ${t("metaFindings")}</td>
+          <td>${_folderAccessHtml(f)}</td>
           <td>${actions}</td>
         </tr>`;
       }).join("");
@@ -8638,6 +8701,7 @@
               <th>${_sortButton("file", t("folderFile"))}</th>
               <th>${_sortButton("risk", t("folderLevel"))}</th>
               <th style="text-align:right">${_sortButton("findings", t("metaFindings"))}</th>
+              <th>${_sortButton("access", t("folderAccess"))}</th>
               <th style="text-align:right">${escapeHtml(t("folderActions"))}</th>
             </tr></thead>
             <tbody>${rows}</tbody>

@@ -181,6 +181,51 @@ def test_scan_folder_start_endpoint_tracks_background_progress(monkeypatch, tmp_
     assert all(row["report_id"] for row in status["files"])
 
 
+def test_scan_folder_start_includes_requested_access_check(monkeypatch, tmp_path: Path):
+    _write(tmp_path / "root.txt")
+    observed_access_flags = []
+
+    def fake_scan_file(path, **kwargs):
+        observed_access_flags.append(kwargs.get("include_access_check"))
+        p = Path(path)
+        return ScanResult(file_name=p.name, file_size=1, text_length=1, text_preview="x")
+
+    monkeypatch.setattr(folder_routes, "_scan_file", fake_scan_file)
+    monkeypatch.setattr(
+        folder_routes,
+        "audit_containing_folder_access",
+        lambda path, cache: {
+            "available": True,
+            "ok": True,
+            "source": "test",
+            "scope": "containing_folder",
+            "entries_total": 1,
+            "broad_access": True,
+            "broad_identities": ["Everyone"],
+            "entries": [{"identity": "Everyone", "rights": "RX"}],
+        },
+    )
+    with app_module.app_state.folder_jobs_lock:
+        app_module.app_state.folder_jobs.clear()
+    client = app_module.flask_app.test_client()
+
+    started = client.post(
+        "/scan-folder/start",
+        json={"folder_path": str(tmp_path), "access_check": True},
+    ).get_json()
+
+    job_id = started["job_id"]
+    status = {}
+    for _ in range(50):
+        status = client.get(f"/scan-folder/status/{job_id}").get_json()
+        if status["status"] == "completed":
+            break
+        time.sleep(0.05)
+
+    assert observed_access_flags == [False]
+    assert status["files"][0]["access_summary"]["broad_identities"] == ["Everyone"]
+
+
 def test_folder_export_and_audit_endpoints_write_files(monkeypatch, tmp_path: Path):
     result = ScanResult(
         file_name="root.txt",
