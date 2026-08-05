@@ -780,11 +780,21 @@ def test_auto_ocr_setting_defaults_on_and_is_wired():
     html = HTML.read_text(encoding="utf-8")
 
     assert 'id="auto-ocr" checked' in html
+    assert 'id="access-check"' in html
     assert 'data-i18n="autoOcrLabel"' in html
     assert 'data-i18n="autoOcrNote"' in html
+    assert 'data-i18n="accessCheckLabel"' in html
+    assert 'data-i18n="accessCheckNote"' in html
     assert "if (autoOcr) autoOcr.checked = s.autoOcr !== false;" in html
+    assert "if (accessCheck) accessCheck.checked = s.accessCheck === true;" in html
     assert 'autoOcr: document.getElementById("auto-ocr")?.checked !== false' in html
+    assert 'accessCheck: document.getElementById("access-check")?.checked === true' in html
+    assert 'access_check: document.getElementById("access-check")?.checked === true' in html
     assert 'document.getElementById("auto-ocr")?.addEventListener("change", saveSettings);' in html
+    assert 'document.getElementById("access-check")?.addEventListener("change", saveSettings);' in html
+    assert 'fd.append("access_check", opts.access_check ? "true" : "false");' in html
+    assert html.count("accessCheckLabel:") == 6
+    assert html.count("accessCheckNote:") == 6
     assert "function _maybeRunAutoOcr(r, ext)" in html
     assert "function _runOcrForLastScan()" in html
     assert "setTimeout(() => _runOcrForLastScan(), 50);" in html

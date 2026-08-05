@@ -38,6 +38,7 @@ from xlent_scanner.detectors.regex_no import detect_no_specific, find_emails
 from xlent_scanner.detectors.regex_sv import detect_sv_specific
 from xlent_scanner.detectors.regex_url import detect_urls
 from xlent_scanner.detectors.secrets import detect_secrets
+from xlent_scanner.access_audit import audit_containing_folder_access, audit_path_access
 from xlent_scanner.ignore import filter_findings, load_ignore_list
 from xlent_scanner.language import resolve_language
 from xlent_scanner.models import Finding, ScanResult  # noqa: F401
@@ -864,6 +865,7 @@ def scan_folder(
     scan_profile: str = "normal",
     categories: Iterable[str] | None = None,
     pdf_mode: str = "fast",
+    include_access_check: bool = False,
 ) -> list[ScanResult]:
     """Skann alle støttede filer i en mappe. Returnerer resultater sortert etter risikonivå."""
     plan = build_folder_scan_plan(
@@ -874,6 +876,7 @@ def scan_folder(
     )
     root = Path(folder)
     results = []
+    access_cache: dict[str, dict] = {}
     for f in plan["files"]:
         try:
             result = scan_file(
@@ -883,11 +886,14 @@ def scan_folder(
                 scan_profile=scan_profile,
                 categories=categories,
                 pdf_mode=pdf_mode,
+                include_access_check=False,
             )
         except TypeError as exc:
             if "unexpected keyword argument" not in str(exc):
                 raise
             result = scan_file(f, ignore_xlent=ignore_xlent, language=language)
+        if include_access_check:
+            result.access_summary = audit_containing_folder_access(f, access_cache)
         result.relative_path = str(Path(f).relative_to(root))
         result.source_path = str(f)
         results.append(result)
@@ -904,6 +910,7 @@ def scan_file(
     scan_profile: str = "normal",
     categories: Iterable[str] | None = None,
     pdf_mode: str = "fast",
+    include_access_check: bool = False,
 ) -> ScanResult:
     total_t0 = time.perf_counter()
     p = Path(path)
@@ -1031,5 +1038,6 @@ def scan_file(
             "scan_strategy": extraction_metadata.get("scan_strategy", ""),
             "scan_strategy_reason": extraction_metadata.get("scan_strategy_reason", ""),
         },
+        access_summary=audit_path_access(p) if include_access_check else None,
     )
     return assess(result)

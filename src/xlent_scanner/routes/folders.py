@@ -19,6 +19,7 @@ from typing import Callable
 
 from flask import Blueprint, jsonify, request
 
+from xlent_scanner.access_audit import audit_containing_folder_access
 from xlent_scanner.anonymize import build_replacements
 from xlent_scanner.app_state import app_state
 from xlent_scanner.history import add_history_entry
@@ -82,6 +83,13 @@ def _folder_scan_options(data: dict) -> dict:
     }
 
 
+def _request_bool(data: dict, name: str, default: bool = False) -> bool:
+    value = data.get(name, default)
+    if isinstance(value, str):
+        return value.strip().lower() in {"1", "true", "yes", "ja", "on"}
+    return bool(value)
+
+
 def _folder_finding_summary(result: ScanResult, limit: int = 8) -> list[dict]:
     rows = []
     for finding in result.findings:
@@ -123,6 +131,7 @@ def folder_result_row(result: ScanResult, report_id: str | None = None) -> dict:
         "text_length": result.text_length,
         "warning": result.warning,
         "warning_code": result.warning_code,
+        "access_summary": result.access_summary,
     }
 
 
@@ -184,6 +193,9 @@ def _folder_export_rows(job: dict) -> list[dict]:
             "text_length": row.get("text_length", 0),
             "error": row.get("error") or "",
             "warning": row.get("warning") or "",
+            "access_source": (row.get("access_summary") or {}).get("source", ""),
+            "access_entries": (row.get("access_summary") or {}).get("entries_total", ""),
+            "access_broad": ", ".join((row.get("access_summary") or {}).get("broad_identities", []) or []),
             "top_findings": "; ".join(
                 f"{finding.get('category', '')}: {finding.get('text', '')}"
                 for finding in (row.get("findings_summary") or [])
@@ -206,6 +218,7 @@ def _folder_audit_html(job_id: str, job: dict) -> str:
             f"<td>{html.escape(str(row['relative_path']))}</td>"
             f"<td>{html.escape(str(row['risk_level']))}</td>"
             f"<td>{html.escape(str(row['finding_count']))}</td>"
+            f"<td>{html.escape(str(row['access_broad']))}</td>"
             f"<td>{html.escape(str(row['top_findings']))}</td>"
             f"<td>{html.escape(str(row['error']))}</td>"
             "</tr>"
@@ -234,7 +247,7 @@ def _folder_audit_html(job_id: str, job: dict) -> str:
     <div>Status: {html.escape(str(job.get("status", "")))}</div>
   </div>
   <table>
-    <thead><tr><th>Fil</th><th>Risiko</th><th>Funn</th><th>Toppfunn</th><th>Feil</th></tr></thead>
+    <thead><tr><th>Fil</th><th>Risiko</th><th>Funn</th><th>Bred tilgang</th><th>Toppfunn</th><th>Feil</th></tr></thead>
     <tbody>{''.join(table_rows)}</tbody>
   </table>
 </body>
@@ -249,6 +262,7 @@ def _run_folder_scan_job(
     scan_profile: str,
     pdf_mode: str,
     categories: list[str] | None,
+    include_access_check: bool,
     opts: dict,
 ) -> None:
     try:
@@ -264,6 +278,7 @@ def _run_folder_scan_job(
             "max_depth": plan["max_depth"],
         })
         root = Path(folder_path)
+        access_cache: dict[str, dict] = {}
         for file_path in plan["files"]:
             with app_state.folder_job_manager.mutate(job_id) as job:
                 if job is None or job.get("cancel_requested"):
@@ -278,11 +293,14 @@ def _run_folder_scan_job(
                     scan_profile=scan_profile,
                     pdf_mode=pdf_mode,
                     categories=categories,
+                    include_access_check=False,
                 )
             except TypeError as exc:
                 if "unexpected keyword argument" not in str(exc):
                     raise
                 result = _scan_file(file_path, ignore_xlent=ignore_xlent, language=language)
+            if include_access_check:
+                result.access_summary = audit_containing_folder_access(file_path, access_cache)
             result.relative_path = str(Path(file_path).relative_to(root))
             result.source_path = str(file_path)
             row = folder_result_row(result)
@@ -347,6 +365,7 @@ def scan_folder_endpoint():
         scan_profile = data.get("scan_profile", "normal")
         pdf_mode = data.get("scan_mode", data.get("pdf_mode", "auto"))
         categories = data.get("categories") if isinstance(data.get("categories"), list) else None
+        include_access_check = _request_bool(data, "access_check", _request_bool(data, "include_access_check", False))
         opts = _folder_scan_options(data)
         plan = build_folder_scan_plan(folder_path, **opts)
         results = _scan_folder(
@@ -356,6 +375,7 @@ def scan_folder_endpoint():
             scan_profile=scan_profile,
             pdf_mode=pdf_mode,
             categories=categories,
+            include_access_check=include_access_check,
             **opts,
         )
         summary = []
@@ -392,6 +412,7 @@ def scan_folder_start_endpoint():
         scan_profile = data.get("scan_profile", "normal")
         pdf_mode = data.get("scan_mode", data.get("pdf_mode", "auto"))
         categories = data.get("categories") if isinstance(data.get("categories"), list) else None
+        include_access_check = _request_bool(data, "access_check", _request_bool(data, "include_access_check", False))
         opts = _folder_scan_options(data)
         job_id = app_state.folder_job_manager.create({
             "status": "queued",
@@ -409,7 +430,7 @@ def scan_folder_start_endpoint():
         })
         threading.Thread(
             target=_run_folder_scan_job,
-            args=(job_id, folder_path, ignore_xlent, language, scan_profile, pdf_mode, categories, opts),
+            args=(job_id, folder_path, ignore_xlent, language, scan_profile, pdf_mode, categories, include_access_check, opts),
             daemon=True,
             name=f"folder-scan-{job_id[:8]}",
         ).start()

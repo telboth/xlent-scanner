@@ -48,3 +48,4 @@ class ScanResult:
     policy_warning_level: str | None = None
     scan_status: str = "success"      # success / partial / failed
     scan_timings: dict = field(default_factory=dict)
+    access_summary: dict | None = None

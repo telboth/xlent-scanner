@@ -235,3 +235,29 @@ class TestReport:
         assert "Microsoft 365-label tilsier konfidensielt dokument." in html
         assert "Highly Confidential" in html
         assert "Retain 7 years" in html
+
+    def test_access_summary_rendered_when_present(self):
+        result = _result_with_findings()
+        result.access_summary = {
+            "available": True,
+            "ok": True,
+            "source": "local_windows_acl",
+            "path_type": "file",
+            "entries_total": 2,
+            "direct_entries": 1,
+            "inherited_entries": 1,
+            "broad_access": True,
+            "broad_identities": ["BUILTIN\\Users"],
+            "person_count_note": "Ikke beregnet.",
+            "entries": [
+                {"identity": "BUILTIN\\Users", "rights": "(I)(RX)", "inherited": True, "broad": True},
+            ],
+            "scope_note": "Mappeskann: vurderingen gjelder rettighetene til filens inneholdende mappe.",
+        }
+
+        html = generate_html(result)
+
+        assert "Tilgangssjekk" in html
+        assert "Mappeskann: vurderingen gjelder" in html
+        assert "local_windows_acl" in html
+        assert "BUILTIN\\Users" in html

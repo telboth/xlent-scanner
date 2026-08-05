@@ -216,6 +216,7 @@ def _api_result_payload(
         "policy_warning_level": getattr(result, "policy_warning_level", None),
         "error": result.error,
         "scan_timings": getattr(result, "scan_timings", {}) or {},
+        "access_summary": getattr(result, "access_summary", None),
         "findings": [
             {
                 "category": finding.category,
@@ -367,6 +368,7 @@ def api_scan_file():
             scan_profile=_api_scan_profile(data.get("scan_profile")),
             categories=_api_categories(data.get("categories")),
             pdf_mode=_api_pdf_mode(data.get("scan_mode", data.get("pdf_mode"))),
+            include_access_check=_api_bool(data.get("access_check", data.get("include_access_check")), False),
         )
         result.file_name = file_name
         scan_id = _api_store_scan_result(result, path=tmp_path, owns_path=True)

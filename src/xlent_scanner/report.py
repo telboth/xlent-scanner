@@ -117,6 +117,11 @@ _TEMPLATE = _JINJA_ENV.from_string("""<!DOCTYPE html>
   .audit { background: var(--panel); border: 1px solid var(--border);
            border-radius: 6px; padding: 10px 12px; margin-bottom: 16px;
            font-size: 12px; color: var(--muted); line-height: 1.6; }
+  .access-audit { background: var(--panel); border: 1px solid var(--border);
+                  border-radius: 6px; padding: 10px 12px; margin-bottom: 16px;
+                  font-size: 12px; color: var(--muted); line-height: 1.6; }
+  .access-audit strong { color: var(--text); }
+  .access-broad { color: var(--gul); font-weight: 600; }
   footer { margin-top: 32px; color: var(--muted); font-size: 12px;
            border-top: 1px solid var(--border); padding-top: 16px; }
 </style>
@@ -179,6 +184,42 @@ _TEMPLATE = _JINJA_ENV.from_string("""<!DOCTYPE html>
   {{ verification.get("finding_count", 0) }} gjenværende).
   {% endif %}
 </div>
+
+{% if result.access_summary %}
+{% set access = result.access_summary %}
+<div class="access-audit">
+  <strong>Tilgangssjekk:</strong>
+  {% if access.get("available") %}
+    {{ access.get("source", "lokal") }} · {{ access.get("path_type", "fil") }} ·
+    {{ access.get("entries_total", 0) }} tilgangsoppføringer
+    ({{ access.get("direct_entries", 0) }} direkte, {{ access.get("inherited_entries", 0) }} arvet).
+    {% if access.get("broad_access") %}
+      <span class="access-broad">Bred tilgang: {{ access.get("broad_identities", [])|join(", ") }}</span>.
+    {% else %}
+      Ingen bred tilgang oppdaget i lokal sjekk.
+    {% endif %}
+    {% if access.get("scope_note") %}<br>{{ access.get("scope_note") }}{% endif %}
+    <br>{{ access.get("person_count_note", "Personantall er ikke beregnet.") }}
+    {% if access.get("entries") %}
+      <table style="margin-top:8px;">
+        <thead><tr><th>Identitet</th><th>Rettigheter</th><th>Type</th></tr></thead>
+        <tbody>
+        {% for entry in access.get("entries", []) %}
+          <tr>
+            <td>{{ entry.get("identity", "") }}</td>
+            <td>{{ entry.get("rights", "") }}</td>
+            <td>{% if entry.get("inherited") %}arvet{% else %}direkte{% endif %}{% if entry.get("broad") %}, bred{% endif %}</td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      {% if access.get("truncated") %}<div>Listen er avkortet.</div>{% endif %}
+    {% endif %}
+  {% else %}
+    Ikke tilgjengelig: {{ access.get("reason", "ukjent årsak") }}
+  {% endif %}
+</div>
+{% endif %}
 
 {% if redaction_audit and redaction_audit.get("selected_findings") %}
 <h2>Faktisk anonymiserte funn ({{ redaction_audit.get("selected_findings")|length }})</h2>

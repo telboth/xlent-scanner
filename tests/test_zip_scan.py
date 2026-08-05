@@ -68,7 +68,10 @@ def test_cleanup_old_zip_temp_dirs_only_removes_old_zip_dirs(tmp_path: Path):
 
 
 def test_scan_upload_zip_returns_batch_rows(monkeypatch):
+    observed_access_flags = []
+
     def fake_scan_file(path, **kwargs):
+        observed_access_flags.append(kwargs.get("include_access_check"))
         p = Path(path)
         return ScanResult(
             file_name=p.name,
@@ -87,7 +90,10 @@ def test_scan_upload_zip_returns_batch_rows(monkeypatch):
 
     response = client.post(
         "/scan-upload",
-        data={"file": (io.BytesIO(_zip_bytes({"a.txt": "Kontakt ola@example.com", "skip.bin": "x"})), "case.zip")},
+        data={
+            "file": (io.BytesIO(_zip_bytes({"a.txt": "Kontakt ola@example.com", "skip.bin": "x"})), "case.zip"),
+            "access_check": "true",
+        },
         content_type="multipart/form-data",
     )
 
@@ -100,6 +106,9 @@ def test_scan_upload_zip_returns_batch_rows(monkeypatch):
     assert data["job_id"]
     assert data["files"][0]["relative_path"] == "a.txt"
     assert data["files"][0]["finding_count"] == 1
+    assert data["files"][0]["access_summary"]["available"] is False
+    assert data["files"][0]["access_summary"]["source"] == "uploaded_copy"
+    assert observed_access_flags == [False]
 
     status = client.get(f"/scan-folder/status/{data['job_id']}").get_json()
     assert status["status"] == "completed"

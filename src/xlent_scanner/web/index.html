@@ -1596,6 +1596,11 @@
           <label for="auto-ocr" data-i18n="autoOcrLabel">Kjør automatisk OCR på skannede dokumenter og bildefiler</label>
         </div>
         <div class="settings-note" data-i18n="autoOcrNote">Når en PDF eller bildefil mangler maskinlesbar tekst, starter OCR automatisk.</div>
+        <div class="settings-row" style="margin-top:12px;">
+          <input type="checkbox" id="access-check" />
+          <label for="access-check" data-i18n="accessCheckLabel">Ta med lokal tilgangssjekk i rapporter</label>
+        </div>
+        <div class="settings-note" data-i18n="accessCheckNote">Valgfritt og av som standard. Viser lokale filrettigheter/ACL-er, men beregner ikke nøyaktig antall personer fordi grupper ikke ekspanderes. For opplastede filer er original tilgang ikke tilgjengelig; bruk mappeskanning.</div>
       </details>
 
       <!-- API docs -->
@@ -1940,6 +1945,8 @@
         stripAnnotationsNote: "Gjelder støttede originalformater: DOCX-kommentarer, PPTX speaker notes/kommentarer, XLSX-kommentarer og PDF-annotasjoner.",
         autoOcrLabel: "Kjør automatisk OCR på skannede dokumenter og bildefiler",
         autoOcrNote: "Når en PDF eller bildefil mangler maskinlesbar tekst, starter OCR automatisk.",
+        accessCheckLabel: "Ta med lokal tilgangssjekk i rapporter",
+        accessCheckNote: "Valgfritt og av som standard. Viser lokale filrettigheter/ACL-er, men beregner ikke nøyaktig antall personer fordi grupper ikke ekspanderes. For opplastede filer er original tilgang ikke tilgjengelig; bruk mappeskanning.",
         settingsFilterTitle: "Filtrering",
         settingsWhitelistTitle: "Hviteliste",
         whitelistPersonalNote: "Denne hvitelisten er personlig og bygges opp av den enkelte bruker.",
@@ -2379,6 +2386,8 @@
         stripAnnotationsNote: "Gäller stödda originalformat: DOCX-kommentarer, PPTX speaker notes/kommentarer, XLSX-kommentarer och PDF-annoteringar.",
         autoOcrLabel: "Kör OCR automatiskt på skannade dokument och bildfiler",
         autoOcrNote: "När en PDF eller bildfil saknar maskinläsbar text startar OCR automatiskt.",
+        accessCheckLabel: "Ta med lokal åtkomstkontroll i rapporter",
+        accessCheckNote: "Valfritt och av som standard. Visar lokala filrättigheter/ACL:er, men beräknar inte exakt antal personer eftersom grupper inte expanderas. För uppladdade filer är originalets åtkomst inte tillgänglig; använd mappskanning.",
         settingsFilterTitle: "Filtrering",
         settingsWhitelistTitle: "Vitlista",
         whitelistPersonalNote: "Denna vitlista är personlig och byggs upp av varje enskild användare.",
@@ -2808,6 +2817,8 @@
         stripAnnotationsNote: "Applies to supported original formats: DOCX comments, PPTX speaker notes/comments, XLSX comments and PDF annotations.",
         autoOcrLabel: "Run OCR automatically on scanned documents and image files",
         autoOcrNote: "When a PDF or image file has no machine-readable text, OCR starts automatically.",
+        accessCheckLabel: "Include local access check in reports",
+        accessCheckNote: "Optional and off by default. Shows local file permissions/ACLs, but does not calculate exact person counts because groups are not expanded. Original permissions are unavailable for uploaded files; use folder scanning.",
         settingsFilterTitle: "Filtering",
         settingsWhitelistTitle: "Whitelist",
         whitelistPersonalNote: "This whitelist is personal and built by each individual user.",
@@ -3234,6 +3245,8 @@
         stripAnnotationsNote: "Gilt für unterstützte Originalformate: DOCX-Kommentare, PPTX-Sprechernotizen/Kommentare, XLSX-Kommentare und PDF-Anmerkungen.",
         autoOcrLabel: "OCR für gescannte Dokumente und Bilddateien automatisch ausführen",
         autoOcrNote: "Wenn eine PDF- oder Bilddatei keinen maschinenlesbaren Text enthält, startet OCR automatisch.",
+        accessCheckLabel: "Lokale Zugriffsprüfung in Berichte aufnehmen",
+        accessCheckNote: "Optional und standardmäßig aus. Zeigt lokale Dateiberechtigungen/ACLs, berechnet aber keine genaue Personenzahl, da Gruppen nicht expandiert werden. Bei hochgeladenen Dateien sind die ursprünglichen Rechte nicht verfügbar; verwenden Sie den Ordnerscan.",
         ignoreXlent:         "Interne Begriffe filtern",
         ignoreHint:          "Domainnamen, interne E-Mails und Namen werden herausgefiltert.",
         settingsWhitelistTitle:"Whitelist",
@@ -3678,6 +3691,8 @@
         stripAnnotationsNote: "S’applique aux formats originaux pris en charge : commentaires DOCX, notes/commentaires PPTX, commentaires XLSX et annotations PDF.",
         autoOcrLabel: "Lancer automatiquement l’OCR sur les documents scannés et fichiers image",
         autoOcrNote: "Lorsqu’un PDF ou fichier image ne contient pas de texte lisible par machine, l’OCR démarre automatiquement.",
+        accessCheckLabel: "Inclure la vérification locale des accès dans les rapports",
+        accessCheckNote: "Optionnel et désactivé par défaut. Affiche les droits/ACL locaux, mais ne calcule pas le nombre exact de personnes car les groupes ne sont pas développés. Les droits d’origine ne sont pas disponibles pour les fichiers téléversés; utilisez l’analyse de dossier.",
         ignoreXlent:         "Filtrer les termes internes",
         ignoreHint:          "Les noms de domaine, e-mails internes et noms sont filtrés.",
         settingsWhitelistTitle:"Liste blanche",
@@ -4122,6 +4137,8 @@
         stripAnnotationsNote: "Se aplica a formatos originales compatibles: comentarios DOCX, notas/comentarios PPTX, comentarios XLSX y anotaciones PDF.",
         autoOcrLabel: "Ejecutar OCR automáticamente en documentos escaneados y archivos de imagen",
         autoOcrNote: "Cuando un PDF o archivo de imagen no tiene texto legible por máquina, OCR se inicia automáticamente.",
+        accessCheckLabel: "Incluir comprobación local de acceso en los informes",
+        accessCheckNote: "Opcional y desactivado por defecto. Muestra permisos/ACL locales, pero no calcula el número exacto de personas porque los grupos no se expanden. Los permisos originales no están disponibles para archivos subidos; use el escaneo de carpetas.",
         ignoreXlent:         "Filtrar términos internos",
         ignoreHint:          "Los nombres de dominio, correos internos y nombres se filtran.",
         settingsWhitelistTitle:"Lista blanca",
@@ -6583,6 +6600,7 @@
         scan_profile: "auto",
         pdf_mode:     "auto",
         scan_mode:    "auto",
+        access_check: document.getElementById("access-check")?.checked === true,
         categories:   _selectedScanCategories(),
       };
     }
@@ -6666,6 +6684,7 @@
         fd.append("scan_profile", opts.scan_profile);
         fd.append("scan_mode",    opts.scan_mode);
         fd.append("pdf_mode",     opts.pdf_mode);
+        fd.append("access_check", opts.access_check ? "true" : "false");
         fd.append("categories",   opts.categories.join(","));
         if (extraOpts?.ocr) fd.append("ocr", "true");
         const r = await (await fetch(`${API}/scan-upload`, { method:"POST", body: fd })).json();
@@ -6779,6 +6798,8 @@
         if (sa) sa.checked = s.stripAnnotations === true;
         const autoOcr = document.getElementById("auto-ocr");
         if (autoOcr) autoOcr.checked = s.autoOcr !== false;
+        const accessCheck = document.getElementById("access-check");
+        if (accessCheck) accessCheck.checked = s.accessCheck === true;
         const m365Fields = {
           "m365-drive-id": "m365_drive_id",
           "m365-item-id": "m365_item_id",
@@ -6806,6 +6827,7 @@
           scanCategories: _selectedScanCategories(),
           stripAnnotations: document.getElementById("stripAnnotations").checked,
           autoOcr: document.getElementById("auto-ocr")?.checked !== false,
+          accessCheck: document.getElementById("access-check")?.checked === true,
           theme:       normalizeTheme(document.getElementById("themeSelect").value),
           m365_drive_id: document.getElementById("m365-drive-id")?.value || "",
           m365_item_id: document.getElementById("m365-item-id")?.value || "",
@@ -6830,6 +6852,7 @@
     document.querySelectorAll(".scan-cat").forEach(cb => cb.addEventListener("change", saveSettings));
     document.getElementById("stripAnnotations").addEventListener("change", saveSettings);
     document.getElementById("auto-ocr")?.addEventListener("change", saveSettings);
+    document.getElementById("access-check")?.addEventListener("change", saveSettings);
     document.getElementById("manual-redaction-terms")?.addEventListener("input", () => {
       updateManualRedactionPreview();
       updateRedactionReport(_currentResultExt());
@@ -8656,6 +8679,7 @@
             fd.append("scan_profile", opts.scan_profile);
             fd.append("scan_mode",    opts.scan_mode);
             fd.append("pdf_mode",     opts.pdf_mode);
+            fd.append("access_check", opts.access_check ? "true" : "false");
             fd.append("categories",   opts.categories.join(","));
             r = await (await fetch(`${API}/scan-upload`, { method:"POST", body: fd })).json();
           }

@@ -10,6 +10,7 @@ from pathlib import Path
 
 from flask import Blueprint, jsonify, request
 
+from xlent_scanner.access_audit import audit_path_access, uploaded_copy_access_summary
 from xlent_scanner.app_state import app_state
 from xlent_scanner.history import add_history_entry
 from xlent_scanner.routes.folders import folder_result_row
@@ -48,6 +49,7 @@ def _error_payload(message: str) -> dict:
         "original_text": "",
         "error": message,
         "scan_status": "failed",
+        "access_summary": None,
     }
 
 
@@ -83,6 +85,7 @@ def _scan_file_compat(*args, scan_profile: str = "normal", **kwargs):
             raise
         legacy_kwargs = dict(kwargs)
         legacy_kwargs.pop("categories", None)
+        legacy_kwargs.pop("include_access_check", None)
         try:
             return scan_file(*args, scan_profile=scan_profile, **legacy_kwargs)
         except TypeError as exc2:
@@ -117,6 +120,8 @@ def _scan_zip_upload(
     scan_profile: str,
     pdf_mode: str,
     categories: list[str] | None,
+    include_access_check: bool = False,
+    source_is_upload: bool = False,
 ) -> dict:
     extracted = extract_zip_to_temp(zip_path)
     plan = build_folder_scan_plan(extracted.root, recursive=True)
@@ -141,6 +146,16 @@ def _scan_zip_upload(
     root = extracted.root
     level_order = {"grønn": 0, "gul": 1, "rød": 2, "svart": 3}
     aggregate_level = "grønn"
+    access_summary = None
+    if include_access_check:
+        if source_is_upload:
+            access_summary = uploaded_copy_access_summary()
+        else:
+            access_summary = {
+                **audit_path_access(zip_path),
+                "scope": "zip_archive",
+                "scope_note": "Tilgangssjekken gjelder selve ZIP-arkivet, ikke de utpakkede midlertidige filene.",
+            }
     for file_path in plan["files"]:
         result = _scan_file_compat(
             file_path,
@@ -150,7 +165,10 @@ def _scan_zip_upload(
             scan_profile=scan_profile,
             categories=categories,
             pdf_mode=pdf_mode,
+            include_access_check=False,
         )
+        if access_summary is not None:
+            result.access_summary = dict(access_summary)
         result.relative_path = str(Path(file_path).relative_to(root))
         result.source_path = str(file_path)
         if level_order.get(result.risk_level, 0) > level_order.get(aggregate_level, 0):
@@ -213,6 +231,7 @@ def scan():
         scan_profile = data.get("scan_profile", "normal")
         pdf_mode = data.get("scan_mode", data.get("pdf_mode", "auto"))
         categories = _request_categories(data.get("categories"))
+        include_access_check = bool(data.get("access_check", data.get("include_access_check", False)))
         LOGGER.info(
             "scan request path=%s lang=%s profile=%s pdf_mode=%s ignore_xlent=%s ocr=%s categories=%s",
             file_path,
@@ -234,6 +253,7 @@ def scan():
                 scan_profile=scan_profile,
                 categories=categories,
                 pdf_mode=pdf_mode,
+                include_access_check=include_access_check,
             )
             return jsonify(payload)
         result = _scan_file_compat(
@@ -244,6 +264,7 @@ def scan():
             scan_profile=scan_profile,
             categories=categories,
             pdf_mode=pdf_mode,
+            include_access_check=include_access_check,
         )
         _remember_result(result, path_obj)
         LOGGER.info(
@@ -271,6 +292,7 @@ def scan_upload():
         scan_profile = request.form.get("scan_profile", "normal")
         pdf_mode = request.form.get("scan_mode") or request.form.get("pdf_mode", "auto")
         categories = _request_categories(request.form.get("categories"))
+        include_access_check = request.form.get("access_check", request.form.get("include_access_check", "false")).lower() == "true"
         original_name = uploaded.filename or "ukjent"
         suffix = Path(original_name).suffix.lower()
         LOGGER.info(
@@ -306,6 +328,8 @@ def scan_upload():
                 scan_profile=scan_profile,
                 categories=categories,
                 pdf_mode=pdf_mode,
+                include_access_check=include_access_check,
+                source_is_upload=True,
             )
             app_state.last_tmp_path = tmp_path
             app_state.last_result = None
@@ -328,7 +352,10 @@ def scan_upload():
             scan_profile=scan_profile,
             categories=categories,
             pdf_mode=pdf_mode,
+            include_access_check=False,
         )
+        if include_access_check:
+            result.access_summary = uploaded_copy_access_summary()
         result.file_name = original_name
         app_state.last_tmp_path = tmp_path
         _remember_result(result, tmp_path)
