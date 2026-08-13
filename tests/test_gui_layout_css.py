@@ -569,6 +569,7 @@ def test_recursive_folder_scan_controls_are_wired():
     assert 'id="folder-clear">${escapeHtml(t("folderClear"))}</button>` : ""}' in html
     assert 'folderMoreActions:  "Eksport og metadata"' in html
     assert 'folderRedactSelected:"Anonymiser valgte"' in html
+    assert 'folderRedactFile:    "Anonymiser fil"' in html
     assert 'folderDeleteSelected: "Slett valgte"' in html
     assert 'folderAuditHtml:    "Åpne audit HTML"' in html
     assert 'folderAuditPdf:     "Åpne audit PDF"' in html
@@ -586,6 +587,7 @@ def test_recursive_folder_scan_controls_are_wired():
     assert "window.confirm(" in html
     assert "folder-redact-file" in html
     assert "folder-delete-file" in html
+    assert "if (_folderRows.length) renderFolderResults(_folderRows);" in html
     assert '_folderPost(url, { report_id: id })' in html
 
 

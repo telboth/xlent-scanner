@@ -2182,7 +2182,7 @@
         folderAuditPdf:     "Åpne audit PDF",
         folderRedactSelected:"Anonymiser valgte",
         folderRedactSelectedTooltip:"Lager anonymiserte kopier av valgte filer fra mappeskann-resultatet. Kontroller resultatfilene før deling.",
-        folderRedactFile:    "Anonymiser",
+        folderRedactFile:    "Anonymiser fil",
         folderDeleteSelected: "Slett valgte",
         folderDeleteSelectedTooltip: "Sletter de valgte originalfilene permanent etter bekreftelse.",
         folderDeleteFile:    "Slett",
@@ -2633,7 +2633,7 @@
         folderAuditPdf:     "Öppna audit PDF",
         folderRedactSelected:"Anonymisera valda",
         folderRedactSelectedTooltip:"Skapar anonymiserade kopior av valda filer från mappskanningsresultatet. Kontrollera resultatfilerna före delning.",
-        folderRedactFile:    "Anonymisera",
+        folderRedactFile:    "Anonymisera fil",
         folderDeleteSelected: "Ta bort valda",
         folderDeleteSelectedTooltip: "Tar bort de valda originalfilerna permanent efter bekräftelse.",
         folderDeleteFile:    "Ta bort",
@@ -3089,7 +3089,7 @@
         folderAuditPdf:     "Open audit PDF",
         folderRedactSelected:"Redact selected",
         folderRedactSelectedTooltip:"Creates redacted copies of selected files from the folder scan result. Verify the output files before sharing.",
-        folderRedactFile:    "Redact",
+        folderRedactFile:    "Redact file",
         folderDeleteSelected: "Delete selected",
         folderDeleteSelectedTooltip: "Permanently deletes the selected original files after confirmation.",
         folderDeleteFile:    "Delete",
@@ -3638,7 +3638,7 @@
         folderAuditPdf:      "Audit PDF öffnen",
         folderRedactSelected:"Ausgewählte anonymisieren",
         folderRedactSelectedTooltip:"Erstellt anonymisierte Kopien der ausgewählten Dateien aus dem Ordnerscan-Ergebnis. Prüfen Sie die Ergebnisdateien vor dem Teilen.",
-        folderRedactFile:    "Anonymisieren",
+        folderRedactFile:    "Datei anonymisieren",
         folderDeleteSelected: "Ausgewählte löschen",
         folderDeleteSelectedTooltip: "Löscht die ausgewählten Originaldateien nach Bestätigung dauerhaft.",
         folderDeleteFile:    "Löschen",
@@ -4104,7 +4104,7 @@
         folderAuditPdf:      "Ouvrir audit PDF",
         folderRedactSelected:"Anonymiser la sélection",
         folderRedactSelectedTooltip:"Crée des copies anonymisées des fichiers sélectionnés depuis le résultat d’analyse de dossier. Vérifiez les fichiers produits avant partage.",
-        folderRedactFile:    "Anonymiser",
+        folderRedactFile:    "Anonymiser le fichier",
         folderDeleteSelected: "Supprimer la sélection",
         folderDeleteSelectedTooltip: "Supprime définitivement les fichiers originaux sélectionnés après confirmation.",
         folderDeleteFile:    "Supprimer",
@@ -4570,7 +4570,7 @@
         folderAuditPdf:      "Abrir audit PDF",
         folderRedactSelected:"Anonimizar seleccionados",
         folderRedactSelectedTooltip:"Crea copias anonimizadas de los archivos seleccionados del resultado de escaneo de carpeta. Verifique los archivos generados antes de compartirlos.",
-        folderRedactFile:    "Anonimizar",
+        folderRedactFile:    "Anonimizar archivo",
         folderDeleteSelected: "Eliminar seleccionados",
         folderDeleteSelectedTooltip: "Elimina permanentemente los archivos originales seleccionados tras la confirmación.",
         folderDeleteFile:    "Eliminar",
@@ -4784,6 +4784,9 @@
 
       // Re-render result if visible (so button labels update)
       if (lastResult) renderResult(lastResult);
+
+      // Folder scan rows are dynamically rendered and must follow the selected UI language.
+      if (_folderRows.length) renderFolderResults(_folderRows);
 
       // Update status if it shows a "ready" message
       const readyMsgs = Object.values(I18N)
