@@ -333,6 +333,16 @@ def test_folder_redact_endpoint_patches_selected_files(monkeypatch, tmp_path: Pa
     with app_module.app_state.folder_scan_lock:
         app_module.app_state.folder_scan_results["report-redact"] = result
     monkeypatch.setattr(app_module, "_downloads_dir", lambda: tmp_path)
+    recorded = []
+
+    def fake_record(output, source_result, selected, **kwargs):
+        recorded.append((output, source_result, selected, kwargs))
+        return {
+            "id": "audit-1",
+            "verification": {"status": "passed", "passed": True, "finding_count": 0},
+        }
+
+    monkeypatch.setattr(folder_routes, "record_redaction", fake_record)
 
     calls = []
 
@@ -352,8 +362,82 @@ def test_folder_redact_endpoint_patches_selected_files(monkeypatch, tmp_path: Pa
     assert data["ok"] is True
     assert len(data["outputs"]) == 1
     assert Path(data["outputs"][0]["path"]).exists()
+    assert Path(data["outputs"][0]["path"]).parent == source.parent
+    assert Path(data["outputs"][0]["path"]).name == "source-redacted.docx"
     assert calls[0][0] == source
     assert calls[0][3] is True
+    assert not list(tmp_path.glob(".*.tmp-*.docx"))
+    assert recorded[0][3]["store_finding_details"] is False
+    assert data["outputs"][0]["history_id"] == "audit-1"
+    assert data["outputs"][0]["verification"]["passed"] is True
+
+
+def test_folder_redact_endpoint_uses_unique_name_beside_original(monkeypatch, tmp_path: Path):
+    source = _write(tmp_path / "source.docx", "secret")
+    _write(tmp_path / "source-redacted.docx", "existing")
+    result = ScanResult(
+        file_name="source.docx",
+        source_path=str(source),
+        file_size=6,
+        text_length=6,
+        text_preview="secret",
+        findings=[Finding(category="hemmelighet", text="secret", context="secret", severity="rød")],
+        risk_level="rød",
+    )
+    with app_module.app_state.folder_scan_lock:
+        app_module.app_state.folder_scan_results["report-redact-unique"] = result
+
+    def fake_patch_file(src, replacements, output, strip_annotations=False):
+        Path(output).write_text("redacted", encoding="utf-8")
+
+    monkeypatch.setattr(app_module, "patch_file", fake_patch_file)
+    monkeypatch.setattr(
+        folder_routes,
+        "record_redaction",
+        lambda *args, **kwargs: {"id": "audit-2", "verification": {"status": "passed", "passed": True}},
+    )
+    data = app_module.flask_app.test_client().post(
+        "/folder-redact", json={"report_ids": ["report-redact-unique"]}
+    ).get_json()
+
+    assert data["ok"] is True
+    assert Path(data["outputs"][0]["path"]).name == "source-redacted-1.docx"
+
+
+def test_folder_redact_permission_error_leaves_no_partial_file(monkeypatch, tmp_path: Path):
+    source = _write(tmp_path / "locked.docx", "secret")
+    result = ScanResult(
+        file_name="locked.docx",
+        source_path=str(source),
+        file_size=6,
+        text_length=6,
+        text_preview="secret",
+        findings=[Finding(category="hemmelighet", text="secret", context="", severity="rød")],
+        risk_level="rød",
+    )
+    with app_module.app_state.folder_scan_lock:
+        app_module.app_state.folder_scan_results["report-locked"] = result
+
+    def denied(*args, **kwargs):
+        raise PermissionError("denied")
+
+    monkeypatch.setattr(app_module, "patch_file", denied)
+    data = app_module.flask_app.test_client().post(
+        "/folder-redact", json={"report_ids": ["report-locked"]}
+    ).get_json()
+
+    assert data["ok"] is False
+    assert "Ingen skrivetilgang" in data["errors"][0]["error"]
+    assert not (tmp_path / "locked-redacted.docx").exists()
+    assert not list(tmp_path.glob(".*.tmp-*.docx"))
+
+
+def test_folder_result_marks_redacted_copies():
+    redacted = ScanResult(file_name="contract-redacted-2.docx", file_size=0, text_length=0, text_preview="")
+    original = ScanResult(file_name="contract.docx", file_size=0, text_length=0, text_preview="")
+
+    assert app_module._folder_result_row(redacted, report_id="redacted")["is_redacted"] is True
+    assert app_module._folder_result_row(original, report_id="original")["is_redacted"] is False
 
 
 def test_folder_delete_endpoint_requires_confirmation_and_deletes_active_file(tmp_path: Path):

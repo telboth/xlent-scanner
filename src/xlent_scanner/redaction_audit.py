@@ -203,6 +203,7 @@ def record_redaction(
     ai_findings: list[dict] | None = None,
     method: str,
     ai_metadata: dict[str, Any] | None = None,
+    store_finding_details: bool = True,
 ) -> dict:
     ai_findings = ai_findings or []
     verification = verify_redacted_file(
@@ -211,22 +212,46 @@ def record_redaction(
         language=source_result.language or "auto",
         source_text=source_result.original_text or "",
     )
+    stored_verification = verification if store_finding_details else _verification_summary(verification)
     entry = {
         "id": uuid.uuid4().hex[:12],
         "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "source_file": source_result.file_name,
+        "source_risk_level": source_result.risk_level,
+        "source_finding_count": len(_active_findings(source_result)),
         "output_file": output_path.name,
         "path": str(output_path),
         "method": method,
         "selected_count": len(selected_findings),
-        "selected_findings": _selected_audit(selected_findings, ai_findings),
+        "selected_findings": (
+            _selected_audit(selected_findings, ai_findings)
+            if store_finding_details
+            else []
+        ),
         "ai_metadata": dict(ai_metadata or {}),
-        "verification": verification,
+        "stores_finding_details": store_finding_details,
+        "verification": stored_verification,
     }
     history = load_redaction_history()
     history.append(entry)
     _write_history(history)
     return entry
+
+
+def _verification_summary(verification: dict) -> dict:
+    """Keep audit metadata without persisting detected document content."""
+    keys = (
+        "status",
+        "passed",
+        "checked_at",
+        "risk_level",
+        "scan_status",
+        "finding_count",
+        "removed_count",
+        "not_found_count",
+        "remaining_selected_count",
+    )
+    return {key: verification.get(key) for key in keys if key in verification}
 
 
 def refresh_redaction_verification(entry_id: str) -> dict | None:
@@ -252,6 +277,11 @@ def refresh_redaction_verification(entry_id: str) -> dict | None:
             )
             for item in entry.get("selected_findings") or []
         ]
-        entry["verification"] = verify_redacted_file(path, selected)
+        verification = verify_redacted_file(path, selected)
+        entry["verification"] = (
+            verification
+            if entry.get("stores_finding_details", True)
+            else _verification_summary(verification)
+        )
     _write_history(history)
     return entry

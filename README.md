@@ -438,6 +438,14 @@ src/xlent_scanner/
 
 ## Endringslogg
 
+### v1.9.13
+
+- Anonymiserte filer lagres atomisk ved siden av originalen og kontrollskannes automatisk.
+- Bekreftelsesdialogen viser kontrollresultat og kan åpne filen eller vise den i mappen.
+- Lokal revisjonshistorikk for mappeanonymisering lagrer bare metadata, ikke dokumentinnhold eller funntekst.
+- Anonymiserte filer merkes i mappeskann og skjules som standard med et valgfritt filter.
+- Tydeligere feilmelding ved manglende skrivetilgang.
+
 ### v1.7.6
 - Legger til generisk Tax ID/TIN/VAT ID-deteksjon under «Personnummer / ID», styrt av samme kategoriavkryssing.
 - Legger til firmanavn-deteksjon basert på juridiske suffix som AS, ASA, LTD og LLC under «Firmanavn».

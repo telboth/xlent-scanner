@@ -324,6 +324,11 @@
       padding: 5px 8px; border: 1px solid var(--border); border-radius: 6px;
       background: var(--panel); color: var(--text); font-size: 12px;
     }
+    .folder-redact-dialog { max-width:560px; width:calc(100% - 32px); color:var(--text); background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:20px; }
+    .folder-redact-dialog::backdrop { background:rgba(0,0,0,.55); }
+    .folder-redact-dialog-path { display:block; margin:10px 0; padding:8px; overflow-wrap:anywhere; background:var(--bg); border-radius:6px; }
+    .folder-redact-dialog-actions { display:flex; gap:8px; justify-content:flex-end; flex-wrap:wrap; margin-top:16px; }
+    .folder-redacted-badge { margin-left:6px; padding:1px 5px; border:1px solid var(--accent); border-radius:10px; color:var(--accent); font-size:10px; white-space:nowrap; }
     .folder-sort-btn {
       border: 0; background: transparent; color: inherit; font: inherit;
       font-weight: 700; cursor: pointer; padding: 0;
@@ -988,6 +993,16 @@
           <label><span data-i18n="folderMaxDepth">Maks dybde</span> <input type="number" id="folder-max-depth" min="0" max="50" value="5"></label>
         </div>
         <div id="folder-results" style="display:none;"></div>
+        <dialog id="folder-redact-dialog" class="folder-redact-dialog">
+          <h3 id="folder-redact-dialog-title"></h3>
+          <code id="folder-redact-dialog-path" class="folder-redact-dialog-path"></code>
+          <p id="folder-redact-dialog-status" class="muted"></p>
+          <div class="folder-redact-dialog-actions">
+            <button type="button" class="ctrl-btn" id="folder-redact-dialog-open"></button>
+            <button type="button" class="ctrl-btn" id="folder-redact-dialog-reveal"></button>
+            <button type="button" class="ctrl-btn" id="folder-redact-dialog-close"></button>
+          </div>
+        </dialog>
       </div>
 
       <!-- Vises kun når spaCy NER-modeller mangler -->
@@ -2183,6 +2198,16 @@
         folderRedactSelected:"Anonymiser valgte",
         folderRedactSelectedTooltip:"Lager anonymiserte kopier av valgte filer fra mappeskann-resultatet. Kontroller resultatfilene før deling.",
         folderRedactFile:    "Anonymiser fil",
+        folderRedactFileDone: "Anonymisert fil er lagret:\n{path}\n\nOriginalfilen er ikke endret.",
+        folderRedactDialogTitle: "Anonymisert fil er lagret",
+        folderRedactVerificationPassed: "Kontrollskann bestått – ingen gjenværende funn.",
+        folderRedactVerificationReview: "Kontroll kreves – {count} funn, risikonivå {risk}.",
+        folderRedactVerificationError: "Kontrollskann kunne ikke fullføres.",
+        folderRedactOpen: "Åpne fil",
+        folderRedactReveal: "Vis i mappe",
+        folderRedactClose: "Lukk",
+        folderHideRedacted: "Skjul anonymiserte filer",
+        folderRedactedBadge: "ANONYMISERT",
         folderDeleteSelected: "Slett valgte",
         folderDeleteSelectedTooltip: "Sletter de valgte originalfilene permanent etter bekreftelse.",
         folderDeleteFile:    "Slett",
@@ -2634,6 +2659,16 @@
         folderRedactSelected:"Anonymisera valda",
         folderRedactSelectedTooltip:"Skapar anonymiserade kopior av valda filer från mappskanningsresultatet. Kontrollera resultatfilerna före delning.",
         folderRedactFile:    "Anonymisera fil",
+        folderRedactFileDone: "Anonymiserad fil har sparats:\n{path}\n\nOriginalfilen har inte ändrats.",
+        folderRedactDialogTitle: "Anonymiserad fil har sparats",
+        folderRedactVerificationPassed: "Kontrollskanningen godkändes – inga återstående fynd.",
+        folderRedactVerificationReview: "Kontroll krävs – {count} fynd, risknivå {risk}.",
+        folderRedactVerificationError: "Kontrollskanningen kunde inte slutföras.",
+        folderRedactOpen: "Öppna fil",
+        folderRedactReveal: "Visa i mapp",
+        folderRedactClose: "Stäng",
+        folderHideRedacted: "Dölj anonymiserade filer",
+        folderRedactedBadge: "ANONYMISERAD",
         folderDeleteSelected: "Ta bort valda",
         folderDeleteSelectedTooltip: "Tar bort de valda originalfilerna permanent efter bekräftelse.",
         folderDeleteFile:    "Ta bort",
@@ -3090,6 +3125,16 @@
         folderRedactSelected:"Redact selected",
         folderRedactSelectedTooltip:"Creates redacted copies of selected files from the folder scan result. Verify the output files before sharing.",
         folderRedactFile:    "Redact file",
+        folderRedactFileDone: "Redacted file saved:\n{path}\n\nThe original file was not changed.",
+        folderRedactDialogTitle: "Redacted file saved",
+        folderRedactVerificationPassed: "Verification scan passed – no remaining findings.",
+        folderRedactVerificationReview: "Review required – {count} findings, risk level {risk}.",
+        folderRedactVerificationError: "The verification scan could not be completed.",
+        folderRedactOpen: "Open file",
+        folderRedactReveal: "Show in folder",
+        folderRedactClose: "Close",
+        folderHideRedacted: "Hide redacted files",
+        folderRedactedBadge: "REDACTED",
         folderDeleteSelected: "Delete selected",
         folderDeleteSelectedTooltip: "Permanently deletes the selected original files after confirmation.",
         folderDeleteFile:    "Delete",
@@ -3639,6 +3684,16 @@
         folderRedactSelected:"Ausgewählte anonymisieren",
         folderRedactSelectedTooltip:"Erstellt anonymisierte Kopien der ausgewählten Dateien aus dem Ordnerscan-Ergebnis. Prüfen Sie die Ergebnisdateien vor dem Teilen.",
         folderRedactFile:    "Datei anonymisieren",
+        folderRedactFileDone: "Anonymisierte Datei gespeichert:\n{path}\n\nDie Originaldatei wurde nicht geändert.",
+        folderRedactDialogTitle: "Anonymisierte Datei gespeichert",
+        folderRedactVerificationPassed: "Kontrollscan bestanden – keine verbleibenden Treffer.",
+        folderRedactVerificationReview: "Prüfung erforderlich – {count} Treffer, Risikostufe {risk}.",
+        folderRedactVerificationError: "Der Kontrollscan konnte nicht abgeschlossen werden.",
+        folderRedactOpen: "Datei öffnen",
+        folderRedactReveal: "Im Ordner anzeigen",
+        folderRedactClose: "Schließen",
+        folderHideRedacted: "Anonymisierte Dateien ausblenden",
+        folderRedactedBadge: "ANONYMISIERT",
         folderDeleteSelected: "Ausgewählte löschen",
         folderDeleteSelectedTooltip: "Löscht die ausgewählten Originaldateien nach Bestätigung dauerhaft.",
         folderDeleteFile:    "Löschen",
@@ -4105,6 +4160,16 @@
         folderRedactSelected:"Anonymiser la sélection",
         folderRedactSelectedTooltip:"Crée des copies anonymisées des fichiers sélectionnés depuis le résultat d’analyse de dossier. Vérifiez les fichiers produits avant partage.",
         folderRedactFile:    "Anonymiser le fichier",
+        folderRedactFileDone: "Fichier anonymisé enregistré :\n{path}\n\nLe fichier d’origine n’a pas été modifié.",
+        folderRedactDialogTitle: "Fichier anonymisé enregistré",
+        folderRedactVerificationPassed: "Analyse de contrôle réussie – aucun résultat restant.",
+        folderRedactVerificationReview: "Vérification requise – {count} résultats, niveau de risque {risk}.",
+        folderRedactVerificationError: "L’analyse de contrôle n’a pas pu être terminée.",
+        folderRedactOpen: "Ouvrir le fichier",
+        folderRedactReveal: "Afficher dans le dossier",
+        folderRedactClose: "Fermer",
+        folderHideRedacted: "Masquer les fichiers anonymisés",
+        folderRedactedBadge: "ANONYMISÉ",
         folderDeleteSelected: "Supprimer la sélection",
         folderDeleteSelectedTooltip: "Supprime définitivement les fichiers originaux sélectionnés après confirmation.",
         folderDeleteFile:    "Supprimer",
@@ -4571,6 +4636,16 @@
         folderRedactSelected:"Anonimizar seleccionados",
         folderRedactSelectedTooltip:"Crea copias anonimizadas de los archivos seleccionados del resultado de escaneo de carpeta. Verifique los archivos generados antes de compartirlos.",
         folderRedactFile:    "Anonimizar archivo",
+        folderRedactFileDone: "Archivo anonimizado guardado:\n{path}\n\nEl archivo original no se ha modificado.",
+        folderRedactDialogTitle: "Archivo anonimizado guardado",
+        folderRedactVerificationPassed: "Escaneo de verificación superado – no quedan hallazgos.",
+        folderRedactVerificationReview: "Se requiere revisión – {count} hallazgos, nivel de riesgo {risk}.",
+        folderRedactVerificationError: "No se pudo completar el escaneo de verificación.",
+        folderRedactOpen: "Abrir archivo",
+        folderRedactReveal: "Mostrar en carpeta",
+        folderRedactClose: "Cerrar",
+        folderHideRedacted: "Ocultar archivos anonimizados",
+        folderRedactedBadge: "ANONIMIZADO",
         folderDeleteSelected: "Eliminar seleccionados",
         folderDeleteSelectedTooltip: "Elimina permanentemente los archivos originales seleccionados tras la confirmación.",
         folderDeleteFile:    "Eliminar",
@@ -8416,6 +8491,7 @@
     let _folderFilterRisk = "";
     let _folderOnlyFindings = false;
     let _folderOnlyErrors = false;
+    let _folderHideRedacted = true;
 
     function _stopFolderPolling() {
       if (_folderPollTimer) clearInterval(_folderPollTimer);
@@ -8445,6 +8521,39 @@
       return await r.json();
     }
 
+    function _folderVerificationText(verification) {
+      if (!verification || verification.status === "error") return t("folderRedactVerificationError");
+      if (verification.passed) return t("folderRedactVerificationPassed");
+      return t("folderRedactVerificationReview")
+        .replace("{count}", Number(verification.finding_count || 0))
+        .replace("{risk}", String(verification.risk_level || "-").toUpperCase());
+    }
+
+    function showFolderRedactDialog(output) {
+      const dialog = document.getElementById("folder-redact-dialog");
+      if (!dialog || typeof dialog.showModal !== "function") {
+        window.alert(t("folderRedactFileDone").replace("{path}", output.path || ""));
+        return;
+      }
+      document.getElementById("folder-redact-dialog-title").textContent = t("folderRedactDialogTitle");
+      document.getElementById("folder-redact-dialog-path").textContent = output.path || "";
+      document.getElementById("folder-redact-dialog-status").textContent = _folderVerificationText(output.verification);
+      const openBtn = document.getElementById("folder-redact-dialog-open");
+      const revealBtn = document.getElementById("folder-redact-dialog-reveal");
+      const closeBtn = document.getElementById("folder-redact-dialog-close");
+      openBtn.textContent = t("folderRedactOpen");
+      revealBtn.textContent = t("folderRedactReveal");
+      closeBtn.textContent = t("folderRedactClose");
+      const runOutputAction = async url => {
+        const d = await _folderPost(url, { id: output.history_id || "" });
+        if (!d.ok) _setFolderAction(`${t("folderActionFailed")} ${d.error || ""}`, false);
+      };
+      openBtn.onclick = () => runOutputAction("/open-anonymized-file");
+      revealBtn.onclick = () => runOutputAction("/reveal-anonymized-file");
+      closeBtn.onclick = () => dialog.close();
+      dialog.showModal();
+    }
+
     async function _folderRunOutputAction(url, labelKey, openOutput = false) {
       if (!_folderJobId) { _setFolderAction(t("folderNoSelection"), false); return; }
       try {
@@ -8468,6 +8577,7 @@
       _folderFilterRisk = "";
       _folderOnlyFindings = false;
       _folderOnlyErrors = false;
+      _folderHideRedacted = true;
       const fs = document.getElementById("folder-status");
       const fr = document.getElementById("folder-results");
       const cancelBtn = document.getElementById("btn-cancel-folder");
@@ -8595,7 +8705,8 @@
     function _batchFileNameHtml(file, icon) {
       const displayPath = file.relative_path || file.file_name;
       const tooltip = _folderTooltipHtml(file);
-      const name = `${icon ? `<span style="margin-right:5px">${icon}</span>` : ""}${escapeHtml(displayPath)}`;
+      const redactedBadge = file.is_redacted ? `<span class="folder-redacted-badge">${escapeHtml(t("folderRedactedBadge"))}</span>` : "";
+      const name = `${icon ? `<span style="margin-right:5px">${icon}</span>` : ""}${escapeHtml(displayPath)}${redactedBadge}`;
       if (file.report_id) {
         return `<span class="batch-file-wrap">
           <button type="button" class="batch-file-link" data-report-id="${escapeHtml(file.report_id)}" title="${escapeHtml(t("openReport"))}">${name}</button>
@@ -8614,6 +8725,7 @@
         <label>${escapeHtml(t("folderFilterRisk"))} <select id="folder-filter-risk">${riskOptions}</select></label>
         <label><input type="checkbox" id="folder-only-findings" ${_folderOnlyFindings ? "checked" : ""}> ${escapeHtml(t("folderOnlyFindings"))}</label>
         <label><input type="checkbox" id="folder-only-errors" ${_folderOnlyErrors ? "checked" : ""}> ${escapeHtml(t("folderOnlyErrors"))}</label>
+        <label><input type="checkbox" id="folder-hide-redacted" ${_folderHideRedacted ? "checked" : ""}> ${escapeHtml(t("folderHideRedacted"))}</label>
         <span class="ctrl-sep"></span>
         <button type="button" class="ctrl-btn ctrl-btn-outline-accent" id="folder-redact-selected" title="${escapeHtml(t("folderRedactSelectedTooltip"))}">${escapeHtml(t("folderRedactSelected"))}</button>
         <button type="button" class="ctrl-btn ctrl-btn-danger" id="folder-delete-selected" title="${escapeHtml(t("folderDeleteSelectedTooltip"))}">${escapeHtml(t("folderDeleteSelected"))}</button>
@@ -8641,6 +8753,7 @@
         if (_folderFilterRisk && f.risk_level !== _folderFilterRisk) return false;
         if (_folderOnlyFindings && !(Number(f.finding_count || 0) > 0)) return false;
         if (_folderOnlyErrors && !f.error) return false;
+        if (_folderHideRedacted && f.is_redacted) return false;
         return true;
       });
       const dir = _folderSortDir === "asc" ? 1 : -1;
@@ -8740,6 +8853,8 @@
       if (onlyFindings) onlyFindings.addEventListener("change", () => { _folderOnlyFindings = onlyFindings.checked; renderFolderResults(_folderRows); });
       const onlyErrors = container.querySelector("#folder-only-errors");
       if (onlyErrors) onlyErrors.addEventListener("change", () => { _folderOnlyErrors = onlyErrors.checked; renderFolderResults(_folderRows); });
+      const hideRedacted = container.querySelector("#folder-hide-redacted");
+      if (hideRedacted) hideRedacted.addEventListener("change", () => { _folderHideRedacted = hideRedacted.checked; renderFolderResults(_folderRows); });
       const selectAll = container.querySelector("#folder-select-all");
       if (selectAll) selectAll.addEventListener("change", () => container.querySelectorAll(".folder-row-cb").forEach(cb => { cb.checked = selectAll.checked; }));
       container.querySelector("#folder-export-json")?.addEventListener("click", () => _folderRunOutputAction("/folder-export/json", "folderActionDone"));
@@ -8755,7 +8870,12 @@
             report_ids: ids,
             strip_annotations: document.getElementById("stripAnnotations")?.checked === true,
           });
-          if (d.ok) _setFolderAction(`${t("folderRedactDone")} ${d.folder || ""}${d.errors?.length ? ` (${d.errors.length} ${t("folderActionFailed")})` : ""}`);
+          if (d.ok) {
+            _setFolderAction(`${t("folderRedactDone")} ${d.folder || ""}${d.errors?.length ? ` (${d.errors.length} ${t("folderActionFailed")})` : ""}`);
+            if (ids.length === 1 && d.outputs?.length === 1) {
+              showFolderRedactDialog(d.outputs[0]);
+            }
+          }
           else _setFolderAction(`${t("folderActionFailed")} ${d.error || ""}`, false);
         } catch (e) {
           _setFolderAction(`${t("folderActionFailed")} ${e}`, false);

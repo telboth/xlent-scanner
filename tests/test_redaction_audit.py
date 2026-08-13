@@ -157,3 +157,38 @@ def test_record_redaction_persists_audit_metadata(monkeypatch, tmp_path):
     assert entry["verification"]["passed"] is True
     assert entry["selected_findings"][0]["engine"] == "rule"
     assert entry["ai_metadata"]["model"] == "llama3.2:3b"
+
+
+def test_record_redaction_can_store_metadata_without_finding_content(monkeypatch, tmp_path):
+    output = tmp_path / "source-redacted.txt"
+    output.write_text("redacted", encoding="utf-8")
+    monkeypatch.setattr(redaction_audit, "app_data_dir", lambda: tmp_path)
+    monkeypatch.setattr(
+        redaction_audit,
+        "verify_redacted_file",
+        lambda *args, **kwargs: {
+            "status": "needs_review",
+            "passed": False,
+            "risk_level": "gul",
+            "finding_count": 1,
+            "remaining_findings": [{"text": "sensitive content", "context": "secret"}],
+            "remaining_selected": [{"text": "sensitive content"}],
+        },
+    )
+
+    entry = redaction_audit.record_redaction(
+        output,
+        _source_result(),
+        _source_result().findings,
+        method="folder_scan",
+        store_finding_details=False,
+    )
+
+    serialized = (tmp_path / "redaction_history.jsonl").read_text(encoding="utf-8")
+    assert entry["selected_findings"] == []
+    assert entry["stores_finding_details"] is False
+    assert entry["source_risk_level"] == "gul"
+    assert entry["source_finding_count"] == 1
+    assert entry["verification"]["finding_count"] == 1
+    assert "sensitive content" not in serialized
+    assert "remaining_findings" not in entry["verification"]

@@ -6,7 +6,7 @@ import html
 import io
 import json
 import logging
-import shutil
+import re
 import subprocess
 import sys
 import threading
@@ -26,6 +26,7 @@ from xlent_scanner.history import add_history_entry
 from xlent_scanner.models import ScanResult
 from xlent_scanner.microsoft_graph import sharepoint_access_for_local_path
 from xlent_scanner.patch import SUPPORTED_PATCH_SUFFIXES
+from xlent_scanner.redaction_audit import record_redaction
 from xlent_scanner.report import generate_html
 from xlent_scanner.routes.reports import write_text_pdf
 from xlent_scanner.scanner import (
@@ -134,7 +135,12 @@ def folder_result_row(result: ScanResult, report_id: str | None = None) -> dict:
         "warning_code": result.warning_code,
         "access_summary": result.access_summary,
         "sharepoint_access_summary": result.sharepoint_access_summary,
+        "is_redacted": _is_redacted_file_name(result.relative_path or result.file_name),
     }
+
+
+def _is_redacted_file_name(value: str) -> bool:
+    return bool(re.search(r"-redacted(?:-\d+)?$", Path(value).stem, flags=re.IGNORECASE))
 
 
 def folder_job_snapshot(job_id: str) -> dict | None:
@@ -544,6 +550,40 @@ def _unique_download_path(stem: str, suffix: str) -> Path:
     return out
 
 
+def _unique_redacted_sibling(source: Path) -> Path:
+    """Return a non-overwriting redacted filename beside the original file."""
+    candidate = source.with_name(f"{source.stem}-redacted{source.suffix}")
+    counter = 1
+    while candidate.exists():
+        candidate = source.with_name(f"{source.stem}-redacted-{counter}{source.suffix}")
+        counter += 1
+    return candidate
+
+
+def _atomic_patch_file(
+    source: Path,
+    replacements: list,
+    output: Path,
+    *,
+    strip_annotations: bool,
+) -> None:
+    """Patch beside the target and publish only a complete output file."""
+    temporary = output.with_name(
+        f".{output.stem}.tmp-{uuid.uuid4().hex}{output.suffix}"
+    )
+    try:
+        _patch_file(
+            source,
+            replacements,
+            temporary,
+            strip_annotations=strip_annotations,
+        )
+        temporary.replace(output)
+    finally:
+        if temporary.exists():
+            temporary.unlink()
+
+
 @folders_bp.post("/folder-export/csv")
 def folder_export_csv_endpoint():
     try:
@@ -654,8 +694,6 @@ def folder_redact_endpoint():
         strip_annotations = bool(data.get("strip_annotations", False))
         if not report_ids:
             return jsonify({"ok": False, "error": "Ingen filer valgt."})
-        out_root = _downloads_dir() / f"XLENT-redacted-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
-        out_root.mkdir(parents=True, exist_ok=True)
         outputs = []
         errors = []
         for report_id in report_ids:
@@ -677,16 +715,36 @@ def folder_redact_endpoint():
                 if not replacements:
                     errors.append({"file": result.relative_path or result.file_name, "error": "Ingen direkte redigerbare funn."})
                     continue
-                relative = Path(result.relative_path or result.file_name)
-                out = out_root / relative.parent / f"{relative.stem}-redacted{source.suffix}"
-                out.parent.mkdir(parents=True, exist_ok=True)
-                _patch_file(source, replacements, out, strip_annotations=strip_annotations)
-                outputs.append({"file": result.relative_path or result.file_name, "path": str(out)})
+                out = _unique_redacted_sibling(source)
+                _atomic_patch_file(
+                    source,
+                    replacements,
+                    out,
+                    strip_annotations=strip_annotations,
+                )
+                audit = record_redaction(
+                    out,
+                    result,
+                    findings,
+                    method="folder_scan",
+                    store_finding_details=False,
+                )
+                app_state.last_anonymized_path = out
+                outputs.append({
+                    "file": result.relative_path or result.file_name,
+                    "path": str(out),
+                    "history_id": audit["id"],
+                    "verification": audit["verification"],
+                })
+            except PermissionError:
+                errors.append({
+                    "file": result.relative_path or result.file_name,
+                    "error": "Ingen skrivetilgang til mappen. Kontroller fil- og mapperettigheter.",
+                })
             except Exception as exc:
                 errors.append({"file": report_id, "error": str(exc)})
-        if not outputs and errors:
-            shutil.rmtree(out_root, ignore_errors=True)
-        return jsonify({"ok": bool(outputs), "folder": str(out_root), "outputs": outputs, "errors": errors})
+        output_folder = str(Path(outputs[0]["path"]).parent) if len(outputs) == 1 else ""
+        return jsonify({"ok": bool(outputs), "folder": output_folder, "outputs": outputs, "errors": errors})
     except Exception as exc:
         LOGGER.error("folder-redact failed: %s", traceback.format_exc())
         return jsonify({"ok": False, "error": str(exc)})

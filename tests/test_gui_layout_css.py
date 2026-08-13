@@ -505,6 +505,8 @@ def test_recursive_folder_scan_controls_are_wired():
         "folderFilterAll",
         "folderOnlyFindings",
         "folderOnlyErrors",
+        "folderHideRedacted",
+        "folderRedactedBadge",
         "folderMoreActions",
         "folderClear",
         "folderExportJson",
@@ -513,6 +515,14 @@ def test_recursive_folder_scan_controls_are_wired():
         "folderAuditPdf",
         "folderRedactSelected",
         "folderRedactFile",
+        "folderRedactFileDone",
+        "folderRedactDialogTitle",
+        "folderRedactVerificationPassed",
+        "folderRedactVerificationReview",
+        "folderRedactVerificationError",
+        "folderRedactOpen",
+        "folderRedactReveal",
+        "folderRedactClose",
         "folderDeleteSelected",
         "folderDeleteSelectedTooltip",
         "folderDeleteFile",
@@ -570,6 +580,7 @@ def test_recursive_folder_scan_controls_are_wired():
     assert 'folderMoreActions:  "Eksport og metadata"' in html
     assert 'folderRedactSelected:"Anonymiser valgte"' in html
     assert 'folderRedactFile:    "Anonymiser fil"' in html
+    assert 'folderRedactFileDone: "Anonymisert fil er lagret:' in html
     assert 'folderDeleteSelected: "Slett valgte"' in html
     assert 'folderAuditHtml:    "Åpne audit HTML"' in html
     assert 'folderAuditPdf:     "Åpne audit PDF"' in html
@@ -586,6 +597,14 @@ def test_recursive_folder_scan_controls_are_wired():
     assert "function confirmFolderDelete(ids)" in html
     assert "window.confirm(" in html
     assert "folder-redact-file" in html
+    assert "showFolderRedactDialog(d.outputs[0]);" in html
+    assert 'id="folder-redact-dialog"' in html
+    assert 'id="folder-redact-dialog-open"' in html
+    assert 'id="folder-redact-dialog-reveal"' in html
+    assert 'runOutputAction("/open-anonymized-file")' in html
+    assert 'runOutputAction("/reveal-anonymized-file")' in html
+    assert 'id="folder-hide-redacted"' in html
+    assert "if (_folderHideRedacted && f.is_redacted) return false;" in html
     assert "folder-delete-file" in html
     assert "if (_folderRows.length) renderFolderResults(_folderRows);" in html
     assert '_folderPost(url, { report_id: id })' in html
