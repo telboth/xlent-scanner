@@ -692,6 +692,70 @@ def folder_redact_endpoint():
         return jsonify({"ok": False, "error": str(exc)})
 
 
+@folders_bp.post("/folder-delete")
+def folder_delete_endpoint():
+    """Permanently delete explicitly confirmed files from the active folder scan."""
+    try:
+        data = request.get_json(force=True) or {}
+        if data.get("confirmed") is not True:
+            return jsonify({"ok": False, "error": "Sletting må bekreftes."})
+
+        job_id, job = folder_job_from_request(data)
+        if job.get("status") == "running":
+            return jsonify({"ok": False, "error": "Vent til mappeskanningen er ferdig eller avbrutt før filer slettes."})
+        report_ids = [str(value) for value in data.get("report_ids") or [] if str(value)]
+        if not report_ids:
+            return jsonify({"ok": False, "error": "Ingen filer valgt."})
+
+        active_ids = {
+            str(row.get("report_id") or "")
+            for row in job.get("files", [])
+            if row.get("report_id")
+        }
+        unknown_ids = [report_id for report_id in report_ids if report_id not in active_ids]
+        if unknown_ids:
+            return jsonify({"ok": False, "error": "En eller flere filer tilhører ikke den aktive mappeskanningen."})
+
+        deleted = []
+        errors = []
+        for report_id in dict.fromkeys(report_ids):
+            try:
+                result = folder_result_for_report_id(report_id)
+                path = Path(result.source_path)
+                if not path.exists():
+                    errors.append({"file": result.relative_path or result.file_name, "error": "Filen finnes ikke lenger."})
+                    continue
+                if not path.is_file():
+                    errors.append({"file": result.relative_path or result.file_name, "error": "Målet er ikke en vanlig fil."})
+                    continue
+                path.unlink()
+                deleted.append({"report_id": report_id, "file": result.relative_path or result.file_name})
+                add_history_entry(
+                    file_name=result.file_name,
+                    risk_level=result.risk_level,
+                    finding_count=len(result.findings),
+                    file_size=result.file_size,
+                    source="deleted",
+                )
+                with app_state.folder_scan_lock:
+                    app_state.folder_scan_results.pop(report_id, None)
+            except Exception as exc:
+                errors.append({"file": report_id, "error": str(exc)})
+
+        deleted_ids = {entry["report_id"] for entry in deleted}
+        if deleted_ids:
+            with app_state.folder_job_manager.mutate(job_id) as active_job:
+                if active_job is not None:
+                    active_job["files"] = [
+                        row for row in active_job.get("files", [])
+                        if str(row.get("report_id") or "") not in deleted_ids
+                    ]
+        return jsonify({"ok": bool(deleted), "deleted": deleted, "errors": errors})
+    except Exception as exc:
+        LOGGER.error("folder-delete failed: %s", traceback.format_exc())
+        return jsonify({"ok": False, "error": str(exc)})
+
+
 @folders_bp.get("/folder-report/<report_id>")
 def folder_report(report_id: str):
     with app_state.folder_scan_lock:

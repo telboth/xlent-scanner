@@ -356,6 +356,74 @@ def test_folder_redact_endpoint_patches_selected_files(monkeypatch, tmp_path: Pa
     assert calls[0][3] is True
 
 
+def test_folder_delete_endpoint_requires_confirmation_and_deletes_active_file(tmp_path: Path):
+    source = _write(tmp_path / "sensitive.txt", "secret")
+    result = ScanResult(
+        file_name="sensitive.txt",
+        relative_path="docs/sensitive.txt",
+        source_path=str(source),
+        file_size=6,
+        text_length=6,
+        text_preview="secret",
+        findings=[Finding(category="hemmelighet", text="secret", context="secret", severity="rød")],
+        risk_level="rød",
+    )
+    row = app_module._folder_result_row(result, report_id="report-delete")
+    with app_module.app_state.folder_scan_lock:
+        app_module.app_state.folder_scan_results["report-delete"] = result
+    with app_module.app_state.folder_jobs_lock:
+        app_module.app_state.folder_jobs["job-delete"] = {
+            "status": "completed",
+            "files": [row],
+            "completed": 1,
+        }
+    client = app_module.flask_app.test_client()
+
+    unconfirmed = client.post(
+        "/folder-delete",
+        json={"job_id": "job-delete", "report_ids": ["report-delete"]},
+    ).get_json()
+    assert unconfirmed["ok"] is False
+    assert source.exists()
+
+    deleted = client.post(
+        "/folder-delete",
+        json={"job_id": "job-delete", "report_ids": ["report-delete"], "confirmed": True},
+    ).get_json()
+    assert deleted["ok"] is True
+    assert deleted["deleted"] == [{"report_id": "report-delete", "file": "docs/sensitive.txt"}]
+    assert not source.exists()
+    with app_module.app_state.folder_scan_lock:
+        assert "report-delete" not in app_module.app_state.folder_scan_results
+    with app_module.app_state.folder_jobs_lock:
+        assert app_module.app_state.folder_jobs["job-delete"]["files"] == []
+
+
+def test_folder_delete_rejects_file_outside_active_job(tmp_path: Path):
+    source = _write(tmp_path / "sensitive.txt", "secret")
+    result = ScanResult(
+        file_name="sensitive.txt",
+        source_path=str(source),
+        file_size=6,
+        text_length=6,
+        text_preview="secret",
+        findings=[Finding(category="hemmelighet", text="secret", context="secret", severity="rød")],
+        risk_level="rød",
+    )
+    with app_module.app_state.folder_scan_lock:
+        app_module.app_state.folder_scan_results["report-other"] = result
+    with app_module.app_state.folder_jobs_lock:
+        app_module.app_state.folder_jobs["job-delete-scope"] = {"status": "completed", "files": []}
+    client = app_module.flask_app.test_client()
+
+    data = client.post(
+        "/folder-delete",
+        json={"job_id": "job-delete-scope", "report_ids": ["report-other"], "confirmed": True},
+    ).get_json()
+    assert data["ok"] is False
+    assert source.exists()
+
+
 def test_folder_csv_export_escapes_excel_formula_cells(monkeypatch, tmp_path: Path):
     row = {
         "file_name": "=evil.txt",

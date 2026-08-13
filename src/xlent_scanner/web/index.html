@@ -498,6 +498,8 @@
       background: transparent; border-color: #43a047; color: var(--text); font-weight: 600;
     }
     .ctrl-btn-outline-accent:hover { background: rgba(67,160,71,.12); border-color: #5fbd63; }
+    .ctrl-btn-danger { background: transparent; border-color: #c62828; color: #b71c1c; font-weight: 600; }
+    .ctrl-btn-danger:hover { background: rgba(198,40,40,.10); border-color: #e53935; }
     .anon-msg { font-size: 12px; margin-left: 2px; flex: 1; }
     .manual-redaction {
       margin: 2px 0 8px;
@@ -2180,6 +2182,14 @@
         folderAuditPdf:     "Åpne audit PDF",
         folderRedactSelected:"Anonymiser valgte",
         folderRedactSelectedTooltip:"Lager anonymiserte kopier av valgte filer fra mappeskann-resultatet. Kontroller resultatfilene før deling.",
+        folderRedactFile:    "Anonymiser",
+        folderDeleteSelected: "Slett valgte",
+        folderDeleteSelectedTooltip: "Sletter de valgte originalfilene permanent etter bekreftelse.",
+        folderDeleteFile:    "Slett",
+        folderDeleteConfirmTitle: "Er du sikker på at du vil slette disse filene permanent?",
+        folderDeleteConfirmWarning: "Handlingen kan ikke angres i scanneren. Synkroniserte kopier, backup og retention-policy kan fortsatt gjelde.",
+        folderDeleteMore:    "flere filer",
+        folderDeleteDone:    "Slettet permanent:",
         folderM365Metadata: "Skriv M365-metadata",
         folderNoSelection:  "Velg minst én fil.",
         folderOpenFile:     "Åpne",
@@ -2623,6 +2633,14 @@
         folderAuditPdf:     "Öppna audit PDF",
         folderRedactSelected:"Anonymisera valda",
         folderRedactSelectedTooltip:"Skapar anonymiserade kopior av valda filer från mappskanningsresultatet. Kontrollera resultatfilerna före delning.",
+        folderRedactFile:    "Anonymisera",
+        folderDeleteSelected: "Ta bort valda",
+        folderDeleteSelectedTooltip: "Tar bort de valda originalfilerna permanent efter bekräftelse.",
+        folderDeleteFile:    "Ta bort",
+        folderDeleteConfirmTitle: "Är du säker på att du vill ta bort dessa filer permanent?",
+        folderDeleteConfirmWarning: "Åtgärden kan inte ångras i skannern. Synkroniserade kopior, säkerhetskopior och retention-policy kan fortfarande gälla.",
+        folderDeleteMore:    "fler filer",
+        folderDeleteDone:    "Borttagna permanent:",
         folderM365Metadata: "Skriv M365-metadata",
         folderNoSelection:  "Välj minst en fil.",
         folderOpenFile:     "Öppna",
@@ -3071,6 +3089,14 @@
         folderAuditPdf:     "Open audit PDF",
         folderRedactSelected:"Redact selected",
         folderRedactSelectedTooltip:"Creates redacted copies of selected files from the folder scan result. Verify the output files before sharing.",
+        folderRedactFile:    "Redact",
+        folderDeleteSelected: "Delete selected",
+        folderDeleteSelectedTooltip: "Permanently deletes the selected original files after confirmation.",
+        folderDeleteFile:    "Delete",
+        folderDeleteConfirmTitle: "Are you sure you want to permanently delete these files?",
+        folderDeleteConfirmWarning: "This cannot be undone in the scanner. Synced copies, backups, and retention policies may still apply.",
+        folderDeleteMore:    "more files",
+        folderDeleteDone:    "Permanently deleted:",
         folderM365Metadata: "Write M365 metadata",
         folderNoSelection:  "Select at least one file.",
         folderOpenFile:     "Open",
@@ -3612,6 +3638,14 @@
         folderAuditPdf:      "Audit PDF öffnen",
         folderRedactSelected:"Ausgewählte anonymisieren",
         folderRedactSelectedTooltip:"Erstellt anonymisierte Kopien der ausgewählten Dateien aus dem Ordnerscan-Ergebnis. Prüfen Sie die Ergebnisdateien vor dem Teilen.",
+        folderRedactFile:    "Anonymisieren",
+        folderDeleteSelected: "Ausgewählte löschen",
+        folderDeleteSelectedTooltip: "Löscht die ausgewählten Originaldateien nach Bestätigung dauerhaft.",
+        folderDeleteFile:    "Löschen",
+        folderDeleteConfirmTitle: "Möchten Sie diese Dateien wirklich dauerhaft löschen?",
+        folderDeleteConfirmWarning: "Die Aktion kann im Scanner nicht rückgängig gemacht werden. Synchronisierte Kopien, Backups und Aufbewahrungsrichtlinien können weiterhin gelten.",
+        folderDeleteMore:    "weitere Dateien",
+        folderDeleteDone:    "Dauerhaft gelöscht:",
         folderM365Metadata:  "M365-Metadaten schreiben",
         folderNoSelection:   "Wählen Sie mindestens eine Datei.",
         folderOpenFile:      "Öffnen",
@@ -4070,6 +4104,14 @@
         folderAuditPdf:      "Ouvrir audit PDF",
         folderRedactSelected:"Anonymiser la sélection",
         folderRedactSelectedTooltip:"Crée des copies anonymisées des fichiers sélectionnés depuis le résultat d’analyse de dossier. Vérifiez les fichiers produits avant partage.",
+        folderRedactFile:    "Anonymiser",
+        folderDeleteSelected: "Supprimer la sélection",
+        folderDeleteSelectedTooltip: "Supprime définitivement les fichiers originaux sélectionnés après confirmation.",
+        folderDeleteFile:    "Supprimer",
+        folderDeleteConfirmTitle: "Voulez-vous vraiment supprimer définitivement ces fichiers ?",
+        folderDeleteConfirmWarning: "Cette action est irréversible dans le scanner. Les copies synchronisées, sauvegardes et règles de conservation peuvent toujours s’appliquer.",
+        folderDeleteMore:    "autres fichiers",
+        folderDeleteDone:    "Supprimés définitivement :",
         folderM365Metadata:  "Écrire les métadonnées M365",
         folderNoSelection:   "Sélectionnez au moins un fichier.",
         folderOpenFile:      "Ouvrir",
@@ -4528,6 +4570,14 @@
         folderAuditPdf:      "Abrir audit PDF",
         folderRedactSelected:"Anonimizar seleccionados",
         folderRedactSelectedTooltip:"Crea copias anonimizadas de los archivos seleccionados del resultado de escaneo de carpeta. Verifique los archivos generados antes de compartirlos.",
+        folderRedactFile:    "Anonimizar",
+        folderDeleteSelected: "Eliminar seleccionados",
+        folderDeleteSelectedTooltip: "Elimina permanentemente los archivos originales seleccionados tras la confirmación.",
+        folderDeleteFile:    "Eliminar",
+        folderDeleteConfirmTitle: "¿Está seguro de que desea eliminar permanentemente estos archivos?",
+        folderDeleteConfirmWarning: "No se puede deshacer en el escáner. Las copias sincronizadas, copias de seguridad y políticas de retención pueden seguir aplicándose.",
+        folderDeleteMore:    "archivos más",
+        folderDeleteDone:    "Eliminados permanentemente:",
         folderM365Metadata:  "Escribir metadatos M365",
         folderNoSelection:   "Seleccione al menos un archivo.",
         folderOpenFile:      "Abrir",
@@ -8563,6 +8613,7 @@
         <label><input type="checkbox" id="folder-only-errors" ${_folderOnlyErrors ? "checked" : ""}> ${escapeHtml(t("folderOnlyErrors"))}</label>
         <span class="ctrl-sep"></span>
         <button type="button" class="ctrl-btn ctrl-btn-outline-accent" id="folder-redact-selected" title="${escapeHtml(t("folderRedactSelectedTooltip"))}">${escapeHtml(t("folderRedactSelected"))}</button>
+        <button type="button" class="ctrl-btn ctrl-btn-danger" id="folder-delete-selected" title="${escapeHtml(t("folderDeleteSelectedTooltip"))}">${escapeHtml(t("folderDeleteSelected"))}</button>
         ${_folderRows.length ? `<button type="button" class="ctrl-btn" id="folder-clear">${escapeHtml(t("folderClear"))}</button>` : ""}
         <details class="folder-more-actions">
           <summary class="ctrl-btn">${escapeHtml(t("folderMoreActions"))}</summary>
@@ -8694,8 +8745,7 @@
       container.querySelector("#folder-audit-pdf")?.addEventListener("click", () => _folderRunOutputAction("/folder-audit/pdf", "folderActionDone", true));
       container.querySelector("#folder-m365-metadata")?.addEventListener("click", writeFolderM365Metadata);
       container.querySelector("#folder-clear")?.addEventListener("click", clearFolderResults);
-      container.querySelector("#folder-redact-selected")?.addEventListener("click", async () => {
-        const ids = _selectedFolderReportIds();
+      async function redactFolderFiles(ids) {
         if (!ids.length) { _setFolderAction(t("folderNoSelection"), false); return; }
         try {
           const d = await _folderPost("/folder-redact", {
@@ -8707,7 +8757,38 @@
         } catch (e) {
           _setFolderAction(`${t("folderActionFailed")} ${e}`, false);
         }
+      }
+      function confirmFolderDelete(ids) {
+        const files = _folderRows.filter(row => ids.includes(row.report_id));
+        const names = files.slice(0, 10).map(row => `• ${row.relative_path || row.file_name}`).join("\n");
+        const more = files.length > 10 ? `\n… ${files.length - 10} ${t("folderDeleteMore")}` : "";
+        return window.confirm(
+          `${t("folderDeleteConfirmTitle")}\n\n${names}${more}\n\n${t("folderDeleteConfirmWarning")}`
+        );
+      }
+      async function deleteFolderFiles(ids) {
+        if (!ids.length) { _setFolderAction(t("folderNoSelection"), false); return; }
+        if (!confirmFolderDelete(ids)) return;
+        try {
+          const d = await _folderPost("/folder-delete", { job_id: _folderJobId, report_ids: ids, confirmed: true });
+          if (d.ok) {
+            const deletedIds = new Set((d.deleted || []).map(row => row.report_id));
+            _folderRows = _folderRows.filter(row => !deletedIds.has(row.report_id));
+            renderFolderResults(_folderRows);
+            _setFolderAction(`${t("folderDeleteDone")} ${d.deleted.length}${d.errors?.length ? ` (${d.errors.length} ${t("folderActionFailed")})` : ""}`);
+            loadHistoryFromApi();
+          } else _setFolderAction(`${t("folderActionFailed")} ${d.error || ""}`, false);
+        } catch (e) {
+          _setFolderAction(`${t("folderActionFailed")} ${e}`, false);
+        }
+      }
+      container.querySelector("#folder-redact-selected")?.addEventListener("click", async () => {
+        const ids = _selectedFolderReportIds();
+        await redactFolderFiles(ids);
       });
+      container.querySelector("#folder-delete-selected")?.addEventListener("click", async () => deleteFolderFiles(_selectedFolderReportIds()));
+      container.querySelectorAll(".folder-redact-file").forEach(btn => btn.addEventListener("click", async () => redactFolderFiles([btn.dataset.reportId || ""])));
+      container.querySelectorAll(".folder-delete-file").forEach(btn => btn.addEventListener("click", async () => deleteFolderFiles([btn.dataset.reportId || ""])));
       container.querySelectorAll(".folder-open-file,.folder-reveal-file").forEach(btn => {
         btn.addEventListener("click", async () => {
           const id = btn.dataset.reportId || "";
@@ -8755,6 +8836,8 @@
         const actions = f.report_id ? `<div class="folder-row-actions">
           <button type="button" class="ctrl-btn folder-open-file" data-report-id="${escapeHtml(f.report_id)}">${escapeHtml(t("folderOpenFile"))}</button>
           <button type="button" class="ctrl-btn folder-reveal-file" data-report-id="${escapeHtml(f.report_id)}">${escapeHtml(t("folderRevealFile"))}</button>
+          <button type="button" class="ctrl-btn folder-redact-file" data-report-id="${escapeHtml(f.report_id)}">${escapeHtml(t("folderRedactFile"))}</button>
+          <button type="button" class="ctrl-btn ctrl-btn-danger folder-delete-file" data-report-id="${escapeHtml(f.report_id)}">${escapeHtml(t("folderDeleteFile"))}</button>
         </div>` : "";
         if (f.error) {
           return `<tr>

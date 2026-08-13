@@ -512,6 +512,14 @@ def test_recursive_folder_scan_controls_are_wired():
         "folderAuditHtml",
         "folderAuditPdf",
         "folderRedactSelected",
+        "folderRedactFile",
+        "folderDeleteSelected",
+        "folderDeleteSelectedTooltip",
+        "folderDeleteFile",
+        "folderDeleteConfirmTitle",
+        "folderDeleteConfirmWarning",
+        "folderDeleteMore",
+        "folderDeleteDone",
         "folderM365Metadata",
         "folderNoSelection",
         "folderOpenFile",
@@ -551,6 +559,7 @@ def test_recursive_folder_scan_controls_are_wired():
     assert 'id="folder-audit-pdf"' in html
     assert 'id="folder-m365-metadata"' in html
     assert 'id="folder-redact-selected"' in html
+    assert 'id="folder-delete-selected"' in html
     assert 'id="folder-clear"' in html
     assert 'class="folder-more-actions"' in html
     assert 'class="folder-more-actions-body"' in html
@@ -560,6 +569,7 @@ def test_recursive_folder_scan_controls_are_wired():
     assert 'id="folder-clear">${escapeHtml(t("folderClear"))}</button>` : ""}' in html
     assert 'folderMoreActions:  "Eksport og metadata"' in html
     assert 'folderRedactSelected:"Anonymiser valgte"' in html
+    assert 'folderDeleteSelected: "Slett valgte"' in html
     assert 'folderAuditHtml:    "Åpne audit HTML"' in html
     assert 'folderAuditPdf:     "Åpne audit PDF"' in html
     assert 'class="folder-row-cb"' in html
@@ -571,6 +581,11 @@ def test_recursive_folder_scan_controls_are_wired():
     assert "function clearFolderResults()" in html
     assert "function writeFolderM365Metadata()" in html
     assert '_folderPost("/folder-redact"' in html
+    assert '_folderPost("/folder-delete"' in html
+    assert "function confirmFolderDelete(ids)" in html
+    assert "window.confirm(" in html
+    assert "folder-redact-file" in html
+    assert "folder-delete-file" in html
     assert '_folderPost(url, { report_id: id })' in html
 
 
