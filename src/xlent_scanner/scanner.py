@@ -40,6 +40,7 @@ from xlent_scanner.detectors.regex_url import detect_urls
 from xlent_scanner.detectors.secrets import detect_secrets
 from xlent_scanner.access_audit import audit_containing_folder_access, audit_path_access
 from xlent_scanner.microsoft_graph import sharepoint_access_for_local_path
+from xlent_scanner.purview_classification import read_document_classification
 from xlent_scanner.ignore import filter_findings, load_ignore_list
 from xlent_scanner.language import resolve_language
 from xlent_scanner.models import Finding, ScanResult  # noqa: F401
@@ -867,6 +868,7 @@ def scan_folder(
     categories: Iterable[str] | None = None,
     pdf_mode: str = "fast",
     include_access_check: bool = False,
+    include_purview_classification: bool = True,
     graph_drive_id: str | None = None,
     graph_sync_root: str | None = None,
 ) -> list[ScanResult]:
@@ -891,6 +893,9 @@ def scan_folder(
                 categories=categories,
                 pdf_mode=pdf_mode,
                 include_access_check=False,
+                include_purview_classification=include_purview_classification,
+                graph_drive_id=graph_drive_id,
+                graph_sync_root=graph_sync_root,
             )
         except TypeError as exc:
             if "unexpected keyword argument" not in str(exc):
@@ -937,6 +942,7 @@ def scan_file(
     categories: Iterable[str] | None = None,
     pdf_mode: str = "fast",
     include_access_check: bool = False,
+    include_purview_classification: bool = True,
     graph_drive_id: str | None = None,
     graph_sync_root: str | None = None,
 ) -> ScanResult:
@@ -950,6 +956,12 @@ def scan_file(
         )
     suffix = p.suffix.lower()
     scan_mode = normalise_pdf_mode(pdf_mode)
+    purview_classification = read_document_classification(
+        p,
+        enabled=include_purview_classification,
+        graph_drive_id=graph_drive_id,
+        graph_sync_root=graph_sync_root,
+    )
     _set_extraction_metadata()
     advanced_image_ocr = suffix in IMAGE_SUFFIXES and scan_mode == "advanced"
     if suffix not in SUPPORTED_SUFFIXES:
@@ -958,6 +970,7 @@ def scan_file(
             text_length=0, text_preview="",
             error=f"Filtype ikke støttet: {suffix}",
             scan_status="failed",
+            purview_classification=purview_classification,
         )
     try:
         try:
@@ -992,6 +1005,7 @@ def scan_file(
             text_length=0, text_preview="",
             error=friendly,
             scan_status="failed",
+            purview_classification=purview_classification,
         )
 
     extraction_metadata = _current_extraction_metadata()
@@ -1080,5 +1094,6 @@ def scan_file(
         },
         access_summary=local_access,
         sharepoint_access_summary=sharepoint_access,
+        purview_classification=purview_classification,
     )
     return assess(result)

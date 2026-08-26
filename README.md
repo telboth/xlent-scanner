@@ -44,6 +44,7 @@ Alt kjøres 100 % lokalt — ingen dokumenter, tekst eller funn sendes over inte
 - **Persistent historikk** mellom øktene
 - Valgt **språk og AI-modell huskes** mellom øktene (localStorage)
 - Valgfri **Microsoft 365 / Graph-integrasjon** for å lese sensitivity/retention labels, vise rødt policyvarsel og skrive scan-metadata til SharePoint-felt
+- Standard aktivert **Microsoft Purview-klassifisering** som leser innebygd sensitivity-label fra lokale Office/PDF-filer og viser klassifisert, ikke klassifisert, ikke kontrollert eller ikke støttet – uten å endre dokumentets label
 
 ---
 
@@ -267,6 +268,9 @@ Appen kan kobles til Microsoft Graph for dokumenter som ligger i SharePoint/OneD
 
 Funksjoner:
 - Leser sensitivity labels via Graph `extractSensitivityLabels`
+- Leser Purview-label lokalt fra klartekstmetadata i DOCX/XLSX/PPTX og PDF; Graph brukes som reserve når synkroniseringskontekst er konfigurert
+- Viser Purview-klassifisering separat fra innholdsrisiko og detektoren «Hemmeligheter / konfidensialitet» i enkeltskann, mappeskann og eksporter
+- Hvis lokal metadata bare inneholder label-ID, forsøker Graph å slå den opp i tenantens labelregister; dette krever `SensitivityLabel.Read` i tillegg til filtilgang
 - Leser retention label og SharePoint-felt for dokumentet
 - Viser Microsoft 365-labels i GUI og HTML/PDF-rapport
 - Gir rødt policyvarsel hvis label-navn matcher konfidensielle nøkkelord, f.eks. `confidential`, `restricted`, `hemmelig`
@@ -437,6 +441,13 @@ src/xlent_scanner/
 ---
 
 ## Endringslogg
+
+### v1.9.14
+
+- Leser og viser Microsoft Purview-klassifisering for støttede Office- og PDF-filer uten å endre dokumentets label.
+- Behandler `KDA RESTRICTED` som en kjent klassifisering på samme nivå og med samme visning som `KDA LIMITED`.
+- Lokaliserer nye Purview-titler og statustekster i enkelt- og mapperapporter (HTML/PDF) samt mappeeksport (CSV/JSON) for norsk, svensk, engelsk, tysk, fransk og spansk.
+- Forenkler visningen av grønne skanneresultater og beholder de øvrige handlingene under utvidede valg.
 
 ### v1.9.13
 

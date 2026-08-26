@@ -21,6 +21,12 @@ from xlent_scanner.anonymize import anonymize_text, build_replacements
 from xlent_scanner.app_state import app_state
 from xlent_scanner.image_pdf_redaction import redact_image_pdf
 from xlent_scanner.patch import SUPPORTED_PATCH_SUFFIXES, patch_file
+from xlent_scanner.purview_classification import (
+    classification_display_text,
+    classification_pdf_color,
+    normalize_ui_language,
+    purview_translation,
+)
 from xlent_scanner.redaction_audit import (
     clear_redaction_history,
     latest_redaction_for_source,
@@ -86,7 +92,12 @@ def _record_output(
     )
 
 
-def write_text_pdf(text: str, out_path: Path, title: str = "") -> None:
+def write_text_pdf(
+    text: str,
+    out_path: Path,
+    title: str = "",
+    line_colors: dict[str, tuple[float, float, float]] | None = None,
+) -> None:
     import fitz  # noqa: PLC0415
 
     doc = fitz.open()
@@ -114,6 +125,7 @@ def write_text_pdf(text: str, out_path: Path, title: str = "") -> None:
             y += line_height // 2
             continue
         current = ""
+        line_color = (line_colors or {}).get(raw_line, (0.1, 0.1, 0.1))
         for word in raw_line.split(" "):
             candidate = (current + " " + word).strip()
             if len(candidate) > max_chars and current:
@@ -122,7 +134,7 @@ def write_text_pdf(text: str, out_path: Path, title: str = "") -> None:
                     current,
                     fontsize=fontsize,
                     fontname="helv",
-                    color=(0.1, 0.1, 0.1),
+                    color=line_color,
                 )
                 y += line_height
                 current = word
@@ -136,7 +148,7 @@ def write_text_pdf(text: str, out_path: Path, title: str = "") -> None:
                 current,
                 fontsize=fontsize,
                 fontname="helv",
-                color=(0.1, 0.1, 0.1),
+                color=line_color,
             )
             y += line_height
             if y > height - margin:
@@ -197,12 +209,14 @@ def set_ai_findings():
 def report():
     if app_state.last_result is None:
         return "Ingen rapport tilgjengelig.", 404
+    language = normalize_ui_language(request.args.get("lang"))
     rendered = generate_html(
         app_state.last_result,
         api_base=f"http://127.0.0.1:{app_state.port}",
         ai_findings=ai_findings_for_report(),
         audit_metadata=_audit_metadata(),
         redaction_audit=_latest_redaction(),
+        language=language,
     )
     return rendered, 200, {"Content-Type": "text/html; charset=utf-8"}
 
@@ -212,7 +226,9 @@ def open_report():
     if app_state.last_result is None:
         return jsonify({"error": "Ingen rapport tilgjengelig ennå."})
     try:
-        webbrowser.open(f"http://127.0.0.1:{app_state.port}/report")
+        data = request.get_json(silent=True) or {}
+        language = normalize_ui_language(data.get("lang"))
+        webbrowser.open(f"http://127.0.0.1:{app_state.port}/report?lang={language}")
         return jsonify({"ok": True})
     except Exception as exc:
         return jsonify({"error": str(exc)})
@@ -230,6 +246,7 @@ def report_pdf():
             "rød": (0.87, 0.22, 0.22),
             "svart": (0.61, 0.15, 0.69),
         }
+        language = normalize_ui_language(request.args.get("lang"))
         result = app_state.last_result
         ai_findings = ai_findings_for_report()
         metadata = _audit_metadata()
@@ -267,6 +284,26 @@ def report_pdf():
         )
         y = add_text(page, y, assessment.recommended_action, 9, (0.72, 0.77, 0.85))
         y += 18
+
+        classification = result.purview_classification or {}
+        if classification.get("status") != "disabled":
+            y = add_text(
+                page,
+                y,
+                purview_translation("title", language),
+                9,
+                (0.5, 0.57, 0.68),
+                True,
+            )
+            y = add_text(
+                page,
+                y,
+                classification_display_text(classification, language),
+                10,
+                classification_pdf_color(classification),
+                classification.get("status") == "classified",
+            )
+            y += 10
 
         if not merged_findings:
             y = add_text(page, y, "Ingen sensitive funn oppdaget.", 10, colors["grønn"])

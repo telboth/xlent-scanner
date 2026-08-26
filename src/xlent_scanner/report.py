@@ -14,6 +14,12 @@ from types import SimpleNamespace
 from jinja2 import Environment, select_autoescape
 
 from xlent_scanner.models import ScanResult
+from xlent_scanner.purview_classification import (
+    classification_display_text,
+    classification_style_key,
+    normalize_ui_language,
+    purview_translation,
+)
 from xlent_scanner.risk import assessment_for_level
 
 _LEVEL_ORDER = {"grønn": 0, "gul": 1, "rød": 2, "svart": 3}
@@ -26,7 +32,7 @@ _JINJA_ENV = Environment(
 )
 
 _TEMPLATE = _JINJA_ENV.from_string("""<!DOCTYPE html>
-<html lang="nb">
+<html lang="{{ report_language }}">
 <head>
 <meta charset="UTF-8">
 <title>XLENT Compliance-scanner – {{ result.file_name }}</title>
@@ -114,6 +120,15 @@ _TEMPLATE = _JINJA_ENV.from_string("""<!DOCTYPE html>
   .m365-tags { background: var(--panel); border: 1px solid var(--border);
                border-radius: 6px; padding: 9px 12px; margin-bottom: 16px;
                font-size: 12px; color: var(--muted); line-height: 1.5; }
+  .purview-badge { display: inline-block; padding: 2px 7px; border: 1px solid;
+                   border-radius: 999px; font-size: 11px; font-weight: 700; line-height: 1.35; }
+  .purview-public { background: rgba(76,175,80,.16); color: #8bd692; border-color: rgba(76,175,80,.5); }
+  .purview-personal { background: rgba(79,158,255,.16); color: #8fc2ff; border-color: rgba(79,158,255,.5); }
+  .purview-limited { background: rgba(255,184,77,.17); color: #ffd18a; border-color: rgba(255,184,77,.55); }
+  .purview-protected, .purview-regulated { background: rgba(255,139,66,.18); color: #ffbc8f; border-color: rgba(255,139,66,.58); }
+  .purview-unknown { background: rgba(190,125,255,.15); color: #d7adff; border-color: rgba(190,125,255,.5); }
+  .purview-neutral { color: var(--muted); }
+  .purview-not-checked { border-style: dashed; background: transparent; color: var(--muted); border-color: var(--muted); }
   .audit { background: var(--panel); border: 1px solid var(--border);
            border-radius: 6px; padding: 10px 12px; margin-bottom: 16px;
            font-size: 12px; color: var(--muted); line-height: 1.6; }
@@ -221,6 +236,15 @@ _TEMPLATE = _JINJA_ENV.from_string("""<!DOCTYPE html>
   {% else %}
     Ikke tilgjengelig: {{ access.get("reason", "ukjent årsak") }}
   {% endif %}
+</div>
+{% endif %}
+
+{% if result.purview_classification and result.purview_classification.get("status") != "disabled" %}
+<div class="m365-tags">
+  <strong>{{ purview_title }}:</strong>
+  {% set classification = result.purview_classification %}
+  {% set style = purview_style(classification) %}
+  <span class="{% if style == 'neutral' %}purview-neutral{% else %}purview-badge purview-{{ style }}{% endif %}">{{ purview_text(classification) }}</span>
 </div>
 {% endif %}
 
@@ -548,8 +572,10 @@ def generate_html(
     ai_findings: list[dict] | None = None,
     audit_metadata: dict | None = None,
     redaction_audit: dict | None = None,
+    language: str = "nb",
 ) -> str:
     audit_metadata = audit_metadata or {}
+    report_language = normalize_ui_language(language)
     merged_findings, has_ai_findings = _build_merged_findings(
         result,
         ai_findings,
@@ -571,6 +597,13 @@ def generate_html(
         api_base=api_base,
         file_suffix=file_suffix,
         patch_supported=(file_suffix in _PATCH_SUFFIXES),
+        purview_style=classification_style_key,
+        purview_title=purview_translation("title", report_language),
+        purview_text=lambda classification: classification_display_text(
+            classification,
+            report_language,
+        ),
+        report_language=report_language,
     )
 
 

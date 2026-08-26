@@ -17,6 +17,11 @@
       --border: #2a3648; --svart: #9c27b0; --rød: #f44336;
       --header-bg: #1a2331; --header-text: #e8edf3; --header-muted: #8a96a8;
       --button-text-on-accent: #ffffff; --badge-text-dark: #1a1a1a; --badge-text-light: #ffffff;
+      --purview-green-bg: rgba(76,175,80,.16); --purview-green-text: #8bd692; --purview-green-border: rgba(76,175,80,.5);
+      --purview-blue-bg: rgba(79,158,255,.16); --purview-blue-text: #8fc2ff; --purview-blue-border: rgba(79,158,255,.5);
+      --purview-amber-bg: rgba(255,184,77,.17); --purview-amber-text: #ffd18a; --purview-amber-border: rgba(255,184,77,.55);
+      --purview-orange-bg: rgba(255,139,66,.18); --purview-orange-text: #ffbc8f; --purview-orange-border: rgba(255,139,66,.58);
+      --purview-purple-bg: rgba(190,125,255,.15); --purview-purple-text: #d7adff; --purview-purple-border: rgba(190,125,255,.5);
     }
     :root[data-theme="light"] {
       --bg: #eef2f6; --panel: #ffffff; --panel2: #f5f7fa;
@@ -25,6 +30,11 @@
       --border: #d2dbe6; --svart: #7b1fa2; --rød: #c62828;
       --header-bg: #5b6673; --header-text: #ffffff; --header-muted: #d7dde5;
       --button-text-on-accent: #ffffff; --badge-text-dark: #111827; --badge-text-light: #ffffff;
+      --purview-green-bg: #e8f5e9; --purview-green-text: #1f6f32; --purview-green-border: #91c99b;
+      --purview-blue-bg: #e7f1fb; --purview-blue-text: #185c9d; --purview-blue-border: #91b9df;
+      --purview-amber-bg: #fff4d6; --purview-amber-text: #805000; --purview-amber-border: #dbb85a;
+      --purview-orange-bg: #ffeadb; --purview-orange-text: #944100; --purview-orange-border: #df9b68;
+      --purview-purple-bg: #f3eafb; --purview-purple-text: #6f368f; --purview-purple-border: #bd92d2;
     }
     * { box-sizing: border-box; }
     *::before, *::after { box-sizing: border-box; }
@@ -211,6 +221,22 @@
       background: var(--panel); border: 1px solid var(--border); border-radius: 7px;
       padding: 8px 12px; font-size: 12px; color: var(--muted); line-height: 1.5;
     }
+    .purview-badge {
+      display: inline-block; padding: 2px 7px; border: 1px solid;
+      border-radius: 999px; font-size: 11px; font-weight: 700; line-height: 1.35;
+      white-space: nowrap;
+    }
+    .purview-public { background: var(--purview-green-bg); color: var(--purview-green-text); border-color: var(--purview-green-border); }
+    .purview-personal { background: var(--purview-blue-bg); color: var(--purview-blue-text); border-color: var(--purview-blue-border); }
+    .purview-limited { background: var(--purview-amber-bg); color: var(--purview-amber-text); border-color: var(--purview-amber-border); }
+    .purview-protected, .purview-regulated { background: var(--purview-orange-bg); color: var(--purview-orange-text); border-color: var(--purview-orange-border); }
+    .purview-unknown { background: var(--purview-purple-bg); color: var(--purview-purple-text); border-color: var(--purview-purple-border); }
+    .purview-neutral { color: var(--muted); }
+    .purview-not-checked { border-style: dashed; background: transparent; color: var(--muted); border-color: var(--muted); }
+    .clean-result-only { display: none; }
+    #result.compact-green .clean-result-only { display: inline-flex; }
+    #result.compact-green .normal-result-only,
+    #result.compact-green .clean-result-controls { display: none !important; }
 
     /* ── Dybdeskann (Ollama) ──────────────────────────────────────── */
     #deep-scan-section {
@@ -460,11 +486,6 @@
     .result-header { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 10px; }
     .tl { width: 50px; height: 50px; border-radius: 50%; display: flex;
           align-items: center; justify-content: center; font-size: 21px; flex-shrink: 0; }
-    .action-box {
-      background: var(--panel2); border-left: 3px solid currentColor;
-      padding: 8px 12px; border-radius: 4px; font-size: 13px;
-      margin-bottom: 14px; line-height: 1.5;
-    }
     .err { color: var(--danger); padding: 12px; background: rgba(255,107,107,.1); border-radius: 4px; }
 
     /* Anonymize / Export controls */
@@ -1623,6 +1644,11 @@
           <label for="access-check" data-i18n="accessCheckLabel">Ta med tilgangssjekk i rapporter</label>
         </div>
         <div class="settings-note" data-i18n="accessCheckNote">På som standard. Viser lokal tilgang separat fra SharePoint-tilgang. SharePoint krever Graph-token, Drive ID og sync-root. Grupper ekspanderes ikke til et nøyaktig personantall.</div>
+        <div class="settings-row" style="margin-top:12px;">
+          <input type="checkbox" id="purview-classification" checked />
+          <label for="purview-classification" data-i18n="purviewClassificationLabel">Les Microsoft Purview-klassifisering</label>
+        </div>
+        <div class="settings-note" data-i18n="purviewClassificationNote">På som standard. Leser dokumentets sensitivity label uten å endre klassifiseringen.</div>
       </details>
 
       <!-- API docs -->
@@ -1905,6 +1931,7 @@
         errPrefix:    "Feil:",
         netErr:       "Nettverksfeil:",
         openReport:   "📄 Åpne fullstendig rapport",
+        scanNewDocument:"📄 Skann nytt dokument",
         rescan:       "🔄 Skann på nytt",
         rescanRedacted:"Kontrollskann output",
         extractedText:"Ekstrahert tekst",
@@ -1969,6 +1996,13 @@
         autoOcrNote: "Når en PDF eller bildefil mangler maskinlesbar tekst, starter OCR automatisk.",
         accessCheckLabel: "Ta med tilgangssjekk i rapporter",
         accessCheckNote: "På som standard. Viser lokal tilgang separat fra SharePoint-tilgang. SharePoint krever Graph-token, Drive ID og sync-root. Grupper ekspanderes ikke til et nøyaktig personantall.",
+        purviewClassificationLabel: "Les Microsoft Purview-klassifisering",
+        purviewClassificationNote: "På som standard. Leser dokumentets sensitivity label uten å endre klassifiseringen.",
+        purviewClassificationTitle: "Microsoft Purview-klassifisering",
+        purviewUnclassified: "Ikke klassifisert",
+        purviewNotChecked: "Ikke kontrollert",
+        purviewUnsupported: "Ikke støttet",
+        purviewUnknown: "Ukjent klassifisering",
         settingsFilterTitle: "Filtrering",
         settingsWhitelistTitle: "Hviteliste",
         whitelistPersonalNote: "Denne hvitelisten er personlig og bygges opp av den enkelte bruker.",
@@ -2234,6 +2268,7 @@
         folderFile:         "Fil",
         folderAccess:       "Lokal tilgang",
         folderSharePointAccess:"SharePoint-tilgang",
+        folderPurviewClassification:"Purview-klassifisering",
         folderSharePointPublic:"Offentlig lenke",
         folderSharePointOrganization:"Hele organisasjonen",
         folderSharePointGroup:"Delt med gruppe",
@@ -2376,6 +2411,7 @@
         errPrefix:    "Fel:",
         netErr:       "Nätverksfel:",
         openReport:   "📄 Öppna fullständig rapport",
+        scanNewDocument:"📄 Skanna nytt dokument",
         rescan:       "🔄 Skanna igen",
         rescanRedacted:"Kontrollskanna output",
         extractedText:"Extraherad text",
@@ -2440,6 +2476,13 @@
         autoOcrNote: "När en PDF eller bildfil saknar maskinläsbar text startar OCR automatiskt.",
         accessCheckLabel: "Ta med åtkomstkontroll i rapporter",
         accessCheckNote: "På som standard. Visar lokal åtkomst separat från SharePoint-åtkomst. SharePoint kräver Graph-token, Drive ID och synkroniseringsrot. Grupper expanderas inte till ett exakt personantal.",
+        purviewClassificationLabel: "Läs Microsoft Purview-klassificering",
+        purviewClassificationNote: "På som standard. Läser dokumentets sensitivity label utan att ändra klassificeringen.",
+        purviewClassificationTitle: "Microsoft Purview-klassificering",
+        purviewUnclassified: "Inte klassificerad",
+        purviewNotChecked: "Inte kontrollerad",
+        purviewUnsupported: "Stöds inte",
+        purviewUnknown: "Okänd klassificering",
         settingsFilterTitle: "Filtrering",
         settingsWhitelistTitle: "Vitlista",
         whitelistPersonalNote: "Denna vitlista är personlig och byggs upp av varje enskild användare.",
@@ -2695,6 +2738,7 @@
         folderFile:         "Fil",
         folderAccess:       "Lokal åtkomst",
         folderSharePointAccess:"SharePoint-åtkomst",
+        folderPurviewClassification:"Purview-klassificering",
         folderSharePointPublic:"Offentlig länk",
         folderSharePointOrganization:"Hela organisationen",
         folderSharePointGroup:"Delad med grupp",
@@ -2837,6 +2881,7 @@
         errPrefix:    "Error:",
         netErr:       "Network error:",
         openReport:   "📄 Open full report",
+        scanNewDocument:"📄 Scan another document",
         rescan:       "🔄 Re-scan",
         rescanRedacted:"Check output",
         extractedText:"Extracted text",
@@ -2901,6 +2946,13 @@
         autoOcrNote: "When a PDF or image file has no machine-readable text, OCR starts automatically.",
         accessCheckLabel: "Include access check in reports",
         accessCheckNote: "On by default. Shows local access separately from SharePoint access. SharePoint requires a Graph token, Drive ID and sync root. Groups are not expanded into an exact person count.",
+        purviewClassificationLabel: "Read Microsoft Purview classification",
+        purviewClassificationNote: "On by default. Reads the document sensitivity label without changing its classification.",
+        purviewClassificationTitle: "Microsoft Purview classification",
+        purviewUnclassified: "Not classified",
+        purviewNotChecked: "Not checked",
+        purviewUnsupported: "Not supported",
+        purviewUnknown: "Unknown classification",
         settingsFilterTitle: "Filtering",
         settingsWhitelistTitle: "Whitelist",
         whitelistPersonalNote: "This whitelist is personal and built by each individual user.",
@@ -3161,6 +3213,7 @@
         folderFile:         "File",
         folderAccess:       "Local access",
         folderSharePointAccess:"SharePoint access",
+        folderPurviewClassification:"Purview classification",
         folderSharePointPublic:"Public link",
         folderSharePointOrganization:"Entire organization",
         folderSharePointGroup:"Shared with group",
@@ -3280,6 +3333,7 @@
         aiRiskSummary:       "Der KI-Tiefenscan hat sensible Treffer gefunden.",
         aiRiskAction:        "Prüfen Sie die KI-Treffer und erstellen Sie vor dem Teilen ein redacted Dokument.",
         openReport:          "HTML-Bericht öffnen",
+        scanNewDocument:     "Neues Dokument scannen",
         downloadPdf:         "PDF-Bericht herunterladen",
         rescan:              "Erneut scannen",
         rescanRedacted:       "Output prüfen",
@@ -3359,6 +3413,13 @@
         autoOcrNote: "Wenn eine PDF- oder Bilddatei keinen maschinenlesbaren Text enthält, startet OCR automatisch.",
         accessCheckLabel: "Zugriffsprüfung in Berichte aufnehmen",
         accessCheckNote: "Standardmäßig aktiviert. Zeigt lokalen und SharePoint-Zugriff getrennt. SharePoint benötigt Graph-Token, Drive ID und Synchronisierungsstamm. Gruppen werden nicht zu einer exakten Personenzahl erweitert.",
+        purviewClassificationLabel: "Microsoft Purview-Klassifizierung lesen",
+        purviewClassificationNote: "Standardmäßig aktiviert. Liest das Sensitivity Label, ohne die Klassifizierung zu ändern.",
+        purviewClassificationTitle: "Microsoft Purview-Klassifizierung",
+        purviewUnclassified: "Nicht klassifiziert",
+        purviewNotChecked: "Nicht geprüft",
+        purviewUnsupported: "Nicht unterstützt",
+        purviewUnknown: "Unbekannte Klassifizierung",
         ignoreXlent:         "Interne Begriffe filtern",
         ignoreHint:          "Domainnamen, interne E-Mails und Namen werden herausgefiltert.",
         settingsWhitelistTitle:"Whitelist",
@@ -3646,6 +3707,7 @@
         folderLevel:         "Risikostufe",
         folderAccess:        "Lokaler Zugriff",
         folderSharePointAccess:"SharePoint-Zugriff",
+        folderPurviewClassification:"Purview-Klassifizierung",
         folderSharePointPublic:"Öffentlicher Link",
         folderSharePointOrganization:"Gesamte Organisation",
         folderSharePointGroup:"Mit Gruppe geteilt",
@@ -3756,6 +3818,7 @@
         aiRiskSummary:       "L'analyse approfondie IA a trouvé des éléments sensibles.",
         aiRiskAction:        "Vérifiez les résultats IA et créez un document redacted avant le partage.",
         openReport:          "Ouvrir le rapport HTML",
+        scanNewDocument:     "Analyser un autre document",
         downloadPdf:         "Télécharger le rapport PDF",
         rescan:              "Réanalyser",
         rescanRedacted:       "Vérifier la sortie",
@@ -3835,6 +3898,13 @@
         autoOcrNote: "Lorsqu’un PDF ou fichier image ne contient pas de texte lisible par machine, l’OCR démarre automatiquement.",
         accessCheckLabel: "Inclure la vérification des accès dans les rapports",
         accessCheckNote: "Activé par défaut. Affiche séparément l’accès local et SharePoint. SharePoint nécessite un jeton Graph, un Drive ID et une racine de synchronisation. Les groupes ne sont pas développés en nombre exact de personnes.",
+        purviewClassificationLabel: "Lire la classification Microsoft Purview",
+        purviewClassificationNote: "Activé par défaut. Lit le sensitivity label sans modifier la classification.",
+        purviewClassificationTitle: "Classification Microsoft Purview",
+        purviewUnclassified: "Non classifié",
+        purviewNotChecked: "Non contrôlé",
+        purviewUnsupported: "Non pris en charge",
+        purviewUnknown: "Classification inconnue",
         ignoreXlent:         "Filtrer les termes internes",
         ignoreHint:          "Les noms de domaine, e-mails internes et noms sont filtrés.",
         settingsWhitelistTitle:"Liste blanche",
@@ -4122,6 +4192,7 @@
         folderLevel:         "Niveau de risque",
         folderAccess:        "Accès local",
         folderSharePointAccess:"Accès SharePoint",
+        folderPurviewClassification:"Classification Purview",
         folderSharePointPublic:"Lien public",
         folderSharePointOrganization:"Toute l’organisation",
         folderSharePointGroup:"Partagé avec un groupe",
@@ -4232,6 +4303,7 @@
         aiRiskSummary:       "El escaneo profundo con IA encontró datos sensibles.",
         aiRiskAction:        "Revise los hallazgos de IA y cree un documento redacted antes de compartirlo.",
         openReport:          "Abrir informe HTML",
+        scanNewDocument:     "Escanear otro documento",
         downloadPdf:         "Descargar informe PDF",
         rescan:              "Volver a escanear",
         rescanRedacted:       "Comprobar salida",
@@ -4311,6 +4383,13 @@
         autoOcrNote: "Cuando un PDF o archivo de imagen no tiene texto legible por máquina, OCR se inicia automáticamente.",
         accessCheckLabel: "Incluir comprobación de acceso en los informes",
         accessCheckNote: "Activado por defecto. Muestra por separado el acceso local y el de SharePoint. SharePoint requiere token de Graph, Drive ID y raíz de sincronización. Los grupos no se expanden a un número exacto de personas.",
+        purviewClassificationLabel: "Leer clasificación de Microsoft Purview",
+        purviewClassificationNote: "Activado por defecto. Lee el sensitivity label sin cambiar la clasificación.",
+        purviewClassificationTitle: "Clasificación de Microsoft Purview",
+        purviewUnclassified: "Sin clasificar",
+        purviewNotChecked: "No comprobado",
+        purviewUnsupported: "No compatible",
+        purviewUnknown: "Clasificación desconocida",
         ignoreXlent:         "Filtrar términos internos",
         ignoreHint:          "Los nombres de dominio, correos internos y nombres se filtran.",
         settingsWhitelistTitle:"Lista blanca",
@@ -4598,6 +4677,7 @@
         folderLevel:         "Nivel de riesgo",
         folderAccess:        "Acceso local",
         folderSharePointAccess:"Acceso de SharePoint",
+        folderPurviewClassification:"Clasificación Purview",
         folderSharePointPublic:"Enlace público",
         folderSharePointOrganization:"Toda la organización",
         folderSharePointGroup:"Compartido con grupo",
@@ -5733,6 +5813,7 @@
       lastScan    = null;
       resultEl.innerHTML = "";
       resultEl.classList.remove("show");
+      resultEl.classList.remove("compact-green");
       document.getElementById("result-header").style.display = "none";
       document.getElementById("ai-scan-status").style.display = "none";
       document.getElementById("ai-progress").textContent = "";
@@ -5749,6 +5830,26 @@
       const sumEl = document.getElementById("severity-summary");
       if (sumEl) sumEl.innerHTML = "";
       setStatus("");
+    }
+
+    function _isCompactGreenResult(r = lastResult) {
+      if (!r || r.error || r.risk_level !== "grønn") return false;
+      if ((r.findings || []).length || (r.suppressed_findings || []).length) return false;
+      if (warningText(r) || r.warning_code || r.policy_warning) return false;
+      if (_manualRedactionTerms().length) return false;
+      if (document.getElementById("stripAnnotations")?.checked === true) return false;
+      const aiEnabled = document.getElementById("ai-scan-toggle")?.checked === true;
+      if (aiEnabled && !_aiDeepScanCompleted) return false;
+      return !(_aiFindingsData || []).length;
+    }
+
+    function _applyCompactGreenPresentation() {
+      const compact = _isCompactGreenResult();
+      resultEl.classList.toggle("compact-green", compact);
+      const copyButton = document.getElementById("btn-copy-findings");
+      const clearButton = document.getElementById("btn-clear-result");
+      if (copyButton) copyButton.style.display = compact ? "none" : "";
+      if (clearButton) clearButton.style.display = compact ? "none" : "";
     }
 
     /* Sammendragsrad: fargede badges med antall per alvorlighetsgrad (regel + AI).
@@ -5826,6 +5927,46 @@
       if (labels.length) parts.push(`${escapeHtml(t("m365SensitivityLabels"))}: ${escapeHtml(labels.join(", "))}`);
       if (retention) parts.push(`${escapeHtml(t("m365RetentionLabel"))}: ${escapeHtml(retention)}`);
       return `<div class="m365-tags">${parts.join(" &middot; ")}</div>`;
+    }
+
+    function _purviewClassificationText(classification) {
+      const value = classification || {};
+      if (value.status === "classified") return value.display_name || value.label_id || t("purviewUnknown");
+      if (value.status === "unclassified") return t("purviewUnclassified");
+      if (value.status === "unsupported") return t("purviewUnsupported");
+      if (value.status === "unknown") return `${t("purviewUnknown")}: ${value.display_name || value.label_id || "-"}`;
+      if (value.status === "not_checked") return t("purviewNotChecked");
+      return "";
+    }
+
+    function _purviewClassificationClass(classification) {
+      const value = classification || {};
+      if (value.status === "unclassified" || value.status === "unsupported") return "purview-neutral";
+      if (value.status === "not_checked") return "purview-badge purview-not-checked";
+      if (value.status === "unknown") return "purview-badge purview-unknown";
+      if (value.status !== "classified") return "purview-neutral";
+      const label = String(value.display_name || "").trim().toUpperCase();
+      if (label === "PUBLIC") return "purview-badge purview-public";
+      if (label === "PERSONAL" || label === "PRIVATE") return "purview-badge purview-personal";
+      if (["KDA LIMITED", "KDA RESTRICTED"].includes(label)) return "purview-badge purview-limited";
+      if (label === "KDA PROTECTED") return "purview-badge purview-protected";
+      if (["UPI", "CUI", "ITAR"].includes(label)) return "purview-badge purview-regulated";
+      return "purview-badge purview-unknown";
+    }
+
+    function _purviewClassificationValueHtml(classification, text) {
+      return `<span class="${_purviewClassificationClass(classification)}">${escapeHtml(text)}</span>`;
+    }
+
+    function buildPurviewClassificationHtml(r) {
+      const classification = r?.purview_classification;
+      if (!classification || classification.status === "disabled") return "";
+      const text = _purviewClassificationText(classification);
+      if (!text) return "";
+      const details = [classification.source, classification.assignment_method, classification.error]
+        .filter(Boolean).join(" · ");
+      const title = details ? ` title="${escapeHtml(details)}"` : "";
+      return `<div class="m365-tags"${title}><strong>${escapeHtml(t("purviewClassificationTitle"))}:</strong> ${_purviewClassificationValueHtml(classification, text)}</div>`;
     }
 
     function _findingEngineLabel(f, isAi = false) {
@@ -5935,12 +6076,15 @@
       _aiFindingsData = [];
       _aiDeepScanCompleted = false;
       _setLastAnonymizedPath("");
+      resultEl.classList.remove("compact-green");
       resultEl.classList.add("show");
       document.getElementById("result-header").style.display = "flex";
       document.getElementById("btn-copy-findings").style.display = "";
+      document.getElementById("btn-clear-result").style.display = "";
 
       if (r.error) {
         resultEl.innerHTML = `<h2>${escapeHtml(r.file_name)}</h2>
+          ${buildPurviewClassificationHtml(r)}
           <div class="err">${escapeHtml(r.error)}</div>`;
         return;
       }
@@ -5972,6 +6116,7 @@
       const policyWarningBanner = r.policy_warning
         ? `<div class="policy-warning-banner">⛔ ${escapeHtml(t("m365PolicyWarning"))}: ${escapeHtml(r.policy_warning)}</div>` : "";
       const m365TagsHtml = buildM365TagsHtml(r);
+      const purviewClassificationHtml = buildPurviewClassificationHtml(r);
 
       resultEl.innerHTML = `
         <div class="result-header">
@@ -5994,26 +6139,26 @@
         ${warningBanner}
         ${ocrResultBanner}
         ${policyWarningBanner}
+        ${purviewClassificationHtml}
         ${m365TagsHtml}
-
-        <div class="action-box" id="result-action-box" style="color:${color};border-left-color:${color};">
-          ${escapeHtml(r.recommended_action)}
-        </div>
 
         ${buildFindingsHtml(sorted, canPatch, ext)}
         ${buildSuppressedHtml(r.suppressed_findings || [])}
 
         <div class="toolbar-row">
+          <button id="btn-scan-new" class="ctrl-btn ctrl-btn-outline-accent clean-result-only">${t("scanNewDocument")}</button>
           <button id="btn-open-report" class="ctrl-btn">${t("openReport")}</button>
-          <button id="btn-download-pdf" class="ctrl-btn">${t("downloadPdf")}</button>
-          ${lastScan ? `<button id="btn-rescan" class="ctrl-btn">${t("rescan")}</button>` : ""}
-          <span class="anon-msg" id="exp-msg"></span>
+          <button id="btn-download-pdf" class="ctrl-btn normal-result-only">${t("downloadPdf")}</button>
+          ${lastScan ? `<button id="btn-rescan" class="ctrl-btn normal-result-only">${t("rescan")}</button>` : ""}
+          <span class="anon-msg normal-result-only" id="exp-msg"></span>
           <details class="advanced-actions" id="advanced-actions">
             <summary>${t("moreOptions")}</summary>
             <div class="advanced-actions-body">
-              <button class="ctrl-btn" id="g-preview">${t("previewRedaction")}</button>
-              <button class="ctrl-btn ctrl-btn-outline-primary" id="g-anon">${t("genMd")}</button>
-              <button class="ctrl-btn ctrl-btn-outline-primary" id="g-anon-pdf">${t("genPdf")}</button>
+              <button class="ctrl-btn normal-result-only" id="g-preview">${t("previewRedaction")}</button>
+              <button class="ctrl-btn ctrl-btn-outline-primary normal-result-only" id="g-anon">${t("genMd")}</button>
+              <button class="ctrl-btn ctrl-btn-outline-primary normal-result-only" id="g-anon-pdf">${t("genPdf")}</button>
+              <button id="btn-download-pdf-compact" class="ctrl-btn clean-result-only">${t("downloadPdf")}</button>
+              ${lastScan ? `<button id="btn-rescan-compact" class="ctrl-btn clean-result-only">${t("rescan")}</button>` : ""}
               <button id="btn-exp-json" class="ctrl-btn">${t("exportJson")}</button>
               <button id="btn-exp-csv" class="ctrl-btn">${t("exportCsv")}</button>
             </div>
@@ -6024,6 +6169,7 @@
 
       wireEvents(sorted, canPatch, ext);
       updateManualRedactionPreview();
+      _applyCompactGreenPresentation();
 
       // OCR re-skann av bilde-PDF (knappen finnes kun når canOcr var sann)
       document.getElementById("btn-ocr-rescan")?.addEventListener("click", () => {
@@ -6195,7 +6341,7 @@
           ? t("noFindings")
           : `${t("noFindings")} (${sorted.length - filtered.length} skjult av filter)`;
         return `
-          <details class="result-expander redaction-report-expander" open>
+          <details class="result-expander redaction-report-expander clean-result-controls" open>
             <summary>${escapeHtml(t("redactionReport"))}</summary>
             <div class="result-expander-body">
               ${anonBar}
@@ -6205,7 +6351,7 @@
           </details>`;
       }
       return `
-        <details class="result-expander redaction-report-expander" open>
+        <details class="result-expander redaction-report-expander clean-result-controls" open>
           <summary>${escapeHtml(t("redactionReport"))}</summary>
           <div class="result-expander-body">
             <h3 class="section-heading">${t("sectionFind")} (${sorted_use.length})${hiddenNote}</h3>
@@ -6438,12 +6584,6 @@
         title.style.color = color;
         title.textContent = `${level.toUpperCase()} — ${summary}`;
       }
-      const box = document.getElementById("result-action-box");
-      if (box) {
-        box.style.color = color;
-        box.style.borderLeftColor = color;
-        box.textContent = action;
-      }
     }
 
     async function previewRedaction() {
@@ -6487,18 +6627,30 @@
 
     function wireEvents(sorted, canPatch, ext) {
       document.getElementById("btn-open-report")
-        .addEventListener("click", () => fetch(`${API}/open-report`, { method:"POST" }));
+        .addEventListener("click", () => fetch(`${API}/open-report`, {
+          method:"POST",
+          headers:{ "Content-Type":"application/json" },
+          body:JSON.stringify({ lang: uiLang }),
+        }));
 
       document.getElementById("btn-download-pdf")
-        .addEventListener("click", () => window.open(`${API}/report/pdf`, "_blank"));
+        .addEventListener("click", () => window.open(`${API}/report/pdf?lang=${encodeURIComponent(uiLang)}`, "_blank"));
+      document.getElementById("btn-download-pdf-compact")
+        ?.addEventListener("click", () => window.open(`${API}/report/pdf?lang=${encodeURIComponent(uiLang)}`, "_blank"));
 
-      const rescanBtn = document.getElementById("btn-rescan");
-      if (rescanBtn && lastScan) {
-        rescanBtn.addEventListener("click", () => {
+      const rescan = () => {
+        if (lastScan) {
           if (lastScan.type === "path") scanPath(lastScan.path);
           else if (lastScan.type === "upload") scanUpload(lastScan.file, lastScan.name);
-        });
-      }
+        }
+      };
+      document.getElementById("btn-rescan")?.addEventListener("click", rescan);
+      document.getElementById("btn-rescan-compact")?.addEventListener("click", rescan);
+      document.getElementById("btn-scan-new")?.addEventListener("click", () => {
+        clearResult();
+        setScanMode("file");
+        browseBtn.click();
+      });
 
       // Export
       document.getElementById("btn-exp-json").addEventListener("click", () => postExport("export/json"));
@@ -6806,6 +6958,7 @@
         pdf_mode:     "auto",
         scan_mode:    "auto",
         access_check: document.getElementById("access-check")?.checked === true,
+        purview_classification: document.getElementById("purview-classification")?.checked !== false,
         graph_drive_id: document.getElementById("m365-drive-id")?.value.trim() || "",
         graph_sync_root: document.getElementById("m365-sync-root")?.value.trim() || "",
         categories:   _selectedScanCategories(),
@@ -6892,6 +7045,7 @@
         fd.append("scan_mode",    opts.scan_mode);
         fd.append("pdf_mode",     opts.pdf_mode);
         fd.append("access_check", opts.access_check ? "true" : "false");
+        fd.append("purview_classification", opts.purview_classification ? "true" : "false");
         fd.append("categories",   opts.categories.join(","));
         if (extraOpts?.ocr) fd.append("ocr", "true");
         const r = await (await fetch(`${API}/scan-upload`, { method:"POST", body: fd })).json();
@@ -7007,6 +7161,8 @@
         if (autoOcr) autoOcr.checked = s.autoOcr !== false;
         const accessCheck = document.getElementById("access-check");
         if (accessCheck) accessCheck.checked = s.accessCheck !== false;
+        const purviewClassification = document.getElementById("purview-classification");
+        if (purviewClassification) purviewClassification.checked = s.purviewClassification !== false;
         const m365Fields = {
           "m365-drive-id": "m365_drive_id",
           "m365-item-id": "m365_item_id",
@@ -7035,6 +7191,7 @@
           stripAnnotations: document.getElementById("stripAnnotations").checked,
           autoOcr: document.getElementById("auto-ocr")?.checked !== false,
           accessCheck: document.getElementById("access-check")?.checked === true,
+          purviewClassification: document.getElementById("purview-classification")?.checked !== false,
           theme:       normalizeTheme(document.getElementById("themeSelect").value),
           m365_drive_id: document.getElementById("m365-drive-id")?.value || "",
           m365_item_id: document.getElementById("m365-item-id")?.value || "",
@@ -7057,12 +7214,17 @@
     document.getElementById("ignoreXlent").addEventListener("change", saveSettings);
     document.getElementById("langSelect").addEventListener("change", saveSettings);
     document.querySelectorAll(".scan-cat").forEach(cb => cb.addEventListener("change", saveSettings));
-    document.getElementById("stripAnnotations").addEventListener("change", saveSettings);
+    document.getElementById("stripAnnotations").addEventListener("change", () => {
+      saveSettings();
+      _applyCompactGreenPresentation();
+    });
     document.getElementById("auto-ocr")?.addEventListener("change", saveSettings);
     document.getElementById("access-check")?.addEventListener("change", saveSettings);
+    document.getElementById("purview-classification")?.addEventListener("change", saveSettings);
     document.getElementById("manual-redaction-terms")?.addEventListener("input", () => {
       updateManualRedactionPreview();
       updateRedactionReport(_currentResultExt());
+      _applyCompactGreenPresentation();
     });
     ["m365-drive-id", "m365-item-id", "m365-sync-root", "m365-sensitivity-label-id", "m365-retention-label-name", "m365-map-gronn", "m365-map-gul", "m365-map-rod", "m365-map-svart"].forEach(id => {
       document.getElementById(id)?.addEventListener("input", saveSettings);
@@ -7865,6 +8027,7 @@
       // Vis re-skann-knapp når et resultat finnes, også uten AI-toggle.
       if (rescanBtn) rescanBtn.style.display = lastResult ? "" : "none";
       if (this.checked) _loadAiModels();
+      _applyCompactGreenPresentation();
     });
 
     // Re-skann-knapp: AI-dybdeskann når toggle er på, ellers vanlig scan.
@@ -8308,6 +8471,7 @@
 
       // Injiser alltid i hovedlisten (viktigst – brukeren ser den)
       _injectAiFindingsIntoMainList(findings);
+      _applyCompactGreenPresentation();
 
       if (!findings.length) {
         area.innerHTML = `<p style="color:var(--ok);font-size:13px;">${t("deepScanNoFindings")}</p>`;
@@ -8557,7 +8721,7 @@
     async function _folderRunOutputAction(url, labelKey, openOutput = false) {
       if (!_folderJobId) { _setFolderAction(t("folderNoSelection"), false); return; }
       try {
-        const d = await _folderPost(url, { job_id: _folderJobId, open: openOutput });
+        const d = await _folderPost(url, { job_id: _folderJobId, open: openOutput, lang: uiLang });
         if (d.ok) _setFolderAction(`${t(labelKey)} ${d.path || d.folder || ""}`);
         else _setFolderAction(`${t("folderActionFailed")} ${d.error || ""}`, false);
       } catch (e) {
@@ -8631,6 +8795,7 @@
           pdf_mode: opts.pdf_mode,
           categories: opts.categories,
           access_check: opts.access_check,
+          purview_classification: opts.purview_classification,
           graph_drive_id: opts.graph_drive_id,
           graph_sync_root: opts.graph_sync_root,
           ...folderOpts,
@@ -8830,11 +8995,23 @@
       return `<span class="folder-access-status ${cls}"${title}>${escapeHtml(t(key))}</span>`;
     }
 
+    function _folderPurviewClassificationHtml(file) {
+      const classification = file?.purview_classification;
+      if (!classification || classification.status === "disabled") {
+        return `<span class="folder-access-status folder-access-muted">-</span>`;
+      }
+      const text = _purviewClassificationText(classification) || t("purviewNotChecked");
+      const details = [classification.label_id, classification.source, classification.error]
+        .filter(Boolean).join("\n");
+      const title = details ? ` title="${escapeHtml(details)}"` : "";
+      return `<span${title}>${_purviewClassificationValueHtml(classification, text)}</span>`;
+    }
+
     function wireBatchTableEvents(container) {
       container.querySelectorAll(".batch-file-link").forEach(btn => {
         btn.addEventListener("click", () => {
           const id = btn.dataset.reportId;
-          if (id) window.open(`${API}/folder-report/${encodeURIComponent(id)}`, "_blank");
+          if (id) window.open(`${API}/folder-report/${encodeURIComponent(id)}?lang=${encodeURIComponent(uiLang)}`, "_blank");
         });
       });
       container.querySelectorAll(".folder-sort-btn").forEach(btn => {
@@ -8966,7 +9143,9 @@
           return `<tr>
             <td>${cb}</td>
             <td style="color:var(--danger)">${_batchFileNameHtml(f, "")}</td>
-            <td colspan="4" style="color:var(--muted);font-size:11px;">${escapeHtml(f.error)}</td>
+            <td colspan="2" style="color:var(--muted);font-size:11px;">${escapeHtml(f.error)}</td>
+            <td>${_folderPurviewClassificationHtml(f)}</td>
+            <td colspan="2">-</td>
             <td>${actions}</td>
           </tr>`;
         }
@@ -8975,6 +9154,7 @@
           <td>${_batchFileNameHtml(f, ic)}</td>
           <td style="color:${rc};font-weight:600;white-space:nowrap">${String(f.risk_level || "").toUpperCase()}</td>
           <td style="color:var(--muted);text-align:right">${f.finding_count || 0} ${t("metaFindings")}</td>
+          <td>${_folderPurviewClassificationHtml(f)}</td>
           <td>${_folderAccessHtml(f)}</td>
           <td>${_folderSharePointAccessHtml(f)}</td>
           <td>${actions}</td>
@@ -8988,6 +9168,7 @@
               <th>${_sortButton("file", t("folderFile"))}</th>
               <th>${_sortButton("risk", t("folderLevel"))}</th>
               <th style="text-align:right">${_sortButton("findings", t("metaFindings"))}</th>
+              <th>${escapeHtml(t("folderPurviewClassification"))}</th>
               <th>${_sortButton("access", t("folderAccess"))}</th>
               <th>${escapeHtml(t("folderSharePointAccess"))}</th>
               <th style="text-align:right">${escapeHtml(t("folderActions"))}</th>
@@ -9032,6 +9213,7 @@
             fd.append("scan_mode",    opts.scan_mode);
             fd.append("pdf_mode",     opts.pdf_mode);
             fd.append("access_check", opts.access_check ? "true" : "false");
+            fd.append("purview_classification", opts.purview_classification ? "true" : "false");
             fd.append("categories",   opts.categories.join(","));
             r = await (await fetch(`${API}/scan-upload`, { method:"POST", body: fd })).json();
           }
@@ -9039,6 +9221,7 @@
             file_name: r.file_name || file.name,
             risk_level: r.risk_level || "grønn",
             finding_count: (r.findings || []).filter(f => !f.category.startsWith("⚠")).length,
+            purview_classification: r.purview_classification || {},
             error: r.error,
           });
         } catch (e) {

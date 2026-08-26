@@ -60,6 +60,77 @@ class TestReport:
         assert "test.txt" in html
         assert "a@b.no" in html
 
+    def test_purview_classification_uses_colored_badge(self):
+        result = _result_with_findings()
+        result.purview_classification = {
+            "status": "classified",
+            "display_name": "KDA LIMITED",
+        }
+
+        html = generate_html(result)
+
+        assert '<span class="purview-badge purview-limited">KDA LIMITED</span>' in html
+
+    def test_purview_html_report_uses_selected_language(self):
+        result = _result_with_findings()
+        result.purview_classification = {"status": "unclassified"}
+
+        html = generate_html(result, language="de")
+
+        assert '<html lang="de">' in html
+        assert "Microsoft Purview-Klassifizierung" in html
+        assert "Nicht klassifiziert" in html
+        assert "Ikke klassifisert" not in html
+
+    def test_pdf_report_includes_colored_purview_classification(self):
+        import fitz
+
+        from xlent_scanner import app as app_module
+
+        result = _result_with_findings()
+        result.purview_classification = {
+            "status": "classified",
+            "display_name": "KDA LIMITED",
+        }
+        previous = app_module.app_state.last_result
+        app_module.app_state.last_result = result
+        try:
+            response = app_module.flask_app.test_client().get("/report/pdf")
+        finally:
+            app_module.app_state.last_result = previous
+
+        assert response.status_code == 200
+        with fitz.open(stream=response.data, filetype="pdf") as document:
+            spans = [
+                span
+                for block in document[0].get_text("dict")["blocks"]
+                for line in block.get("lines", [])
+                for span in line.get("spans", [])
+            ]
+        label_span = next(span for span in spans if "KDA LIMITED" in span["text"])
+        assert label_span["color"] != 0xD8E0ED
+
+    def test_pdf_report_uses_selected_language_for_purview(self):
+        import fitz
+
+        from xlent_scanner import app as app_module
+
+        result = _result_with_findings()
+        result.purview_classification = {"status": "unclassified"}
+        previous = app_module.app_state.last_result
+        app_module.app_state.last_result = result
+        try:
+            response = app_module.flask_app.test_client().get("/report/pdf?lang=en")
+        finally:
+            app_module.app_state.last_result = previous
+
+        assert response.status_code == 200
+        with fitz.open(stream=response.data, filetype="pdf") as document:
+            text = "\n".join(page.get_text() for page in document)
+        assert "Microsoft Purview classification" in text
+        assert "Not classified" in text
+        assert "Ikke klassifisert" not in text
+
     def test_ai_findings_merged_into_main_table(self):
         """AI-funn flettes inn i hovedlisten, ikke en separat seksjon."""
         html = generate_html(

@@ -391,11 +391,51 @@ def _extract_label_names(raw: Any) -> list[dict[str, Any]]:
     seen: set[str] = set()
     out: list[dict[str, Any]] = []
     for label in labels:
-        key = str(label.get("id") or label.get("labelId") or label.get("name") or label).casefold()
+        key = str(
+            label.get("id")
+            or label.get("labelId")
+            or label.get("sensitivityLabelId")
+            or label.get("name")
+            or label
+        ).casefold()
         if key and key not in seen:
             seen.add(key)
             out.append(label)
     return out
+
+
+def list_sensitivity_labels() -> list[dict[str, Any]]:
+    """Return tenant Purview labels used to resolve assignment GUIDs to names."""
+    payload = _graph_request("GET", "/security/dataSecurityAndGovernance/sensitivityLabels")
+    values = payload.get("value", []) if isinstance(payload, dict) else []
+    return [value for value in values if isinstance(value, dict)]
+
+
+def _resolve_sensitivity_label_names(labels: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    name_keys = ("name", "displayName", "labelName", "sensitivityLabelName")
+    if not labels or all(any(label.get(key) for key in name_keys) for label in labels):
+        return labels
+    try:
+        pending = list_sensitivity_labels()
+    except (GraphConfigError, GraphRequestError):
+        return labels
+    catalog: dict[str, dict[str, Any]] = {}
+    while pending:
+        label = pending.pop()
+        label_id = str(label.get("id") or "").casefold()
+        if label_id:
+            catalog[label_id] = label
+        pending.extend(value for value in label.get("sublabels", []) if isinstance(value, dict))
+    resolved = []
+    for assignment in labels:
+        label_id = str(
+            assignment.get("id")
+            or assignment.get("labelId")
+            or assignment.get("sensitivityLabelId")
+            or ""
+        ).casefold()
+        resolved.append({**catalog.get(label_id, {}), **assignment})
+    return resolved
 
 
 def read_document_tags(drive_id: str, item_id: str) -> dict[str, Any]:
@@ -414,7 +454,7 @@ def read_document_tags(drive_id: str, item_id: str) -> dict[str, Any]:
         fields = _graph_request("GET", _drive_item_path(drive_id, item_id, "/listItem/fields"))
     except GraphRequestError as exc:
         fields = {"error": str(exc), "_status": exc.status}
-    sensitivity_labels = _extract_label_names(sensitivity_raw)
+    sensitivity_labels = _resolve_sensitivity_label_names(_extract_label_names(sensitivity_raw))
     return {
         "drive_id": drive_id,
         "item_id": item_id,

@@ -119,6 +119,29 @@ def test_read_document_tags_extracts_labels_and_red_policy_warning(monkeypatch):
     assert calls[0][1].startswith("/drives/drive%201/items/item%201")
 
 
+def test_read_document_tags_resolves_assignment_id_from_tenant_catalog(monkeypatch):
+    label_id = "11111111-2222-3333-4444-555555555555"
+
+    def fake_request(method: str, path: str, body: dict | None = None):
+        if method == "GET" and "?$select=" in path:
+            return {"id": "item1", "name": "doc.docx"}
+        if method == "POST" and path.endswith("/extractSensitivityLabels"):
+            return {"value": {"labels": [{"sensitivityLabelId": label_id, "assignmentMethod": "standard"}]}}
+        if path == "/security/dataSecurityAndGovernance/sensitivityLabels":
+            return {"value": [{"id": label_id, "displayName": "KDA LIMITED"}]}
+        if method == "GET" and path.endswith("/retentionLabel"):
+            return {}
+        if method == "GET" and path.endswith("/listItem/fields"):
+            return {}
+        raise AssertionError((method, path, body))
+
+    monkeypatch.setattr(graph, "_graph_request", fake_request)
+
+    tags = graph.read_document_tags("drive", "item")
+
+    assert tags["sensitivity"]["labels"][0]["displayName"] == "KDA LIMITED"
+
+
 def test_graph_write_helpers_send_expected_payloads(monkeypatch):
     calls: list[tuple[str, str, dict | None]] = []
 

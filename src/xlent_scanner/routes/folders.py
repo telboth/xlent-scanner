@@ -26,6 +26,13 @@ from xlent_scanner.history import add_history_entry
 from xlent_scanner.models import ScanResult
 from xlent_scanner.microsoft_graph import sharepoint_access_for_local_path
 from xlent_scanner.patch import SUPPORTED_PATCH_SUFFIXES
+from xlent_scanner.purview_classification import (
+    classification_display_text,
+    classification_pdf_color,
+    classification_style_key,
+    normalize_ui_language,
+    purview_translation,
+)
 from xlent_scanner.redaction_audit import record_redaction
 from xlent_scanner.report import generate_html
 from xlent_scanner.routes.reports import write_text_pdf
@@ -135,6 +142,7 @@ def folder_result_row(result: ScanResult, report_id: str | None = None) -> dict:
         "warning_code": result.warning_code,
         "access_summary": result.access_summary,
         "sharepoint_access_summary": result.sharepoint_access_summary,
+        "purview_classification": result.purview_classification,
         "is_redacted": _is_redacted_file_name(result.relative_path or result.file_name),
     }
 
@@ -188,11 +196,15 @@ def folder_result_for_report_id(report_id: str) -> ScanResult:
     return result
 
 
-def _folder_export_rows(job: dict) -> list[dict]:
+def _folder_export_rows(job: dict, language: str = "nb") -> list[dict]:
+    language = normalize_ui_language(language)
     rows = []
     for row in job.get("files", []):
         access = row.get("access_summary") or {}
         sharepoint = row.get("sharepoint_access_summary") or {}
+        classification = row.get("purview_classification") or {}
+        classification_status = str(classification.get("status") or "")
+        classification_display = classification_display_text(classification, language)
         access_level = access.get("access_level", "")
         access_status = {
             "broad": "Bred tilgang",
@@ -209,6 +221,11 @@ def _folder_export_rows(job: dict) -> list[dict]:
             "text_length": row.get("text_length", 0),
             "error": row.get("error") or "",
             "warning": row.get("warning") or "",
+            "purview_status": classification_status,
+            "purview_classification": classification_display,
+            "purview_label_id": classification.get("label_id", ""),
+            "purview_source": classification.get("source", ""),
+            "purview_error": classification.get("error", ""),
             "access_source": access.get("source", ""),
             "access_level": access_level,
             "access_status": access_status,
@@ -241,15 +258,24 @@ def _safe_csv_cell(value) -> str:
     return "'" + text if text.startswith(("=", "+", "-", "@")) else text
 
 
-def _folder_audit_html(job_id: str, job: dict) -> str:
-    rows = _folder_export_rows(job)
+def _folder_audit_html(job_id: str, job: dict, language: str = "nb") -> str:
+    language = normalize_ui_language(language)
+    rows = _folder_export_rows(job, language)
     table_rows = []
     for row in rows:
+        classification = {
+            "status": row["purview_status"],
+            "display_name": row["purview_classification"],
+        }
+        style = classification_style_key(classification)
+        purview_class = "purview-neutral" if style == "neutral" else f"purview-badge purview-{style}"
         table_rows.append(
             "<tr>"
             f"<td>{html.escape(str(row['relative_path']))}</td>"
             f"<td>{html.escape(str(row['risk_level']))}</td>"
             f"<td>{html.escape(str(row['finding_count']))}</td>"
+            f"<td><span class=\"{purview_class}\">"
+            f"{html.escape(classification_display_text(classification, language))}</span></td>"
             f"<td>{html.escape(str(row['access_status']))}"
             f"{': ' if row['access_broad'] or row['access_shared'] else ''}"
             f"{html.escape(str(row['access_broad'] or row['access_shared']))}</td>"
@@ -261,7 +287,7 @@ def _folder_audit_html(job_id: str, job: dict) -> str:
             "</tr>"
         )
     return f"""<!doctype html>
-<html lang="nb">
+<html lang="{language}">
 <head>
   <meta charset="utf-8">
   <title>XLENT mappeskann-rapport</title>
@@ -271,6 +297,14 @@ def _folder_audit_html(job_id: str, job: dict) -> str:
     th, td {{ border-bottom: 1px solid #d9dee8; padding: 7px 8px; text-align: left; vertical-align: top; }}
     th {{ background: #eef3f8; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }}
     .meta {{ color: #5d6980; line-height: 1.6; margin-bottom: 18px; }}
+    .purview-badge {{ display: inline-block; padding: 2px 7px; border: 1px solid; border-radius: 999px; font-size: 11px; font-weight: 700; white-space: nowrap; }}
+    .purview-public {{ background: #e8f5e9; color: #1f6f32; border-color: #91c99b; }}
+    .purview-personal {{ background: #e7f1fb; color: #185c9d; border-color: #91b9df; }}
+    .purview-limited {{ background: #fff4d6; color: #805000; border-color: #dbb85a; }}
+    .purview-protected, .purview-regulated {{ background: #ffeadb; color: #944100; border-color: #df9b68; }}
+    .purview-unknown {{ background: #f3eafb; color: #6f368f; border-color: #bd92d2; }}
+    .purview-neutral {{ color: #5f6d7d; }}
+    .purview-not-checked {{ border-style: dashed; background: transparent; color: #5f6d7d; border-color: #5f6d7d; }}
   </style>
 </head>
 <body>
@@ -284,7 +318,7 @@ def _folder_audit_html(job_id: str, job: dict) -> str:
     <div>Status: {html.escape(str(job.get("status", "")))}</div>
   </div>
   <table>
-    <thead><tr><th>Fil</th><th>Risiko</th><th>Funn</th><th>Lokal tilgang</th><th>SharePoint-tilgang</th><th>Toppfunn</th><th>Feil</th></tr></thead>
+    <thead><tr><th>Fil</th><th>Risiko</th><th>Funn</th><th>{html.escape(purview_translation("folder_title", language))}</th><th>Lokal tilgang</th><th>SharePoint-tilgang</th><th>Toppfunn</th><th>Feil</th></tr></thead>
     <tbody>{''.join(table_rows)}</tbody>
   </table>
 </body>
@@ -300,6 +334,7 @@ def _run_folder_scan_job(
     pdf_mode: str,
     categories: list[str] | None,
     include_access_check: bool,
+    include_purview_classification: bool,
     graph_drive_id: str,
     graph_sync_root: str,
     opts: dict,
@@ -334,6 +369,9 @@ def _run_folder_scan_job(
                     pdf_mode=pdf_mode,
                     categories=categories,
                     include_access_check=False,
+                    include_purview_classification=include_purview_classification,
+                    graph_drive_id=graph_drive_id or None,
+                    graph_sync_root=graph_sync_root or None,
                 )
             except TypeError as exc:
                 if "unexpected keyword argument" not in str(exc):
@@ -425,6 +463,11 @@ def scan_folder_endpoint():
         pdf_mode = data.get("scan_mode", data.get("pdf_mode", "auto"))
         categories = data.get("categories") if isinstance(data.get("categories"), list) else None
         include_access_check = _request_bool(data, "access_check", _request_bool(data, "include_access_check", False))
+        include_purview_classification = _request_bool(
+            data,
+            "purview_classification",
+            _request_bool(data, "include_purview_classification", True),
+        )
         graph_drive_id = str(data.get("graph_drive_id") or data.get("drive_id") or "").strip()
         graph_sync_root = str(data.get("graph_sync_root") or data.get("sync_root") or "").strip()
         opts = _folder_scan_options(data)
@@ -437,6 +480,7 @@ def scan_folder_endpoint():
             pdf_mode=pdf_mode,
             categories=categories,
             include_access_check=include_access_check,
+            include_purview_classification=include_purview_classification,
             graph_drive_id=graph_drive_id or None,
             graph_sync_root=graph_sync_root or None,
             **opts,
@@ -476,6 +520,11 @@ def scan_folder_start_endpoint():
         pdf_mode = data.get("scan_mode", data.get("pdf_mode", "auto"))
         categories = data.get("categories") if isinstance(data.get("categories"), list) else None
         include_access_check = _request_bool(data, "access_check", _request_bool(data, "include_access_check", False))
+        include_purview_classification = _request_bool(
+            data,
+            "purview_classification",
+            _request_bool(data, "include_purview_classification", True),
+        )
         graph_drive_id = str(data.get("graph_drive_id") or data.get("drive_id") or "").strip()
         graph_sync_root = str(data.get("graph_sync_root") or data.get("sync_root") or "").strip()
         opts = _folder_scan_options(data)
@@ -495,7 +544,11 @@ def scan_folder_start_endpoint():
         })
         threading.Thread(
             target=_run_folder_scan_job,
-            args=(job_id, folder_path, ignore_xlent, language, scan_profile, pdf_mode, categories, include_access_check, graph_drive_id, graph_sync_root, opts),
+            args=(
+                job_id, folder_path, ignore_xlent, language, scan_profile, pdf_mode,
+                categories, include_access_check, include_purview_classification,
+                graph_drive_id, graph_sync_root, opts,
+            ),
             daemon=True,
             name=f"folder-scan-{job_id[:8]}",
         ).start()
@@ -523,7 +576,9 @@ def scan_folder_cancel_endpoint(job_id: str):
 @folders_bp.post("/folder-export/json")
 def folder_export_json_endpoint():
     try:
-        job_id, job = folder_job_from_request(request.get_json(force=True) or {})
+        data = request.get_json(force=True) or {}
+        job_id, job = folder_job_from_request(data)
+        language = normalize_ui_language(data.get("lang"))
         payload = {
             "job_id": job_id,
             "folder": job.get("folder", ""),
@@ -532,7 +587,7 @@ def folder_export_json_endpoint():
             "total": job.get("total", 0),
             "completed": job.get("completed", 0),
             "truncated": job.get("truncated", False),
-            "files": _folder_export_rows(job),
+            "files": _folder_export_rows(job, language),
         }
         out = _unique_download_path(f"xlent-folder-scan-{job_id[:8]}", ".json")
         out.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -587,12 +642,14 @@ def _atomic_patch_file(
 @folders_bp.post("/folder-export/csv")
 def folder_export_csv_endpoint():
     try:
-        job_id, job = folder_job_from_request(request.get_json(force=True) or {})
-        rows = _folder_export_rows(job)
+        data = request.get_json(force=True) or {}
+        job_id, job = folder_job_from_request(data)
+        rows = _folder_export_rows(job, normalize_ui_language(data.get("lang")))
         buf = io.StringIO()
         fieldnames = [
             "relative_path", "risk_level", "scan_status", "finding_count",
-            "file_size", "text_length", "access_status", "sharepoint_access_status",
+            "file_size", "text_length", "purview_status", "purview_classification",
+            "purview_label_id", "purview_source", "purview_error", "access_status", "sharepoint_access_status",
             "sharepoint_identities", "error", "warning", "top_findings",
         ]
         writer = csv.DictWriter(buf, fieldnames=fieldnames, extrasaction="ignore")
@@ -612,7 +669,10 @@ def folder_audit_html_endpoint():
         data = request.get_json(force=True) or {}
         job_id, job = folder_job_from_request(data)
         out = _unique_download_path(f"xlent-folder-audit-{job_id[:8]}", ".html")
-        out.write_text(_folder_audit_html(job_id, job), encoding="utf-8")
+        out.write_text(
+            _folder_audit_html(job_id, job, normalize_ui_language(data.get("lang"))),
+            encoding="utf-8",
+        )
         if data.get("open") is True:
             _open_path(out)
         return jsonify({"ok": True, "path": str(out)})
@@ -625,6 +685,7 @@ def folder_audit_pdf_endpoint():
     try:
         data = request.get_json(force=True) or {}
         job_id, job = folder_job_from_request(data)
+        language = normalize_ui_language(data.get("lang"))
         lines = [
             "XLENT mappeskann-rapport",
             f"Jobb: {job_id}",
@@ -633,16 +694,34 @@ def folder_audit_pdf_endpoint():
             f"Filer: {job.get('completed', 0)} / {job.get('total', 0)}",
             "",
         ]
-        for row in _folder_export_rows(job):
-            lines.append(
-                f"{row['risk_level'].upper()} | {row['relative_path']} | "
-                f"{row['finding_count']} funn | Lokal tilgang: {row['access_status']} | "
-                f"SharePoint: {row['sharepoint_access_status']} | {row['top_findings']}"
+        line_colors: dict[str, tuple[float, float, float]] = {}
+        for row in _folder_export_rows(job, language):
+            lines.append(f"{row['risk_level'].upper()} | {row['relative_path']} | {row['finding_count']} funn")
+            classification = {
+                "status": row["purview_status"],
+                "display_name": row["purview_classification"],
+            }
+            purview_line = (
+                f"  {purview_translation('folder_title', language)}: "
+                f"{classification_display_text(classification, language)}"
             )
+            lines.append(purview_line)
+            line_colors[purview_line] = classification_pdf_color(classification)
+            lines.append(
+                f"  Lokal tilgang: {row['access_status']} | SharePoint: {row['sharepoint_access_status']}"
+            )
+            if row["top_findings"]:
+                lines.append(f"  Toppfunn: {row['top_findings']}")
             if row["error"]:
                 lines.append(f"  Feil: {row['error']}")
+            lines.append("")
         out = _unique_download_path(f"xlent-folder-audit-{job_id[:8]}", ".pdf")
-        write_text_pdf("\n".join(lines), out, title="XLENT mappeskann-rapport")
+        write_text_pdf(
+            "\n".join(lines),
+            out,
+            title="XLENT mappeskann-rapport",
+            line_colors=line_colors,
+        )
         if data.get("open") is True:
             _open_path(out)
         return jsonify({"ok": True, "path": str(out)})
@@ -820,9 +899,11 @@ def folder_report(report_id: str):
         result = app_state.folder_scan_results.get(report_id)
     if result is None:
         return "Ingen rapport tilgjengelig for denne filen.", 404
+    language = normalize_ui_language(request.args.get("lang"))
     report_html = generate_html(
         result,
         api_base=f"http://127.0.0.1:{app_state.port}",
         ai_findings=[],
+        language=language,
     )
     return report_html, 200, {"Content-Type": "text/html; charset=utf-8"}

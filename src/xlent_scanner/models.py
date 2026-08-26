@@ -44,6 +44,7 @@ class ScanResult:
     warning_code: str | None = None   # stabil kode som GUI/API kan oversette
     ocr_used: bool = False            # teksten er ekstrahert med OCR
     microsoft_tags: dict = field(default_factory=dict)
+    purview_classification: dict = field(default_factory=dict)
     policy_warning: str | None = None
     policy_warning_level: str | None = None
     scan_status: str = "success"      # success / partial / failed

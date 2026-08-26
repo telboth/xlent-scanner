@@ -758,6 +758,7 @@ def _api_openapi_spec() -> dict:
             "language": {"type": "string"},
             "warning": {"type": "string", "nullable": True},
             "microsoft_tags": {"type": "object"},
+            "purview_classification": {"type": "object"},
             "policy_warning": {"type": "string", "nullable": True},
             "policy_warning_level": {"type": "string", "nullable": True},
             "error": {"type": "string", "nullable": True},

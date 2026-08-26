@@ -142,6 +142,26 @@ def test_scan_folder_endpoint_returns_tooltip_summary_and_report(monkeypatch, tm
     assert "person@example.com" in report.get_data(as_text=True)
 
 
+def test_folder_purview_export_and_audit_use_selected_language():
+    job = {
+        "folder": "C:/synthetic",
+        "files": [{
+            "relative_path": "plain.docx",
+            "risk_level": "grønn",
+            "finding_count": 0,
+            "purview_classification": {"status": "unclassified"},
+        }],
+    }
+
+    rows = folder_routes._folder_export_rows(job, language="en")
+    audit = folder_routes._folder_audit_html("job-1", job, language="de")
+
+    assert rows[0]["purview_classification"] == "Not classified"
+    assert '<html lang="de">' in audit
+    assert "Purview-Klassifizierung" in audit
+    assert "Nicht klassifiziert" in audit
+
+
 def test_scan_folder_start_endpoint_tracks_background_progress(monkeypatch, tmp_path: Path):
     _write(tmp_path / "root.txt")
     _write(tmp_path / "sub" / "nested.txt")
@@ -255,6 +275,12 @@ def test_folder_export_and_audit_endpoints_write_files(monkeypatch, tmp_path: Pa
         findings=[Finding(category="e-post", text="person@example.com", context="", severity="gul")],
         risk_level="gul",
     )
+    result.purview_classification = {
+        "status": "classified",
+        "display_name": "KDA LIMITED",
+        "label_id": "11111111-2222-3333-4444-555555555555",
+        "source": "embedded_metadata",
+    }
     row = app_module._folder_result_row(result, report_id="report-1")
     job_id = "job-export"
     with app_module.app_state.folder_jobs_lock:
@@ -280,6 +306,29 @@ def test_folder_export_and_audit_endpoints_write_files(monkeypatch, tmp_path: Pa
         assert data["ok"] is True
         assert data["path"].endswith(suffix)
         assert Path(data["path"]).exists()
+    json_export = next(tmp_path.glob("xlent-folder-scan-*.json"))
+    csv_export = next(tmp_path.glob("xlent-folder-scan-*.csv"))
+    html_export = next(tmp_path.glob("xlent-folder-audit-*.html"))
+    pdf_export = next(tmp_path.glob("xlent-folder-audit-*.pdf"))
+    assert "KDA LIMITED" in json_export.read_text(encoding="utf-8")
+    assert "purview_classification" in csv_export.read_text(encoding="utf-8-sig")
+    html_report = html_export.read_text(encoding="utf-8")
+    assert '<span class="purview-badge purview-limited">KDA LIMITED</span>' in html_report
+    import fitz
+
+    with fitz.open(pdf_export) as document:
+        spans = [
+            span
+            for block in document[0].get_text("dict")["blocks"]
+            for line in block.get("lines", [])
+            for span in line.get("spans", [])
+        ]
+    purview_span = next(
+        span
+        for span in spans
+        if "Purview-klassifisering: KDA LIMITED" in span["text"]
+    )
+    assert purview_span["color"] != 0x191919
 
 
 def test_folder_audit_endpoints_can_open_created_files(monkeypatch, tmp_path: Path):

@@ -24,6 +24,64 @@ def test_root_layout_fills_webview_viewport():
     assert ".tab-panel { display: none; flex-direction: column; flex: 1; min-height: 0;" in html
 
 
+def test_purview_classification_is_default_on_and_sent_to_all_scan_flows():
+    html = HTML.read_text(encoding="utf-8")
+
+    assert 'id="purview-classification" checked' in html
+    assert 'purviewClassification !== false' in html
+    assert 'purview_classification: document.getElementById("purview-classification")?.checked !== false' in html
+    assert 'fd.append("purview_classification", opts.purview_classification ? "true" : "false")' in html
+    assert 'purview_classification: opts.purview_classification' in html
+    assert 'folderPurviewClassification' in html
+
+
+def test_purview_classification_uses_distinct_accessible_badges():
+    html = HTML.read_text(encoding="utf-8")
+
+    assert ".purview-badge {" in html
+    assert ".purview-public {" in html
+    assert ".purview-personal {" in html
+    assert ".purview-limited {" in html
+    assert ".purview-protected, .purview-regulated {" in html
+    assert ".purview-unknown {" in html
+    assert ".purview-neutral { color: var(--muted); }" in html
+    assert ".purview-not-checked { border-style: dashed;" in html
+    assert 'if (label === "PUBLIC") return "purview-badge purview-public";' in html
+    assert 'if (label === "PERSONAL" || label === "PRIVATE") return "purview-badge purview-personal";' in html
+    assert 'if (["KDA LIMITED", "KDA RESTRICTED"].includes(label)) return "purview-badge purview-limited";' in html
+    assert 'if (label === "KDA PROTECTED") return "purview-badge purview-protected";' in html
+    assert 'if (["UPI", "CUI", "ITAR"].includes(label)) return "purview-badge purview-regulated";' in html
+    assert "_purviewClassificationValueHtml(classification, text)" in html
+
+
+def test_clean_green_result_uses_compact_progressive_disclosure():
+    html = HTML.read_text(encoding="utf-8")
+
+    compact_start = html.index("function _isCompactGreenResult")
+    compact_end = html.index("function _applyCompactGreenPresentation", compact_start)
+    compact = html[compact_start:compact_end]
+    assert 'r.risk_level !== "grønn"' in compact
+    assert "(r.findings || []).length" in compact
+    assert "(r.suppressed_findings || []).length" in compact
+    assert "warningText(r) || r.warning_code || r.policy_warning" in compact
+    assert "_manualRedactionTerms().length" in compact
+    assert 'document.getElementById("stripAnnotations")?.checked === true' in compact
+    assert "aiEnabled && !_aiDeepScanCompleted" in compact
+    assert "!(_aiFindingsData || []).length" in compact
+
+    assert "#result.compact-green .normal-result-only" in html
+    assert "#result.compact-green .clean-result-controls" in html
+    assert 'id="btn-scan-new"' in html
+    assert 'id="btn-download-pdf-compact"' in html
+    assert 'id="btn-rescan-compact"' in html
+    assert 'class="result-expander redaction-report-expander clean-result-controls"' in html
+    assert 'copyButton.style.display = compact ? "none" : "";' in html
+    assert 'clearButton.style.display = compact ? "none" : "";' in html
+    assert 'setScanMode("file");' in html
+    assert "browseBtn.click();" in html
+    assert html.count("scanNewDocument:") == 6
+
+
 def test_wide_panels_fill_window_but_keep_readable_content_width():
     html = HTML.read_text(encoding="utf-8")
 
@@ -558,7 +616,7 @@ def test_recursive_folder_scan_controls_are_wired():
     assert "function _folderTooltipHtml(file)" in html
     assert "findings_summary" in html
     assert 'class="batch-file-link"' in html
-    assert "window.open(`${API}/folder-report/${encodeURIComponent(id)}`, \"_blank\")" in html
+    assert "window.open(`${API}/folder-report/${encodeURIComponent(id)}?lang=${encodeURIComponent(uiLang)}`, \"_blank\")" in html
     assert "function _folderVisibleRows(files)" in html
     assert "function _sortButton(key, label)" in html
     assert 'id="folder-filter-search"' in html
@@ -589,6 +647,9 @@ def test_recursive_folder_scan_controls_are_wired():
     assert '_folderRunOutputAction("/folder-export/csv", "folderActionDone")' in html
     assert '_folderRunOutputAction("/folder-audit/html", "folderActionDone", true)' in html
     assert '_folderRunOutputAction("/folder-audit/pdf", "folderActionDone", true)' in html
+    assert "{ job_id: _folderJobId, open: openOutput, lang: uiLang }" in html
+    assert "`${API}/report/pdf?lang=${encodeURIComponent(uiLang)}`" in html
+    assert "body:JSON.stringify({ lang: uiLang })" in html
     assert 'container.querySelector("#folder-clear")?.addEventListener("click", clearFolderResults);' in html
     assert "function clearFolderResults()" in html
     assert "function writeFolderM365Metadata()" in html
@@ -863,7 +924,7 @@ def test_scanner_result_sections_use_expanders_and_neutral_scan_buttons():
     assert ".result-expander" in html
     assert '<details class="result-expander text-preview-expander">' in html
     assert '<summary>${escapeHtml(t("extractedText"))}</summary>' in html
-    assert '<details class="result-expander redaction-report-expander" open>' in html
+    assert '<details class="result-expander redaction-report-expander clean-result-controls" open>' in html
     assert '<summary>${escapeHtml(t("redactionReport"))}</summary>' in html
     assert 'resultEl.querySelector(".redaction-report-expander .result-expander-body") || resultEl' in html
 
@@ -1123,7 +1184,8 @@ def test_ai_deep_scan_updates_main_risk_and_redaction_controls():
     assert 'document.getElementById("ai-open-anonymized-btn").addEventListener("click"' in html
     assert 'id="result-risk-dot"' in html
     assert 'id="result-risk-title"' in html
-    assert 'id="result-action-box"' in html
+    assert 'id="result-action-box"' not in html
+    assert "escapeHtml(r.recommended_action)" not in html
     assert "function _updateRiskHeaderForAiFindings" in html
     assert "lastResult.risk_level = level;" in html
     assert "resultEl.querySelectorAll(\".no-findings-message\").forEach(el => el.remove());" in html

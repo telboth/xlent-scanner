@@ -212,6 +212,7 @@ def _api_result_payload(
         "warning": result.warning,
         "warning_code": getattr(result, "warning_code", None),
         "microsoft_tags": getattr(result, "microsoft_tags", {}) or {},
+        "purview_classification": getattr(result, "purview_classification", {}) or {},
         "policy_warning": getattr(result, "policy_warning", None),
         "policy_warning_level": getattr(result, "policy_warning_level", None),
         "error": result.error,

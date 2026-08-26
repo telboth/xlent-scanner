@@ -51,6 +51,7 @@ def _error_payload(message: str) -> dict:
         "scan_status": "failed",
         "access_summary": None,
         "sharepoint_access_summary": None,
+        "purview_classification": {},
     }
 
 
@@ -87,6 +88,7 @@ def _scan_file_compat(*args, scan_profile: str = "normal", **kwargs):
         legacy_kwargs = dict(kwargs)
         legacy_kwargs.pop("categories", None)
         legacy_kwargs.pop("include_access_check", None)
+        legacy_kwargs.pop("include_purview_classification", None)
         legacy_kwargs.pop("graph_drive_id", None)
         legacy_kwargs.pop("graph_sync_root", None)
         try:
@@ -124,6 +126,7 @@ def _scan_zip_upload(
     pdf_mode: str,
     categories: list[str] | None,
     include_access_check: bool = False,
+    include_purview_classification: bool = True,
     source_is_upload: bool = False,
 ) -> dict:
     extracted = extract_zip_to_temp(zip_path)
@@ -169,6 +172,7 @@ def _scan_zip_upload(
             categories=categories,
             pdf_mode=pdf_mode,
             include_access_check=False,
+            include_purview_classification=include_purview_classification,
         )
         if access_summary is not None:
             result.access_summary = dict(access_summary)
@@ -235,6 +239,9 @@ def scan():
         pdf_mode = data.get("scan_mode", data.get("pdf_mode", "auto"))
         categories = _request_categories(data.get("categories"))
         include_access_check = bool(data.get("access_check", data.get("include_access_check", False)))
+        include_purview_classification = bool(
+            data.get("purview_classification", data.get("include_purview_classification", True))
+        )
         graph_drive_id = str(data.get("graph_drive_id") or data.get("drive_id") or "").strip()
         graph_sync_root = str(data.get("graph_sync_root") or data.get("sync_root") or "").strip()
         LOGGER.info(
@@ -259,6 +266,7 @@ def scan():
                 categories=categories,
                 pdf_mode=pdf_mode,
                 include_access_check=include_access_check,
+                include_purview_classification=include_purview_classification,
             )
             return jsonify(payload)
         result = _scan_file_compat(
@@ -270,6 +278,7 @@ def scan():
             categories=categories,
             pdf_mode=pdf_mode,
             include_access_check=include_access_check,
+            include_purview_classification=include_purview_classification,
             graph_drive_id=graph_drive_id or None,
             graph_sync_root=graph_sync_root or None,
         )
@@ -299,7 +308,14 @@ def scan_upload():
         scan_profile = request.form.get("scan_profile", "normal")
         pdf_mode = request.form.get("scan_mode") or request.form.get("pdf_mode", "auto")
         categories = _request_categories(request.form.get("categories"))
-        include_access_check = request.form.get("access_check", request.form.get("include_access_check", "false")).lower() == "true"
+        include_access_check = request.form.get(
+            "access_check",
+            request.form.get("include_access_check", "false"),
+        ).lower() == "true"
+        include_purview_classification = request.form.get(
+            "purview_classification",
+            request.form.get("include_purview_classification", "true"),
+        ).lower() == "true"
         original_name = uploaded.filename or "ukjent"
         suffix = Path(original_name).suffix.lower()
         LOGGER.info(
@@ -336,6 +352,7 @@ def scan_upload():
                 categories=categories,
                 pdf_mode=pdf_mode,
                 include_access_check=include_access_check,
+                include_purview_classification=include_purview_classification,
                 source_is_upload=True,
             )
             app_state.last_tmp_path = tmp_path
@@ -360,6 +377,7 @@ def scan_upload():
             categories=categories,
             pdf_mode=pdf_mode,
             include_access_check=False,
+            include_purview_classification=include_purview_classification,
         )
         if include_access_check:
             result.access_summary = uploaded_copy_access_summary()
