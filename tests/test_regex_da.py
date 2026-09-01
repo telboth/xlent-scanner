@@ -1,8 +1,7 @@
 """Unit-tester for danske regex-detektorer (regex_da.py)."""
 from __future__ import annotations
 
-import pytest
-from xlent_scanner.detectors.regex_da import find_cpr, _validate_cpr
+from xlent_scanner.detectors.regex_da import _validate_cpr, find_cpr
 
 
 class TestValidateCpr:

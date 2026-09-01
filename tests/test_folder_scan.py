@@ -1,10 +1,10 @@
-from pathlib import Path
 import time
+from pathlib import Path
 
 from xlent_scanner import app as app_module
 from xlent_scanner import scanner
-from xlent_scanner.routes import folders as folder_routes
 from xlent_scanner.models import Finding, ScanResult
+from xlent_scanner.routes import folders as folder_routes
 
 
 def _write(path: Path, text: str = "hello") -> Path:

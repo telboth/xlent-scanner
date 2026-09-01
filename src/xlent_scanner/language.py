@@ -48,7 +48,7 @@ def detect_language(text: str) -> str:
     if len(text.strip()) < _MIN_DETECT_CHARS:
         return "en"
     try:
-        from langdetect import detect, DetectorFactory  # type: ignore
+        from langdetect import DetectorFactory, detect  # type: ignore
         DetectorFactory.seed = 0   # deterministisk resultat
         lang = detect(text[:3000])
         # Norsk bokmål og nynorsk → nb

@@ -23,8 +23,8 @@ from xlent_scanner.access_audit import audit_containing_folder_access
 from xlent_scanner.anonymize import build_replacements
 from xlent_scanner.app_state import app_state
 from xlent_scanner.history import add_history_entry
-from xlent_scanner.models import ScanResult
 from xlent_scanner.microsoft_graph import sharepoint_access_for_local_path
+from xlent_scanner.models import ScanResult
 from xlent_scanner.patch import SUPPORTED_PATCH_SUFFIXES
 from xlent_scanner.purview_classification import (
     classification_display_text,

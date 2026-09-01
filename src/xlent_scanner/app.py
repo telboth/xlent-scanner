@@ -11,6 +11,7 @@ import faulthandler
 import html
 import json
 import logging
+import mimetypes
 import os
 import platform
 import shlex
@@ -21,7 +22,6 @@ import tempfile
 import threading
 import time
 import traceback
-import mimetypes
 import urllib.parse
 import urllib.request
 import warnings
@@ -37,23 +37,33 @@ from xlent_scanner.app_state import app_state
 from xlent_scanner.blacklist import (
     get_blacklist_entries,
 )
-from xlent_scanner.paths import app_data_dir
+from xlent_scanner.detectors.ner_names import preload_model_async
 from xlent_scanner.ignore import (
     get_ignore_toml_text,
 )
-from xlent_scanner.detectors.ner_names import preload_model_async
 from xlent_scanner.patch import patch_file
+from xlent_scanner.paths import app_data_dir
 from xlent_scanner.routes.api import (
     api_key_configured as _api_key_configured,
+)
+from xlent_scanner.routes.api import (
     create_api_blueprint,
+)
+from xlent_scanner.routes.api import (
     validate_api_bind as _validate_api_bind,
 )
 from xlent_scanner.routes.background import background_bp
 from xlent_scanner.routes.diagnostics import create_diagnostics_blueprint
 from xlent_scanner.routes.folders import (
     create_folders_blueprint,
+)
+from xlent_scanner.routes.folders import (
     folder_job_from_request as _folder_job_from_request,
+)
+from xlent_scanner.routes.folders import (
     folder_result_for_report_id as _folder_result_for_report_id,
+)
+from xlent_scanner.routes.folders import (
     folder_result_row as _folder_result_row,  # noqa: F401
 )
 from xlent_scanner.routes.microsoft import create_microsoft_blueprint
@@ -61,12 +71,12 @@ from xlent_scanner.routes.ollama import create_ollama_blueprint
 from xlent_scanner.routes.reports import reports_bp
 from xlent_scanner.routes.scanning import scanning_bp
 from xlent_scanner.routes.settings import settings_bp
+from xlent_scanner.scan_categories import SCAN_CATEGORIES
 from xlent_scanner.scanner import (
     scan_file,
     scan_folder,
     scan_text,
 )
-from xlent_scanner.scan_categories import SCAN_CATEGORIES
 from xlent_scanner.utils import open_path
 from xlent_scanner.whitelist import (
     get_whitelist_entries,
@@ -232,8 +242,8 @@ def _health_check() -> dict:
         add("python_docx", False, str(exc))
 
     try:
-        import rapidocr  # noqa: F401, PLC0415
         import onnxruntime  # noqa: F401, PLC0415
+        import rapidocr  # noqa: F401, PLC0415
         image_ocr_ok = True
         image_ocr_detail = "rapidocr + onnxruntime import ok"
     except Exception as exc:
@@ -321,8 +331,8 @@ def _health_check() -> dict:
 
 
 def _write_debug_package() -> Path:
-    from datetime import datetime  # noqa: PLC0415
     import json as _json  # noqa: PLC0415
+    from datetime import datetime  # noqa: PLC0415
 
     out_dir = _downloads_dir()
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")

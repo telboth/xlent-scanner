@@ -16,7 +16,6 @@ from xlent_scanner.purview_classification import (
     read_document_classification,
 )
 
-
 LABEL_ID = "11111111-2222-3333-4444-555555555555"
 SITE_ID = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
 
@@ -114,17 +113,18 @@ def test_reads_kda_restricted_as_known_classification(tmp_path: Path):
 
 def test_purview_presentation_text_is_available_in_all_ui_languages():
     expected = {
-        "nb": ("Microsoft Purview-klassifisering", "Ikke klassifisert"),
-        "sv": ("Microsoft Purview-klassificering", "Inte klassificerad"),
-        "en": ("Microsoft Purview classification", "Not classified"),
-        "de": ("Microsoft Purview-Klassifizierung", "Nicht klassifiziert"),
-        "fr": ("Classification Microsoft Purview", "Non classifiée"),
-        "es": ("Clasificación de Microsoft Purview", "Sin clasificar"),
+        "nb": ("Microsoft Purview-klassifisering", "Ikke klassifisert", "Ikke kontrollert for denne filtypen"),
+        "sv": ("Microsoft Purview-klassificering", "Inte klassificerad", "Inte kontrollerad för den här filtypen"),
+        "en": ("Microsoft Purview classification", "Not classified", "Not checked for this file type"),
+        "de": ("Microsoft Purview-Klassifizierung", "Nicht klassifiziert", "Für diesen Dateityp nicht geprüft"),
+        "fr": ("Classification Microsoft Purview", "Non classifiée", "Non contrôlée pour ce type de fichier"),
+        "es": ("Clasificación de Microsoft Purview", "Sin clasificar", "No comprobada para este tipo de archivo"),
     }
 
-    for language, (title, status) in expected.items():
+    for language, (title, status, unsupported) in expected.items():
         assert purview_translation("title", language) == title
         assert classification_display_text({"status": "unclassified"}, language) == status
+        assert classification_display_text({"status": "unsupported"}, language) == unsupported
 
 
 def test_purview_presentation_defaults_to_norwegian_for_unknown_language():

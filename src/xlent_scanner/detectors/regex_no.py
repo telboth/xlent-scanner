@@ -19,7 +19,6 @@ from xlent_scanner.models import Finding
 from xlent_scanner.suppression import record_suppressed
 from xlent_scanner.utils import ctx as _ctx
 
-
 # ── helpers ──────────────────────────────────────────────────────────────────
 
 

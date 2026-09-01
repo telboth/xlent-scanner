@@ -15,7 +15,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-
 GRAPH_BASE = os.environ.get("XLENT_GRAPH_BASE_URL", "https://graph.microsoft.com/v1.0").rstrip("/")
 TOKEN_ENV_NAMES = ("XLENT_GRAPH_TOKEN", "MICROSOFT_GRAPH_TOKEN")
 DRIVE_ID_ENV_NAMES = ("XLENT_GRAPH_DRIVE_ID", "MICROSOFT_GRAPH_DRIVE_ID")

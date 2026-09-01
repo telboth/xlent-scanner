@@ -6,7 +6,6 @@ from xlent_scanner.detectors.filter_config import load_person_name_filters
 from xlent_scanner.detectors.ner_names import looks_like_person_name
 from xlent_scanner.scanner import looks_like_technical_or_academic_text, scan_text
 
-
 FIXTURE = Path(__file__).parent / "fixtures" / "technical_false_positive_regression.txt"
 
 

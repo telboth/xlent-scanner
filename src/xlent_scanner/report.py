@@ -477,7 +477,10 @@ def _build_merged_findings(
     Whitelist-matchede funn har whitelisted=True og severity='grønn'.
     Duplikate AI-funn (tekst finnes allerede i regelbaserte) hoppes over.
     """
-    from xlent_scanner.whitelist import category_allows_whitelist, load_whitelist  # noqa: PLC0415
+    from xlent_scanner.whitelist import (  # noqa: PLC0415
+        category_allows_whitelist,
+        load_whitelist,
+    )
 
     wl = load_whitelist()
     audit_metadata = audit_metadata or {}

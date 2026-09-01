@@ -3,12 +3,15 @@ import stat
 from pathlib import Path
 from types import SimpleNamespace
 
-from xlent_scanner import app as app_module
-from xlent_scanner import scanner
-from xlent_scanner import access_audit
-from xlent_scanner.access_audit import _parse_icacls_output, _posix_access_audit, audit_path_access
-from xlent_scanner.models import ScanResult
 import xlent_scanner.routes.scanning as scanning_routes
+from xlent_scanner import access_audit, scanner
+from xlent_scanner import app as app_module
+from xlent_scanner.access_audit import (
+    _parse_icacls_output,
+    _posix_access_audit,
+    audit_path_access,
+)
+from xlent_scanner.models import ScanResult
 
 
 def test_parse_icacls_output_marks_local_group_as_shared_not_broad():

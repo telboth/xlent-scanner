@@ -1,13 +1,12 @@
 """Unit-tester for svenske regex-detektorer (regex_sv.py)."""
 from __future__ import annotations
 
-import pytest
 from xlent_scanner.detectors.regex_sv import (
-    find_persnr,
-    find_orgnr_sv,
-    find_telefon_sv,
     find_bankgiro,
+    find_orgnr_sv,
+    find_persnr,
     find_plusgiro,
+    find_telefon_sv,
 )
 
 

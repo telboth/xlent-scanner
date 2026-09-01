@@ -4,9 +4,9 @@ import zipfile
 from pathlib import Path
 
 from xlent_scanner import app as app_module
+from xlent_scanner.models import Finding, ScanResult
 from xlent_scanner.routes import reports as reports_routes
 from xlent_scanner.routes import scanning as scanning_routes
-from xlent_scanner.models import Finding, ScanResult
 
 
 def _scan_result() -> ScanResult:

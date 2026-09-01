@@ -8,15 +8,18 @@ Strategi per format:
 """
 from __future__ import annotations
 
-import unicodedata
-import re
 import os
-import zipfile
+import re
+import unicodedata
 import xml.etree.ElementTree as ET
+import zipfile
 from pathlib import Path
 
-from xlent_scanner.anonymize import _clean_replacement_text, _replace_literal_safe, _token
-
+from xlent_scanner.anonymize import (
+    _clean_replacement_text,
+    _replace_literal_safe,
+    _token,
+)
 
 # ── Normalisering ─────────────────────────────────────────────────────────────
 

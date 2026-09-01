@@ -1,6 +1,6 @@
 [project]
 name = "xlent-scanner"
-version = "1.9.14"
+version = "1.9.15"
 description = "Lokal scanner som sjekker dokumenter for sensitiv kundeinfo før opplasting til online AI-verktøy"
 readme = "README.md"
 authors = [
@@ -29,7 +29,14 @@ xlent-scanner = "xlent_scanner.app:main"
 [dependency-groups]
 dev = [
     "pytest>=8.0",
+    "ruff>=0.16.4",
 ]
+
+[tool.ruff]
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E9", "F", "I"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

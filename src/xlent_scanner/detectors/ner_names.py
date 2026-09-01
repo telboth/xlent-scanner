@@ -332,7 +332,9 @@ def _get_nlp(lang: str = "nb") -> Any | None:
         model_name = cfg["model"]
 
         try:
-            from xlent_scanner.model_manager import model_path as _user_model_path  # noqa: PLC0415
+            from xlent_scanner.model_manager import (
+                model_path as _user_model_path,  # noqa: PLC0415
+            )
             user_path = _user_model_path(model_name)
         except Exception:
             user_path = None

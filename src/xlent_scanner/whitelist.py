@@ -15,7 +15,6 @@ from pathlib import Path
 from xlent_scanner.models import Finding
 from xlent_scanner.paths import app_data_dir
 
-
 _NON_WHITELISTABLE_CATEGORY_TOKENS = (
     "prosjektsum",
     "fødselsdato",

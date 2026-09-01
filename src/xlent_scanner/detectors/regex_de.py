@@ -12,7 +12,6 @@ from typing import Iterator
 from xlent_scanner.models import Finding
 from xlent_scanner.utils import ctx as _ctx
 
-
 # ── Steueridentifikationsnummer ───────────────────────────────────────────────
 # 11 siffer, første siffer 1-9, ikke to like tilstøtende i pos 1-5,
 # siste siffer er kontrollsiffer (ISO/IEC-lignende algoritme)

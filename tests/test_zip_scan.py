@@ -8,11 +8,10 @@ from pathlib import Path
 
 import pytest
 
-from xlent_scanner.models import Finding, ScanResult
-from xlent_scanner.zip_processing import cleanup_old_zip_temp_dirs, extract_zip_to_temp
-
 import xlent_scanner.app as app_module
 import xlent_scanner.routes.scanning as scanning_routes
+from xlent_scanner.models import Finding, ScanResult
+from xlent_scanner.zip_processing import cleanup_old_zip_temp_dirs, extract_zip_to_temp
 
 
 def _zip_bytes(entries: dict[str, str]) -> bytes:

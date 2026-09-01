@@ -8,10 +8,8 @@ Dekker:
   - build_replacements: raw_text brukes foran text
   - anonymize_text: full erstatning
 """
-import pytest
 from xlent_scanner.anonymize import anonymize_text, build_replacements
 from xlent_scanner.models import Finding
-
 
 # ── Hjelpere ──────────────────────────────────────────────────────────────────
 

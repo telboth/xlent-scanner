@@ -6,6 +6,7 @@ GDPR-sensitive personopplysninger som regel-baserte detektorer kan misse.
 from __future__ import annotations
 
 import contextvars
+import ipaddress
 import json
 import logging
 import os
@@ -13,6 +14,7 @@ import re
 import threading
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from typing import Any
 
@@ -22,9 +24,11 @@ from xlent_scanner.jobs import JobManager
 
 LOGGER = logging.getLogger(__name__)
 
-# URL kan overstyres med miljøvariabelen OLLAMA_BASE_URL.
-# Eksempel: OLLAMA_BASE_URL=http://192.168.1.10:11434 xlent-scanner
+# URL kan overstyres med miljøvariabelen OLLAMA_BASE_URL. Eksterne adresser
+# krever i tillegg XLENT_SCANNER_ALLOW_REMOTE_OLLAMA=true.
 OLLAMA_BASE: str = os.environ.get("OLLAMA_BASE_URL", "http://localhost:11434").rstrip("/")
+_REMOTE_OLLAMA_PERMISSION_ENV = "XLENT_SCANNER_ALLOW_REMOTE_OLLAMA"
+_TRUTHY_ENV_VALUES = {"1", "true", "yes", "on"}
 
 # Balansert chunk-størrelse: færre Ollama-kall uten å presse kontekstvinduet for hardt.
 _CHUNK_WORDS   = 1600
@@ -86,7 +90,39 @@ _pull_lock = _pull_jobs.lock
 
 # ── Ollama REST-hjelpere ────────────────────────────────────────────────
 
+def _remote_ollama_permission_granted() -> bool:
+    value = os.environ.get(_REMOTE_OLLAMA_PERMISSION_ENV, "").strip().lower()
+    return value in _TRUTHY_ENV_VALUES
+
+
+def _is_loopback_ollama_url(base_url: str) -> bool:
+    parsed = urllib.parse.urlsplit(base_url)
+    hostname = (parsed.hostname or "").rstrip(".").lower()
+    if parsed.scheme not in {"http", "https"} or not hostname:
+        return False
+    if hostname == "localhost":
+        return True
+    try:
+        return ipaddress.ip_address(hostname).is_loopback
+    except ValueError:
+        return False
+
+
+def _require_ollama_connection_permission(base_url: str = OLLAMA_BASE) -> None:
+    parsed = urllib.parse.urlsplit(base_url)
+    if parsed.scheme not in {"http", "https"} or not parsed.hostname:
+        raise ValueError("OLLAMA_BASE_URL må være en gyldig HTTP- eller HTTPS-adresse.")
+    if _is_loopback_ollama_url(base_url) or _remote_ollama_permission_granted():
+        return
+    raise PermissionError(
+        "Ekstern Ollama er blokkert fordi dokumenttekst kan sendes til en annen "
+        "maskin. Sett XLENT_SCANNER_ALLOW_REMOTE_OLLAMA=true for å gi eksplisitt "
+        "tillatelse."
+    )
+
+
 def _get(path: str, timeout: int = 5) -> Any:
+    _require_ollama_connection_permission(OLLAMA_BASE)
     req = urllib.request.Request(
         f"{OLLAMA_BASE}{path}",
         headers={"Accept": "application/json"},
@@ -96,6 +132,7 @@ def _get(path: str, timeout: int = 5) -> Any:
 
 
 def _post(path: str, data: dict, timeout: int = 180) -> Any:
+    _require_ollama_connection_permission(OLLAMA_BASE)
     body = json.dumps(data).encode("utf-8")
     req = urllib.request.Request(
         f"{OLLAMA_BASE}{path}",
@@ -126,6 +163,16 @@ def ollama_status() -> dict[str, Any]:
             "ollama_base": OLLAMA_BASE,
             "recommended_model": recommended,
             "recommended_installed": recommended in sorted_models,
+            "install_command": f"ollama pull {recommended}",
+        }
+    except PermissionError as exc:
+        return {
+            "running": False,
+            "models": [],
+            "error": str(exc),
+            "ollama_base": OLLAMA_BASE,
+            "recommended_model": recommended,
+            "recommended_installed": False,
             "install_command": f"ollama pull {recommended}",
         }
     except (urllib.error.URLError, OSError):
@@ -1752,8 +1799,10 @@ def _run_deep_scan(
     # Bankkontonummer: mod-11-validering er 100 % pålitelig.
     if "bankkonto" in categories:
         try:
-            from xlent_scanner.detectors.regex_no import find_kontonummer  # noqa: PLC0415
             from xlent_scanner.detectors.iban import find_iban  # noqa: PLC0415
+            from xlent_scanner.detectors.regex_no import (
+                find_kontonummer,  # noqa: PLC0415
+            )
             for f in find_kontonummer(text):
                 all_raw.append({
                     "category":   "Kontonummer",
@@ -1804,7 +1853,10 @@ def _run_deep_scan(
 
     # Marker whitelist-funn som grønne (same logikk som regelbasert skann)
     try:
-        from xlent_scanner.whitelist import category_allows_whitelist, load_whitelist  # noqa: PLC0415
+        from xlent_scanner.whitelist import (  # noqa: PLC0415
+            category_allows_whitelist,
+            load_whitelist,
+        )
         wl = load_whitelist()
         if wl:
             marked = 0

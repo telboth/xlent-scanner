@@ -13,6 +13,7 @@ Testfilen inneholder (fra manuell gjennomgang):
 from __future__ import annotations
 
 import pathlib
+
 import pytest
 
 FIXTURE = pathlib.Path(__file__).parent / "fixtures" / "i_english.docx"
@@ -145,3 +146,19 @@ def test_merged_bank_category_includes_credit_cards():
     result = scan_text("Kort: 4532015112830002", language="nb", categories=["konto"])
 
     assert any(f.category.startswith("kredittkort") for f in result.findings)
+
+
+def test_markdown_file_is_scanned_as_plain_text(tmp_path):
+    from xlent_scanner.scanner import scan_file
+
+    markdown = tmp_path / "notes.md"
+    markdown.write_text(
+        "# Project notes\n\nContact person@example.com for details about the project.",
+        encoding="utf-8",
+    )
+
+    result = scan_file(markdown)
+
+    assert result.error is None
+    assert result.original_text.startswith("# Project notes")
+    assert any(f.category == "e-post" and f.text == "person@example.com" for f in result.findings)

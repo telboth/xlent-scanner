@@ -14,7 +14,6 @@ from xlent_scanner.detectors.bibliographic import has_bibliographic_context
 from xlent_scanner.models import Finding
 from xlent_scanner.utils import ctx as _ctx
 
-
 # ── UK National Insurance Number ──────────────────────────────────────────────
 #
 # Format: AA 99 99 99 A

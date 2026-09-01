@@ -1,8 +1,9 @@
 # XLENT Compliance-scanner
 
-> **v1.7.6** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
+> **v1.9.15** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
 
-Alt kjøres 100 % lokalt — ingen dokumenter, tekst eller funn sendes over internett.
+Scanning kjøres lokalt som standard. Dokumenttekst sendes bare til en annen maskin
+når brukeren både konfigurerer en ekstern Ollama-adresse og gir eksplisitt tillatelse.
 
 ---
 
@@ -27,7 +28,7 @@ Alt kjøres 100 % lokalt — ingen dokumenter, tekst eller funn sendes over inte
 - **Konfidensfilter**: `høy` / `medium` / `lav`
 - **Re-skann**-knapp + inline statusindikator med fremdriftsbar, delstatus og estimert gjenstående tid
 - **Stopp aktiv AI-modell** i Innstillinger for å frigjøre minne/CPU/GPU uten å stoppe Ollama-tjenesten
-- Ollama-adresse kan overstyres med miljøvariabelen `OLLAMA_BASE_URL`
+- Ollama-adresse kan overstyres med miljøvariabelen `OLLAMA_BASE_URL`. Adresser som ikke er loopback krever også eksplisitt `XLENT_SCANNER_ALLOW_REMOTE_OLLAMA=true`.
 
 ### Resultater og eksport
 
@@ -257,7 +258,26 @@ Ytelse:
 
 Egendefinert Ollama-adresse:
 ```bash
-OLLAMA_BASE_URL=http://192.168.1.10:11434 uv run xlent-scanner
+OLLAMA_BASE_URL=http://127.0.0.1:11434 uv run xlent-scanner
+```
+
+Ollama på en annen maskin er blokkert som standard fordi dokumenttekst sendes til
+den konfigurerte adressen. Brukeren må gi eksplisitt tillatelse:
+
+PowerShell:
+
+```powershell
+$env:OLLAMA_BASE_URL = "http://192.168.1.10:11434"
+$env:XLENT_SCANNER_ALLOW_REMOTE_OLLAMA = "true"
+uv run xlent-scanner
+```
+
+Bash:
+
+```bash
+OLLAMA_BASE_URL=http://192.168.1.10:11434 \
+XLENT_SCANNER_ALLOW_REMOTE_OLLAMA=true \
+uv run xlent-scanner
 ```
 
 ---
@@ -384,7 +404,8 @@ Tag-push (`v*`) trigger bygget automatisk. Manuell kjøring: bruk **workflow_dis
 ## Test
 
 ```bash
-uv run pytest        # hele test-suiten (detektorer, anonymisering, integrasjon mot fixtures)
+uv run pytest                   # hele test-suiten
+uv run ruff check src tests     # syntaks, ubrukte imports og importsortering
 ```
 
 Fixtures ligger i `tests/fixtures/` (`sensitiv_nb.txt` + `sensitiv_nb.pdf` med alle typer sensitiv testdata).
@@ -441,6 +462,13 @@ src/xlent_scanner/
 ---
 
 ## Endringslogg
+
+### v1.9.15
+
+- Blokkerer Ollama på en annen maskin med mindre brukeren har gitt eksplisitt tillatelse.
+- Presiserer at Purview ikke er kontrollert for filtyper der metadata ikke kan leses.
+- Dokumenterer og tester Markdown-skanning som ren tekst.
+- Legger Ruff og full pytest-kjøring til CI for push og pull requests mot `master`.
 
 ### v1.9.14
 

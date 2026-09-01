@@ -22,8 +22,11 @@ _DOCLING_TABLE_IMAGE_DEPRECATION = (
 _DOCLING_IMAGE_PLACEHOLDER_RE = re.compile(r"(?is)<!--\s*image\s*-->")
 _extraction_metadata: ContextVar[dict[str, str]] = ContextVar("xlent_scanner_extraction_metadata", default={})
 
+from xlent_scanner.access_audit import audit_containing_folder_access, audit_path_access
+from xlent_scanner.blacklist import detect_blacklist
 from xlent_scanner.detectors.clients import detect_clients
 from xlent_scanner.detectors.creditcards import detect_creditcards
+from xlent_scanner.detectors.custom_patterns import detect_custom_patterns
 from xlent_scanner.detectors.financials import detect_financials
 from xlent_scanner.detectors.iban import detect_iban
 from xlent_scanner.detectors.keywords import detect_keywords
@@ -38,22 +41,23 @@ from xlent_scanner.detectors.regex_no import detect_no_specific, find_emails
 from xlent_scanner.detectors.regex_sv import detect_sv_specific
 from xlent_scanner.detectors.regex_url import detect_urls
 from xlent_scanner.detectors.secrets import detect_secrets
-from xlent_scanner.access_audit import audit_containing_folder_access, audit_path_access
-from xlent_scanner.microsoft_graph import sharepoint_access_for_local_path
-from xlent_scanner.purview_classification import read_document_classification
 from xlent_scanner.ignore import filter_findings, load_ignore_list
 from xlent_scanner.language import resolve_language
+from xlent_scanner.microsoft_graph import sharepoint_access_for_local_path
 from xlent_scanner.models import Finding, ScanResult  # noqa: F401
+from xlent_scanner.purview_classification import read_document_classification
 from xlent_scanner.risk import assess
 from xlent_scanner.scan_categories import (
     category_enabled as _category_enabled,
+)
+from xlent_scanner.scan_categories import (
     finding_matches_scan_categories as _finding_matches_scan_categories,
+)
+from xlent_scanner.scan_categories import (
     normalise_scan_categories,
 )
 from xlent_scanner.suppression import capture_suppressed_findings
 from xlent_scanner.whitelist import mark_whitelist_findings
-from xlent_scanner.blacklist import detect_blacklist
-from xlent_scanner.detectors.custom_patterns import detect_custom_patterns
 
 IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff", ".webp"}
 TEXT_WARNING_MIN_CHARS = 50
@@ -167,9 +171,9 @@ def _ignore_docling_table_image_deprecation() -> None:
 
 
 def _build_pdf_converter(ocr: bool):
-    from docling.document_converter import DocumentConverter, PdfFormatOption
-    from docling.datamodel.pipeline_options import PdfPipelineOptions
     from docling.datamodel.base_models import InputFormat
+    from docling.datamodel.pipeline_options import PdfPipelineOptions
+    from docling.document_converter import DocumentConverter, PdfFormatOption
 
     opts = PdfPipelineOptions()
     opts.do_ocr = ocr
@@ -439,7 +443,6 @@ def _extract_text_docx(path: Path) -> str:
     # Kombiner avsnitt og tabeller i dokumentets rekkefølge ved å iterere
     # over XML-barna direkte, slik at tabeller dukker opp på riktig sted
     # i teksten (f.eks. etter «Here is my budget:»-setningen).
-    from docx.oxml.ns import qn  # noqa: PLC0415
     body = doc.element.body
     tbl_idx = 0
     para_idx = 0

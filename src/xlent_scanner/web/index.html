@@ -1121,9 +1121,10 @@
           <h3>Hva gjør verktøyet?</h3>
           <p>Compliance-scanner analyserer dokumenter automatisk og leter etter sensitiv informasjon som personnumre, navn, API-nøkler, kommersielt sensitive tall (timespriser, dagspriser, prosjektsummer, marginer og rabatter) og konfidensielle nøkkelord. Funnene presenteres som et trafikklysnivå slik at du raskt ser hva som bør fjernes eller vurderes før dokumentet deles, lagres eller gjenbrukes.</p>
           <p>Verktøyet er laget for mer enn opplasting til AI-tjenester. Det kan brukes til å redusere mengden personopplysninger virksomheten lagrer, støtte GDPR-arbeid når informasjon må slettes eller minimeres, og redigere bort sensitive opplysninger ved innsynsbegjæringer. Det er også nyttig når en gammel kontrakt, avtale eller mal skal gjenbrukes: sensitivt innhold kan blankes ut, mens struktur og formuleringer beholdes.</p>
+          <p>Markdown (.md) støttes og skannes som ren tekst.</p>
         </div>
         <div class="about-section">
-          <div class="local-badge"><span class="icon">🔒</span><span><strong>100 % lokal kjøring</strong> — ingen dokumenter, tekst eller funn sendes over internett.<br>Filen forlater aldri maskinen din.</span></div>
+          <div class="local-badge"><span class="icon">🔒</span><span><strong>Lokal kjøring som standard</strong> — dokumenttekst sendes bare til en annen maskin når ekstern Ollama er konfigurert og eksplisitt tillatt.</span></div>
         </div>
         <div class="about-section">
           <h3>Hva søker verktøyet etter?</h3>
@@ -1178,7 +1179,7 @@
             <li>Ord og uttrykk som alltid skal anonymiseres kan legges inn manuelt for dokumenter der vanlige regler ikke finner alt.</li>
             <li>Egendefinerte regex-mønstre kan legges inn via UI for interne saksnumre, prosjektkoder eller andre organisasjonsspesifikke formater.</li>
             <li>Forkastede kandidater vises separat og kan likevel velges for anonymisering hvis et postfilter har vært for strengt.</li>
-            <li>Microsoft 365-tags og sensitivity/retention-labels kan leses, foreslås og skrives der Graph-tilgang er konfigurert, inkludert lokal mapping fra trafikklysnivå til ønsket label.</li>
+            <li>Microsoft Purview-klassifisering kan leses lokalt fra innebygde sensitivity-labels i støttede Office- og PDF-filer, uten å endre dokumentets label. Microsoft 365 sensitivity/retention-labels kan også foreslås og skrives når Graph-tilgang er konfigurert.</li>
             <li>Et lokalt API med Swagger/OpenAPI-side gjør det mulig å bygge andre frontender, for eksempel Power Apps, uten å endre desktop-appen.</li>
             <li>Appen kan sjekke GitHub for ny versjon, laste ned riktig installer for operativsystemet og vise installasjonsskript der dette er relevant.</li>
           </ul>
@@ -1201,9 +1202,10 @@
           <h3>Vad gör verktyget?</h3>
           <p>Compliance-scanner analyserar dokument automatiskt och letar efter känslig information som personnummer, namn, API-nycklar, kommersiellt känsliga siffror (timpriser, dagspriser, projektsummor, marginaler och rabatter) och konfidentiella nyckelord. Fynden presenteras som en trafikljusnivå så att du snabbt ser vad som bör tas bort eller bedömas innan dokumentet delas, lagras eller återanvänds.</p>
           <p>Verktyget är gjort för mer än uppladdning till AI-tjänster. Det kan användas för att minska mängden personuppgifter verksamheten lagrar, stödja GDPR-arbete när information måste raderas eller minimeras, och maskera känsliga uppgifter vid begäran om insyn. Det är också användbart när ett gammalt avtal, kontrakt eller en mall ska återanvändas: känsligt innehåll kan blankas ut medan struktur och formuleringar bevaras.</p>
+          <p>Markdown (.md) stöds och skannas som ren text.</p>
         </div>
         <div class="about-section">
-          <div class="local-badge"><span class="icon">🔒</span><span><strong>100 % lokal körning</strong> — inga dokument, ingen text och inga fynd skickas via internet.<br>Filen lämnar aldrig din dator.</span></div>
+          <div class="local-badge"><span class="icon">🔒</span><span><strong>Lokal körning som standard</strong> — dokumenttext skickas bara till en annan dator när extern Ollama har konfigurerats och uttryckligen tillåtits.</span></div>
         </div>
         <div class="about-section">
           <h3>Vad söker verktyget efter?</h3>
@@ -1258,7 +1260,7 @@
             <li>Ord och uttryck som alltid ska anonymiseras kan läggas in manuellt för dokument där vanliga regler inte hittar allt.</li>
             <li>Anpassade regex-mönster kan läggas in via UI för interna ärendenummer, projektkoder eller andra organisationsspecifika format.</li>
             <li>Avvisade kandidater visas separat och kan ändå väljas för anonymisering om ett postfilter har varit för strikt.</li>
-            <li>Microsoft 365-taggar och sensitivity/retention-labels kan läsas, föreslås och skrivas där Graph-åtkomst är konfigurerad, inklusive lokal mapping från trafikljusnivå till önskad label.</li>
+            <li>Microsoft Purview-klassificering kan läsas lokalt från inbäddade sensitivity-labels i Office- och PDF-filer som stöds, utan att ändra dokumentets label. Microsoft 365 sensitivity/retention-labels kan också föreslås och skrivas när Graph-åtkomst är konfigurerad.</li>
             <li>Ett lokalt API med Swagger/OpenAPI-sida gör det möjligt att bygga andra frontender, till exempel Power Apps, utan att ändra desktop-appen.</li>
             <li>Appen kan kontrollera GitHub för ny version, ladda ned rätt installer för operativsystemet och visa installationsskript där det är relevant.</li>
           </ul>
@@ -1281,9 +1283,10 @@
           <h3>What does it do?</h3>
           <p>Compliance-scanner automatically analyses documents and searches for sensitive information such as national ID numbers, personal names, API keys, commercially sensitive figures (hourly rates, daily rates, project totals, margins, and discounts), and confidential keywords. Findings are shown as a traffic-light risk level so you can quickly see what should be removed or reviewed before a document is shared, stored, or reused.</p>
           <p>The tool is designed for more than uploads to AI services. It can help reduce the amount of personal data an organisation stores, support GDPR work when information must be deleted or minimized, and redact sensitive information for access-to-information or disclosure requests. It is also useful when an old contract, agreement, or template should be reused: sensitive content can be blanked out while the structure and wording are preserved.</p>
+          <p>Markdown (.md) is supported and scanned as plain text.</p>
         </div>
         <div class="about-section">
-          <div class="local-badge"><span class="icon">🔒</span><span><strong>100% local processing</strong> — no documents, no text, and no findings are ever sent over the internet.<br>The file never leaves your machine.</span></div>
+          <div class="local-badge"><span class="icon">🔒</span><span><strong>Local processing by default</strong> — document text is sent to another machine only when remote Ollama is configured and explicitly permitted.</span></div>
         </div>
         <div class="about-section">
           <h3>What does the tool look for?</h3>
@@ -1338,7 +1341,7 @@
             <li>Words and phrases that should always be redacted can be entered manually for documents where normal rules do not find everything.</li>
             <li>Custom regex patterns can be added through the UI for internal case numbers, project codes, or other organisation-specific formats.</li>
             <li>Suppressed candidates are shown separately and can still be selected for redaction if a post-filter was too strict.</li>
-            <li>Microsoft 365 tags and sensitivity/retention labels can be read, suggested, and written when Graph access is configured, including local mapping from traffic-light level to target label.</li>
+            <li>Microsoft Purview classification can be read locally from embedded sensitivity labels in supported Office and PDF files without changing the document label. Microsoft 365 sensitivity/retention labels can also be suggested and written when Graph access is configured.</li>
             <li>A local API with a Swagger/OpenAPI page makes it possible to build other frontends, such as Power Apps, without changing the desktop app.</li>
             <li>The app can check GitHub for new versions, download the correct installer for the operating system, and show installer scripts where relevant.</li>
           </ul>
@@ -1361,9 +1364,10 @@
           <h3>Was macht das Tool?</h3>
           <p>Der Compliance-Scanner analysiert Dokumente automatisch und sucht nach sensiblen Informationen wie Personenkennzahlen, Namen, API-Schlüsseln, geschäftskritischen Kennzahlen (Stundensätze, Tagessätze, Projektsummen, Margen und Rabatte) sowie vertraulichen Schlüsselwörtern. Die Treffer werden als Ampel-Risikostufe dargestellt, damit Sie schnell sehen, was vor Weitergabe, Speicherung oder Wiederverwendung entfernt oder geprüft werden sollte.</p>
           <p>Das Tool ist für mehr als Uploads zu KI-Diensten gedacht. Es kann helfen, die Menge gespeicherter personenbezogener Daten zu reduzieren, GDPR-/DSGVO-Arbeit zu unterstützen, wenn Informationen gelöscht oder minimiert werden müssen, und sensible Informationen bei Auskunfts- oder Offenlegungsanfragen zu schwärzen. Es ist auch nützlich, wenn ein alter Vertrag, eine Vereinbarung oder eine Vorlage wiederverwendet werden soll: sensible Inhalte können ausgeblendet werden, während Struktur und Formulierungen erhalten bleiben.</p>
+          <p>Markdown (.md) wird unterstützt und als reiner Text gescannt.</p>
         </div>
         <div class="about-section">
-          <div class="local-badge"><span class="icon">🔒</span><span><strong>100 % lokal</strong> — keine Dokumente, keine Texte und keine Treffer werden über das Internet gesendet.<br>Die Datei verlässt Ihren Rechner nie.</span></div>
+          <div class="local-badge"><span class="icon">🔒</span><span><strong>Standardmäßig lokale Verarbeitung</strong> — Dokumenttext wird nur dann an einen anderen Rechner gesendet, wenn externes Ollama konfiguriert und ausdrücklich zugelassen wurde.</span></div>
         </div>
         <div class="about-section">
           <h3>Wonach sucht das Tool?</h3>
@@ -1418,7 +1422,7 @@
             <li>Wörter und Ausdrücke, die immer anonymisiert werden sollen, können manuell erfasst werden, wenn normale Regeln nicht alles finden.</li>
             <li>Benutzerdefinierte Regex-Muster können über die UI für interne Vorgangsnummern, Projektcodes oder andere organisationsspezifische Formate ergänzt werden.</li>
             <li>Verworfene Kandidaten werden separat angezeigt und können dennoch für die Anonymisierung ausgewählt werden, falls ein Nachfilter zu streng war.</li>
-            <li>Microsoft 365-Tags sowie Sensitivity- und Retention-Labels können gelesen, vorgeschlagen und geschrieben werden, wenn Graph-Zugriff konfiguriert ist, inklusive lokaler Zuordnung von Ampelniveau zu Ziel-Label.</li>
+            <li>Die Microsoft-Purview-Klassifizierung kann lokal aus eingebetteten Sensitivity-Labels in unterstützten Office- und PDF-Dateien gelesen werden, ohne das Dokument-Label zu ändern. Microsoft 365 Sensitivity-/Retention-Labels können bei konfiguriertem Graph-Zugriff außerdem vorgeschlagen und geschrieben werden.</li>
             <li>Ein lokales API mit Swagger/OpenAPI-Seite ermöglicht andere Frontends, zum Beispiel Power Apps, ohne die Desktop-App zu ändern.</li>
             <li>Die App kann GitHub auf neue Versionen prüfen, den passenden Installer für das Betriebssystem herunterladen und relevante Installationsskripte anzeigen.</li>
           </ul>
@@ -1441,9 +1445,10 @@
           <h3>Que fait l’outil ?</h3>
           <p>Le scanner de conformité analyse automatiquement les documents et recherche des informations sensibles comme les identifiants personnels, les noms, les clés API, les chiffres commerciaux sensibles (taux horaire, taux journalier, total projet, marge et remise) et des mots-clés confidentiels. Les résultats sont présentés sous forme de niveau de risque type feu tricolore afin de voir rapidement ce qui doit être supprimé ou vérifié avant qu’un document soit partagé, stocké ou réutilisé.</p>
           <p>L’outil ne sert pas seulement aux téléversements vers des services d’IA. Il peut aider à réduire la quantité de données personnelles conservées par une organisation, soutenir le travail de conformité GDPR/RGPD lorsque des informations doivent être supprimées ou minimisées, et masquer des informations sensibles lors de demandes d’accès ou de communication de documents. Il est aussi utile lorsqu’un ancien contrat, accord ou modèle doit être réutilisé : le contenu sensible peut être occulté tout en conservant la structure et les formulations.</p>
+          <p>Markdown (.md) est pris en charge et analysé comme du texte brut.</p>
         </div>
         <div class="about-section">
-          <div class="local-badge"><span class="icon">🔒</span><span><strong>100 % local</strong> — aucun document, aucun texte et aucun résultat n’est envoyé sur Internet.<br>Le fichier ne quitte jamais votre machine.</span></div>
+          <div class="local-badge"><span class="icon">🔒</span><span><strong>Traitement local par défaut</strong> — le texte du document n’est envoyé à une autre machine que si Ollama distant est configuré et explicitement autorisé.</span></div>
         </div>
         <div class="about-section">
           <h3>Que recherche l’outil ?</h3>
@@ -1498,7 +1503,7 @@
             <li>Les mots et expressions qui doivent toujours être anonymisés peuvent être saisis manuellement lorsque les règles normales ne trouvent pas tout.</li>
             <li>Des expressions régulières personnalisées (regex) peuvent être ajoutées via l’interface pour des numéros de dossier internes, codes projet ou autres formats propres à l’organisation.</li>
             <li>Les candidats rejetés sont affichés séparément et peuvent quand même être sélectionnés pour l’anonymisation si un post-filtre a été trop strict.</li>
-            <li>Les tags Microsoft 365 et les labels de sensibilité/rétention peuvent être lus, proposés et écrits lorsque l’accès Graph est configuré, avec mapping local du niveau de risque vers le label cible.</li>
+            <li>La classification Microsoft Purview peut être lue localement à partir des labels de sensibilité intégrés aux fichiers Office et PDF pris en charge, sans modifier le label du document. Les labels de sensibilité/rétention Microsoft 365 peuvent aussi être proposés et écrits lorsque l’accès Graph est configuré.</li>
             <li>Une API locale avec page Swagger/OpenAPI permet de créer d’autres frontends, par exemple Power Apps, sans modifier l’application desktop.</li>
             <li>L’application peut vérifier GitHub pour les nouvelles versions, télécharger l’installer adapté au système d’exploitation et afficher les scripts d’installation pertinents.</li>
           </ul>
@@ -1521,9 +1526,10 @@
           <h3>¿Qué hace la herramienta?</h3>
           <p>El escáner de cumplimiento analiza documentos automáticamente y busca información sensible como números de identificación personal, nombres, claves API, métricas comerciales sensibles (tarifa por hora, tarifa diaria, total de proyecto, margen y descuento) y palabras clave confidenciales. Los hallazgos se muestran como nivel de riesgo tipo semáforo para que pueda ver rápidamente qué debe eliminarse o revisarse antes de compartir, almacenar o reutilizar un documento.</p>
           <p>La herramienta sirve para más que cargar documentos en servicios de IA. Puede ayudar a reducir la cantidad de datos personales que almacena una organización, apoyar el trabajo de cumplimiento GDPR/RGPD cuando la información debe eliminarse o minimizarse, y redactar información sensible en solicitudes de acceso o divulgación. También es útil cuando se quiere reutilizar un contrato, acuerdo o plantilla antiguos: el contenido sensible puede ocultarse mientras se conserva la estructura y la redacción.</p>
+          <p>Markdown (.md) es compatible y se analiza como texto sin formato.</p>
         </div>
         <div class="about-section">
-          <div class="local-badge"><span class="icon">🔒</span><span><strong>Ejecución 100 % local</strong> — no se envían documentos, texto ni hallazgos por Internet.<br>El archivo nunca sale de su equipo.</span></div>
+          <div class="local-badge"><span class="icon">🔒</span><span><strong>Procesamiento local de forma predeterminada</strong> — el texto del documento solo se envía a otro equipo cuando Ollama remoto está configurado y permitido explícitamente.</span></div>
         </div>
         <div class="about-section">
           <h3>¿Qué busca la herramienta?</h3>
@@ -1578,7 +1584,7 @@
             <li>Las palabras y expresiones que siempre deben anonimizarse pueden introducirse manualmente para documentos donde las reglas normales no detectan todo.</li>
             <li>Se pueden añadir patrones regex personalizados desde la UI para números de caso internos, códigos de proyecto u otros formatos específicos de la organización.</li>
             <li>Los candidatos descartados se muestran por separado y aun así pueden seleccionarse para anonimización si un postfiltro fue demasiado estricto.</li>
-            <li>Las etiquetas Microsoft 365 y los labels de sensibilidad/retención pueden leerse, sugerirse y escribirse cuando Graph está configurado, con mapping local del nivel de semáforo al label objetivo.</li>
+            <li>La clasificación Microsoft Purview puede leerse localmente desde las etiquetas de confidencialidad integradas en archivos Office y PDF compatibles, sin modificar la etiqueta del documento. Las etiquetas de confidencialidad/retención de Microsoft 365 también pueden sugerirse y escribirse cuando Graph está configurado.</li>
             <li>Una API local con página Swagger/OpenAPI permite crear otros frontends, por ejemplo Power Apps, sin cambiar la aplicación desktop.</li>
             <li>La app puede comprobar GitHub para nuevas versiones, descargar el instalador correcto para el sistema operativo y mostrar scripts de instalación cuando corresponda.</li>
           </ul>
@@ -2001,7 +2007,7 @@
         purviewClassificationTitle: "Microsoft Purview-klassifisering",
         purviewUnclassified: "Ikke klassifisert",
         purviewNotChecked: "Ikke kontrollert",
-        purviewUnsupported: "Ikke støttet",
+        purviewUnsupported: "Ikke kontrollert for denne filtypen",
         purviewUnknown: "Ukjent klassifisering",
         settingsFilterTitle: "Filtrering",
         settingsWhitelistTitle: "Hviteliste",
@@ -2481,7 +2487,7 @@
         purviewClassificationTitle: "Microsoft Purview-klassificering",
         purviewUnclassified: "Inte klassificerad",
         purviewNotChecked: "Inte kontrollerad",
-        purviewUnsupported: "Stöds inte",
+        purviewUnsupported: "Inte kontrollerad för den här filtypen",
         purviewUnknown: "Okänd klassificering",
         settingsFilterTitle: "Filtrering",
         settingsWhitelistTitle: "Vitlista",
@@ -2951,7 +2957,7 @@
         purviewClassificationTitle: "Microsoft Purview classification",
         purviewUnclassified: "Not classified",
         purviewNotChecked: "Not checked",
-        purviewUnsupported: "Not supported",
+        purviewUnsupported: "Not checked for this file type",
         purviewUnknown: "Unknown classification",
         settingsFilterTitle: "Filtering",
         settingsWhitelistTitle: "Whitelist",
@@ -3418,7 +3424,7 @@
         purviewClassificationTitle: "Microsoft Purview-Klassifizierung",
         purviewUnclassified: "Nicht klassifiziert",
         purviewNotChecked: "Nicht geprüft",
-        purviewUnsupported: "Nicht unterstützt",
+        purviewUnsupported: "Für diesen Dateityp nicht geprüft",
         purviewUnknown: "Unbekannte Klassifizierung",
         ignoreXlent:         "Interne Begriffe filtern",
         ignoreHint:          "Domainnamen, interne E-Mails und Namen werden herausgefiltert.",
@@ -3903,7 +3909,7 @@
         purviewClassificationTitle: "Classification Microsoft Purview",
         purviewUnclassified: "Non classifié",
         purviewNotChecked: "Non contrôlé",
-        purviewUnsupported: "Non pris en charge",
+        purviewUnsupported: "Non contrôlée pour ce type de fichier",
         purviewUnknown: "Classification inconnue",
         ignoreXlent:         "Filtrer les termes internes",
         ignoreHint:          "Les noms de domaine, e-mails internes et noms sont filtrés.",
@@ -4388,7 +4394,7 @@
         purviewClassificationTitle: "Clasificación de Microsoft Purview",
         purviewUnclassified: "Sin clasificar",
         purviewNotChecked: "No comprobado",
-        purviewUnsupported: "No compatible",
+        purviewUnsupported: "No comprobada para este tipo de archivo",
         purviewUnknown: "Clasificación desconocida",
         ignoreXlent:         "Filtrar términos internos",
         ignoreHint:          "Los nombres de dominio, correos internos y nombres se filtran.",
@@ -7759,7 +7765,7 @@
           statusEl.innerHTML = `<span style="color:var(--danger)">${t("ollamaNotRunning")}</span>`;
           listEl.innerHTML = "";
           _renderOllamaSettingsModelSelect([]);
-          instrEl.innerHTML = t("ollamaInstallHint");
+          instrEl.textContent = s.error || t("ollamaInstallHint");
           instrEl.style.display = "block";
           if (stopBtn) stopBtn.disabled = true;
         }
@@ -8047,7 +8053,7 @@
         const s = await (await fetch(`${API}/ollama/status`)).json();
         if (!s.running) {
           statusEl.innerHTML   = `<span style="color:var(--danger)">${t("ollamaNotRunning")}</span>`;
-          notRunEl.innerHTML   = t("ollamaInstallHint");
+          notRunEl.textContent = s.error || t("ollamaInstallHint");
           notRunEl.style.display = "block";
           readyEl.style.display  = "none";
           return;

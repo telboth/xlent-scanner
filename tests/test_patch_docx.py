@@ -1,10 +1,15 @@
-from pathlib import Path
 import zipfile
+from pathlib import Path
 
 from docx import Document
 from docx.parts.hdrftr import FooterPart, HeaderPart
 
-from xlent_scanner.patch import patch_docx, strip_docx_annotations, strip_pptx_annotations, strip_xlsx_annotations
+from xlent_scanner.patch import (
+    patch_docx,
+    strip_docx_annotations,
+    strip_pptx_annotations,
+    strip_xlsx_annotations,
+)
 
 
 def test_patch_docx_without_header_footer_does_not_create_defaults(

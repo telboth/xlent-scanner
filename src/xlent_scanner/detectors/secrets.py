@@ -13,7 +13,6 @@ from typing import Iterator
 from xlent_scanner.models import Finding
 from xlent_scanner.utils import ctx as _ctx
 
-
 # ── kontekst-hjelper ──────────────────────────────────────────────────────────
 
 

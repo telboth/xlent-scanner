@@ -1,6 +1,5 @@
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 HTML = ROOT / "src" / "xlent_scanner" / "web" / "index.html"
 APP = ROOT / "src" / "xlent_scanner" / "app.py"
@@ -33,6 +32,21 @@ def test_purview_classification_is_default_on_and_sent_to_all_scan_flows():
     assert 'fd.append("purview_classification", opts.purview_classification ? "true" : "false")' in html
     assert 'purview_classification: opts.purview_classification' in html
     assert 'folderPurviewClassification' in html
+
+
+def test_markdown_is_accepted_and_purview_status_is_not_ambiguous():
+    html = HTML.read_text(encoding="utf-8")
+
+    assert '.txt,.md,.html' in html
+    assert 'purviewUnsupported: "Ikke kontrollert for denne filtypen"' in html
+    assert 'purviewUnsupported: "Not checked for this file type"' in html
+
+
+def test_remote_ollama_permission_error_is_visible_in_both_status_panels():
+    html = HTML.read_text(encoding="utf-8")
+
+    assert html.count('s.error || t("ollamaInstallHint")') == 2
+    assert "Local processing by default" in html
 
 
 def test_purview_classification_uses_distinct_accessible_badges():
@@ -1331,11 +1345,16 @@ def test_about_text_documents_recent_features_in_all_languages():
         marker = f'id="about-{lang}"'
         start = html.index(marker)
         next_start = html.find('class="about-content"', start + 1)
-        section = html[start: next_start if next_start != -1 else len(html)]
+        about_end = html.find('class="about-section about-source-link"', start + 1)
+        end_candidates = [position for position in (next_start, about_end) if position != -1]
+        section = html[start: min(end_candidates) if end_candidates else len(html)]
 
         assert "Ollama" in section
         assert "OCR" in section
         assert "Microsoft 365" in section
+        assert "Purview" in section
+        assert "Markdown (.md)" in section
+        assert "KDA " not in section
         assert "Swagger/OpenAPI" in section
         assert "Power Apps" in section
         assert "regex" in section.lower()

@@ -1,8 +1,7 @@
 """Tester for risk-klassifisering og HTML-rapport (inkl. AI-dybdeskann-funn)."""
+from xlent_scanner.models import Finding, ScanResult
+from xlent_scanner.report import ai_severity, combined_assessment, generate_html
 from xlent_scanner.risk import _category_severity
-from xlent_scanner.report import combined_assessment, generate_html, ai_severity
-from xlent_scanner.models import ScanResult, Finding
-
 
 # ── Alvorlighetsgrad-klassifisering ───────────────────────────────────────────
 

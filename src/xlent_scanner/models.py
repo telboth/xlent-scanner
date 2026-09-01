@@ -1,6 +1,6 @@
 from __future__ import annotations
-from dataclasses import dataclass, field
 
+from dataclasses import dataclass, field
 
 LEVELS = ("grønn", "gul", "rød", "svart")
 SCAN_STATUSES = ("success", "partial", "failed")

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from xlent_scanner import app as app_module
 from xlent_scanner import microsoft_graph as graph
-from xlent_scanner.routes import microsoft as microsoft_routes
 from xlent_scanner.models import Finding, ScanResult
+from xlent_scanner.routes import microsoft as microsoft_routes
 
 
 def test_detect_cloud_sync_context_recognises_onedrive_shortcut(tmp_path):

@@ -14,7 +14,6 @@ from pathlib import Path
 from typing import Any, Callable
 from xml.etree import ElementTree
 
-
 OFFICE_SUFFIXES = {".docx", ".xlsx", ".pptx"}
 SUPPORTED_SUFFIXES = OFFICE_SUFFIXES | {".pdf"}
 DEFAULT_KNOWN_LABELS = (
@@ -53,7 +52,7 @@ _PURVIEW_TRANSLATIONS = {
         "title": "Microsoft Purview-klassifisering",
         "folder_title": "Purview-klassifisering",
         "unclassified": "Ikke klassifisert",
-        "unsupported": "Ikke støttet for denne filtypen",
+        "unsupported": "Ikke kontrollert for denne filtypen",
         "unknown": "Ukjent klassifisering",
         "disabled": "Deaktivert",
         "not_checked": "Ikke kontrollert",
@@ -62,7 +61,7 @@ _PURVIEW_TRANSLATIONS = {
         "title": "Microsoft Purview-klassificering",
         "folder_title": "Purview-klassificering",
         "unclassified": "Inte klassificerad",
-        "unsupported": "Stöds inte för denna filtyp",
+        "unsupported": "Inte kontrollerad för den här filtypen",
         "unknown": "Okänd klassificering",
         "disabled": "Inaktiverad",
         "not_checked": "Inte kontrollerad",
@@ -71,7 +70,7 @@ _PURVIEW_TRANSLATIONS = {
         "title": "Microsoft Purview classification",
         "folder_title": "Purview classification",
         "unclassified": "Not classified",
-        "unsupported": "Not supported for this file type",
+        "unsupported": "Not checked for this file type",
         "unknown": "Unknown classification",
         "disabled": "Disabled",
         "not_checked": "Not checked",
@@ -80,7 +79,7 @@ _PURVIEW_TRANSLATIONS = {
         "title": "Microsoft Purview-Klassifizierung",
         "folder_title": "Purview-Klassifizierung",
         "unclassified": "Nicht klassifiziert",
-        "unsupported": "Für diesen Dateityp nicht unterstützt",
+        "unsupported": "Für diesen Dateityp nicht geprüft",
         "unknown": "Unbekannte Klassifizierung",
         "disabled": "Deaktiviert",
         "not_checked": "Nicht geprüft",
@@ -89,7 +88,7 @@ _PURVIEW_TRANSLATIONS = {
         "title": "Classification Microsoft Purview",
         "folder_title": "Classification Purview",
         "unclassified": "Non classifiée",
-        "unsupported": "Non prise en charge pour ce type de fichier",
+        "unsupported": "Non contrôlée pour ce type de fichier",
         "unknown": "Classification inconnue",
         "disabled": "Désactivée",
         "not_checked": "Non contrôlée",
@@ -98,7 +97,7 @@ _PURVIEW_TRANSLATIONS = {
         "title": "Clasificación de Microsoft Purview",
         "folder_title": "Clasificación Purview",
         "unclassified": "Sin clasificar",
-        "unsupported": "No compatible con este tipo de archivo",
+        "unsupported": "No comprobada para este tipo de archivo",
         "unknown": "Clasificación desconocida",
         "disabled": "Desactivada",
         "not_checked": "No comprobada",

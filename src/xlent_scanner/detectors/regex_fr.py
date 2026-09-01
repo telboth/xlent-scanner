@@ -11,7 +11,6 @@ from typing import Iterator
 from xlent_scanner.models import Finding
 from xlent_scanner.utils import ctx as _ctx
 
-
 # ── Numéro de sécurité sociale (INSEE) ───────────────────────────────────────
 # Format: S AA MM DDD CCC KK  (15 tegn totalt, vises gjerne som S-AA-MM-DDD-CCC-KK)
 # S: 1=menn, 2=kvinner (og spesielle koder)

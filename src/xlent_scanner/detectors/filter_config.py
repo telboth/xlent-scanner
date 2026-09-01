@@ -1,10 +1,10 @@
 """Konfigurasjon for false-positive-filtre i detektorene."""
 from __future__ import annotations
 
+import tomllib
 from dataclasses import dataclass
 from functools import lru_cache
 from importlib import resources
-import tomllib
 
 
 @dataclass(frozen=True)

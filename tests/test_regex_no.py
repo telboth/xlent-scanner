@@ -1,7 +1,6 @@
 """Unit-tester for norske regex-detektorer (regex_no.py)."""
 from __future__ import annotations
 
-import pytest
 from xlent_scanner.detectors.regex_no import (
     find_emails,
     find_fnr,
@@ -9,7 +8,6 @@ from xlent_scanner.detectors.regex_no import (
     find_orgnr,
     find_telefon,
 )
-
 
 # ── E-post ────────────────────────────────────────────────────────────────────
 

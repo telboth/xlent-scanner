@@ -6,8 +6,9 @@ Verifikasjon:
   - Risikonivå er korrekt (svart for personnummer)
   - PDF og TXT gir overlappende funn
 """
-import pytest
 from pathlib import Path
+
+import pytest
 
 FIXTURES = Path(__file__).parent / "fixtures"
 TXT_FILE = FIXTURES / "sensitiv_nb.txt"
@@ -190,7 +191,9 @@ class TestNewFileFormats:
 
     def test_odt_scan(self, tmp_path):
         """ODT: zip med content.xml."""
-        import zipfile, io
+        import io
+        import zipfile
+
         from xlent_scanner.scanner import scan_file
 
         content_xml = """<?xml version="1.0" encoding="UTF-8"?>

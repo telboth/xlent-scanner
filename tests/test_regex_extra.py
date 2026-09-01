@@ -5,14 +5,14 @@ from xlent_scanner.detectors.regex_extra import (
     find_confidential_label_lines,
     find_document_metadata_fields,
     find_hr_personnel_data,
-    find_tax_id,
-    find_legal_case_data,
     find_labeled_phone_or_fax,
+    find_legal_case_data,
     find_location_device_ids,
     find_medical_fields,
     find_po_box_address,
     find_street_address,
     find_swift,
+    find_tax_id,
 )
 from xlent_scanner.scanner import scan_text
 

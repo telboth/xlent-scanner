@@ -1,5 +1,4 @@
 """Tester for URL-detektor (detectors/regex_url.py)."""
-import pytest
 from xlent_scanner.detectors.regex_url import detect_urls
 
 

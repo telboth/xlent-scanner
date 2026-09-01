@@ -10,8 +10,8 @@ E-postadresser (format: bruker@domene.tld) er IKKE inkludert
 from __future__ import annotations
 
 import re
-from urllib.parse import urlparse
 from typing import Iterator
+from urllib.parse import urlparse
 
 from xlent_scanner.models import Finding
 from xlent_scanner.utils import ctx as _ctx_base

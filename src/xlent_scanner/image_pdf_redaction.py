@@ -13,7 +13,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-
 _TOKEN_RE = re.compile(r"[^\W_]+", re.UNICODE)
 
 

@@ -11,8 +11,6 @@ Dekker:
   - keywords: konfidensielle markører, konfigurasjonsord
   - regex_url: HTTP/HTTPS og www.
 """
-import pytest
-
 # ────────────────────────────────────────────────────────────
 #  Hjelpere
 # ────────────────────────────────────────────────────────────
@@ -29,9 +27,14 @@ def _texts(findings):
 # ════════════════════════════════════════════════════════════
 
 from xlent_scanner.detectors.regex_no import (
-    find_fnr, find_kontonummer, find_orgnr, find_telefon, find_emails,
     detect_no_specific,
+    find_emails,
+    find_fnr,
+    find_kontonummer,
+    find_orgnr,
+    find_telefon,
 )
+
 
 class TestFnr:
     def test_valid_fnr(self):
@@ -195,7 +198,10 @@ class TestNoDoublingBug:
 # ════════════════════════════════════════════════════════════
 
 from xlent_scanner.detectors.regex_sv import (
-    find_persnr, find_orgnr_sv, find_telefon_sv, find_bankgiro, find_plusgiro,
+    find_bankgiro,
+    find_orgnr_sv,
+    find_persnr,
+    find_plusgiro,
 )
 
 
@@ -405,7 +411,7 @@ class TestIban:
 #  secrets
 # ════════════════════════════════════════════════════════════
 
-from xlent_scanner.detectors.secrets import detect_secrets, find_known_secrets
+from xlent_scanner.detectors.secrets import detect_secrets
 
 
 class TestSecrets:
