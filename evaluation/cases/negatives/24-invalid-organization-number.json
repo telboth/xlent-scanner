@@ -1,0 +1,1 @@
+{"id":"nb-invalid-organization-number-001","corpus_version":1,"language":"nb","profile":"normal","text":"Ordrenummer: 999 999 998","expected_status":"success","expected_risk":"grønn","expected_findings":[],"forbidden_findings":[{"type":"organization_number"}],"tags":["negative","structured"]}

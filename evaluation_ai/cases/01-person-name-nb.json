@@ -1,0 +1,1 @@
+{"id":"nb-ai-person-name-001","corpus_version":1,"language":"nb","text":"Prosjektleder Kari Nordmann godkjente den kommersielle planen.","categories":["navn"],"min_confidence":"medium","expected_findings":[{"type":"person_name","value":"Kari Nordmann"}],"forbidden_findings":[],"tags":["positive","person"]}

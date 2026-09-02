@@ -1,0 +1,1 @@
+{"id":"en-confidential-label-001","corpus_version":1,"language":"en","profile":"normal","text":"STRICTLY CONFIDENTIAL\nCommercial proposal for internal review.","expected_status":"success","expected_risk":"rød","expected_findings":[{"type":"confidential","value":"STRICTLY CONFIDENTIAL"}],"forbidden_findings":[],"tags":["mixed","confidential","label-line"]}

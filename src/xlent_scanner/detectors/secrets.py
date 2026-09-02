@@ -108,10 +108,20 @@ def find_high_entropy(text: str) -> Iterator[Finding]:
 # ── samlet ────────────────────────────────────────────────────────────────────
 
 def detect_secrets(text: str) -> list[Finding]:
-    known = list(find_known_secrets(text))
+    # Mønstrene er prioritert fra spesifikke til generiske. Behold gjentatte
+    # forekomster, men ikke en senere generisk kategori for samme råverdi.
+    known: list[Finding] = []
+    seen_categories_by_raw: dict[str, set[str]] = {}
+    for finding in find_known_secrets(text):
+        raw = finding.raw_text or finding.text
+        earlier_categories = seen_categories_by_raw.get(raw)
+        if earlier_categories and finding.category not in earlier_categories:
+            continue
+        seen_categories_by_raw.setdefault(raw, set()).add(finding.category)
+        known.append(finding)
     known_raws = {f.raw_text for f in known if f.raw_text}
     entropy_findings = [
         f for f in find_high_entropy(text)
-        if f.raw_text not in known_raws
+        if not any(f.raw_text and f.raw_text in known_raw for known_raw in known_raws)
     ]
     return known + entropy_findings

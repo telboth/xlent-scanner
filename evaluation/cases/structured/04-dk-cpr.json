@@ -1,0 +1,1 @@
+{"id":"da-cpr-001","corpus_version":1,"language":"da","profile":"normal","text":"CPR: 010180-0008","expected_status":"success","expected_risk":"svart","expected_findings":[{"type":"dk_cpr","value":"010180-0008"}],"forbidden_findings":[],"tags":["structured","positive"]}

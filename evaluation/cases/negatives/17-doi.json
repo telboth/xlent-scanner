@@ -1,0 +1,1 @@
+{"id":"en-doi-001","corpus_version":1,"language":"en","profile":"technical","text":"Reference DOI: 10.1785/BSSA0760551393.","expected_status":"success","expected_risk":"grønn","expected_findings":[],"forbidden_findings":[{"type":"phone"},{"type":"person_name"}],"tags":["negative","technical","hard-negative"]}

@@ -86,7 +86,9 @@ _SUM_KW_RE = re.compile(
         r"|total\s+(?:NOK|SEK|DKK|EUR|USD|£|kr|€|\$)"  # «Total NOK 180,-»
         r"|budget\b"                                      # engelsk «budget:»
     r")"
-    r"\s*:?\s*"
+    # Tillat stramme koblinger som «prosjektsum på 450 000» og
+    # «contract value of 450,000», men ikke vilkårlig tekst mellom dem.
+    r"\s*(?::|(?:på|er|of|is)\b)?\s*"
     r"(?:NOK|SEK|DKK|EUR|USD|£|kr|€|\$)?\s*"
     # \d{1,7} fanger tall uten tusenskilletegn (som 1200, 50000) i tillegg
     # til formaterte tall som 1 200 / 1.200 / 4 500 000

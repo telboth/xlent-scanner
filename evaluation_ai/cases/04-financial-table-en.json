@@ -1,0 +1,1 @@
+{"id":"en-ai-financial-table-001","corpus_version":1,"language":"en","text":"Role | Hours | Cost (NOK)\nEngineer | 120 | 250 000","categories":["budsjett_tall"],"min_confidence":"medium","expected_findings":[{"type":"financial","value":"250 000"}],"forbidden_findings":[],"tags":["positive","financial","table"]}

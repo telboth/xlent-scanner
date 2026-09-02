@@ -1,0 +1,986 @@
+{
+  "metadata": {
+    "scanner_version": "1.9.16",
+    "corpus_versions": [
+      1
+    ],
+    "scan_mode": "standard"
+  },
+  "summary": {
+    "cases": 38,
+    "true_positives": 30,
+    "false_positives": 0,
+    "false_negatives": 0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0,
+    "risk_matches": 38,
+    "status_matches": 38,
+    "forbidden_violations": 0
+  },
+  "by_type": {
+    "bank_account": {
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "confidential": {
+      "true_positives": 2,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "config_keyword": {
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "config_password": {
+      "true_positives": 2,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "credit_card": {
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "dk_cpr": {
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "email": {
+      "true_positives": 3,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "financial": {
+      "true_positives": 5,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "github_token": {
+      "true_positives": 3,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "iban": {
+      "true_positives": 2,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "ip_address": {
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "jwt": {
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "medical": {
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "no_d_number": {
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "no_national_id": {
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "openai_key": {
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "phone": {
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "se_personal_id": {
+      "true_positives": 2,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    }
+  },
+  "cases": [
+    {
+      "id": "nb-clean-general-001",
+      "source": "cases/mixed/25-clean-general.json",
+      "language": "nb",
+      "profile": "normal",
+      "tags": [
+        "mixed",
+        "clean"
+      ],
+      "true_positives": 0,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "risk_expected": "grønn",
+      "risk_actual": "grønn",
+      "status_expected": "success",
+      "status_actual": "success",
+      "forbidden_violations": 0,
+      "missing_findings": [],
+      "forbidden_finding_details": [],
+      "unexpected_findings": []
+    },
+    {
+      "id": "en-clean-technical-001",
+      "source": "cases/mixed/26-clean-technical.json",
+      "language": "en",
+      "profile": "technical",
+      "tags": [
+        "mixed",
+        "clean",
+        "technical"
+      ],
+      "true_positives": 0,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "risk_expected": "grønn",
+      "risk_actual": "grønn",
+      "status_expected": "success",
+      "status_actual": "success",
+      "forbidden_violations": 0,
+      "missing_findings": [],
+      "forbidden_finding_details": [],
+      "unexpected_findings": []
+    },
+    {
+      "id": "nb-project-offer-001",
+      "source": "cases/mixed/27-project-offer.json",
+      "language": "nb",
+      "profile": "normal",
+      "tags": [
+        "mixed",
+        "commercial"
+      ],
+      "true_positives": 3,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "risk_expected": "rød",
+      "risk_actual": "rød",
+      "status_expected": "success",
+      "status_actual": "success",
+      "forbidden_violations": 0,
+      "missing_findings": [],
+      "forbidden_finding_details": [],
+      "unexpected_findings": []
+    },
+    {
+      "id": "en-config-secrets-001",
+      "source": "cases/mixed/28-config-secrets.json",
+      "language": "en",
+      "profile": "normal",
+      "tags": [
+        "mixed",
+        "secret"
+      ],
+      "true_positives": 2,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "risk_expected": "rød",
+      "risk_actual": "rød",
+      "status_expected": "success",
+      "status_actual": "success",
+      "forbidden_violations": 0,
+      "missing_findings": [],
+      "forbidden_finding_details": [],
+      "unexpected_findings": []
+    },
+    {
+      "id": "sv-multilingual-identifiers-001",
+      "source": "cases/mixed/29-multilingual-identifiers.json",
+      "language": "sv",
+      "profile": "normal",
+      "tags": [
+        "mixed",
+        "multilingual"
+      ],
+      "true_positives": 3,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "risk_expected": "svart",
+      "risk_actual": "svart",
+      "status_expected": "success",
+      "status_actual": "success",
+      "forbidden_violations": 0,
+      "missing_findings": [],
+      "forbidden_finding_details": [],
+      "unexpected_findings": []
+    },
+    {
+      "id": "nb-medical-note-001",
+      "source": "cases/mixed/30-medical-note.json",
+      "language": "nb",
+      "profile": "normal",
+      "tags": [
+        "mixed",
+        "medical",
+        "contextual"
+      ],
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "risk_expected": "rød",
+      "risk_actual": "rød",
+      "status_expected": "success",
+      "status_actual": "success",
+      "forbidden_violations": 0,
+      "missing_findings": [],
+      "forbidden_finding_details": [],
+      "unexpected_findings": []
+    },
+    {
+      "id": "nb-project-sum-link-001",
+      "source": "cases/mixed/31-project-sum-link-nb.json",
+      "language": "nb",
+      "profile": "normal",
+      "tags": [
+        "mixed",
+        "financial",
+        "linking-word"
+      ],
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "risk_expected": "gul",
+      "risk_actual": "gul",
+      "status_expected": "success",
+      "status_actual": "success",
+      "forbidden_violations": 0,
+      "missing_findings": [],
+      "forbidden_finding_details": [],
+      "unexpected_findings": []
+    },
+    {
+      "id": "en-contract-value-link-001",
+      "source": "cases/mixed/32-project-sum-link-en.json",
+      "language": "en",
+      "profile": "normal",
+      "tags": [
+        "mixed",
+        "financial",
+        "linking-word"
+      ],
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "risk_expected": "gul",
+      "risk_actual": "gul",
+      "status_expected": "success",
+      "status_actual": "success",
+      "forbidden_violations": 0,
+      "missing_findings": [],
+      "forbidden_finding_details": [],
+      "unexpected_findings": []
+    },
+    {
+      "id": "en-project-budget-link-001",
+      "source": "cases/mixed/33-budget-link-en.json",
+      "language": "en",
+      "profile": "normal",
+      "tags": [
+        "mixed",
+        "financial",
+        "linking-word"
+      ],
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "risk_expected": "gul",
+      "risk_actual": "gul",
+      "status_expected": "success",
+      "status_actual": "success",
+      "forbidden_violations": 0,
+      "missing_findings": [],
+      "forbidden_finding_details": [],
+      "unexpected_findings": []
+    },
+    {
+      "id": "en-real-server-ip-001",
+      "source": "cases/mixed/36-real-server-ip.json",
+      "language": "en",
+      "profile": "technical",
+      "tags": [
+        "mixed",
+        "technical",
+        "ip"
+      ],
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "risk_expected": "gul",
+      "risk_actual": "gul",
+      "status_expected": "success",
+      "status_actual": "success",
+      "forbidden_violations": 0,
+      "missing_findings": [],
+      "forbidden_finding_details": [],
+      "unexpected_findings": []
+    },
+    {
+      "id": "en-confidential-label-001",
+      "source": "cases/mixed/38-confidential-label-en.json",
+      "language": "en",
+      "profile": "normal",
+      "tags": [
+        "mixed",
+        "confidential",
+        "label-line"
+      ],
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "risk_expected": "rød",
+      "risk_actual": "rød",
+      "status_expected": "success",
+      "status_actual": "success",
+      "forbidden_violations": 0,
+      "missing_findings": [],
+      "forbidden_finding_details": [],
+      "unexpected_findings": []
+    },
+    {
+      "id": "nb-invalid-national-id-001",
+      "source": "cases/negatives/13-invalid-national-id.json",
+      "language": "nb",
+      "profile": "normal",
+      "tags": [
+        "structured",
+        "negative",
+        "hard-negative"
+      ],
+      "true_positives": 0,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "risk_expected": "grønn",
+      "risk_actual": "grønn",
+      "status_expected": "success",
+      "status_actual": "success",
+      "forbidden_violations": 0,
+      "missing_findings": [],
+      "forbidden_finding_details": [],
+      "unexpected_findings": []
+    },
+    {
+      "id": "nb-calendar-date-001",
+      "source": "cases/negatives/14-calendar-date.json",
+      "language": "nb",
+      "profile": "normal",
+      "tags": [
+        "negative",
+        "date"
+      ],
+      "true_positives": 0,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "risk_expected": "grønn",
+      "risk_actual": "grønn",
+      "status_expected": "success",
+      "status_actual": "success",
+      "forbidden_violations": 0,
+      "missing_findings": [],
+      "forbidden_finding_details": [],
+      "unexpected_findings": []
+    },
+    {
+      "id": "en-axis-values-001",
+      "source": "cases/negatives/15-axis-values.json",
+      "language": "en",
+      "profile": "technical",
+      "tags": [
+        "negative",
+        "technical",
+        "hard-negative"
+      ],
+      "true_positives": 0,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "risk_expected": "grønn",
+      "risk_actual": "grønn",
+      "status_expected": "success",
+      "status_actual": "success",
+      "forbidden_violations": 0,
+      "missing_findings": [],
+      "forbidden_finding_details": [],
+      "unexpected_findings": []
+    },
+    {
+      "id": "nb-project-number-001",
+      "source": "cases/negatives/16-project-number.json",
+      "language": "nb",
+      "profile": "normal",
+      "tags": [
+        "negative",
+        "hard-negative"
+      ],
+      "true_positives": 0,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "risk_expected": "grønn",
+      "risk_actual": "grønn",
+      "status_expected": "success",
+      "status_actual": "success",
+      "forbidden_violations": 0,
+      "missing_findings": [],
+      "forbidden_finding_details": [],
+      "unexpected_findings": []
+    },
+    {
+      "id": "en-doi-001",
+      "source": "cases/negatives/17-doi.json",
+      "language": "en",
+      "profile": "technical",
+      "tags": [
+        "negative",
+        "technical",
+        "hard-negative"
+      ],
+      "true_positives": 0,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "risk_expected": "grønn",
+      "risk_actual": "grønn",
+      "status_expected": "success",
+      "status_actual": "success",
+      "forbidden_violations": 0,
+      "missing_findings": [],
+      "forbidden_finding_details": [],
+      "unexpected_findings": []
+    },
+    {
+      "id": "en-version-string-001",
+      "source": "cases/negatives/18-version-string.json",
+      "language": "en",
+      "profile": "technical",
+      "tags": [
+        "negative",
+        "technical",
+        "hard-negative"
+      ],
+      "true_positives": 0,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "risk_expected": "grønn",
+      "risk_actual": "grønn",
+      "status_expected": "success",
+      "status_actual": "success",
+      "forbidden_violations": 0,
+      "missing_findings": [],
+      "forbidden_finding_details": [],
+      "unexpected_findings": []
+    },
+    {
+      "id": "en-title-case-001",
+      "source": "cases/negatives/19-title-case.json",
+      "language": "en",
+      "profile": "technical",
+      "tags": [
+        "negative",
+        "technical",
+        "hard-negative"
+      ],
+      "true_positives": 0,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "risk_expected": "grønn",
+      "risk_actual": "grønn",
+      "status_expected": "success",
+      "status_actual": "success",
+      "forbidden_violations": 0,
+      "missing_findings": [],
+      "forbidden_finding_details": [],
+      "unexpected_findings": []
+    },
+    {
+      "id": "en-placeholder-secret-001",
+      "source": "cases/negatives/20-placeholder-secret.json",
+      "language": "en",
+      "profile": "normal",
+      "tags": [
+        "secret",
+        "unsafe-default"
+      ],
+      "true_positives": 2,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "risk_expected": "rød",
+      "risk_actual": "rød",
+      "status_expected": "success",
+      "status_actual": "success",
+      "forbidden_violations": 0,
+      "missing_findings": [],
+      "forbidden_finding_details": [],
+      "unexpected_findings": []
+    },
+    {
+      "id": "nb-invalid-credit-card-001",
+      "source": "cases/negatives/21-invalid-credit-card.json",
+      "language": "nb",
+      "profile": "normal",
+      "tags": [
+        "negative",
+        "structured"
+      ],
+      "true_positives": 0,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "risk_expected": "grønn",
+      "risk_actual": "grønn",
+      "status_expected": "success",
+      "status_actual": "success",
+      "forbidden_violations": 0,
+      "missing_findings": [],
+      "forbidden_finding_details": [],
+      "unexpected_findings": []
+    },
+    {
+      "id": "nb-invalid-iban-001",
+      "source": "cases/negatives/22-invalid-iban.json",
+      "language": "nb",
+      "profile": "normal",
+      "tags": [
+        "negative",
+        "structured"
+      ],
+      "true_positives": 0,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "risk_expected": "grønn",
+      "risk_actual": "grønn",
+      "status_expected": "success",
+      "status_actual": "success",
+      "forbidden_violations": 0,
+      "missing_findings": [],
+      "forbidden_finding_details": [],
+      "unexpected_findings": []
+    },
+    {
+      "id": "en-page-range-001",
+      "source": "cases/negatives/23-page-range.json",
+      "language": "en",
+      "profile": "technical",
+      "tags": [
+        "negative",
+        "technical",
+        "hard-negative"
+      ],
+      "true_positives": 0,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "risk_expected": "grønn",
+      "risk_actual": "grønn",
+      "status_expected": "success",
+      "status_actual": "success",
+      "forbidden_violations": 0,
+      "missing_findings": [],
+      "forbidden_finding_details": [],
+      "unexpected_findings": []
+    },
+    {
+      "id": "nb-invalid-organization-number-001",
+      "source": "cases/negatives/24-invalid-organization-number.json",
+      "language": "nb",
+      "profile": "normal",
+      "tags": [
+        "negative",
+        "structured"
+      ],
+      "true_positives": 0,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "risk_expected": "grønn",
+      "risk_actual": "grønn",
+      "status_expected": "success",
+      "status_actual": "success",
+      "forbidden_violations": 0,
+      "missing_findings": [],
+      "forbidden_finding_details": [],
+      "unexpected_findings": []
+    },
+    {
+      "id": "en-runtime-version-ip-shape-001",
+      "source": "cases/negatives/34-runtime-version-ip-shape.json",
+      "language": "en",
+      "profile": "technical",
+      "tags": [
+        "negative",
+        "technical",
+        "version"
+      ],
+      "true_positives": 0,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "risk_expected": "grønn",
+      "risk_actual": "grønn",
+      "status_expected": "success",
+      "status_actual": "success",
+      "forbidden_violations": 0,
+      "missing_findings": [],
+      "forbidden_finding_details": [],
+      "unexpected_findings": []
+    },
+    {
+      "id": "en-release-version-ip-shape-001",
+      "source": "cases/negatives/35-release-version-ip-shape.json",
+      "language": "en",
+      "profile": "technical",
+      "tags": [
+        "negative",
+        "technical",
+        "version"
+      ],
+      "true_positives": 0,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "risk_expected": "grønn",
+      "risk_actual": "grønn",
+      "status_expected": "success",
+      "status_actual": "success",
+      "forbidden_violations": 0,
+      "missing_findings": [],
+      "forbidden_finding_details": [],
+      "unexpected_findings": []
+    },
+    {
+      "id": "nb-no-national-id-001",
+      "source": "cases/structured/01-no-national-id.json",
+      "language": "nb",
+      "profile": "normal",
+      "tags": [
+        "structured",
+        "positive"
+      ],
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "risk_expected": "svart",
+      "risk_actual": "svart",
+      "status_expected": "success",
+      "status_actual": "success",
+      "forbidden_violations": 0,
+      "missing_findings": [],
+      "forbidden_finding_details": [],
+      "unexpected_findings": []
+    },
+    {
+      "id": "nb-no-d-number-001",
+      "source": "cases/structured/02-no-d-number.json",
+      "language": "nb",
+      "profile": "normal",
+      "tags": [
+        "structured",
+        "positive"
+      ],
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "risk_expected": "svart",
+      "risk_actual": "svart",
+      "status_expected": "success",
+      "status_actual": "success",
+      "forbidden_violations": 0,
+      "missing_findings": [],
+      "forbidden_finding_details": [],
+      "unexpected_findings": []
+    },
+    {
+      "id": "sv-personal-id-001",
+      "source": "cases/structured/03-se-personal-id.json",
+      "language": "sv",
+      "profile": "normal",
+      "tags": [
+        "structured",
+        "positive"
+      ],
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "risk_expected": "svart",
+      "risk_actual": "svart",
+      "status_expected": "success",
+      "status_actual": "success",
+      "forbidden_violations": 0,
+      "missing_findings": [],
+      "forbidden_finding_details": [],
+      "unexpected_findings": []
+    },
+    {
+      "id": "da-cpr-001",
+      "source": "cases/structured/04-dk-cpr.json",
+      "language": "da",
+      "profile": "normal",
+      "tags": [
+        "structured",
+        "positive"
+      ],
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "risk_expected": "svart",
+      "risk_actual": "svart",
+      "status_expected": "success",
+      "status_actual": "success",
+      "forbidden_violations": 0,
+      "missing_findings": [],
+      "forbidden_finding_details": [],
+      "unexpected_findings": []
+    },
+    {
+      "id": "nb-iban-001",
+      "source": "cases/structured/05-iban.json",
+      "language": "nb",
+      "profile": "normal",
+      "tags": [
+        "structured",
+        "positive"
+      ],
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "risk_expected": "rød",
+      "risk_actual": "rød",
+      "status_expected": "success",
+      "status_actual": "success",
+      "forbidden_violations": 0,
+      "missing_findings": [],
+      "forbidden_finding_details": [],
+      "unexpected_findings": []
+    },
+    {
+      "id": "nb-bank-account-001",
+      "source": "cases/structured/06-bank-account.json",
+      "language": "nb",
+      "profile": "normal",
+      "tags": [
+        "structured",
+        "positive"
+      ],
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "risk_expected": "svart",
+      "risk_actual": "svart",
+      "status_expected": "success",
+      "status_actual": "success",
+      "forbidden_violations": 0,
+      "missing_findings": [],
+      "forbidden_finding_details": [],
+      "unexpected_findings": []
+    },
+    {
+      "id": "nb-credit-card-001",
+      "source": "cases/structured/07-credit-card.json",
+      "language": "nb",
+      "profile": "normal",
+      "tags": [
+        "structured",
+        "positive"
+      ],
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "risk_expected": "svart",
+      "risk_actual": "svart",
+      "status_expected": "success",
+      "status_actual": "success",
+      "forbidden_violations": 0,
+      "missing_findings": [],
+      "forbidden_finding_details": [],
+      "unexpected_findings": []
+    },
+    {
+      "id": "nb-email-001",
+      "source": "cases/structured/08-email.json",
+      "language": "nb",
+      "profile": "normal",
+      "tags": [
+        "structured",
+        "positive"
+      ],
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "risk_expected": "gul",
+      "risk_actual": "gul",
+      "status_expected": "success",
+      "status_actual": "success",
+      "forbidden_violations": 0,
+      "missing_findings": [],
+      "forbidden_finding_details": [],
+      "unexpected_findings": []
+    },
+    {
+      "id": "nb-phone-001",
+      "source": "cases/structured/09-phone.json",
+      "language": "nb",
+      "profile": "normal",
+      "tags": [
+        "structured",
+        "positive"
+      ],
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "risk_expected": "gul",
+      "risk_actual": "gul",
+      "status_expected": "success",
+      "status_actual": "success",
+      "forbidden_violations": 0,
+      "missing_findings": [],
+      "forbidden_finding_details": [],
+      "unexpected_findings": []
+    },
+    {
+      "id": "nb-openai-key-001",
+      "source": "cases/structured/10-openai-key.json",
+      "language": "nb",
+      "profile": "normal",
+      "tags": [
+        "structured",
+        "positive",
+        "secret"
+      ],
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "risk_expected": "rød",
+      "risk_actual": "rød",
+      "status_expected": "success",
+      "status_actual": "success",
+      "forbidden_violations": 0,
+      "missing_findings": [],
+      "forbidden_finding_details": [],
+      "unexpected_findings": []
+    },
+    {
+      "id": "nb-github-token-001",
+      "source": "cases/structured/11-github-token.json",
+      "language": "nb",
+      "profile": "normal",
+      "tags": [
+        "structured",
+        "positive",
+        "secret"
+      ],
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "risk_expected": "rød",
+      "risk_actual": "rød",
+      "status_expected": "success",
+      "status_actual": "success",
+      "forbidden_violations": 0,
+      "missing_findings": [],
+      "forbidden_finding_details": [],
+      "unexpected_findings": []
+    },
+    {
+      "id": "nb-jwt-001",
+      "source": "cases/structured/12-jwt.json",
+      "language": "nb",
+      "profile": "normal",
+      "tags": [
+        "structured",
+        "positive",
+        "secret"
+      ],
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "risk_expected": "rød",
+      "risk_actual": "rød",
+      "status_expected": "success",
+      "status_actual": "success",
+      "forbidden_violations": 0,
+      "missing_findings": [],
+      "forbidden_finding_details": [],
+      "unexpected_findings": []
+    },
+    {
+      "id": "en-repeated-github-token-001",
+      "source": "cases/structured/37-repeated-github-token.json",
+      "language": "en",
+      "profile": "normal",
+      "tags": [
+        "structured",
+        "secret",
+        "duplicate-value"
+      ],
+      "true_positives": 2,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "risk_expected": "rød",
+      "risk_actual": "rød",
+      "status_expected": "success",
+      "status_actual": "success",
+      "forbidden_violations": 0,
+      "missing_findings": [],
+      "forbidden_finding_details": [],
+      "unexpected_findings": []
+    }
+  ]
+}

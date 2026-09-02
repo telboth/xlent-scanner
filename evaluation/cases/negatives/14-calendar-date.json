@@ -1,0 +1,1 @@
+{"id":"nb-calendar-date-001","corpus_version":1,"language":"nb","profile":"normal","text":"Dokumentdato: 01.01.1990","expected_status":"success","expected_risk":"grønn","expected_findings":[],"forbidden_findings":[{"type":"possible_person_id"}],"tags":["negative","date"]}

@@ -1,0 +1,1 @@
+{"id":"nb-project-number-001","corpus_version":1,"language":"nb","profile":"normal","text":"Prosjektreferanse: 1000.00.00007","expected_status":"success","expected_risk":"grønn","expected_findings":[],"forbidden_findings":[{"type":"bank_account"}],"tags":["negative","hard-negative"]}

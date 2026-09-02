@@ -1,0 +1,1 @@
+{"id":"nb-github-token-001","corpus_version":1,"language":"nb","profile":"normal","text":"Token: ghp_AbCdEfGhIjKlMnOpQrStUvWxYz1234567890Ab","expected_status":"success","expected_risk":"rød","expected_findings":[{"type":"github_token"}],"forbidden_findings":[{"type":"config_password"}],"tags":["structured","positive","secret"]}

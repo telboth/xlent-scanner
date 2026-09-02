@@ -1,0 +1,1 @@
+{"id":"nb-invalid-credit-card-001","corpus_version":1,"language":"nb","profile":"normal","text":"Referansekode: 4532015112830003","expected_status":"success","expected_risk":"grønn","expected_findings":[],"forbidden_findings":[{"type":"credit_card"}],"tags":["negative","structured"]}

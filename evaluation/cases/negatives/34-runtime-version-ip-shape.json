@@ -1,0 +1,1 @@
+{"id":"en-runtime-version-ip-shape-001","corpus_version":1,"language":"en","profile":"technical","text":"Runtime version 10.20.30.40 was used for validation.","expected_status":"success","expected_risk":"grønn","expected_findings":[],"forbidden_findings":[{"type":"ip_address"}],"tags":["negative","technical","version"]}

@@ -1,0 +1,10 @@
+{
+  "person_name": {"category_prefixes": ["navn (person)", "personnavn", "navn"], "severity": "gul"},
+  "physical_address": {"category_prefixes": ["fysisk adresse", "adresse"], "severity": "gul"},
+  "company_name": {"category_prefixes": ["selskapsnavn", "firmanavn", "offisielle firma- og organisasjonsnavn", "company"], "severity": "gul"},
+  "financial": {"category_prefixes": ["budsjettall", "finansielle", "financial", "pengebeløp"], "severity": "gul"},
+  "medical": {"category_prefixes": ["medisinsk", "diagnose", "medical"], "severity": "rød"},
+  "personnel": {"category_prefixes": ["personalsak", "personnel"], "severity": "rød"},
+  "legal": {"category_prefixes": ["juridisk", "legal"], "severity": "rød"},
+  "child_school": {"category_prefixes": ["barn/elev", "barn", "elev", "child", "student"], "severity": "rød"}
+}

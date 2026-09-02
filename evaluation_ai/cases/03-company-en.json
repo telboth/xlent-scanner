@@ -1,0 +1,1 @@
+{"id":"en-ai-company-001","corpus_version":1,"language":"en","text":"The selected supplier is Northstar Fabrication Ltd.","categories":["selskapsnavn"],"min_confidence":"medium","expected_findings":[{"type":"company_name","value":"Northstar Fabrication Ltd"}],"forbidden_findings":[],"tags":["positive","company"]}

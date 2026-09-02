@@ -38,7 +38,7 @@ jobs:
         run: uv sync --locked --only-group dev
 
       - name: Kjør Ruff
-        run: uv run --no-sync ruff check src tests
+        run: uv run --no-sync ruff check src tests scripts
 
   pytest:
     name: Pytest
@@ -60,3 +60,27 @@ jobs:
 
       - name: Kjør tester
         run: uv run --no-sync pytest -q
+
+  evaluation:
+    name: Standard evalueringsport
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Installer uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          python-version: "3.13"
+
+      - name: Installer prosjekt- og testavhengigheter
+        run: uv sync --locked
+
+      - name: Kjør standardkorpus
+        run: uv run --no-sync python scripts/evaluate_accuracy.py --output artifacts/evaluation/current.json
+
+      - name: Kontroller mot v1.9.15-baseline
+        run: uv run --no-sync python scripts/check_evaluation_regression.py --baseline evaluation/baselines/v1.9.15.json --current artifacts/evaluation/current.json

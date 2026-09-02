@@ -1,0 +1,1 @@
+{"id":"nb-openai-key-001","corpus_version":1,"language":"nb","profile":"normal","text":"Nøkkel: sk-aBcDeFgHiJkLmNoPqRsTuVwXyZaBcDeFgHiJkLmNoPqRsTuV","expected_status":"success","expected_risk":"rød","expected_findings":[{"type":"openai_key"}],"forbidden_findings":[],"tags":["structured","positive","secret"]}

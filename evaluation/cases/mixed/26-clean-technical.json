@@ -1,0 +1,1 @@
+{"id":"en-clean-technical-001","corpus_version":1,"language":"en","profile":"technical","text":"Methodology and results. The solver converged after forty iterations at 3.20 GHz.","expected_status":"success","expected_risk":"grønn","expected_findings":[],"forbidden_findings":[],"tags":["mixed","clean","technical"]}

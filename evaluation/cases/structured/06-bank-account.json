@@ -1,0 +1,1 @@
+{"id":"nb-bank-account-001","corpus_version":1,"language":"nb","profile":"normal","text":"Kontonummer: 1000.00.00006","expected_status":"success","expected_risk":"svart","expected_findings":[{"type":"bank_account","value":"1000.00.00006"}],"forbidden_findings":[],"tags":["structured","positive"]}

@@ -1,6 +1,6 @@
 # XLENT Compliance-scanner
 
-> **v1.9.15** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
+> **v1.9.16** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
 
 Scanning kjøres lokalt som standard. Dokumenttekst sendes bare til en annen maskin
 når brukeren både konfigurerer en ekstern Ollama-adresse og gir eksplisitt tillatelse.
@@ -406,9 +406,18 @@ Tag-push (`v*`) trigger bygget automatisk. Manuell kjøring: bruk **workflow_dis
 ```bash
 uv run pytest                   # hele test-suiten
 uv run ruff check src tests     # syntaks, ubrukte imports og importsortering
+uv run python scripts/evaluate_accuracy.py --output artifacts/evaluation/current.json --html-output artifacts/evaluation/current.html
+uv run python scripts/check_evaluation_regression.py --baseline evaluation/baselines/v1.9.15.json --current artifacts/evaluation/current.json
+uv run python scripts/evaluate_ai_accuracy.py --model llama3.2:3b --repetitions 3 --output artifacts/evaluation/ai-current.json --html-output artifacts/evaluation/ai-current.html
 ```
 
 Fixtures ligger i `tests/fixtures/` (`sensitiv_nb.txt` + `sensitiv_nb.pdf` med alle typer sensitiv testdata).
+Det syntetiske evalueringskorpuset ligger i `evaluation/`. Det rapporterer
+konkrete avvik i terminalen og kan lage både JSON- og HTML-rapport. Dagens
+baseline gjelder standard-skann; AI-dybdeskann skal måles separat. Rapporten
+viser precision, recall og F1. Standardrapporten har en CI-port mot forrige
+baseline. AI-rapporten blokkerer foreløpig ikke release; den er
+modellspesifikk og rapporterer også variasjon mellom gjentatte kjøringer.
 
 ---
 
@@ -462,6 +471,12 @@ src/xlent_scanner/
 ---
 
 ## Endringslogg
+
+### v1.9.16
+
+- Forbedrer standard-skannens treffsikkerhet for finansbeløp, versjonsnumre, konfidensialitetsmarkører og duplikate secret-funn.
+- Legger til et utvidet syntetisk standardkorpus, detaljert terminal-/HTML-rapport og en CI-regresjonsport mot forrige baseline.
+- Legger til et separat, modellspesifikt AI-korpus med gjentatte kjøringer, modell-digest og stabilitetsmåling.
 
 ### v1.9.15
 

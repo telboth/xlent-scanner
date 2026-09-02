@@ -155,11 +155,22 @@ def ollama_status() -> dict[str, Any]:
     recommended = RECOMMENDED_MODELS[0]
     try:
         data = _get("/api/tags")
-        models = [m["name"] for m in (data.get("models") or [])]
+        model_details = [
+            {
+                "name": str(model.get("name") or ""),
+                "digest": str(model.get("digest") or ""),
+                "modified_at": str(model.get("modified_at") or ""),
+                "size": int(model.get("size") or 0),
+            }
+            for model in (data.get("models") or [])
+            if model.get("name")
+        ]
+        models = [model["name"] for model in model_details]
         sorted_models = sorted(models)
         return {
             "running": True,
             "models": sorted_models,
+            "model_details": model_details,
             "ollama_base": OLLAMA_BASE,
             "recommended_model": recommended,
             "recommended_installed": recommended in sorted_models,

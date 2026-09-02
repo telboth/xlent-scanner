@@ -1,0 +1,1 @@
+{"id":"nb-no-d-number-001","corpus_version":1,"language":"nb","profile":"normal","text":"D-nummer: 41019000077","expected_status":"success","expected_risk":"svart","expected_findings":[{"type":"no_d_number","value":"41019000077"}],"forbidden_findings":[{"type":"bank_account","value":"41019000077"}],"tags":["structured","positive"]}

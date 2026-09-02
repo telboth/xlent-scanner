@@ -1,0 +1,1 @@
+{"id":"en-ai-medical-generic-negative-001","corpus_version":1,"language":"en","text":"Diabetes is a chronic condition discussed in this general training material.","categories":["medisinsk"],"min_confidence":"medium","expected_findings":[],"forbidden_findings":[{"type":"medical"}],"tags":["negative","medical","hard-negative"]}

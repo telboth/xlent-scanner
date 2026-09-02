@@ -1,0 +1,1 @@
+{"id":"en-release-version-ip-shape-001","corpus_version":1,"language":"en","profile":"technical","text":"Release: 4.12.3.9 contains the corrected parser.","expected_status":"success","expected_risk":"grønn","expected_findings":[],"forbidden_findings":[{"type":"ip_address"}],"tags":["negative","technical","version"]}

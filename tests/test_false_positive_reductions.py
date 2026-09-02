@@ -3,8 +3,11 @@ from xlent_scanner.detectors.financials import find_financial_data
 from xlent_scanner.detectors.keywords import find_confidential_markers
 from xlent_scanner.detectors.ner_names import looks_like_person_name
 from xlent_scanner.detectors.regex_en import find_us_phone
+from xlent_scanner.detectors.regex_extra import find_ipv4
 from xlent_scanner.detectors.regex_no import find_telefon
 from xlent_scanner.detectors.regex_sv import find_telefon_sv
+from xlent_scanner.detectors.secrets import detect_secrets
+from xlent_scanner.scanner import scan_text
 
 
 def test_classified_by_ready_is_not_confidential_marker():
@@ -66,6 +69,50 @@ def test_bibliographic_doi_is_not_detected_as_hourly_rate():
     text = "The reference uses DOI: 10.1002/h.12345."
 
     assert list(find_financial_data(text)) == []
+
+
+def test_project_sum_with_norwegian_linking_word_is_detected():
+    findings = list(find_financial_data("Tilbudet har en prosjektsum på 450 000 NOK."))
+
+    assert [(finding.category, finding.text) for finding in findings] == [
+        ("prosjektsum", "450 000"),
+    ]
+
+
+def test_specific_secret_patterns_suppress_generic_duplicates():
+    github = "ghp_AbCdEfGhIjKlMnOpQrStUvWxYz1234567890Ab"
+    jwt = (
+        "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyMTIzIn0."
+        "SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+    )
+
+    github_findings = detect_secrets(f"Token: {github}")
+    jwt_findings = detect_secrets(f"JWT: {jwt}")
+
+    assert [finding.category for finding in github_findings] == ["GitHub Token"]
+    assert [finding.category for finding in jwt_findings] == ["JWT Token"]
+
+    repeated = detect_secrets(f"Primary: {github}\nBackup: {github}")
+    assert [finding.category for finding in repeated] == ["GitHub Token", "GitHub Token"]
+
+
+def test_plain_confidential_label_is_reported_once_at_highest_severity():
+    result = scan_text("KONFIDENSIELT\nTilbudstekst", language="nb")
+    findings = [
+        finding for finding in result.findings
+        if finding.category.startswith("konfidensielt dokument")
+    ]
+
+    assert [(finding.category, finding.text, finding.severity) for finding in findings] == [
+        ("konfidensielt dokument (overskrift)", "KONFIDENSIELT", "rød"),
+    ]
+
+
+def test_ipv4_detector_skips_explicit_version_but_keeps_server_address():
+    assert list(find_ipv4("Runtime version 10.20.30.40 was used.")) == []
+
+    findings = list(find_ipv4("Version 4.2 runs on server 10.20.30.40."))
+    assert [finding.text for finding in findings] == ["10.20.30.40"]
 
 
 def test_technical_title_case_phrases_are_not_person_names():

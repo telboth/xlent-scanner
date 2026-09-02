@@ -1,0 +1,1 @@
+{"id":"nb-ai-address-001","corpus_version":1,"language":"nb","text":"Leveransen skal sendes til Testveien 42, 0123 Oslo.","categories":["adresse"],"min_confidence":"medium","expected_findings":[{"type":"physical_address","value":"Testveien 42"}],"forbidden_findings":[],"tags":["positive","address"]}

@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://xlent.example/schemas/scanner-evaluation-case-v1.json",
+  "title": "XLENT Scanner evaluation case",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id", "corpus_version", "language", "profile", "text",
+    "expected_status", "expected_risk", "expected_findings",
+    "forbidden_findings", "tags"
+  ],
+  "properties": {
+    "id": {"type": "string", "minLength": 1},
+    "corpus_version": {"const": 1},
+    "language": {"enum": ["nb", "sv", "da", "en", "de", "fr", "es"]},
+    "profile": {"enum": ["normal", "technical", "auto"]},
+    "text": {"type": "string", "minLength": 1},
+    "expected_status": {"enum": ["success", "partial", "failed"]},
+    "expected_risk": {"enum": ["grønn", "gul", "rød", "svart"]},
+    "expected_findings": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/finding"}
+    },
+    "forbidden_findings": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/finding"}
+    },
+    "tags": {"type": "array", "items": {"type": "string"}}
+  },
+  "$defs": {
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type"],
+      "properties": {
+        "type": {"type": "string", "minLength": 1},
+        "value": {"type": "string"},
+        "count": {"type": "integer", "minimum": 1}
+      }
+    }
+  }
+}

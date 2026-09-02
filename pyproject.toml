@@ -1,6 +1,6 @@
 [project]
 name = "xlent-scanner"
-version = "1.9.15"
+version = "1.9.16"
 description = "Lokal scanner som sjekker dokumenter for sensitiv kundeinfo før opplasting til online AI-verktøy"
 readme = "README.md"
 authors = [
@@ -28,6 +28,7 @@ xlent-scanner = "xlent_scanner.app:main"
 
 [dependency-groups]
 dev = [
+    "jsonschema>=4.26.0",
     "pytest>=8.0",
     "ruff>=0.16.4",
 ]

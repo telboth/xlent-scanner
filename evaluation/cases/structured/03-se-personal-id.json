@@ -1,0 +1,1 @@
+{"id":"sv-personal-id-001","corpus_version":1,"language":"sv","profile":"normal","text":"Personnummer: 811228-9874","expected_status":"success","expected_risk":"svart","expected_findings":[{"type":"se_personal_id","value":"811228-9874"}],"forbidden_findings":[],"tags":["structured","positive"]}

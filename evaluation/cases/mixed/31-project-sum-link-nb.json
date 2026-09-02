@@ -1,0 +1,1 @@
+{"id":"nb-project-sum-link-001","corpus_version":1,"language":"nb","profile":"normal","text":"Avtalen har en prosjektsum på 725 000 NOK.","expected_status":"success","expected_risk":"gul","expected_findings":[{"type":"financial","value":"725 000"}],"forbidden_findings":[],"tags":["mixed","financial","linking-word"]}

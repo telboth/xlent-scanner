@@ -1,0 +1,1 @@
+{"id":"nb-email-001","corpus_version":1,"language":"nb","profile":"normal","text":"Kontakt: test.person@example.com","expected_status":"success","expected_risk":"gul","expected_findings":[{"type":"email","value":"test.person@example.com"}],"forbidden_findings":[],"tags":["structured","positive"]}

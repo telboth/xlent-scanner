@@ -1,0 +1,1 @@
+{"id":"nb-phone-001","corpus_version":1,"language":"nb","profile":"normal","text":"Telefon: +47 912 34 567","expected_status":"success","expected_risk":"gul","expected_findings":[{"type":"phone","value":"+47 912 34 567"}],"forbidden_findings":[],"tags":["structured","positive"]}

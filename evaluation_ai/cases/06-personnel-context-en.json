@@ -1,0 +1,1 @@
+{"id":"en-ai-personnel-context-001","corpus_version":1,"language":"en","text":"Employee Kari Nordmann received a formal written warning after the investigation.","categories":["personalsak"],"min_confidence":"medium","expected_findings":[{"type":"personnel","count":1}],"forbidden_findings":[],"tags":["positive","personnel","contextual"]}

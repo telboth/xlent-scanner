@@ -1,0 +1,1 @@
+{"id":"nb-invalid-iban-001","corpus_version":1,"language":"nb","profile":"normal","text":"Referanse: NO0010000000006","expected_status":"success","expected_risk":"grønn","expected_findings":[],"forbidden_findings":[{"type":"iban"}],"tags":["negative","structured"]}

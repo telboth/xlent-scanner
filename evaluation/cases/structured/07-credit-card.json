@@ -1,0 +1,1 @@
+{"id":"nb-credit-card-001","corpus_version":1,"language":"nb","profile":"normal","text":"Testkort: 4532015112830002","expected_status":"success","expected_risk":"svart","expected_findings":[{"type":"credit_card"}],"forbidden_findings":[],"tags":["structured","positive"]}

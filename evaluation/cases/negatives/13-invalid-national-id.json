@@ -1,0 +1,1 @@
+{"id":"nb-invalid-national-id-001","corpus_version":1,"language":"nb","profile":"normal","text":"Referanse: 99139900000","expected_status":"success","expected_risk":"grønn","expected_findings":[],"forbidden_findings":[{"type":"no_national_id"},{"type":"possible_person_id"},{"type":"bank_account"}],"tags":["structured","negative","hard-negative"]}

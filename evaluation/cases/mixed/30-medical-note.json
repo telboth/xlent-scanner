@@ -1,0 +1,1 @@
+{"id":"nb-medical-note-001","corpus_version":1,"language":"nb","profile":"normal","text":"Medisinsk opplysning: diagnose diabetes og legemiddel insulin.","expected_status":"success","expected_risk":"rød","expected_findings":[{"type":"medical","count":1}],"forbidden_findings":[],"tags":["mixed","medical","contextual"]}

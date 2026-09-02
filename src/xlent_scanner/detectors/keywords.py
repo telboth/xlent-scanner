@@ -99,6 +99,12 @@ _CODE_PATTERN = re.compile(
 
 _HEADING_RE = re.compile(r"^(#{1,6})\s+(.+)$", re.MULTILINE)
 
+_PLAIN_CONFIDENTIAL_LABEL_RE = re.compile(
+    r"\s*(?:confidential|strictly\s+confidential|internal\s+only|restricted|"
+    r"secret|classified|konfidensielt|fortrolig|internt)\s*[:\-]?\s*",
+    re.IGNORECASE,
+)
+
 
 def _headings(text: str) -> list[tuple[int, int, str]]:
     """Returnerer (start, end, heading-tekst) for alle Markdown-headings."""
@@ -111,7 +117,29 @@ def find_confidential_markers(text: str) -> Iterator[Finding]:
     def _in_heading(pos: int) -> bool:
         return any(start <= pos <= end for start, end, _ in heading_spans)
 
+    def _plain_label_at(start: int) -> tuple[str, int, int] | None:
+        line_start = text.rfind("\n", 0, start) + 1
+        line_end = text.find("\n", start)
+        if line_end < 0:
+            line_end = len(text)
+        line = text[line_start:line_end]
+        if not _PLAIN_CONFIDENTIAL_LABEL_RE.fullmatch(line):
+            return None
+        stripped = line.strip().rstrip(":-").strip()
+        value_start = line_start + line.find(stripped)
+        return stripped, value_start, value_start + len(stripped)
+
     for m in _CONF_PATTERN.finditer(text):
+        plain_label = _plain_label_at(m.start())
+        if plain_label is not None:
+            value, start, end = plain_label
+            yield Finding(
+                "konfidensielt dokument (overskrift)",
+                value,
+                _ctx(text, start, end),
+                severity="rød",
+            )
+            continue
         label = (
             "konfidensielt dokument (overskrift)"
             if _in_heading(m.start())

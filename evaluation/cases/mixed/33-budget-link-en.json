@@ -1,0 +1,1 @@
+{"id":"en-project-budget-link-001","corpus_version":1,"language":"en","profile":"normal","text":"The project budget of EUR 125,000 was approved.","expected_status":"success","expected_risk":"gul","expected_findings":[{"type":"financial","value":"125,000"}],"forbidden_findings":[],"tags":["mixed","financial","linking-word"]}

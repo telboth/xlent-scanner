@@ -1,0 +1,1 @@
+{"id":"en-ai-technical-negative-001","corpus_version":1,"language":"en","text":"The Sparse Solver and Neural Transformer completed the benchmark successfully.","categories":["navn"],"min_confidence":"medium","expected_findings":[],"forbidden_findings":[{"type":"person_name"}],"tags":["negative","technical","hard-negative"]}

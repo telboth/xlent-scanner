@@ -1,0 +1,1 @@
+{"id":"en-contract-value-link-001","corpus_version":1,"language":"en","profile":"normal","text":"The contract value is USD 450,000.","expected_status":"success","expected_risk":"gul","expected_findings":[{"type":"financial","value":"450,000"}],"forbidden_findings":[],"tags":["mixed","financial","linking-word"]}

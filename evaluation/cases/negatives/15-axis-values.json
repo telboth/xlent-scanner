@@ -1,0 +1,1 @@
+{"id":"en-axis-values-001","corpus_version":1,"language":"en","profile":"technical","text":"The time domain error axis is 0 5 10 15 20 25 30 35 40 45 50.","expected_status":"success","expected_risk":"grønn","expected_findings":[],"forbidden_findings":[{"type":"phone"}],"tags":["negative","technical","hard-negative"]}

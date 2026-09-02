@@ -1,0 +1,1 @@
+{"id":"nb-clean-general-001","corpus_version":1,"language":"nb","profile":"normal","text":"Prosjektet følger planen. Neste møte er tirsdag i møterom tre.","expected_status":"success","expected_risk":"grønn","expected_findings":[],"forbidden_findings":[],"tags":["mixed","clean"]}

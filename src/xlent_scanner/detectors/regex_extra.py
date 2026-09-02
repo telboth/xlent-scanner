@@ -47,11 +47,20 @@ _IPV4_SKIP = {
     "192.168.0.0", "192.168.255.255",
 }
 
+_VERSION_BEFORE_IPV4_RE = re.compile(
+    r"(?:runtime\s+)?(?:version|release|build(?:\s+version)?)\s*[:=]?\s*$",
+    re.IGNORECASE,
+)
+
 
 def find_ipv4(text: str) -> Iterator[Finding]:
     for m in _IPV4_RE.finditer(text):
         ip = m.group()
         if ip in _IPV4_SKIP:
+            continue
+        line_start = text.rfind("\n", 0, m.start()) + 1
+        prefix = text[max(line_start, m.start() - 40):m.start()]
+        if _VERSION_BEFORE_IPV4_RE.search(prefix):
             continue
         yield Finding("ip-adresse (IPv4)", ip, _ctx(text, m.start(), m.end()), severity="gul")
 
@@ -649,7 +658,7 @@ def detect_extra(text: str) -> list[Finding]:
                find_hr_personnel_data, find_legal_case_data,
                find_child_school_data, find_location_device_ids,
                find_bank_routing_details, find_medical_fields,
-               find_confidential_label_lines, find_document_metadata_fields,
+               find_document_metadata_fields,
                find_labeled_phone_or_fax, find_po_box_address,
                find_street_address, find_date_of_birth):
         findings.extend(fn(text))

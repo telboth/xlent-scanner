@@ -1,0 +1,872 @@
+{
+  "metadata": {
+    "scanner_version": "1.9.16",
+    "corpus_versions": [
+      1
+    ],
+    "scan_mode": "ai_deep",
+    "model": "llama3.2:3b",
+    "model_digest": "a80c4f17acd55265feec403c7aef86be0c25983ab279d83f3bcd3abbcb5b8b72",
+    "ollama_base": "http://localhost:11434",
+    "repetitions": 3
+  },
+  "summary": {
+    "cases": 8,
+    "runs": 24,
+    "successful_runs": 24,
+    "true_positives": 21,
+    "false_positives": 5,
+    "false_negatives": 0,
+    "precision": 0.807692,
+    "recall": 1.0,
+    "f1": 0.893617,
+    "exact_run_matches": 19,
+    "exact_match_rate": 0.791667,
+    "risk_matches": 0,
+    "status_matches": 8,
+    "forbidden_violations": 3
+  },
+  "by_type": {
+    "_unmapped": {
+      "true_positives": 0,
+      "false_positives": 2,
+      "false_negatives": 0,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0
+    },
+    "company_name": {
+      "true_positives": 3,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "financial": {
+      "true_positives": 3,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "medical": {
+      "true_positives": 6,
+      "false_positives": 3,
+      "false_negatives": 0,
+      "precision": 0.666667,
+      "recall": 1.0,
+      "f1": 0.8
+    },
+    "person_name": {
+      "true_positives": 3,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "personnel": {
+      "true_positives": 3,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "physical_address": {
+      "true_positives": 3,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    }
+  },
+  "cases": [
+    {
+      "id": "nb-ai-person-name-001",
+      "source": "cases/01-person-name-nb.json",
+      "language": "nb",
+      "profile": "ai_deep",
+      "tags": [
+        "positive",
+        "person"
+      ],
+      "true_positives": 3,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "risk_expected": "ikke relevant",
+      "risk_actual": "ikke relevant",
+      "status_expected": "done",
+      "status_actual": "done",
+      "forbidden_violations": 0,
+      "missing_findings": [],
+      "unexpected_findings": [],
+      "forbidden_finding_details": [],
+      "exact_run_matches": 3,
+      "stable": true,
+      "run_results": [
+        {
+          "true_positives": 1,
+          "false_positives": 0,
+          "false_negatives": 0,
+          "forbidden_violations": 0,
+          "missing_findings": [],
+          "unexpected_findings": [],
+          "forbidden_finding_details": [],
+          "exact_match": true,
+          "run": 1,
+          "elapsed_seconds": 3.922,
+          "findings": [
+            {
+              "category": "🤖 Navn (person)",
+              "text": "Kari Nordmann",
+              "context": "Prosjektleder",
+              "confidence": "high"
+            }
+          ]
+        },
+        {
+          "true_positives": 1,
+          "false_positives": 0,
+          "false_negatives": 0,
+          "forbidden_violations": 0,
+          "missing_findings": [],
+          "unexpected_findings": [],
+          "forbidden_finding_details": [],
+          "exact_match": true,
+          "run": 2,
+          "elapsed_seconds": 3.52,
+          "findings": [
+            {
+              "category": "🤖 Navn (person)",
+              "text": "Kari Nordmann",
+              "context": "Prosjektleder",
+              "confidence": "high"
+            }
+          ]
+        },
+        {
+          "true_positives": 1,
+          "false_positives": 0,
+          "false_negatives": 0,
+          "forbidden_violations": 0,
+          "missing_findings": [],
+          "unexpected_findings": [],
+          "forbidden_finding_details": [],
+          "exact_match": true,
+          "run": 3,
+          "elapsed_seconds": 3.519,
+          "findings": [
+            {
+              "category": "🤖 Navn (person)",
+              "text": "Kari Nordmann",
+              "context": "Prosjektleder",
+              "confidence": "high"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "nb-ai-address-001",
+      "source": "cases/02-address-nb.json",
+      "language": "nb",
+      "profile": "ai_deep",
+      "tags": [
+        "positive",
+        "address"
+      ],
+      "true_positives": 3,
+      "false_positives": 2,
+      "false_negatives": 0,
+      "risk_expected": "ikke relevant",
+      "risk_actual": "ikke relevant",
+      "status_expected": "done",
+      "status_actual": "done",
+      "forbidden_violations": 0,
+      "missing_findings": [],
+      "unexpected_findings": [
+        {
+          "category": "🤖 Personnummer",
+          "text": "0123",
+          "run": 1
+        },
+        {
+          "category": "🤖 Personnummer",
+          "text": "0123",
+          "run": 2
+        }
+      ],
+      "forbidden_finding_details": [],
+      "exact_run_matches": 1,
+      "stable": false,
+      "run_results": [
+        {
+          "true_positives": 1,
+          "false_positives": 1,
+          "false_negatives": 0,
+          "forbidden_violations": 0,
+          "missing_findings": [],
+          "unexpected_findings": [
+            {
+              "category": "🤖 Personnummer",
+              "text": "0123"
+            }
+          ],
+          "forbidden_finding_details": [],
+          "exact_match": false,
+          "run": 1,
+          "elapsed_seconds": 13.883,
+          "findings": [
+            {
+              "category": "🤖 Adresse",
+              "text": "Testveien 42",
+              "context": "gatenavn og husnummer",
+              "confidence": "high"
+            },
+            {
+              "category": "🤖 Personnummer",
+              "text": "0123",
+              "context": "mellomrom i personnummer",
+              "confidence": "medium"
+            }
+          ]
+        },
+        {
+          "true_positives": 1,
+          "false_positives": 1,
+          "false_negatives": 0,
+          "forbidden_violations": 0,
+          "missing_findings": [],
+          "unexpected_findings": [
+            {
+              "category": "🤖 Personnummer",
+              "text": "0123"
+            }
+          ],
+          "forbidden_finding_details": [],
+          "exact_match": false,
+          "run": 2,
+          "elapsed_seconds": 11.457,
+          "findings": [
+            {
+              "category": "🤖 Adresse",
+              "text": "Testveien 42",
+              "context": "gatenavn og husnummer",
+              "confidence": "high"
+            },
+            {
+              "category": "🤖 Personnummer",
+              "text": "0123",
+              "context": "mellomrom i personnummer",
+              "confidence": "medium"
+            }
+          ]
+        },
+        {
+          "true_positives": 1,
+          "false_positives": 0,
+          "false_negatives": 0,
+          "forbidden_violations": 0,
+          "missing_findings": [],
+          "unexpected_findings": [],
+          "forbidden_finding_details": [],
+          "exact_match": true,
+          "run": 3,
+          "elapsed_seconds": 11.159,
+          "findings": [
+            {
+              "category": "🤖 Adresse",
+              "text": "Testveien 42",
+              "context": "gatenavn og husnummer",
+              "confidence": "high"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "en-ai-company-001",
+      "source": "cases/03-company-en.json",
+      "language": "en",
+      "profile": "ai_deep",
+      "tags": [
+        "positive",
+        "company"
+      ],
+      "true_positives": 3,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "risk_expected": "ikke relevant",
+      "risk_actual": "ikke relevant",
+      "status_expected": "done",
+      "status_actual": "done",
+      "forbidden_violations": 0,
+      "missing_findings": [],
+      "unexpected_findings": [],
+      "forbidden_finding_details": [],
+      "exact_run_matches": 3,
+      "stable": true,
+      "run_results": [
+        {
+          "true_positives": 1,
+          "false_positives": 0,
+          "false_negatives": 0,
+          "forbidden_violations": 0,
+          "missing_findings": [],
+          "unexpected_findings": [],
+          "forbidden_finding_details": [],
+          "exact_match": true,
+          "run": 1,
+          "elapsed_seconds": 3.72,
+          "findings": [
+            {
+              "category": "🤖 offisielle firma- og organisasjonsnavn",
+              "text": "Northstar Fabrication Ltd.",
+              "context": "",
+              "confidence": "high"
+            }
+          ]
+        },
+        {
+          "true_positives": 1,
+          "false_positives": 0,
+          "false_negatives": 0,
+          "forbidden_violations": 0,
+          "missing_findings": [],
+          "unexpected_findings": [],
+          "forbidden_finding_details": [],
+          "exact_match": true,
+          "run": 2,
+          "elapsed_seconds": 3.619,
+          "findings": [
+            {
+              "category": "🤖 offisielle firma- og organisasjonsnavn",
+              "text": "Northstar Fabrication Ltd.",
+              "context": "",
+              "confidence": "high"
+            }
+          ]
+        },
+        {
+          "true_positives": 1,
+          "false_positives": 0,
+          "false_negatives": 0,
+          "forbidden_violations": 0,
+          "missing_findings": [],
+          "unexpected_findings": [],
+          "forbidden_finding_details": [],
+          "exact_match": true,
+          "run": 3,
+          "elapsed_seconds": 3.62,
+          "findings": [
+            {
+              "category": "🤖 offisielle firma- og organisasjonsnavn",
+              "text": "Northstar Fabrication Ltd.",
+              "context": "",
+              "confidence": "high"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "en-ai-financial-table-001",
+      "source": "cases/04-financial-table-en.json",
+      "language": "en",
+      "profile": "ai_deep",
+      "tags": [
+        "positive",
+        "financial",
+        "table"
+      ],
+      "true_positives": 3,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "risk_expected": "ikke relevant",
+      "risk_actual": "ikke relevant",
+      "status_expected": "done",
+      "status_actual": "done",
+      "forbidden_violations": 0,
+      "missing_findings": [],
+      "unexpected_findings": [],
+      "forbidden_finding_details": [],
+      "exact_run_matches": 3,
+      "stable": true,
+      "run_results": [
+        {
+          "true_positives": 1,
+          "false_positives": 0,
+          "false_negatives": 0,
+          "forbidden_violations": 0,
+          "missing_findings": [],
+          "unexpected_findings": [],
+          "forbidden_finding_details": [],
+          "exact_match": true,
+          "run": 1,
+          "elapsed_seconds": 3.622,
+          "findings": [
+            {
+              "category": "🤖 Budsjettall",
+              "text": "250 000",
+              "context": "Cost (NOK)",
+              "confidence": "high"
+            }
+          ]
+        },
+        {
+          "true_positives": 1,
+          "false_positives": 0,
+          "false_negatives": 0,
+          "forbidden_violations": 0,
+          "missing_findings": [],
+          "unexpected_findings": [],
+          "forbidden_finding_details": [],
+          "exact_match": true,
+          "run": 2,
+          "elapsed_seconds": 4.527,
+          "findings": [
+            {
+              "category": "🤖 Budsjettall",
+              "text": "250 000",
+              "context": "Cost (NOK)",
+              "confidence": "high"
+            }
+          ]
+        },
+        {
+          "true_positives": 1,
+          "false_positives": 0,
+          "false_negatives": 0,
+          "forbidden_violations": 0,
+          "missing_findings": [],
+          "unexpected_findings": [],
+          "forbidden_finding_details": [],
+          "exact_match": true,
+          "run": 3,
+          "elapsed_seconds": 3.419,
+          "findings": [
+            {
+              "category": "🤖 Budsjettall",
+              "text": "250 000",
+              "context": "Cost (NOK)",
+              "confidence": "high"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "en-ai-medical-context-001",
+      "source": "cases/05-medical-context-en.json",
+      "language": "en",
+      "profile": "ai_deep",
+      "tags": [
+        "positive",
+        "medical",
+        "contextual"
+      ],
+      "true_positives": 6,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "risk_expected": "ikke relevant",
+      "risk_actual": "ikke relevant",
+      "status_expected": "done",
+      "status_actual": "done",
+      "forbidden_violations": 0,
+      "missing_findings": [],
+      "unexpected_findings": [],
+      "forbidden_finding_details": [],
+      "exact_run_matches": 3,
+      "stable": true,
+      "run_results": [
+        {
+          "true_positives": 2,
+          "false_positives": 0,
+          "false_negatives": 0,
+          "forbidden_violations": 0,
+          "missing_findings": [],
+          "unexpected_findings": [],
+          "forbidden_finding_details": [],
+          "exact_match": true,
+          "run": 1,
+          "elapsed_seconds": 3.822,
+          "findings": [
+            {
+              "category": "🤖 Medisinsk opplysning",
+              "text": "diabetes",
+              "context": "Employee Kari Nordmann has been diagnosed with diabetes and uses insulin.",
+              "confidence": "high"
+            },
+            {
+              "category": "🤖 Medisinsk opplysning",
+              "text": "insulin",
+              "context": "Employee Kari Nordmann has been diagnosed with diabetes and uses insulin.",
+              "confidence": "high"
+            }
+          ]
+        },
+        {
+          "true_positives": 2,
+          "false_positives": 0,
+          "false_negatives": 0,
+          "forbidden_violations": 0,
+          "missing_findings": [],
+          "unexpected_findings": [],
+          "forbidden_finding_details": [],
+          "exact_match": true,
+          "run": 2,
+          "elapsed_seconds": 3.72,
+          "findings": [
+            {
+              "category": "🤖 Medisinsk opplysning",
+              "text": "diabetes",
+              "context": "Employee Kari Nordmann has been diagnosed with diabetes and uses insulin.",
+              "confidence": "high"
+            },
+            {
+              "category": "🤖 Medisinsk opplysning",
+              "text": "insulin",
+              "context": "Employee Kari Nordmann has been diagnosed with diabetes and uses insulin.",
+              "confidence": "high"
+            }
+          ]
+        },
+        {
+          "true_positives": 2,
+          "false_positives": 0,
+          "false_negatives": 0,
+          "forbidden_violations": 0,
+          "missing_findings": [],
+          "unexpected_findings": [],
+          "forbidden_finding_details": [],
+          "exact_match": true,
+          "run": 3,
+          "elapsed_seconds": 3.72,
+          "findings": [
+            {
+              "category": "🤖 Medisinsk opplysning",
+              "text": "diabetes",
+              "context": "Employee Kari Nordmann has been diagnosed with diabetes and uses insulin.",
+              "confidence": "high"
+            },
+            {
+              "category": "🤖 Medisinsk opplysning",
+              "text": "insulin",
+              "context": "Employee Kari Nordmann has been diagnosed with diabetes and uses insulin.",
+              "confidence": "high"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "en-ai-personnel-context-001",
+      "source": "cases/06-personnel-context-en.json",
+      "language": "en",
+      "profile": "ai_deep",
+      "tags": [
+        "positive",
+        "personnel",
+        "contextual"
+      ],
+      "true_positives": 3,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "risk_expected": "ikke relevant",
+      "risk_actual": "ikke relevant",
+      "status_expected": "done",
+      "status_actual": "done",
+      "forbidden_violations": 0,
+      "missing_findings": [],
+      "unexpected_findings": [],
+      "forbidden_finding_details": [],
+      "exact_run_matches": 3,
+      "stable": false,
+      "run_results": [
+        {
+          "true_positives": 1,
+          "false_positives": 0,
+          "false_negatives": 0,
+          "forbidden_violations": 0,
+          "missing_findings": [],
+          "unexpected_findings": [],
+          "forbidden_finding_details": [],
+          "exact_match": true,
+          "run": 1,
+          "elapsed_seconds": 3.821,
+          "findings": [
+            {
+              "category": "🤖 Personalsak",
+              "text": "Employee Kari Nordmann received a formal written warning",
+              "context": "after the investigation",
+              "confidence": "high"
+            }
+          ]
+        },
+        {
+          "true_positives": 1,
+          "false_positives": 0,
+          "false_negatives": 0,
+          "forbidden_violations": 0,
+          "missing_findings": [],
+          "unexpected_findings": [],
+          "forbidden_finding_details": [],
+          "exact_match": true,
+          "run": 2,
+          "elapsed_seconds": 3.624,
+          "findings": [
+            {
+              "category": "🤖 Personalsak",
+              "text": "Employee Kari Nordmann received a formal written warning",
+              "context": "after the investigation",
+              "confidence": "high"
+            }
+          ]
+        },
+        {
+          "true_positives": 1,
+          "false_positives": 0,
+          "false_negatives": 0,
+          "forbidden_violations": 0,
+          "missing_findings": [],
+          "unexpected_findings": [],
+          "forbidden_finding_details": [],
+          "exact_match": true,
+          "run": 3,
+          "elapsed_seconds": 3.721,
+          "findings": [
+            {
+              "category": "🤖 Personalsak",
+              "text": "Employee Kari Nordmann received a formal written warning after the investigation.",
+              "context": "after the investigation",
+              "confidence": "high"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "en-ai-technical-negative-001",
+      "source": "cases/07-technical-negative-en.json",
+      "language": "en",
+      "profile": "ai_deep",
+      "tags": [
+        "negative",
+        "technical",
+        "hard-negative"
+      ],
+      "true_positives": 0,
+      "false_positives": 0,
+      "false_negatives": 0,
+      "risk_expected": "ikke relevant",
+      "risk_actual": "ikke relevant",
+      "status_expected": "done",
+      "status_actual": "done",
+      "forbidden_violations": 0,
+      "missing_findings": [],
+      "unexpected_findings": [],
+      "forbidden_finding_details": [],
+      "exact_run_matches": 3,
+      "stable": true,
+      "run_results": [
+        {
+          "true_positives": 0,
+          "false_positives": 0,
+          "false_negatives": 0,
+          "forbidden_violations": 0,
+          "missing_findings": [],
+          "unexpected_findings": [],
+          "forbidden_finding_details": [],
+          "exact_match": true,
+          "run": 1,
+          "elapsed_seconds": 3.324,
+          "findings": []
+        },
+        {
+          "true_positives": 0,
+          "false_positives": 0,
+          "false_negatives": 0,
+          "forbidden_violations": 0,
+          "missing_findings": [],
+          "unexpected_findings": [],
+          "forbidden_finding_details": [],
+          "exact_match": true,
+          "run": 2,
+          "elapsed_seconds": 3.22,
+          "findings": []
+        },
+        {
+          "true_positives": 0,
+          "false_positives": 0,
+          "false_negatives": 0,
+          "forbidden_violations": 0,
+          "missing_findings": [],
+          "unexpected_findings": [],
+          "forbidden_finding_details": [],
+          "exact_match": true,
+          "run": 3,
+          "elapsed_seconds": 3.321,
+          "findings": []
+        }
+      ]
+    },
+    {
+      "id": "en-ai-medical-generic-negative-001",
+      "source": "cases/08-medical-generic-negative-en.json",
+      "language": "en",
+      "profile": "ai_deep",
+      "tags": [
+        "negative",
+        "medical",
+        "hard-negative"
+      ],
+      "true_positives": 0,
+      "false_positives": 3,
+      "false_negatives": 0,
+      "risk_expected": "ikke relevant",
+      "risk_actual": "ikke relevant",
+      "status_expected": "done",
+      "status_actual": "done",
+      "forbidden_violations": 3,
+      "missing_findings": [],
+      "unexpected_findings": [
+        {
+          "category": "🤖 Medisinsk opplysning",
+          "text": "Diabetes",
+          "run": 1
+        },
+        {
+          "category": "🤖 Medisinsk opplysning",
+          "text": "Diabetes",
+          "run": 2
+        },
+        {
+          "category": "🤖 Medisinsk opplysning",
+          "text": "Diabetes",
+          "run": 3
+        }
+      ],
+      "forbidden_finding_details": [
+        {
+          "type": "medical",
+          "category": "🤖 Medisinsk opplysning",
+          "text": "Diabetes",
+          "run": 1
+        },
+        {
+          "type": "medical",
+          "category": "🤖 Medisinsk opplysning",
+          "text": "Diabetes",
+          "run": 2
+        },
+        {
+          "type": "medical",
+          "category": "🤖 Medisinsk opplysning",
+          "text": "Diabetes",
+          "run": 3
+        }
+      ],
+      "exact_run_matches": 0,
+      "stable": true,
+      "run_results": [
+        {
+          "true_positives": 0,
+          "false_positives": 1,
+          "false_negatives": 0,
+          "forbidden_violations": 1,
+          "missing_findings": [],
+          "unexpected_findings": [
+            {
+              "category": "🤖 Medisinsk opplysning",
+              "text": "Diabetes"
+            }
+          ],
+          "forbidden_finding_details": [
+            {
+              "type": "medical",
+              "category": "🤖 Medisinsk opplysning",
+              "text": "Diabetes"
+            }
+          ],
+          "exact_match": false,
+          "run": 1,
+          "elapsed_seconds": 2.717,
+          "findings": [
+            {
+              "category": "🤖 Medisinsk opplysning",
+              "text": "Diabetes",
+              "context": "chronic condition",
+              "confidence": "high"
+            }
+          ]
+        },
+        {
+          "true_positives": 0,
+          "false_positives": 1,
+          "false_negatives": 0,
+          "forbidden_violations": 1,
+          "missing_findings": [],
+          "unexpected_findings": [
+            {
+              "category": "🤖 Medisinsk opplysning",
+              "text": "Diabetes"
+            }
+          ],
+          "forbidden_finding_details": [
+            {
+              "type": "medical",
+              "category": "🤖 Medisinsk opplysning",
+              "text": "Diabetes"
+            }
+          ],
+          "exact_match": false,
+          "run": 2,
+          "elapsed_seconds": 2.617,
+          "findings": [
+            {
+              "category": "🤖 Medisinsk opplysning",
+              "text": "Diabetes",
+              "context": "chronic condition",
+              "confidence": "high"
+            }
+          ]
+        },
+        {
+          "true_positives": 0,
+          "false_positives": 1,
+          "false_negatives": 0,
+          "forbidden_violations": 1,
+          "missing_findings": [],
+          "unexpected_findings": [
+            {
+              "category": "🤖 Medisinsk opplysning",
+              "text": "Diabetes"
+            }
+          ],
+          "forbidden_finding_details": [
+            {
+              "type": "medical",
+              "category": "🤖 Medisinsk opplysning",
+              "text": "Diabetes"
+            }
+          ],
+          "exact_match": false,
+          "run": 3,
+          "elapsed_seconds": 2.617,
+          "findings": [
+            {
+              "category": "🤖 Medisinsk opplysning",
+              "text": "Diabetes",
+              "context": "chronic condition",
+              "confidence": "high"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+{"id":"nb-no-national-id-001","corpus_version":1,"language":"nb","profile":"normal","text":"Fødselsnummer: 01019000083","expected_status":"success","expected_risk":"svart","expected_findings":[{"type":"no_national_id","value":"01019000083"}],"forbidden_findings":[{"type":"bank_account","value":"01019000083"}],"tags":["structured","positive"]}

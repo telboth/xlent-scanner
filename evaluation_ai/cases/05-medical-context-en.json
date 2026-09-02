@@ -1,0 +1,1 @@
+{"id":"en-ai-medical-context-001","corpus_version":1,"language":"en","text":"Employee Kari Nordmann has been diagnosed with diabetes and uses insulin.","categories":["medisinsk"],"min_confidence":"medium","expected_findings":[{"type":"medical","value":"diabetes"},{"type":"medical","value":"insulin"}],"forbidden_findings":[],"tags":["positive","medical","contextual"]}

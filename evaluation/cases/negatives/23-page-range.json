@@ -1,0 +1,1 @@
+{"id":"en-page-range-001","corpus_version":1,"language":"en","profile":"technical","text":"The relevant discussion is found on pp. 4662-4666.","expected_status":"success","expected_risk":"grønn","expected_findings":[],"forbidden_findings":[{"type":"phone"}],"tags":["negative","technical","hard-negative"]}
