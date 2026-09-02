@@ -21,8 +21,15 @@ def _downloads_dir() -> Path:
 def audit_events():
     limit = request.args.get("limit", 200, type=int) or 200
     event_type = str(request.args.get("event_type") or "")
+    path_mode = str(request.args.get("path_mode") or "name")
+    if path_mode not in {"none", "name", "full"}:
+        return jsonify({"ok": False, "error": "Ugyldig path_mode."}), 400
     trail = AuditTrail()
-    entries = trail.query_events(limit=limit, event_type=event_type)
+    entries = trail.query_events(
+        limit=limit,
+        event_type=event_type,
+        path_mode=path_mode,
+    )
     return jsonify({
         "ok": True,
         "entries": list(reversed(entries)),

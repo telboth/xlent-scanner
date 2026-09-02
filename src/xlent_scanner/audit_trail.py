@@ -11,11 +11,14 @@ import sys
 import threading
 import uuid
 import zipfile
+from base64 import urlsafe_b64decode, urlsafe_b64encode
 from collections import Counter
 from datetime import datetime, timedelta, timezone
 from html import escape
 from pathlib import Path
 from typing import Any
+
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 from xlent_scanner import __version__
 from xlent_scanner.paths import app_data_dir
@@ -46,6 +49,7 @@ _SAFE_METADATA_KEYS = {
 _KEY_LOCK = threading.Lock()
 _DB_INIT_LOCK = threading.Lock()
 _INITIALIZED_DATABASES: set[str] = set()
+_PATH_ASSOCIATED_DATA = b"xlent-audit-document-path-v1"
 
 
 def _protect_key(key: bytes) -> bytes:
@@ -185,6 +189,26 @@ class AuditTrail:
             })
         return hashlib.sha256(_canonical(manifest)).hexdigest()
 
+    def _encrypt_document_path(self, document_path: str | Path | None) -> str:
+        if document_path is None:
+            return ""
+        absolute_path = os.path.abspath(str(document_path))
+        nonce = secrets.token_bytes(12)
+        encrypted = AESGCM(self._key()).encrypt(
+            nonce,
+            absolute_path.encode("utf-8"),
+            _PATH_ASSOCIATED_DATA,
+        )
+        return urlsafe_b64encode(nonce + encrypted).decode("ascii")
+
+    def _decrypt_document_path(self, encrypted_path: str) -> str:
+        packed = urlsafe_b64decode(encrypted_path.encode("ascii"))
+        return AESGCM(self._key()).decrypt(
+            packed[:12],
+            packed[12:],
+            _PATH_ASSOCIATED_DATA,
+        ).decode("utf-8")
+
     def _connect(self) -> sqlite3.Connection:
         connection = sqlite3.connect(self.db_path, timeout=10)
         connection.row_factory = sqlite3.Row
@@ -206,6 +230,7 @@ class AuditTrail:
                         event_type TEXT NOT NULL,
                         scanner_version TEXT NOT NULL,
                         document_id TEXT NOT NULL,
+                        document_path_encrypted TEXT NOT NULL DEFAULT '',
                         scan_mode TEXT NOT NULL,
                         outcome TEXT NOT NULL,
                         risk_level TEXT NOT NULL,
@@ -224,9 +249,18 @@ class AuditTrail:
                     )
                     """
                 )
+                columns = {
+                    str(row["name"])
+                    for row in connection.execute("PRAGMA table_info(audit_events)")
+                }
+                if "document_path_encrypted" not in columns:
+                    connection.execute(
+                        "ALTER TABLE audit_events ADD COLUMN "
+                        "document_path_encrypted TEXT NOT NULL DEFAULT ''"
+                    )
                 connection.execute(
-                    "INSERT OR IGNORE INTO audit_meta (key, value) "
-                    "VALUES ('schema_version', '1')"
+                    "INSERT OR REPLACE INTO audit_meta (key, value) "
+                    "VALUES ('schema_version', '2')"
                 )
                 connection.commit()
                 _INITIALIZED_DATABASES.add(database_id)
@@ -258,6 +292,7 @@ class AuditTrail:
         occurred_at: str | None = None,
     ) -> dict[str, Any]:
         safe_metadata = _safe_metadata(metadata)
+        encrypted_path = self._encrypt_document_path(document_path)
         event = {
             "id": uuid.uuid4().hex,
             "occurred_at": occurred_at or _utc_now(),
@@ -270,6 +305,8 @@ class AuditTrail:
             "finding_count": max(0, int(finding_count)),
             "metadata": safe_metadata,
         }
+        if encrypted_path:
+            event["document_path_encrypted"] = encrypted_path
         with self._connect() as connection:
             connection.execute("BEGIN IMMEDIATE")
             row = connection.execute(
@@ -285,19 +322,23 @@ class AuditTrail:
                 """
                 INSERT INTO audit_events (
                     id, occurred_at, event_type, scanner_version, document_id,
+                    document_path_encrypted,
                     scan_mode, outcome, risk_level, finding_count, metadata_json,
                     previous_hash, event_hash
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     event["id"], event["occurred_at"], event["event_type"],
-                    event["scanner_version"], event["document_id"], event["scan_mode"],
+                    event["scanner_version"], event["document_id"], encrypted_path,
+                    event["scan_mode"],
                     event["outcome"], event["risk_level"], event["finding_count"],
                     json.dumps(safe_metadata, ensure_ascii=False, sort_keys=True),
                     previous_hash, event_hash,
                 ),
             )
-        return {**event, "previous_hash": previous_hash, "event_hash": event_hash}
+        public_event = dict(event)
+        public_event.pop("document_path_encrypted", None)
+        return {**public_event, "previous_hash": previous_hash, "event_hash": event_hash}
 
     def record_scan(
         self,
@@ -335,7 +376,10 @@ class AuditTrail:
         *,
         limit: int = 200,
         event_type: str = "",
+        path_mode: str = "none",
     ) -> list[dict[str, Any]]:
+        if path_mode not in {"none", "name", "full"}:
+            raise ValueError("path_mode må være none, name eller full")
         query = "SELECT * FROM audit_events"
         params: list[object] = []
         if event_type:
@@ -350,6 +394,15 @@ class AuditTrail:
             event = dict(row)
             event.pop("sequence", None)
             event["metadata"] = json.loads(event.pop("metadata_json"))
+            encrypted_path = str(event.pop("document_path_encrypted") or "")
+            if encrypted_path and path_mode != "none":
+                try:
+                    document_path = self._decrypt_document_path(encrypted_path)
+                    event["document_name"] = Path(document_path).name
+                    if path_mode == "full":
+                        event["document_path"] = document_path
+                except Exception:
+                    event["document_name"] = "[utilgjengelig]"
             events.append(event)
         return events
 
@@ -373,6 +426,9 @@ class AuditTrail:
                 "finding_count": int(row["finding_count"]),
                 "metadata": json.loads(row["metadata_json"]),
             }
+            encrypted_path = str(row["document_path_encrypted"] or "")
+            if encrypted_path:
+                event["document_path_encrypted"] = encrypted_path
             expected_hash = hmac.new(
                 self._key(),
                 previous_hash.encode("ascii") + _canonical(event),
@@ -442,7 +498,7 @@ class AuditTrail:
             "format": "xlent-audit-v1",
             "exported_at": _utc_now(),
             "integrity": self.verify_integrity(),
-            "events": self.query_events(limit=10_000),
+            "events": self.query_events(limit=10_000, path_mode="name"),
         }
         payload["signing_key_id"] = hashlib.sha256(self._key()).hexdigest()
         payload["signature"] = hmac.new(
@@ -452,6 +508,7 @@ class AuditTrail:
             "<tr>"
             f"<td>{escape(str(event['occurred_at']))}</td>"
             f"<td>{escape(str(event['event_type']))}</td>"
+            f"<td>{escape(str(event.get('document_name') or ''))}</td>"
             f"<td>{escape(str(event['scan_mode']))}</td>"
             f"<td>{escape(str(event['outcome']))}</td>"
             f"<td>{escape(str(event['risk_level']))}</td>"
@@ -464,7 +521,7 @@ class AuditTrail:
 <title>XLENT Revisjonsspor</title>
 <style>body{{font:14px system-ui;margin:32px;color:#243230}}table{{border-collapse:collapse;width:100%}}th,td{{padding:8px;border-bottom:1px solid #ccd5d3;text-align:left}}th{{background:#edf1f0}}</style>
 <h1>Revisjonsspor</h1><p>Integritetskontroll: <strong>{status}</strong>. Hendelser: {len(payload['events'])}.</p>
-<table><thead><tr><th>Tidspunkt</th><th>Hendelse</th><th>Modus</th><th>Resultat</th><th>Risiko</th><th>Funn</th></tr></thead><tbody>{rows}</tbody></table>
+<table><thead><tr><th>Tidspunkt</th><th>Hendelse</th><th>Filnavn</th><th>Modus</th><th>Resultat</th><th>Risiko</th><th>Funn</th></tr></thead><tbody>{rows}</tbody></table>
 </html>"""
         with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED) as archive:
             archive.writestr(

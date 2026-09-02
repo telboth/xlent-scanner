@@ -1,6 +1,6 @@
 # XLENT Compliance-scanner
 
-> **v1.9.17** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
+> **v1.9.18** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
 
 Scanning kjøres lokalt som standard. Dokumenttekst sendes bare til en annen maskin
 når brukeren både konfigurerer en ekstern Ollama-adresse og gir eksplisitt tillatelse.
@@ -242,13 +242,15 @@ som separate hendelser. Standard- og AI-skann skilles eksplisitt, og AI-hendelse
 tar med modellnavn og tilgjengelig modelldigest.
 
 Revisjonssporet lagres lokalt i `audit.db` under appens brukerdata-mappe
-(`%APPDATA%\xlent-scanner` på Windows). Det lagrer ikke dokumenttekst, funntekst,
-prompt eller lesbar filsti. Dokumentet får i stedet en nøkkelbasert pseudonym ID.
+(`%APPDATA%\xlent-scanner` på Windows). Det lagrer ikke dokumenttekst, funntekst
+eller prompt. Full filsti lagres kryptert, vises som standard i appen og kan skjules
+med valget **Vis full filsti**. Dokumentet får i tillegg en nøkkelbasert pseudonym ID.
 Hendelsene HMAC-kjedes, og nøkkelen beskyttes med Windows DPAPI. Appen beholder
 som standard maksimalt 10 000 hendelser og 90 dager.
 
 Fra menyen kan integriteten kontrolleres og en ZIP med maskinlesbar JSON og
-HTML-rapport eksporteres. Dette gjør lokal manipulering synlig så lenge auditnøkkelen
+HTML-rapport eksporteres. Eksporten inkluderer filnavn, men aldri full filsti. Dette
+gjør lokal manipulering synlig så lenge auditnøkkelen
 bevares, men er ikke et uavhengig, sentralt bevis mot en lokal administrator som kan
 slette både databasen og nøkkelen.
 
@@ -488,6 +490,12 @@ src/xlent_scanner/
 ---
 
 ## Endringslogg
+
+### v1.9.18
+
+- Viser full filsti som standard i revisjonssporet, med et lokalt valg for å vise bare filnavnet.
+- Lagrer filstien kryptert og begrenser JSON/HTML-eksporten til filnavn.
+- Oppgraderer GitHub Actions til SHA-festede Node 24-versjoner og legger til automatiske Dependabot-oppdateringer.
 
 ### v1.9.17
 

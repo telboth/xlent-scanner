@@ -229,6 +229,9 @@ def test_audit_trail_is_available_from_overflow_menu():
 
     assert 'id="btn-audit-trail"' in html
     assert 'id="panel-audit"' in html
+    assert 'id="audit-show-full-path"' in html
+    assert 'localStorage.getItem("xlent_audit_show_full_path")' in html
+    assert 'new URLSearchParams({path_mode: showFullPath ? "full" : "name"})' in html
     assert 'fetch(`${API}/audit/events' in html
     assert 'fetch(`${API}/audit/verify`)' in html
     assert 'fetch(`${API}/audit/export`' in html
