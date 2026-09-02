@@ -224,6 +224,17 @@ def test_manual_redaction_terms_are_available_in_redaction_payload():
         assert html.count(f"{key}:") == 6
 
 
+def test_audit_trail_is_available_from_overflow_menu():
+    html = HTML.read_text(encoding="utf-8")
+
+    assert 'id="btn-audit-trail"' in html
+    assert 'id="panel-audit"' in html
+    assert 'fetch(`${API}/audit/events' in html
+    assert 'fetch(`${API}/audit/verify`)' in html
+    assert 'fetch(`${API}/audit/export`' in html
+    assert 'id="btn-clear-audit"' not in html
+
+
 def test_about_page_links_to_source_code():
     html = HTML.read_text(encoding="utf-8")
 

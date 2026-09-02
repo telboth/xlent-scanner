@@ -120,6 +120,9 @@ def evaluate_clipboard_text(text: str) -> dict[str, Any] | None:
     result = scan_text(text[:_MAX_TEXT_LEN], language="auto", source_name="Utklippstavle")
     if result.risk_level not in _ALERT_LEVELS:
         return None
+    from xlent_scanner.audit_trail import AuditTrail  # noqa: PLC0415
+
+    AuditTrail().record_scan(result, source="clipboard")
     categories: list[str] = []
     for f in result.findings:
         if f.severity in _ALERT_LEVELS and not f.category.startswith("⚠"):

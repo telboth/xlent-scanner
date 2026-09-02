@@ -34,6 +34,7 @@ from flask import Flask, jsonify, request, send_file
 
 from xlent_scanner import __version__
 from xlent_scanner.app_state import app_state
+from xlent_scanner.audit_trail import AuditTrail
 from xlent_scanner.blacklist import (
     get_blacklist_entries,
 )
@@ -52,6 +53,7 @@ from xlent_scanner.routes.api import (
 from xlent_scanner.routes.api import (
     validate_api_bind as _validate_api_bind,
 )
+from xlent_scanner.routes.audit import audit_bp
 from xlent_scanner.routes.background import background_bp
 from xlent_scanner.routes.diagnostics import create_diagnostics_blueprint
 from xlent_scanner.routes.folders import (
@@ -97,6 +99,7 @@ flask_app.register_blueprint(settings_bp)
 flask_app.register_blueprint(background_bp)
 flask_app.register_blueprint(scanning_bp)
 flask_app.register_blueprint(reports_bp)
+flask_app.register_blueprint(audit_bp)
 _web_dir = Path(__file__).parent / "web"
 _API_DEFAULT_PORT = 51291
 _API_DEFAULT_HOST = "127.0.0.1"
@@ -1342,6 +1345,7 @@ def _cli_scan() -> None:
     args = parser.parse_args()
 
     result = scan_file(args.scan, language=args.lang)
+    AuditTrail().record_scan(result, document_path=args.scan, source="cli")
 
     if args.json:
         print(json.dumps(asdict(result), ensure_ascii=False, indent=2))
@@ -1422,6 +1426,10 @@ def _ipc_start_server() -> None:
 
 
 def main() -> None:
+    try:
+        AuditTrail().enforce_retention(max_events=10_000, max_age_days=90)
+    except Exception:
+        LOGGER.warning("Audit-retention feilet", exc_info=True)
     # ── CLI-modus ──────────────────────────────────────────────────────────
     if "--scan" in sys.argv:
         _cli_scan()

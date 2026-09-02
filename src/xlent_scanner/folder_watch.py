@@ -152,6 +152,7 @@ class FolderWatcher:
         ignore_xlent: bool | None = None,
         language: str | None = None,
     ) -> None:
+        from xlent_scanner.audit_trail import AuditTrail  # noqa: PLC0415
         from xlent_scanner.history import add_history_entry  # noqa: PLC0415
         from xlent_scanner.scanner import scan_file  # noqa: PLC0415
 
@@ -179,6 +180,11 @@ class FolderWatcher:
                 risk_level=result.risk_level,
                 finding_count=entry["finding_count"],
                 file_size=result.file_size,
+                source="watch",
+            )
+            AuditTrail().record_scan(
+                result,
+                document_path=path_str,
                 source="watch",
             )
         except Exception:  # noqa: BLE001

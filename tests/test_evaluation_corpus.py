@@ -39,7 +39,7 @@ def test_evaluate_corpus_scores_a_real_scanner_finding(tmp_path: Path) -> None:
 
     report = evaluate_corpus(tmp_path)
 
-    assert report["metadata"]["scanner_version"] == "1.9.16"
+    assert report["metadata"]["scanner_version"] == "1.9.17"
     assert report["metadata"]["corpus_versions"] == [1]
     assert report["metadata"]["scan_mode"] == "standard"
     assert report["summary"] == {
@@ -54,6 +54,7 @@ def test_evaluate_corpus_scores_a_real_scanner_finding(tmp_path: Path) -> None:
         "status_matches": 1,
         "forbidden_violations": 0,
     }
+    assert len(report["cases"][0]["spec_digest"]) == 64
     assert report["by_type"]["email"] == {
         "true_positives": 1,
         "false_positives": 0,

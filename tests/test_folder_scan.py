@@ -102,6 +102,10 @@ def test_scan_folder_preview_endpoint_returns_plan(tmp_path: Path):
 
 
 def test_scan_folder_endpoint_returns_tooltip_summary_and_report(monkeypatch, tmp_path: Path):
+    from xlent_scanner import audit_trail
+    from xlent_scanner.audit_trail import AuditTrail
+
+    monkeypatch.setattr(audit_trail, "app_data_dir", lambda: tmp_path / "appdata")
     _write(tmp_path / "root.txt")
     result = ScanResult(
         file_name="root.txt",
@@ -140,6 +144,9 @@ def test_scan_folder_endpoint_returns_tooltip_summary_and_report(monkeypatch, tm
     assert report.status_code == 200
     assert "root.txt" in report.get_data(as_text=True)
     assert "person@example.com" in report.get_data(as_text=True)
+    event = AuditTrail(tmp_path / "appdata").query_events()[-1]
+    assert event["event_type"] == "scan_completed"
+    assert event["metadata"]["source"] == "batch"
 
 
 def test_folder_purview_export_and_audit_use_selected_language():

@@ -190,7 +190,11 @@ def test_diagnostics_export_writes_package_without_document_text(monkeypatch, tm
     assert "safe@example.com" in combined
 
 
-def test_scan_text_clears_previous_ai_findings(monkeypatch):
+def test_scan_text_clears_previous_ai_findings(monkeypatch, tmp_path):
+    from xlent_scanner import audit_trail
+    from xlent_scanner.audit_trail import AuditTrail
+
+    monkeypatch.setattr(audit_trail, "app_data_dir", lambda: tmp_path)
     app_module.app_state.last_ai_findings = [
         {"category": "🤖 Fødselsnummer", "text": "01019750023", "context": ""}
     ]
@@ -220,6 +224,10 @@ def test_scan_text_clears_previous_ai_findings(monkeypatch):
     assert app_module.app_state.last_ai_findings == []
     assert app_module.app_state.last_ai_findings_file_name == ""
     assert app_module.app_state.last_anonymized_path is None
+    event = AuditTrail(tmp_path).query_events()[-1]
+    assert event["event_type"] == "scan_completed"
+    assert event["scan_mode"] == "standard"
+    assert event["metadata"]["source"] == "text"
 
 
 def test_open_anonymized_file_opens_last_generated_file(monkeypatch, tmp_path):
@@ -249,6 +257,7 @@ def test_open_anonymized_file_requires_existing_output(tmp_path):
 
 def test_redaction_history_endpoints(monkeypatch, tmp_path):
     from xlent_scanner import redaction_audit
+    from xlent_scanner.audit_trail import AuditTrail
 
     output = tmp_path / "test-anonymisert.docx"
     output.write_bytes(b"test")
@@ -282,3 +291,7 @@ def test_redaction_history_endpoints(monkeypatch, tmp_path):
     assert history["entries"][0]["id"] == entry["id"]
     assert verify["ok"] is True
     assert verify["entry"]["verification"]["passed"] is True
+    assert [event["event_type"] for event in AuditTrail(tmp_path).query_events()] == [
+        "redaction_created",
+        "verification_completed",
+    ]

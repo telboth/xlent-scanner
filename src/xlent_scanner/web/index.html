@@ -165,6 +165,15 @@
     .top-menu-body .ctrl-btn,
     .top-menu-body .ui-lang-select { width: 100%; }
 
+    .audit-page { padding: 22px; gap: 14px; }
+    .audit-toolbar { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    .audit-toolbar select { padding:6px 8px; border:1px solid var(--border); border-radius:6px; background:var(--panel); color:var(--text); }
+    .audit-integrity { padding:10px 12px; border:1px solid var(--border); border-radius:8px; background:var(--panel2); }
+    .audit-table-wrap { overflow:auto; border:1px solid var(--border); border-radius:8px; }
+    .audit-table { width:100%; border-collapse:collapse; font-size:12px; }
+    .audit-table th, .audit-table td { padding:8px 10px; text-align:left; border-bottom:1px solid var(--border); white-space:nowrap; }
+    .audit-table th { color:var(--muted); background:var(--panel2); }
+
     /* ── Tab panels ─────────────────────────────────────────────────── */
     .tab-panel { display: none; flex-direction: column; flex: 1; min-height: 0; overflow-y: auto; }
     .tab-panel.active { display: flex; }
@@ -867,6 +876,7 @@
       <div class="top-menu-body">
         <button class="ctrl-btn top-update-btn" id="btn-check-updates-top" data-i18n="updateCheckTop">Se etter oppdateringer</button>
         <button class="ctrl-btn top-browser-btn" id="btn-open-in-browser-top" data-i18n="openInBrowserTop" data-i18n-title="openInBrowserTooltip" title="Åpner en egen nettleserversjon som fortsetter å fungere selv om desktopvinduet lukkes.">Åpne i nettleser</button>
+        <button class="ctrl-btn" id="btn-audit-trail" data-i18n="auditMenu">Revisjonsspor…</button>
         <div class="ui-lang-sel">
           <select id="themeSelect" class="ui-lang-select" data-i18n-title="themeNote" title="Lys modus bruker en grå header slik at XLENT-logoen fortsatt er synlig.">
             <option value="light" data-i18n="themeLight">Lys modus</option>
@@ -1108,6 +1118,41 @@
         </div>
         <ul class="history-list" id="history-list"></ul>
       </div>
+      </div>
+
+    <!-- ── Audit panel ─────────────────────────────────────────────── -->
+    <div id="panel-audit" class="tab-panel audit-page">
+      <div>
+        <h2 data-i18n="auditTitle">Revisjonsspor</h2>
+        <p class="muted" data-i18n="auditSubtitle">Lokale, personvernminimerte hendelser med integritetskontroll.</p>
+      </div>
+      <div id="audit-integrity" class="audit-integrity"></div>
+      <div class="audit-toolbar">
+        <select id="audit-event-filter" aria-label="Audit event filter">
+          <option value="" data-i18n="auditAll">Alle hendelser</option>
+          <option value="scan_completed">scan_completed</option>
+          <option value="ai_scan_completed">ai_scan_completed</option>
+          <option value="redaction_created">redaction_created</option>
+          <option value="verification_completed">verification_completed</option>
+          <option value="retention_applied">retention_applied</option>
+          <option value="audit_exported">audit_exported</option>
+        </select>
+        <button class="ctrl-btn" id="btn-audit-refresh" data-i18n="auditRefresh">Oppdater</button>
+        <button class="ctrl-btn" id="btn-audit-verify" data-i18n="auditVerify">Kontroller integritet</button>
+        <button class="ctrl-btn ctrl-btn-outline-primary" id="btn-audit-export" data-i18n="auditExport">Eksporter signert pakke</button>
+        <span id="audit-action-msg" class="muted"></span>
+      </div>
+      <div class="audit-table-wrap">
+        <table class="audit-table">
+          <thead><tr>
+            <th data-i18n="auditTime">Tidspunkt</th><th data-i18n="auditEvent">Hendelse</th>
+            <th data-i18n="auditMode">Modus</th><th data-i18n="auditOutcome">Resultat</th>
+            <th data-i18n="auditRisk">Risiko</th><th data-i18n="auditFindings">Funn</th>
+          </tr></thead>
+          <tbody id="audit-table-body"></tbody>
+        </table>
+      </div>
+      <p class="settings-note" data-i18n="auditLocalNote">Sporet er manipulasjonspåvisende, men en lokal administrator kan fortsatt slette hele databasen. Eksporter signerte pakker for varig dokumentasjon.</p>
     </div>
 
     <!-- ── About panel ────────────────────────────────────────────── -->
@@ -1886,6 +1931,11 @@
     const I18N = {
       nb: {
         subtitle:     "Sjekker og anonymiserer dokumenter for sensitiv informasjon",
+        auditMenu:"Revisjonsspor…", auditTitle:"Revisjonsspor", auditSubtitle:"Lokale, personvernminimerte hendelser med integritetskontroll.",
+        auditAll:"Alle hendelser", auditRefresh:"Oppdater", auditVerify:"Kontroller integritet", auditExport:"Eksporter signert pakke",
+        auditTime:"Tidspunkt", auditEvent:"Hendelse", auditMode:"Modus", auditOutcome:"Resultat", auditRisk:"Risiko", auditFindings:"Funn",
+        auditLocalNote:"Sporet er manipulasjonspåvisende, men en lokal administrator kan fortsatt slette hele databasen. Eksporter signerte pakker for varig dokumentasjon.",
+        auditIntegrityOk:"Integritetskontroll bestått", auditIntegrityBroken:"Integritetsbrudd ved hendelse", auditEmpty:"Ingen audit-hendelser.", auditExported:"Eksportert", auditError:"Audit-feil",
         tabScanner:   "🔍 Scanner",
         tabAbout:     "ℹ Om programmet",
         dropTitle:    "Dra og slipp et dokument her",
@@ -2366,6 +2416,11 @@
       },
       sv: {
         subtitle:     "Kontrollerar och anonymiserar dokument med känslig information",
+        auditMenu:"Revisionsspår…", auditTitle:"Revisionsspår", auditSubtitle:"Lokala, dataminimerade händelser med integritetskontroll.",
+        auditAll:"Alla händelser", auditRefresh:"Uppdatera", auditVerify:"Kontrollera integritet", auditExport:"Exportera signerat paket",
+        auditTime:"Tidpunkt", auditEvent:"Händelse", auditMode:"Läge", auditOutcome:"Resultat", auditRisk:"Risk", auditFindings:"Fynd",
+        auditLocalNote:"Spåret upptäcker manipulation, men en lokal administratör kan fortfarande radera hela databasen. Exportera signerade paket för varaktig dokumentation.",
+        auditIntegrityOk:"Integritetskontroll godkänd", auditIntegrityBroken:"Integritetsbrott vid händelse", auditEmpty:"Inga revisionshändelser.", auditExported:"Exporterad", auditError:"Revisionsfel",
         tabScanner:   "🔍 Scanner",
         tabAbout:     "ℹ Om programmet",
         dropTitle:    "Dra och släpp ett dokument här",
@@ -2836,6 +2891,11 @@
       },
       en: {
         subtitle:     "Checks and anonymizes documents for sensitive information",
+        auditMenu:"Audit trail…", auditTitle:"Audit trail", auditSubtitle:"Local, privacy-minimized events with integrity verification.",
+        auditAll:"All events", auditRefresh:"Refresh", auditVerify:"Verify integrity", auditExport:"Export signed bundle",
+        auditTime:"Time", auditEvent:"Event", auditMode:"Mode", auditOutcome:"Outcome", auditRisk:"Risk", auditFindings:"Findings",
+        auditLocalNote:"The trail is tamper-evident, but a local administrator can still delete the entire database. Export signed bundles for durable evidence.",
+        auditIntegrityOk:"Integrity check passed", auditIntegrityBroken:"Integrity breach at event", auditEmpty:"No audit events.", auditExported:"Exported", auditError:"Audit error",
         tabScanner:   "🔍 Scanner",
         tabAbout:     "ℹ About",
         dropTitle:    "Drag and drop a document here",
@@ -3313,6 +3373,11 @@
       // ── Deutsch ────────────────────────────────────────────────────────
       de: {
         subtitle:            "Prüft und anonymisiert Dokumente mit sensiblen Informationen",
+        auditMenu:"Audit-Protokoll…", auditTitle:"Audit-Protokoll", auditSubtitle:"Lokale, datensparsame Ereignisse mit Integritätsprüfung.",
+        auditAll:"Alle Ereignisse", auditRefresh:"Aktualisieren", auditVerify:"Integrität prüfen", auditExport:"Signiertes Paket exportieren",
+        auditTime:"Zeitpunkt", auditEvent:"Ereignis", auditMode:"Modus", auditOutcome:"Ergebnis", auditRisk:"Risiko", auditFindings:"Treffer",
+        auditLocalNote:"Das Protokoll macht Manipulationen erkennbar, ein lokaler Administrator kann jedoch die gesamte Datenbank löschen. Exportieren Sie signierte Pakete als dauerhaften Nachweis.",
+        auditIntegrityOk:"Integritätsprüfung bestanden", auditIntegrityBroken:"Integritätsbruch bei Ereignis", auditEmpty:"Keine Audit-Ereignisse.", auditExported:"Exportiert", auditError:"Audit-Fehler",
         tabScanner:          "🔍 Scanner",
         tabAbout:            "ℹ Über das Programm",
         tabSettings:         "⚙️ Einstellungen",
@@ -3798,6 +3863,11 @@
       // ── Français ───────────────────────────────────────────────────────
       fr: {
         subtitle:            "Vérifie et anonymise les documents contenant des informations sensibles",
+        auditMenu:"Piste d’audit…", auditTitle:"Piste d’audit", auditSubtitle:"Événements locaux minimisés avec contrôle d’intégrité.",
+        auditAll:"Tous les événements", auditRefresh:"Actualiser", auditVerify:"Vérifier l’intégrité", auditExport:"Exporter le paquet signé",
+        auditTime:"Heure", auditEvent:"Événement", auditMode:"Mode", auditOutcome:"Résultat", auditRisk:"Risque", auditFindings:"Résultats",
+        auditLocalNote:"La piste révèle les manipulations, mais un administrateur local peut encore supprimer toute la base. Exportez des paquets signés pour une preuve durable.",
+        auditIntegrityOk:"Contrôle d’intégrité réussi", auditIntegrityBroken:"Rupture d’intégrité à l’événement", auditEmpty:"Aucun événement d’audit.", auditExported:"Exporté", auditError:"Erreur d’audit",
         tabScanner:          "🔍 Scanner",
         tabAbout:            "ℹ À propos",
         tabSettings:         "⚙️ Paramètres",
@@ -4283,6 +4353,11 @@
       // ── Español ────────────────────────────────────────────────────────
       es: {
         subtitle:            "Comprueba y anonimiza documentos con información sensible",
+        auditMenu:"Registro de auditoría…", auditTitle:"Registro de auditoría", auditSubtitle:"Eventos locales minimizados con verificación de integridad.",
+        auditAll:"Todos los eventos", auditRefresh:"Actualizar", auditVerify:"Verificar integridad", auditExport:"Exportar paquete firmado",
+        auditTime:"Hora", auditEvent:"Evento", auditMode:"Modo", auditOutcome:"Resultado", auditRisk:"Riesgo", auditFindings:"Hallazgos",
+        auditLocalNote:"El registro detecta manipulaciones, pero un administrador local aún puede eliminar toda la base. Exporte paquetes firmados como evidencia duradera.",
+        auditIntegrityOk:"Verificación de integridad superada", auditIntegrityBroken:"Ruptura de integridad en el evento", auditEmpty:"No hay eventos de auditoría.", auditExported:"Exportado", auditError:"Error de auditoría",
         tabScanner:          "🔍 Escáner",
         tabAbout:            "ℹ Acerca del programa",
         tabSettings:         "⚙️ Configuración",
@@ -4986,15 +5061,21 @@
     }
 
     /* ── Tab navigation ─────────────────────────────────────────────── */
+    function activateTab(tab) {
+      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+      document.querySelector(`.tab-btn[data-tab="${tab}"]`)?.classList.add("active");
+      document.getElementById("panel-" + tab)?.classList.add("active");
+      if (tab === "about") syncAboutLang();
+      if (tab === "audit") loadAuditTrail();
+    }
     document.querySelectorAll(".tab-btn").forEach(btn =>
-      btn.addEventListener("click", () => {
-        document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
-        document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
-        btn.classList.add("active");
-        document.getElementById("panel-" + btn.dataset.tab).classList.add("active");
-        if (btn.dataset.tab === "about") syncAboutLang();
-      })
+      btn.addEventListener("click", () => activateTab(btn.dataset.tab))
     );
+    document.getElementById("btn-audit-trail").addEventListener("click", () => {
+      document.getElementById("top-menu").open = false;
+      activateTab("audit");
+    });
 
     /* ══════════════════════════════════════════════════════════════════
        UPDATE CHECK
@@ -6811,6 +6892,59 @@
         else      { msg.style.color="#f44336"; msg.textContent=`${t("errPrefix")} ${d.error}`; }
       } catch(e)  { msg.style.color="#f44336"; msg.textContent=`${t("netErr")} ${e}`; }
     }
+
+    /* ══════════════════════════════════════════════════════════════════
+       AUDIT TRAIL
+    ══════════════════════════════════════════════════════════════════ */
+    function renderAuditTrail(entries, integrity) {
+      const status = document.getElementById("audit-integrity");
+      status.innerHTML = integrity?.ok
+        ? `✅ ${escapeHtml(t("auditIntegrityOk"))} · ${Number(integrity.events || 0)}`
+        : `⚠️ ${escapeHtml(t("auditIntegrityBroken"))} ${escapeHtml(String(integrity?.broken_at || ""))}`;
+      const body = document.getElementById("audit-table-body");
+      if (!entries?.length) {
+        body.innerHTML = `<tr><td colspan="6" class="muted">${escapeHtml(t("auditEmpty"))}</td></tr>`;
+        return;
+      }
+      body.innerHTML = entries.map(event => `<tr>
+        <td>${escapeHtml(_fmtHistTime(event.occurred_at))}</td>
+        <td>${escapeHtml(event.event_type || "")}</td>
+        <td>${escapeHtml(event.scan_mode || "")}</td>
+        <td>${escapeHtml(event.outcome || "")}</td>
+        <td>${escapeHtml(event.risk_level || "")}</td>
+        <td>${Number(event.finding_count || 0)}</td>
+      </tr>`).join("");
+    }
+
+    async function loadAuditTrail() {
+      const eventType = document.getElementById("audit-event-filter")?.value || "";
+      const query = eventType ? `?event_type=${encodeURIComponent(eventType)}` : "";
+      try {
+        const data = await (await fetch(`${API}/audit/events${query}`)).json();
+        renderAuditTrail(data.entries || [], data.integrity || {});
+      } catch (error) {
+        document.getElementById("audit-action-msg").textContent = `${t("auditError")}: ${error}`;
+      }
+    }
+
+    async function verifyAuditTrail() {
+      const data = await (await fetch(`${API}/audit/verify`)).json();
+      await loadAuditTrail();
+      document.getElementById("audit-action-msg").textContent = data.integrity?.ok
+        ? t("auditIntegrityOk") : t("auditIntegrityBroken");
+    }
+
+    async function exportAuditTrail() {
+      const data = await (await fetch(`${API}/audit/export`, {method:"POST"})).json();
+      document.getElementById("audit-action-msg").textContent = data.ok
+        ? `${t("auditExported")}: ${data.path}` : `${t("auditError")}: ${data.error || ""}`;
+      await loadAuditTrail();
+    }
+
+    document.getElementById("btn-audit-refresh").addEventListener("click", loadAuditTrail);
+    document.getElementById("btn-audit-verify").addEventListener("click", verifyAuditTrail);
+    document.getElementById("btn-audit-export").addEventListener("click", exportAuditTrail);
+    document.getElementById("audit-event-filter").addEventListener("change", loadAuditTrail);
 
     /* ══════════════════════════════════════════════════════════════════
        HISTORY

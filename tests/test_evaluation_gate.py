@@ -16,6 +16,10 @@ def _report(*, cases=30, false_negatives=1, f1=0.85, risk_matches=28) -> dict:
             "f1": f1,
             "risk_matches": risk_matches,
         },
+        "cases": [
+            {"id": f"case-{index}", "spec_digest": f"digest-{index}"}
+            for index in range(cases)
+        ],
     }
 
 
@@ -36,6 +40,20 @@ def test_regression_gate_reports_each_guardrail() -> None:
     assert any("falske negative" in failure for failure in failures)
     assert any("F1" in failure for failure in failures)
     assert any("risikoavvik" in failure for failure in failures)
+
+
+def test_regression_gate_rejects_removed_or_changed_baseline_cases() -> None:
+    baseline = _report(cases=2, false_negatives=0, f1=1.0, risk_matches=2)
+    current = _report(cases=2, false_negatives=0, f1=1.0, risk_matches=2)
+    current["cases"] = [
+        {"id": "case-0", "spec_digest": "changed"},
+        {"id": "replacement", "spec_digest": "new"},
+    ]
+
+    failures = regression_failures(current, baseline)
+
+    assert any("endret" in failure and "case-0" in failure for failure in failures)
+    assert any("mangler" in failure and "case-1" in failure for failure in failures)
 
 
 def test_regression_gate_cli_returns_nonzero_for_regression(tmp_path: Path) -> None:
@@ -76,4 +94,4 @@ def test_quality_workflow_runs_standard_evaluation_gate() -> None:
 
     assert "scripts/evaluate_accuracy.py" in workflow
     assert "scripts/check_evaluation_regression.py" in workflow
-    assert "evaluation/baselines/v1.9.15.json" in workflow
+    assert "evaluation/baselines/v1.9.16.json" in workflow

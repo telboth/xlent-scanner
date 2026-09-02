@@ -319,8 +319,18 @@ severity = "gul"
     assert "SAK-" in data["custom_patterns_toml"]
 
 
-def test_gui_deep_scan_status_route_accepts_specific_job_id(monkeypatch):
-    from xlent_scanner import deep_scanner
+def test_gui_deep_scan_status_route_accepts_specific_job_id(monkeypatch, tmp_path):
+    from xlent_scanner import audit_trail, deep_scanner
+    from xlent_scanner.audit_trail import AuditTrail
+    from xlent_scanner.routes import ollama as ollama_routes
+
+    monkeypatch.setattr(audit_trail, "app_data_dir", lambda: tmp_path)
+    ollama_routes._AUDITED_AI_JOBS.clear()
+    app_module.app_state.last_path = tmp_path / "source.docx"
+    app_module.app_state.last_ai_scan_metadata = {
+        "model": "llama3.2:3b",
+        "categories": ["navn"],
+    }
 
     monkeypatch.setattr(
         deep_scanner,
@@ -341,6 +351,37 @@ def test_gui_deep_scan_status_route_accepts_specific_job_id(monkeypatch):
     assert found.status_code == 200
     assert found.get_json()["job_id"] == "abc123"
     assert missing.status_code == 404
+    event = AuditTrail(tmp_path).query_events()[-1]
+    assert event["event_type"] == "ai_scan_completed"
+    assert event["metadata"]["model"] == "llama3.2:3b"
+
+
+def test_gui_deep_scan_records_installed_model_digest(monkeypatch):
+    from xlent_scanner import deep_scanner
+
+    app_module.app_state.last_result = _fake_result()
+    monkeypatch.setattr(deep_scanner, "start_deep_scan", lambda *args, **kwargs: "job-1")
+    monkeypatch.setattr(
+        deep_scanner,
+        "ollama_status",
+        lambda: {
+            "running": True,
+            "models": ["llama3.2:3b"],
+            "model_details": [
+                {"name": "llama3.2:3b", "digest": "sha256:installed-model"}
+            ],
+        },
+    )
+
+    response = app_module.flask_app.test_client().post(
+        "/ollama/deep-scan",
+        json={"model": "llama3.2:3b", "categories": ["navn"]},
+    )
+
+    assert response.status_code == 200
+    assert app_module.app_state.last_ai_scan_metadata["model_digest"] == (
+        "sha256:installed-model"
+    )
 
 
 def test_openapi_json_and_swagger_docs_are_available():

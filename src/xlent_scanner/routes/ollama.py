@@ -14,6 +14,7 @@ from xlent_scanner.ai_findings import (
     replacement_texts,
 )
 from xlent_scanner.app_state import app_state
+from xlent_scanner.audit_trail import AuditTrail
 from xlent_scanner.patch import SUPPORTED_PATCH_SUFFIXES
 from xlent_scanner.redaction_audit import record_redaction
 
@@ -21,6 +22,44 @@ LOGGER = logging.getLogger("xlent_scanner")
 _patch_file: Callable
 
 ollama_bp = Blueprint("ollama", __name__)
+_AUDITED_AI_JOBS: set[str] = set()
+_AI_JOB_AUDIT_CONTEXTS: dict[str, dict] = {}
+
+
+def _audit_terminal_ai_job(job_id: str, status: dict) -> None:
+    if status.get("status") not in {"done", "error", "cancelled"}:
+        return
+    if not job_id or job_id in _AUDITED_AI_JOBS:
+        return
+    from xlent_scanner.deep_scanner import (  # noqa: PLC0415
+        OLLAMA_BASE,
+        _is_loopback_ollama_url,
+        _remote_ollama_permission_granted,
+    )
+
+    context = _AI_JOB_AUDIT_CONTEXTS.get(job_id) or {}
+    metadata = context.get("metadata") or app_state.last_ai_scan_metadata or {}
+    document_path = context.get("document_path", app_state.last_path)
+    findings = status.get("findings") or []
+    AuditTrail().record_event(
+        "ai_scan_completed",
+        document_path=document_path,
+        scan_mode="ai_deep",
+        outcome=str(status.get("status") or ""),
+        finding_count=len(findings),
+        metadata={
+            "model": status.get("model") or metadata.get("model") or "",
+            "model_digest": metadata.get("model_digest") or "",
+            "categories": status.get("categories") or metadata.get("categories") or [],
+            "ollama_remote": not _is_loopback_ollama_url(OLLAMA_BASE),
+            "remote_permission_granted": _remote_ollama_permission_granted(),
+            "scan_status": status.get("status") or "",
+        },
+    )
+    _AUDITED_AI_JOBS.add(job_id)
+    _AI_JOB_AUDIT_CONTEXTS.pop(job_id, None)
+    if len(_AUDITED_AI_JOBS) > 1000:
+        _AUDITED_AI_JOBS.clear()
 
 
 def create_ollama_blueprint(*, patch_file_fn: Callable) -> Blueprint:
@@ -97,7 +136,7 @@ def ollama_last_file_info():
 
 @ollama_bp.post("/ollama/deep-scan")
 def ollama_deep_scan_endpoint():
-    from xlent_scanner.deep_scanner import start_deep_scan
+    from xlent_scanner.deep_scanner import ollama_status, start_deep_scan
 
     if app_state.last_result is None:
         return jsonify({"ok": False, "error": "Ingen fil er skannet ennå."})
@@ -112,8 +151,23 @@ def ollama_deep_scan_endpoint():
     min_confidence = (data.get("min_confidence") or "medium").strip().lower()
     if min_confidence not in ("high", "medium", "low"):
         min_confidence = "medium"
+    model_digest = ""
+    try:
+        status = ollama_status()
+        details = next(
+            (
+                item
+                for item in status.get("model_details", [])
+                if item.get("name") == model
+            ),
+            {},
+        )
+        model_digest = str(details.get("digest") or "")
+    except Exception:
+        LOGGER.warning("Klarte ikke å hente Ollama modelldigest", exc_info=True)
     app_state.last_ai_scan_metadata = {
         "model": model,
+        "model_digest": model_digest,
         "categories": list(categories or []),
         "min_confidence": min_confidence,
         "language": getattr(app_state.last_result, "language", "en") or "en",
@@ -126,6 +180,10 @@ def ollama_deep_scan_endpoint():
         categories=categories,
         min_confidence=min_confidence,
     )
+    _AI_JOB_AUDIT_CONTEXTS[job_id] = {
+        "document_path": app_state.last_path,
+        "metadata": dict(app_state.last_ai_scan_metadata),
+    }
     LOGGER.info(
         "ollama/deep-scan started job=%s model=%s cats=%s",
         job_id,
@@ -252,7 +310,9 @@ def _unique_output(directory: Path, stem: str, suffix: str) -> Path:
 @ollama_bp.get("/ollama/deep-scan/status")
 def ollama_deep_scan_status_endpoint():
     from xlent_scanner.deep_scanner import get_deep_scan_status
-    return jsonify(get_deep_scan_status())
+    status = get_deep_scan_status()
+    _audit_terminal_ai_job(str(status.get("job_id") or ""), status)
+    return jsonify(status)
 
 
 @ollama_bp.get("/ollama/deep-scan/status/<job_id>")
@@ -262,6 +322,7 @@ def ollama_deep_scan_status_for_job_endpoint(job_id: str):
     status = get_deep_scan_status(job_id)
     if not status:
         return jsonify({"ok": False, "error": "Ukjent job_id."}), 404
+    _audit_terminal_ai_job(job_id, status)
     status["ok"] = True
     return jsonify(status)
 

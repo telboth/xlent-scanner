@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from xlent_scanner.audit_trail import AuditTrail
 from xlent_scanner.models import Finding, ScanResult
 from xlent_scanner.paths import app_data_dir
 from xlent_scanner.scanner import scan_file
@@ -203,7 +204,7 @@ def record_redaction(
     ai_findings: list[dict] | None = None,
     method: str,
     ai_metadata: dict[str, Any] | None = None,
-    store_finding_details: bool = True,
+    store_finding_details: bool = False,
 ) -> dict:
     ai_findings = ai_findings or []
     verification = verify_redacted_file(
@@ -235,6 +236,24 @@ def record_redaction(
     history = load_redaction_history()
     history.append(entry)
     _write_history(history)
+    audit_metadata = {
+        "method": method,
+        "selected_count": len(selected_findings),
+        "removed_count": int(verification.get("removed_count") or 0),
+        "verification_status": str(verification.get("status") or ""),
+    }
+    for key in ("model", "model_digest", "categories"):
+        if key in (ai_metadata or {}):
+            audit_metadata[key] = (ai_metadata or {})[key]
+    AuditTrail(app_data_dir()).record_event(
+        "redaction_created",
+        document_path=output_path,
+        scan_mode="ai_deep" if ai_findings else "standard",
+        outcome=str(verification.get("status") or "unknown"),
+        risk_level=str(verification.get("risk_level") or ""),
+        finding_count=int(verification.get("finding_count") or 0),
+        metadata=audit_metadata,
+    )
     return entry
 
 
@@ -284,4 +303,19 @@ def refresh_redaction_verification(entry_id: str) -> dict | None:
             else _verification_summary(verification)
         )
     _write_history(history)
+    verification = entry.get("verification") or {}
+    AuditTrail(app_data_dir()).record_event(
+        "verification_completed",
+        document_path=path,
+        scan_mode="verification",
+        outcome=str(verification.get("status") or "unknown"),
+        risk_level=str(verification.get("risk_level") or ""),
+        finding_count=int(verification.get("finding_count") or 0),
+        metadata={
+            "method": entry.get("method") or "",
+            "selected_count": int(entry.get("selected_count") or 0),
+            "removed_count": int(verification.get("removed_count") or 0),
+            "verification_status": verification.get("status") or "unknown",
+        },
+    )
     return entry

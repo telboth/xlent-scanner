@@ -17,6 +17,7 @@ from flask import Blueprint, jsonify, request
 
 from xlent_scanner import __version__
 from xlent_scanner.app_state import app_state
+from xlent_scanner.audit_trail import AuditTrail
 
 LOGGER = logging.getLogger("xlent_scanner")
 _API_SCAN_TTL_SECONDS = 60 * 60
@@ -308,6 +309,7 @@ def api_scan_text():
             scan_profile=_api_scan_profile(data.get("scan_profile")),
             categories=_api_categories(data.get("categories")),
         )
+        AuditTrail().record_scan(result, source="api_text")
         scan_id = _api_store_scan_result(result)
         return jsonify(_api_result_payload(
             result,
@@ -373,6 +375,11 @@ def api_scan_file():
             include_access_check=_api_bool(data.get("access_check", data.get("include_access_check")), False),
         )
         result.file_name = file_name
+        AuditTrail().record_scan(
+            result,
+            document_path=file_name,
+            source="api_file",
+        )
         scan_id = _api_store_scan_result(result, path=tmp_path, owns_path=True)
         tmp_path = None
         return jsonify(_api_result_payload(

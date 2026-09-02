@@ -22,6 +22,7 @@ from flask import Blueprint, jsonify, request
 from xlent_scanner.access_audit import audit_containing_folder_access
 from xlent_scanner.anonymize import build_replacements
 from xlent_scanner.app_state import app_state
+from xlent_scanner.audit_trail import AuditTrail
 from xlent_scanner.history import add_history_entry
 from xlent_scanner.microsoft_graph import sharepoint_access_for_local_path
 from xlent_scanner.models import ScanResult
@@ -43,6 +44,14 @@ from xlent_scanner.scanner import (
 )
 
 LOGGER = logging.getLogger("xlent_scanner")
+
+
+def _record_folder_scan_audit(result: ScanResult, path: Path) -> None:
+    AuditTrail().record_scan(
+        result,
+        document_path=path,
+        source="batch",
+    )
 _FOLDER_SCAN_MAX_RESULTS = 10_000
 
 _downloads_dir: Callable[[], Path]
@@ -408,6 +417,7 @@ def _run_folder_scan_job(
                 file_size=result.file_size,
                 source="batch",
             )
+            _record_folder_scan_audit(result, Path(file_path))
             with app_state.folder_job_manager.mutate(job_id) as job:
                 if job is None:
                     return
@@ -494,6 +504,8 @@ def scan_folder_endpoint():
                 file_size=result.file_size,
                 source="batch",
             )
+            result_path = Path(result.source_path) if result.source_path else Path(folder_path) / (result.relative_path or result.file_name)
+            _record_folder_scan_audit(result, result_path)
             summary.append(folder_result_row(result))
         return jsonify({
             "files": summary,

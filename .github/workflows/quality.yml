@@ -82,5 +82,5 @@ jobs:
       - name: Kjør standardkorpus
         run: uv run --no-sync python scripts/evaluate_accuracy.py --output artifacts/evaluation/current.json
 
-      - name: Kontroller mot v1.9.15-baseline
-        run: uv run --no-sync python scripts/check_evaluation_regression.py --baseline evaluation/baselines/v1.9.15.json --current artifacts/evaluation/current.json
+      - name: Kontroller mot v1.9.16-baseline
+        run: uv run --no-sync python scripts/check_evaluation_regression.py --baseline evaluation/baselines/v1.9.16.json --current artifacts/evaluation/current.json

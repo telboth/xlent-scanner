@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from xlent_scanner import redaction_audit
+from xlent_scanner.audit_trail import AuditTrail
 from xlent_scanner.models import Finding, ScanResult
 
 
@@ -150,6 +151,7 @@ def test_record_redaction_persists_audit_metadata(monkeypatch, tmp_path):
         _source_result().findings,
         method="patch_txt",
         ai_metadata={"model": "llama3.2:3b", "categories": ["navn"]},
+        store_finding_details=True,
     )
 
     loaded = redaction_audit.load_redaction_history()
@@ -157,6 +159,40 @@ def test_record_redaction_persists_audit_metadata(monkeypatch, tmp_path):
     assert entry["verification"]["passed"] is True
     assert entry["selected_findings"][0]["engine"] == "rule"
     assert entry["ai_metadata"]["model"] == "llama3.2:3b"
+
+
+def test_record_redaction_is_privacy_minimized_by_default(monkeypatch, tmp_path):
+    output = tmp_path / "source-anonymisert.txt"
+    output.write_text("redacted", encoding="utf-8")
+    monkeypatch.setattr(redaction_audit, "app_data_dir", lambda: tmp_path)
+    monkeypatch.setattr(
+        redaction_audit,
+        "verify_redacted_file",
+        lambda *args, **kwargs: {
+            "status": "passed",
+            "passed": True,
+            "risk_level": "grønn",
+            "finding_count": 0,
+            "removed_count": 1,
+            "removed_findings": [{"text": "person@example.com"}],
+        },
+    )
+
+    entry = redaction_audit.record_redaction(
+        output,
+        _source_result(),
+        _source_result().findings,
+        method="patch_txt",
+    )
+
+    serialized = (tmp_path / "redaction_history.jsonl").read_text(encoding="utf-8")
+    assert entry["stores_finding_details"] is False
+    assert entry["selected_findings"] == []
+    assert "person@example.com" not in serialized
+    event = AuditTrail(tmp_path).query_events()[-1]
+    assert event["event_type"] == "redaction_created"
+    assert event["metadata"]["method"] == "patch_txt"
+    assert event["metadata"]["selected_count"] == 1
 
 
 def test_record_redaction_can_store_metadata_without_finding_content(monkeypatch, tmp_path):

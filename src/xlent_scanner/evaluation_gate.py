@@ -12,6 +12,23 @@ def regression_failures(current: dict, baseline: dict) -> list[str]:
     now = current["summary"]
     before = baseline["summary"]
     failures: list[str] = []
+    current_cases = {
+        str(case.get("id")): case
+        for case in current.get("cases", [])
+        if case.get("id")
+    }
+    for baseline_case in baseline.get("cases", []):
+        case_id = str(baseline_case.get("id") or "")
+        if not case_id:
+            continue
+        current_case = current_cases.get(case_id)
+        if current_case is None:
+            failures.append(f"Baseline-caset mangler: {case_id}.")
+        elif (
+            baseline_case.get("spec_digest")
+            and current_case.get("spec_digest") != baseline_case.get("spec_digest")
+        ):
+            failures.append(f"Baseline-caset er endret: {case_id}.")
     if now["cases"] < before["cases"]:
         failures.append(
             f"Korpuset har færre caser: {now['cases']} mot {before['cases']}."

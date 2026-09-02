@@ -1,6 +1,6 @@
 # XLENT Compliance-scanner
 
-> **v1.9.16** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
+> **v1.9.17** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
 
 Scanning kjøres lokalt som standard. Dokumenttekst sendes bare til en annen maskin
 når brukeren både konfigurerer en ekstern Ollama-adresse og gir eksplisitt tillatelse.
@@ -234,6 +234,23 @@ Sikkerhetsgrenser:
 - Skjulte/tunge mapper hoppes over, bl.a. `.git`, `.venv`, `node_modules`, `build`, `dist`, `__pycache__`
 
 Støttede filtyper: `pdf`, `docx`, `pptx`, `xlsx`, `txt`, `md`, `html`, `csv`, `eml`, `rtf`, `odt`.
+
+### Lokalt revisjonsspor
+
+**⋯ → Revisjonsspor** viser skanning, AI-dybdeskann, anonymisering og kontrollskann
+som separate hendelser. Standard- og AI-skann skilles eksplisitt, og AI-hendelser
+tar med modellnavn og tilgjengelig modelldigest.
+
+Revisjonssporet lagres lokalt i `audit.db` under appens brukerdata-mappe
+(`%APPDATA%\xlent-scanner` på Windows). Det lagrer ikke dokumenttekst, funntekst,
+prompt eller lesbar filsti. Dokumentet får i stedet en nøkkelbasert pseudonym ID.
+Hendelsene HMAC-kjedes, og nøkkelen beskyttes med Windows DPAPI. Appen beholder
+som standard maksimalt 10 000 hendelser og 90 dager.
+
+Fra menyen kan integriteten kontrolleres og en ZIP med maskinlesbar JSON og
+HTML-rapport eksporteres. Dette gjør lokal manipulering synlig så lenge auditnøkkelen
+bevares, men er ikke et uavhengig, sentralt bevis mot en lokal administrator som kan
+slette både databasen og nøkkelen.
 
 ---
 
@@ -471,6 +488,14 @@ src/xlent_scanner/
 ---
 
 ## Endringslogg
+
+### v1.9.17
+
+- Legger til et lokalt, personvernminimert revisjonsspor for standard-skann, AI-dybdeskann, anonymisering og kontrollskann.
+- Legger til HMAC-kjedet integritetskontroll, DPAPI-beskyttet auditnøkkel på Windows, oppbevaringsgrenser og signert JSON/HTML-eksport.
+- Skiller standard- og AI-skann i auditsporet og registrerer modellnavn og modelldigest uten dokumenttekst, funntekst, prompt eller lesbar filsti.
+- Gjør ny anonymiseringshistorikk personvernminimert som standard.
+- Styrker evalueringsporten slik at eksisterende korpuscaser ikke kan fjernes eller endres stille.
 
 ### v1.9.16
 

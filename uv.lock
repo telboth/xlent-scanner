@@ -2960,7 +2960,7 @@ wheels = [
 
 [[package]]
 name = "xlent-scanner"
-version = "1.9.16"
+version = "1.9.17"
 source = { editable = "." }
 dependencies = [
     { name = "docling" },

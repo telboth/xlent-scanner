@@ -12,6 +12,7 @@ from flask import Blueprint, jsonify, request
 
 from xlent_scanner.access_audit import audit_path_access, uploaded_copy_access_summary
 from xlent_scanner.app_state import app_state
+from xlent_scanner.audit_trail import AuditTrail
 from xlent_scanner.history import add_history_entry
 from xlent_scanner.routes.folders import folder_result_row
 from xlent_scanner.scan_categories import categories_payload
@@ -65,18 +66,28 @@ def _request_categories(value) -> list[str] | None:
     return None
 
 
+def _audit_scan_result(result, path: Path | None, source: str) -> None:
+    AuditTrail().record_scan(
+        result,
+        document_path=path,
+        source=source,
+    )
+
+
 def _remember_result(result, path: Path | None) -> None:
     app_state.last_result = result
     app_state.last_path = path
     app_state.clear_ai_findings()
     app_state.clear_anonymized_file()
+    source = "file" if path is not None else "text"
     add_history_entry(
         file_name=result.file_name,
         risk_level=result.risk_level,
         finding_count=len(result.findings),
         file_size=result.file_size,
-        source="file" if path is not None else "text",
+        source=source,
     )
+    _audit_scan_result(result, path, source)
 
 
 def _scan_file_compat(*args, scan_profile: str = "normal", **kwargs):
@@ -188,6 +199,7 @@ def _scan_zip_upload(
             file_size=result.file_size,
             source="batch",
         )
+        _audit_scan_result(result, zip_path, "zip")
         with app_state.folder_job_manager.mutate(job_id) as job:
             if job is None:
                 break

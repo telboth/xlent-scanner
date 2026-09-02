@@ -167,6 +167,7 @@
   "cases": [
     {
       "id": "nb-clean-general-001",
+      "spec_digest": "a0b314fa9bc18a3135a135c3f719edae2939283313d12166b2fb05e11fdb48b9",
       "source": "cases/mixed/25-clean-general.json",
       "language": "nb",
       "profile": "normal",
@@ -188,6 +189,7 @@
     },
     {
       "id": "en-clean-technical-001",
+      "spec_digest": "7169664481f58bc40e65874c04759691fdb006461a626073e5e0a86c8ac30a39",
       "source": "cases/mixed/26-clean-technical.json",
       "language": "en",
       "profile": "technical",
@@ -210,6 +212,7 @@
     },
     {
       "id": "nb-project-offer-001",
+      "spec_digest": "2e096ce8189d1c475932b890aef18fe342a42147556ff2a8c39d449792d170a5",
       "source": "cases/mixed/27-project-offer.json",
       "language": "nb",
       "profile": "normal",
@@ -231,6 +234,7 @@
     },
     {
       "id": "en-config-secrets-001",
+      "spec_digest": "e676c598e9cd401fe905ecb1916e148e2e6758d82bab985832780f32cac6e37b",
       "source": "cases/mixed/28-config-secrets.json",
       "language": "en",
       "profile": "normal",
@@ -252,6 +256,7 @@
     },
     {
       "id": "sv-multilingual-identifiers-001",
+      "spec_digest": "dbe9308dcfb67bc0cab0c042e751d9860cd8846cfaf3b46064d65a57049a79ad",
       "source": "cases/mixed/29-multilingual-identifiers.json",
       "language": "sv",
       "profile": "normal",
@@ -273,6 +278,7 @@
     },
     {
       "id": "nb-medical-note-001",
+      "spec_digest": "873bbcb8a49b0f1aea4e7131a726f6574c9a47191abbf7fa50d1922a915210e5",
       "source": "cases/mixed/30-medical-note.json",
       "language": "nb",
       "profile": "normal",
@@ -295,6 +301,7 @@
     },
     {
       "id": "nb-project-sum-link-001",
+      "spec_digest": "f6bd42c6fd860871735e8540a10f819b3bf117e2a69a21e283b4f74257819b1f",
       "source": "cases/mixed/31-project-sum-link-nb.json",
       "language": "nb",
       "profile": "normal",
@@ -317,6 +324,7 @@
     },
     {
       "id": "en-contract-value-link-001",
+      "spec_digest": "887a0e4e86694f2b51a55f806123edbfa5ecb42e749c79d7d6b1ce55f4dc3ff7",
       "source": "cases/mixed/32-project-sum-link-en.json",
       "language": "en",
       "profile": "normal",
@@ -339,6 +347,7 @@
     },
     {
       "id": "en-project-budget-link-001",
+      "spec_digest": "8fffadb44e4f9b10a10083b9aac66e5a4811dcc8a8a7a99d49235ac6959b83d0",
       "source": "cases/mixed/33-budget-link-en.json",
       "language": "en",
       "profile": "normal",
@@ -361,6 +370,7 @@
     },
     {
       "id": "en-real-server-ip-001",
+      "spec_digest": "1c4094c1fc4e1bb995f5f531b9c24f9285c71d81ca94667f14f35e86d298439e",
       "source": "cases/mixed/36-real-server-ip.json",
       "language": "en",
       "profile": "technical",
@@ -383,6 +393,7 @@
     },
     {
       "id": "en-confidential-label-001",
+      "spec_digest": "1890517daf185ab7d7c92a20d7303ac131c91c0bbe868f2c62862469b81c5f80",
       "source": "cases/mixed/38-confidential-label-en.json",
       "language": "en",
       "profile": "normal",
@@ -405,6 +416,7 @@
     },
     {
       "id": "nb-invalid-national-id-001",
+      "spec_digest": "5a57db67a43c6edac67a5e081e5d577edf8102a2686339f003ca49ccc41207c2",
       "source": "cases/negatives/13-invalid-national-id.json",
       "language": "nb",
       "profile": "normal",
@@ -427,6 +439,7 @@
     },
     {
       "id": "nb-calendar-date-001",
+      "spec_digest": "f3bdf53514913748e8d88a98ec7f8665c9180767a58f8bcc9008f87bdc5f31ec",
       "source": "cases/negatives/14-calendar-date.json",
       "language": "nb",
       "profile": "normal",
@@ -448,6 +461,7 @@
     },
     {
       "id": "en-axis-values-001",
+      "spec_digest": "4452fa07ff5ae1765a7266ffa3ed83d7d609c917c1506f7b51a0236b84badf16",
       "source": "cases/negatives/15-axis-values.json",
       "language": "en",
       "profile": "technical",
@@ -470,6 +484,7 @@
     },
     {
       "id": "nb-project-number-001",
+      "spec_digest": "29050750596b5cd8844f60f0990c9c3cd119fa1bca213564e284134727808d84",
       "source": "cases/negatives/16-project-number.json",
       "language": "nb",
       "profile": "normal",
@@ -491,6 +506,7 @@
     },
     {
       "id": "en-doi-001",
+      "spec_digest": "0a5bdce3050aac67e6ede06e7eccc47f6fa58048c37491016008a13f935bbc7c",
       "source": "cases/negatives/17-doi.json",
       "language": "en",
       "profile": "technical",
@@ -513,6 +529,7 @@
     },
     {
       "id": "en-version-string-001",
+      "spec_digest": "9ee03c94bf2db7aca60b41e68c82bdbc8f2615278365e04266d8f41f1f8edc23",
       "source": "cases/negatives/18-version-string.json",
       "language": "en",
       "profile": "technical",
@@ -535,6 +552,7 @@
     },
     {
       "id": "en-title-case-001",
+      "spec_digest": "826bc26817b26a383fe4b240ea0aee1eec0d5af54750c33bfac0e5109f195e04",
       "source": "cases/negatives/19-title-case.json",
       "language": "en",
       "profile": "technical",
@@ -557,6 +575,7 @@
     },
     {
       "id": "en-placeholder-secret-001",
+      "spec_digest": "4e849893b2acc987783f591eefecad3ae660ae6cb27b7aa221fb78146777f32a",
       "source": "cases/negatives/20-placeholder-secret.json",
       "language": "en",
       "profile": "normal",
@@ -578,6 +597,7 @@
     },
     {
       "id": "nb-invalid-credit-card-001",
+      "spec_digest": "9b6dd5c540f8abf4fd3820721b5fb54f837bb7fc2f2db5cefbbaf4f1d1e35af8",
       "source": "cases/negatives/21-invalid-credit-card.json",
       "language": "nb",
       "profile": "normal",
@@ -599,6 +619,7 @@
     },
     {
       "id": "nb-invalid-iban-001",
+      "spec_digest": "f914386b7cd4747b2f94d6d0b10b8c90dd7a00514f27490a3526ee3265bd9c23",
       "source": "cases/negatives/22-invalid-iban.json",
       "language": "nb",
       "profile": "normal",
@@ -620,6 +641,7 @@
     },
     {
       "id": "en-page-range-001",
+      "spec_digest": "d64902d8d04c1b811db3a7b8f95c0fbeca35a5b7a85bc5a0782d5d56fec466ca",
       "source": "cases/negatives/23-page-range.json",
       "language": "en",
       "profile": "technical",
@@ -642,6 +664,7 @@
     },
     {
       "id": "nb-invalid-organization-number-001",
+      "spec_digest": "19bf9b32a0d6b80d24524902eacb2282ad051fd0c0170e803a7934632b862fd9",
       "source": "cases/negatives/24-invalid-organization-number.json",
       "language": "nb",
       "profile": "normal",
@@ -663,6 +686,7 @@
     },
     {
       "id": "en-runtime-version-ip-shape-001",
+      "spec_digest": "875b63484ebd6f2d66ef8c8a620f5a6267f774c7cf954b74af8fd8e4241e616b",
       "source": "cases/negatives/34-runtime-version-ip-shape.json",
       "language": "en",
       "profile": "technical",
@@ -685,6 +709,7 @@
     },
     {
       "id": "en-release-version-ip-shape-001",
+      "spec_digest": "79ba80756bf58a35a06a4973180e0d019a3ca8e794988a6294e3f37294ba5449",
       "source": "cases/negatives/35-release-version-ip-shape.json",
       "language": "en",
       "profile": "technical",
@@ -707,6 +732,7 @@
     },
     {
       "id": "nb-no-national-id-001",
+      "spec_digest": "ab3958e58bcecc847b31e32378b847522610bda3d624a86ab3cfaf2da0f731e8",
       "source": "cases/structured/01-no-national-id.json",
       "language": "nb",
       "profile": "normal",
@@ -728,6 +754,7 @@
     },
     {
       "id": "nb-no-d-number-001",
+      "spec_digest": "fd674ce7e2b23038f1d2198d4ca86fab80ff3324bfa0042169ae6a87f32b93d5",
       "source": "cases/structured/02-no-d-number.json",
       "language": "nb",
       "profile": "normal",
@@ -749,6 +776,7 @@
     },
     {
       "id": "sv-personal-id-001",
+      "spec_digest": "a3bbad7eb54838ce9f09409d284e015f55cbd4d5c9c48afd94c638fdb5a6fd02",
       "source": "cases/structured/03-se-personal-id.json",
       "language": "sv",
       "profile": "normal",
@@ -770,6 +798,7 @@
     },
     {
       "id": "da-cpr-001",
+      "spec_digest": "3e9fed48879ccbd369ce3a889a6869669690223162f8eda2c3c879f3c4903779",
       "source": "cases/structured/04-dk-cpr.json",
       "language": "da",
       "profile": "normal",
@@ -791,6 +820,7 @@
     },
     {
       "id": "nb-iban-001",
+      "spec_digest": "2e3a3bcf1acb46373879a50e7ed0ca4fc8efd43ea78028597fee4e329804139b",
       "source": "cases/structured/05-iban.json",
       "language": "nb",
       "profile": "normal",
@@ -812,6 +842,7 @@
     },
     {
       "id": "nb-bank-account-001",
+      "spec_digest": "99396c7433163a6ce6d8fc6f362e721542f372c90e0e1b120eceeda664985101",
       "source": "cases/structured/06-bank-account.json",
       "language": "nb",
       "profile": "normal",
@@ -833,6 +864,7 @@
     },
     {
       "id": "nb-credit-card-001",
+      "spec_digest": "ca64f9df3cc1509b733465687004e8ac4c51c94dc6fdfa6ced045770ddf4619f",
       "source": "cases/structured/07-credit-card.json",
       "language": "nb",
       "profile": "normal",
@@ -854,6 +886,7 @@
     },
     {
       "id": "nb-email-001",
+      "spec_digest": "e71d808c61852b9ddcad95ab65e562e03f4fb11fa3e42ecc6935892a37fe45cd",
       "source": "cases/structured/08-email.json",
       "language": "nb",
       "profile": "normal",
@@ -875,6 +908,7 @@
     },
     {
       "id": "nb-phone-001",
+      "spec_digest": "2b43bf6044e686f12648f524b8781c91fa830141866e1219dd08846148252cf6",
       "source": "cases/structured/09-phone.json",
       "language": "nb",
       "profile": "normal",
@@ -896,6 +930,7 @@
     },
     {
       "id": "nb-openai-key-001",
+      "spec_digest": "c1b5890d96e26b86328eef05819726089b35b8c4b645afa838236d5fb8b4fc85",
       "source": "cases/structured/10-openai-key.json",
       "language": "nb",
       "profile": "normal",
@@ -918,6 +953,7 @@
     },
     {
       "id": "nb-github-token-001",
+      "spec_digest": "5e420ed683b30a4dce7fa57b0071e13eb36940a0b60d286bafbeb7594d0b9e05",
       "source": "cases/structured/11-github-token.json",
       "language": "nb",
       "profile": "normal",
@@ -940,6 +976,7 @@
     },
     {
       "id": "nb-jwt-001",
+      "spec_digest": "63a6395549005ac8f81950275fb3e1cd6b532b09429bf824f6abb4391ddf4ce6",
       "source": "cases/structured/12-jwt.json",
       "language": "nb",
       "profile": "normal",
@@ -962,6 +999,7 @@
     },
     {
       "id": "en-repeated-github-token-001",
+      "spec_digest": "dd022dba53143f777e6ef66632213647bf16b26bce42a64d901254a66aa68377",
       "source": "cases/structured/37-repeated-github-token.json",
       "language": "en",
       "profile": "normal",

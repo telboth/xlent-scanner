@@ -1,6 +1,7 @@
 """Lokalt, deterministisk evalueringsprogram for scannerens syntetiske korpus."""
 from __future__ import annotations
 
+import hashlib
 import json
 import unicodedata
 from collections import Counter, defaultdict
@@ -27,6 +28,16 @@ def _load_json(path: Path) -> object:
         return json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
         raise CorpusValidationError(f"Kan ikke lese {path}: {exc}") from exc
+
+
+def _spec_digest(case: dict) -> str:
+    canonical = json.dumps(
+        case,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(canonical).hexdigest()
 
 
 def _matches_type(category: str, finding_type: str, taxonomy: dict) -> bool:
@@ -177,6 +188,7 @@ def evaluate_corpus(corpus_root: str | Path) -> dict:
         })
         case_reports.append({
             "id": case.get("id", path.stem),
+            "spec_digest": _spec_digest(case),
             "source": path.relative_to(root).as_posix(),
             "language": case.get("language"),
             "profile": case.get("profile", "normal"),
