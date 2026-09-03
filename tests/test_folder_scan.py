@@ -1,4 +1,6 @@
+import os
 import time
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from xlent_scanner import app as app_module
@@ -69,6 +71,66 @@ def test_folder_scan_plan_marks_truncated_at_max_files(tmp_path: Path):
     assert plan["truncated"] is True
 
 
+def test_folder_scan_plan_filters_on_last_modified_time(tmp_path: Path):
+    old_file = _write(tmp_path / "old.txt")
+    new_file = _write(tmp_path / "new.txt")
+    cutoff = datetime.now().replace(microsecond=0) - timedelta(days=365)
+    os.utime(old_file, (cutoff.timestamp() - 60, cutoff.timestamp() - 60))
+    os.utime(new_file, (cutoff.timestamp() + 60, cutoff.timestamp() + 60))
+
+    plan = scanner.build_folder_scan_plan(tmp_path, modified_before=cutoff)
+
+    assert plan["files"] == [old_file]
+    assert plan["modified_before"] == cutoff.date().isoformat()
+    assert plan["age_excluded_count"] == 1
+    assert plan["metadata_error_count"] == 0
+
+
+def test_folder_scan_plan_applies_max_files_after_age_filter(tmp_path: Path):
+    new_file = _write(tmp_path / "a-new.txt")
+    first_old = _write(tmp_path / "b-old.txt")
+    second_old = _write(tmp_path / "c-old.txt")
+    cutoff = datetime.now().replace(microsecond=0) - timedelta(days=365)
+    os.utime(new_file, (cutoff.timestamp() + 60, cutoff.timestamp() + 60))
+    for path in (first_old, second_old):
+        os.utime(path, (cutoff.timestamp() - 60, cutoff.timestamp() - 60))
+
+    plan = scanner.build_folder_scan_plan(
+        tmp_path,
+        max_files=1,
+        modified_before=cutoff,
+    )
+
+    assert plan["files"] == [first_old]
+    assert plan["age_excluded_count"] == 1
+    assert plan["truncated"] is True
+
+
+def test_folder_scan_plan_excludes_file_when_modified_time_cannot_be_read(
+    monkeypatch,
+    tmp_path: Path,
+):
+    unreadable = _write(tmp_path / "unknown.txt")
+    cutoff = datetime.now().replace(microsecond=0)
+    original_stat = Path.stat
+    calls = 0
+
+    def failing_second_stat(path: Path, *args, **kwargs):
+        nonlocal calls
+        if path == unreadable:
+            calls += 1
+            if calls >= 2:
+                raise OSError("metadata unavailable")
+        return original_stat(path, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "stat", failing_second_stat)
+
+    plan = scanner.build_folder_scan_plan(tmp_path, modified_before=cutoff)
+
+    assert plan["file_count"] == 0
+    assert plan["metadata_error_count"] == 1
+
+
 def test_scan_folder_sets_relative_paths(monkeypatch, tmp_path: Path):
     _write(tmp_path / "root.txt")
     _write(tmp_path / "sub" / "nested.txt")
@@ -99,6 +161,53 @@ def test_scan_folder_preview_endpoint_returns_plan(tmp_path: Path):
     assert data["ok"] is True
     assert data["file_count"] == 2
     assert data["folder_count"] == 2
+
+
+def test_scan_folder_preview_accepts_modified_before_filter(tmp_path: Path):
+    old_file = _write(tmp_path / "old.txt")
+    _write(tmp_path / "new.txt")
+    cutoff = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    os.utime(old_file, (cutoff.timestamp() - 60, cutoff.timestamp() - 60))
+    client = app_module.flask_app.test_client()
+
+    response = client.post(
+        "/scan-folder/preview",
+        json={"folder_path": str(tmp_path), "modified_before": cutoff.date().isoformat()},
+    )
+
+    data = response.get_json()
+    assert data["ok"] is True
+    assert data["file_count"] == 1
+    assert data["modified_before"] == cutoff.date().isoformat()
+    assert data["age_excluded_count"] == 1
+    assert data["metadata_error_count"] == 0
+
+
+def test_scan_folder_preview_rejects_invalid_modified_before(tmp_path: Path):
+    client = app_module.flask_app.test_client()
+
+    response = client.post(
+        "/scan-folder/preview",
+        json={"folder_path": str(tmp_path), "modified_before": "03.09.2025"},
+    )
+
+    data = response.get_json()
+    assert data["ok"] is False
+    assert "YYYY-MM-DD" in data["error"]
+
+
+def test_scan_folder_preview_rejects_future_modified_before(tmp_path: Path):
+    client = app_module.flask_app.test_client()
+    future_date = (datetime.now() + timedelta(days=1)).date().isoformat()
+
+    response = client.post(
+        "/scan-folder/preview",
+        json={"folder_path": str(tmp_path), "modified_before": future_date},
+    )
+
+    data = response.get_json()
+    assert data["ok"] is False
+    assert "fremtidig" in data["error"]
 
 
 def test_scan_folder_endpoint_returns_tooltip_summary_and_report(monkeypatch, tmp_path: Path):
@@ -208,6 +317,50 @@ def test_scan_folder_start_endpoint_tracks_background_progress(monkeypatch, tmp_
     assert all(row["report_id"] for row in status["files"])
 
 
+def test_scan_folder_start_tracks_age_filter_and_excluded_files(monkeypatch, tmp_path: Path):
+    old_file = _write(tmp_path / "old.txt")
+    _write(tmp_path / "new.txt")
+    cutoff = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
+    os.utime(old_file, (cutoff.timestamp() - 60, cutoff.timestamp() - 60))
+
+    def fake_scan_file(path, **kwargs):
+        p = Path(path)
+        return ScanResult(
+            file_name=p.name,
+            source_path=str(p),
+            file_size=1,
+            text_length=1,
+            text_preview="x",
+        )
+
+    monkeypatch.setattr(folder_routes, "_scan_file", fake_scan_file)
+    with app_module.app_state.folder_jobs_lock:
+        app_module.app_state.folder_jobs.clear()
+    client = app_module.flask_app.test_client()
+
+    started = client.post(
+        "/scan-folder/start",
+        json={
+            "folder_path": str(tmp_path),
+            "modified_before": cutoff.date().isoformat(),
+        },
+    ).get_json()
+
+    status = {}
+    for _ in range(50):
+        status = client.get(f"/scan-folder/status/{started['job_id']}").get_json()
+        if status["status"] == "completed":
+            break
+        time.sleep(0.05)
+
+    assert status["status"] == "completed"
+    assert status["modified_before"] == cutoff.date().isoformat()
+    assert status["age_excluded_count"] == 1
+    assert status["metadata_error_count"] == 0
+    assert status["total"] == 1
+    assert [row["relative_path"] for row in status["files"]] == ["old.txt"]
+
+
 def test_scan_folder_start_includes_requested_access_check(monkeypatch, tmp_path: Path):
     _write(tmp_path / "root.txt")
     observed_access_flags = []
@@ -298,6 +451,9 @@ def test_folder_export_and_audit_endpoints_write_files(monkeypatch, tmp_path: Pa
             "total": 1,
             "completed": 1,
             "truncated": False,
+            "modified_before": "2025-09-03",
+            "age_excluded_count": 7,
+            "metadata_error_count": 1,
             "files": [row],
         }
     monkeypatch.setattr(app_module, "_downloads_dir", lambda: tmp_path)
@@ -318,8 +474,11 @@ def test_folder_export_and_audit_endpoints_write_files(monkeypatch, tmp_path: Pa
     html_export = next(tmp_path.glob("xlent-folder-audit-*.html"))
     pdf_export = next(tmp_path.glob("xlent-folder-audit-*.pdf"))
     assert "KDA LIMITED" in json_export.read_text(encoding="utf-8")
+    assert '"modified_before": "2025-09-03"' in json_export.read_text(encoding="utf-8")
     assert "purview_classification" in csv_export.read_text(encoding="utf-8-sig")
+    assert "filter_modified_before" in csv_export.read_text(encoding="utf-8-sig")
     html_report = html_export.read_text(encoding="utf-8")
+    assert "Sist endret før: 2025-09-03" in html_report
     assert '<span class="purview-badge purview-limited">KDA LIMITED</span>' in html_report
     import fitz
 

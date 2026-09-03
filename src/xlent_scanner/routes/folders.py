@@ -94,10 +94,21 @@ def _folder_scan_options(data: dict) -> dict:
             return value.strip().lower() in {"1", "true", "yes", "on"}
         return bool(value)
 
+    raw_modified_before = str(data.get("modified_before") or "").strip()
+    modified_before = None
+    if raw_modified_before:
+        try:
+            modified_before = datetime.strptime(raw_modified_before, "%Y-%m-%d")
+        except ValueError:
+            raise ValueError("modified_before må være en gyldig dato i formatet YYYY-MM-DD.") from None
+        if modified_before.date() > datetime.now().date():
+            raise ValueError("modified_before kan ikke være en fremtidig dato.")
+
     return {
         "recursive": _bool("recursive", False),
         "max_files": _int("max_files", DEFAULT_FOLDER_MAX_FILES, 1, 10_000),
         "max_depth": _int("max_depth", DEFAULT_FOLDER_MAX_DEPTH, 0, 50),
+        "modified_before": modified_before,
     }
 
 
@@ -176,6 +187,9 @@ def folder_job_snapshot(job_id: str) -> dict | None:
         "truncated": job.get("truncated", False),
         "max_files": job.get("max_files", DEFAULT_FOLDER_MAX_FILES),
         "max_depth": job.get("max_depth", DEFAULT_FOLDER_MAX_DEPTH),
+        "modified_before": job.get("modified_before", ""),
+        "age_excluded_count": job.get("age_excluded_count", 0),
+        "metadata_error_count": job.get("metadata_error_count", 0),
         "cancel_requested": job.get("cancel_requested", False),
         "error": job.get("error", ""),
         "files": list(job.get("files", [])),
@@ -258,6 +272,9 @@ def _folder_export_rows(job: dict, language: str = "nb") -> list[dict]:
                 f"{finding.get('category', '')}: {finding.get('text', '')}"
                 for finding in (row.get("findings_summary") or [])
             ),
+            "filter_modified_before": job.get("modified_before", ""),
+            "filter_age_excluded_count": job.get("age_excluded_count", 0),
+            "filter_metadata_error_count": job.get("metadata_error_count", 0),
         })
     return rows
 
@@ -323,6 +340,9 @@ def _folder_audit_html(job_id: str, job: dict, language: str = "nb") -> str:
     <div>Mappe: {html.escape(str(job.get("folder", "")))}</div>
     <div>Tidspunkt: {datetime.now().isoformat(timespec="seconds")}</div>
     <div>Rekursiv: {html.escape(str(job.get("recursive", False)))}</div>
+    <div>Sist endret før: {html.escape(str(job.get("modified_before") or "Alle filer"))}</div>
+    <div>Utelatt på grunn av dato: {html.escape(str(job.get("age_excluded_count", 0)))}</div>
+    <div>Utelatt på grunn av metadatafeil: {html.escape(str(job.get("metadata_error_count", 0)))}</div>
     <div>Filer: {html.escape(str(job.get("completed", 0)))} / {html.escape(str(job.get("total", 0)))}</div>
     <div>Status: {html.escape(str(job.get("status", "")))}</div>
   </div>
@@ -359,6 +379,9 @@ def _run_folder_scan_job(
             "truncated": plan["truncated"],
             "max_files": plan["max_files"],
             "max_depth": plan["max_depth"],
+            "modified_before": plan["modified_before"],
+            "age_excluded_count": plan["age_excluded_count"],
+            "metadata_error_count": plan["metadata_error_count"],
         })
         root = Path(folder_path)
         access_cache: dict[str, dict] = {}
@@ -456,6 +479,9 @@ def scan_folder_preview_endpoint():
             "max_depth": plan["max_depth"],
             "samples": plan["samples"],
             "excluded_dirs": plan["excluded_dirs"],
+            "modified_before": plan["modified_before"],
+            "age_excluded_count": plan["age_excluded_count"],
+            "metadata_error_count": plan["metadata_error_count"],
         })
     except Exception as exc:
         LOGGER.error("scan-folder preview failed: %s", traceback.format_exc())
@@ -515,6 +541,9 @@ def scan_folder_endpoint():
             "max_files": plan["max_files"],
             "max_depth": plan["max_depth"],
             "recursive": plan["recursive"],
+            "modified_before": plan["modified_before"],
+            "age_excluded_count": plan["age_excluded_count"],
+            "metadata_error_count": plan["metadata_error_count"],
         })
     except Exception as exc:
         LOGGER.error("scan-folder endpoint failed: %s", traceback.format_exc())
@@ -550,6 +579,12 @@ def scan_folder_start_endpoint():
             "truncated": False,
             "max_files": opts["max_files"],
             "max_depth": opts["max_depth"],
+            "modified_before": (
+                opts["modified_before"].date().isoformat()
+                if opts["modified_before"] else ""
+            ),
+            "age_excluded_count": 0,
+            "metadata_error_count": 0,
             "cancel_requested": False,
             "error": "",
             "files": [],
@@ -599,6 +634,9 @@ def folder_export_json_endpoint():
             "total": job.get("total", 0),
             "completed": job.get("completed", 0),
             "truncated": job.get("truncated", False),
+            "modified_before": job.get("modified_before", ""),
+            "age_excluded_count": job.get("age_excluded_count", 0),
+            "metadata_error_count": job.get("metadata_error_count", 0),
             "files": _folder_export_rows(job, language),
         }
         out = _unique_download_path(f"xlent-folder-scan-{job_id[:8]}", ".json")
@@ -663,6 +701,8 @@ def folder_export_csv_endpoint():
             "file_size", "text_length", "purview_status", "purview_classification",
             "purview_label_id", "purview_source", "purview_error", "access_status", "sharepoint_access_status",
             "sharepoint_identities", "error", "warning", "top_findings",
+            "filter_modified_before", "filter_age_excluded_count",
+            "filter_metadata_error_count",
         ]
         writer = csv.DictWriter(buf, fieldnames=fieldnames, extrasaction="ignore")
         writer.writeheader()
@@ -703,6 +743,9 @@ def folder_audit_pdf_endpoint():
             f"Jobb: {job_id}",
             f"Mappe: {job.get('folder', '')}",
             f"Status: {job.get('status', '')}",
+            f"Sist endret før: {job.get('modified_before') or 'Alle filer'}",
+            f"Utelatt på grunn av dato: {job.get('age_excluded_count', 0)}",
+            f"Utelatt på grunn av metadatafeil: {job.get('metadata_error_count', 0)}",
             f"Filer: {job.get('completed', 0)} / {job.get('total', 0)}",
             "",
         ]

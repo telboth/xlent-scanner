@@ -8,6 +8,7 @@ import time
 import warnings
 from collections.abc import Iterable
 from contextvars import ContextVar
+from datetime import datetime
 from pathlib import Path
 
 import fitz  # type: ignore[import-untyped]  # fallback PDF-parser
@@ -793,6 +794,7 @@ def build_folder_scan_plan(
     max_files: int = DEFAULT_FOLDER_MAX_FILES,
     max_depth: int = DEFAULT_FOLDER_MAX_DEPTH,
     excluded_dirs: set[str] | None = None,
+    modified_before: datetime | None = None,
 ) -> dict:
     """Finn støttede filer i en mappe uten å lese filinnhold."""
     root = Path(folder)
@@ -806,11 +808,22 @@ def build_folder_scan_plan(
     files: list[Path] = []
     folder_count = 0
     truncated = False
+    age_excluded_count = 0
+    metadata_error_count = 0
+    modified_before_timestamp = modified_before.timestamp() if modified_before else None
 
     def add_file(path: Path) -> bool:
-        nonlocal truncated
+        nonlocal age_excluded_count, metadata_error_count, truncated
         if path.suffix.lower() not in SUPPORTED_SUFFIXES:
             return True
+        if modified_before_timestamp is not None:
+            try:
+                if path.stat().st_mtime >= modified_before_timestamp:
+                    age_excluded_count += 1
+                    return True
+            except OSError:
+                metadata_error_count += 1
+                return True
         if len(files) >= max_files:
             truncated = True
             return False
@@ -857,6 +870,9 @@ def build_folder_scan_plan(
         "files": files,
         "samples": samples,
         "excluded_dirs": sorted(excluded),
+        "modified_before": modified_before.date().isoformat() if modified_before else "",
+        "age_excluded_count": age_excluded_count,
+        "metadata_error_count": metadata_error_count,
     }
 
 
@@ -874,6 +890,7 @@ def scan_folder(
     include_purview_classification: bool = True,
     graph_drive_id: str | None = None,
     graph_sync_root: str | None = None,
+    modified_before: datetime | None = None,
 ) -> list[ScanResult]:
     """Skann alle støttede filer i en mappe. Returnerer resultater sortert etter risikonivå."""
     plan = build_folder_scan_plan(
@@ -881,6 +898,7 @@ def scan_folder(
         recursive=recursive,
         max_files=max_files,
         max_depth=max_depth,
+        modified_before=modified_before,
     )
     root = Path(folder)
     results = []

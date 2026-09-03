@@ -337,10 +337,11 @@
       font-size: 12px; color: var(--muted);
     }
     .folder-options label { display: inline-flex; align-items: center; gap: 6px; }
-    .folder-options input[type="number"] {
+    .folder-options input[type="number"], .folder-options input[type="date"], .folder-options select {
       width: 72px; padding: 4px 6px; border: 1px solid var(--border);
       border-radius: 6px; background: var(--panel); color: var(--text);
     }
+    .folder-options input[type="date"], .folder-options select { width: auto; }
     .folder-progress {
       display: none; align-items: center; gap: 8px; flex-wrap: wrap;
       font-size: 12px; color: var(--muted);
@@ -1025,6 +1026,17 @@
           <label data-i18n-title="folderRecursiveTooltip" title="Skanner også alle støttede filer i undermapper. Bruk maks filer og maks dybde for å holde jobben kontrollert."><input type="checkbox" id="folder-recursive"> <span data-i18n="folderRecursive">Skann også undermapper</span></label>
           <label><span data-i18n="folderMaxFiles">Maks filer</span> <input type="number" id="folder-max-files" min="1" max="10000" value="500"></label>
           <label><span data-i18n="folderMaxDepth">Maks dybde</span> <input type="number" id="folder-max-depth" min="0" max="50" value="5"></label>
+          <label><span data-i18n="folderFileAge">Filalder</span>
+            <select id="folder-file-age">
+              <option value="all" data-i18n="folderAgeAll" selected>Alle filer</option>
+              <option value="1" data-i18n="folderAgeOneYear">Eldre enn 1 år</option>
+              <option value="2" data-i18n="folderAgeTwoYears">Eldre enn 2 år</option>
+              <option value="5" data-i18n="folderAgeFiveYears">Eldre enn 5 år</option>
+              <option value="custom" data-i18n="folderAgeCustom">Egendefinert dato</option>
+            </select>
+          </label>
+          <label id="folder-modified-before-wrap" style="display:none;"><span data-i18n="folderModifiedBefore">Sist endret før</span> <input type="date" id="folder-modified-before"></label>
+          <span id="folder-age-cutoff" class="muted"></span>
         </div>
         <div id="folder-results" style="display:none;"></div>
         <dialog id="folder-redact-dialog" class="folder-redact-dialog">
@@ -2304,6 +2316,19 @@
         folderRecursiveTooltip:"Skanner også alle støttede filer i undermapper. Bruk maks filer og maks dybde for å holde jobben kontrollert.",
         folderMaxFiles:     "Maks filer",
         folderMaxDepth:     "Maks dybde",
+        folderFileAge:      "Filalder",
+        folderAgeAll:       "Alle filer",
+        folderAgeOneYear:   "Eldre enn 1 år",
+        folderAgeTwoYears:  "Eldre enn 2 år",
+        folderAgeFiveYears: "Eldre enn 5 år",
+        folderAgeCustom:    "Egendefinert dato",
+        folderModifiedBefore:"Sist endret før",
+        folderAgeCutoff:    "Sist endret før {date}",
+        folderAgeExcluded:  "{n} filer ble utelatt på grunn av dato.",
+        folderAgeExcludedMinimum:"Minst {n} filer ble utelatt på grunn av dato.",
+        folderAgeMetadataErrors:"Endringsdato kunne ikke leses for {n} filer; disse ble ikke skannet.",
+        folderAgeMetadataErrorsMinimum:"Endringsdato kunne ikke leses for minst {n} filer; disse ble ikke skannet.",
+        folderNoAgeMatches: "Ingen filer samsvarer med valgt aldersfilter.",
         folderPreview:      "Fant {files} støttede filer i {folders} mapper. Skanning startet.",
         folderPreviewTruncated:"Fant minst {files} støttede filer i {folders} mapper. Listen er avkortet ved maksgrensen. Skanning startet.",
         folderTruncated:    "Avkortet ved maksgrensen ({n} filer).",
@@ -2782,6 +2807,19 @@
         folderRecursiveTooltip:"Skannar även alla stödda filer i undermappar. Använd max antal filer och max djup för att hålla jobbet kontrollerat.",
         folderMaxFiles:     "Max filer",
         folderMaxDepth:     "Max djup",
+        folderFileAge:      "Filålder",
+        folderAgeAll:       "Alla filer",
+        folderAgeOneYear:   "Äldre än 1 år",
+        folderAgeTwoYears:  "Äldre än 2 år",
+        folderAgeFiveYears: "Äldre än 5 år",
+        folderAgeCustom:    "Eget datum",
+        folderModifiedBefore:"Senast ändrad före",
+        folderAgeCutoff:    "Senast ändrad före {date}",
+        folderAgeExcluded:  "{n} filer uteslöts på grund av datum.",
+        folderAgeExcludedMinimum:"Minst {n} filer uteslöts på grund av datum.",
+        folderAgeMetadataErrors:"Ändringsdatum kunde inte läsas för {n} filer; de skannades inte.",
+        folderAgeMetadataErrorsMinimum:"Ändringsdatum kunde inte läsas för minst {n} filer; de skannades inte.",
+        folderNoAgeMatches: "Inga filer matchar valt åldersfilter.",
         folderPreview:      "Hittade {files} filer som stöds i {folders} mappar. Skanning startad.",
         folderPreviewTruncated:"Hittade minst {files} filer som stöds i {folders} mappar. Listan är avkortad vid maxgränsen. Skanning startad.",
         folderTruncated:    "Avkortad vid maxgränsen ({n} filer).",
@@ -3265,6 +3303,19 @@
         folderRecursiveTooltip:"Also scans all supported files in subfolders. Use maximum files and maximum depth to keep the job controlled.",
         folderMaxFiles:     "Max files",
         folderMaxDepth:     "Max depth",
+        folderFileAge:      "File age",
+        folderAgeAll:       "All files",
+        folderAgeOneYear:   "Older than 1 year",
+        folderAgeTwoYears:  "Older than 2 years",
+        folderAgeFiveYears: "Older than 5 years",
+        folderAgeCustom:    "Custom date",
+        folderModifiedBefore:"Last modified before",
+        folderAgeCutoff:    "Last modified before {date}",
+        folderAgeExcluded:  "{n} files were excluded by date.",
+        folderAgeExcludedMinimum:"At least {n} files were excluded by date.",
+        folderAgeMetadataErrors:"The modified date could not be read for {n} files; they were not scanned.",
+        folderAgeMetadataErrorsMinimum:"The modified date could not be read for at least {n} files; they were not scanned.",
+        folderNoAgeMatches: "No files match the selected age filter.",
         folderPreview:      "Found {files} supported files in {folders} folders. Scan started.",
         folderPreviewTruncated:"Found at least {files} supported files in {folders} folders. The list is capped at the limit. Scan started.",
         folderTruncated:    "Capped at the max limit ({n} files).",
@@ -3842,6 +3893,19 @@
         folderRecursiveTooltip:"Scannt auch alle unterstützten Dateien in Unterordnern. Verwenden Sie maximale Dateianzahl und maximale Tiefe, um den Job kontrolliert zu halten.",
         folderMaxFiles:      "Max. Dateien",
         folderMaxDepth:      "Max. Tiefe",
+        folderFileAge:       "Dateialter",
+        folderAgeAll:        "Alle Dateien",
+        folderAgeOneYear:    "Älter als 1 Jahr",
+        folderAgeTwoYears:   "Älter als 2 Jahre",
+        folderAgeFiveYears:  "Älter als 5 Jahre",
+        folderAgeCustom:     "Benutzerdefiniertes Datum",
+        folderModifiedBefore:"Zuletzt geändert vor",
+        folderAgeCutoff:     "Zuletzt geändert vor {date}",
+        folderAgeExcluded:   "{n} Dateien wurden aufgrund des Datums ausgeschlossen.",
+        folderAgeExcludedMinimum:"Mindestens {n} Dateien wurden aufgrund des Datums ausgeschlossen.",
+        folderAgeMetadataErrors:"Das Änderungsdatum konnte für {n} Dateien nicht gelesen werden; sie wurden nicht gescannt.",
+        folderAgeMetadataErrorsMinimum:"Das Änderungsdatum konnte für mindestens {n} Dateien nicht gelesen werden; sie wurden nicht gescannt.",
+        folderNoAgeMatches:  "Keine Dateien entsprechen dem gewählten Altersfilter.",
         folderPreview:       "{files} unterstützte Dateien in {folders} Ordnern gefunden. Scan gestartet.",
         folderPreviewTruncated:"Mindestens {files} unterstützte Dateien in {folders} Ordnern gefunden. Die Liste wurde am Limit gekürzt. Scan gestartet.",
         folderTruncated:     "Am Maximalwert gekürzt ({n} Dateien).",
@@ -4335,6 +4399,19 @@
         folderRecursiveTooltip:"Analyse aussi tous les fichiers pris en charge dans les sous-dossiers. Utilisez le nombre maximal de fichiers et la profondeur maximale pour garder la tâche maîtrisée.",
         folderMaxFiles:      "Fichiers max.",
         folderMaxDepth:      "Profondeur max.",
+        folderFileAge:       "Âge du fichier",
+        folderAgeAll:        "Tous les fichiers",
+        folderAgeOneYear:    "Plus ancien qu’un an",
+        folderAgeTwoYears:   "Plus ancien que 2 ans",
+        folderAgeFiveYears:  "Plus ancien que 5 ans",
+        folderAgeCustom:     "Date personnalisée",
+        folderModifiedBefore:"Dernière modification avant",
+        folderAgeCutoff:     "Dernière modification avant le {date}",
+        folderAgeExcluded:   "{n} fichiers ont été exclus selon leur date.",
+        folderAgeExcludedMinimum:"Au moins {n} fichiers ont été exclus selon leur date.",
+        folderAgeMetadataErrors:"La date de modification de {n} fichiers n’a pas pu être lue; ils n’ont pas été analysés.",
+        folderAgeMetadataErrorsMinimum:"La date de modification d’au moins {n} fichiers n’a pas pu être lue; ils n’ont pas été analysés.",
+        folderNoAgeMatches:  "Aucun fichier ne correspond au filtre d’âge sélectionné.",
         folderPreview:       "{files} fichiers pris en charge trouvés dans {folders} dossiers. Analyse lancée.",
         folderPreviewTruncated:"Au moins {files} fichiers pris en charge trouvés dans {folders} dossiers. La liste est limitée au maximum. Analyse lancée.",
         folderTruncated:     "Limité au maximum ({n} fichiers).",
@@ -4828,6 +4905,19 @@
         folderRecursiveTooltip:"También escanea todos los archivos compatibles en subcarpetas. Use máximo de archivos y profundidad máxima para mantener el trabajo controlado.",
         folderMaxFiles:      "Máx. archivos",
         folderMaxDepth:      "Profundidad máx.",
+        folderFileAge:       "Antigüedad del archivo",
+        folderAgeAll:        "Todos los archivos",
+        folderAgeOneYear:    "Más antiguo de 1 año",
+        folderAgeTwoYears:   "Más antiguo de 2 años",
+        folderAgeFiveYears:  "Más antiguo de 5 años",
+        folderAgeCustom:     "Fecha personalizada",
+        folderModifiedBefore:"Última modificación anterior a",
+        folderAgeCutoff:     "Última modificación anterior a {date}",
+        folderAgeExcluded:   "Se excluyeron {n} archivos por fecha.",
+        folderAgeExcludedMinimum:"Se excluyeron al menos {n} archivos por fecha.",
+        folderAgeMetadataErrors:"No se pudo leer la fecha de modificación de {n} archivos; no se analizaron.",
+        folderAgeMetadataErrorsMinimum:"No se pudo leer la fecha de modificación de al menos {n} archivos; no se analizaron.",
+        folderNoAgeMatches:  "Ningún archivo coincide con el filtro de antigüedad seleccionado.",
         folderPreview:       "Se encontraron {files} archivos compatibles en {folders} carpetas. Escaneo iniciado.",
         folderPreviewTruncated:"Se encontraron al menos {files} archivos compatibles en {folders} carpetas. La lista se limita al máximo. Escaneo iniciado.",
         folderTruncated:     "Limitado al máximo ({n} archivos).",
@@ -5091,6 +5181,7 @@
       renderWhitelistPath();
       renderBlacklistPath();
       renderLogPath();
+      _syncFolderAgeControl();
       loadNerStatus();
       if (!ignoreMsgEl.textContent || ignoreMsgEl.dataset.mode === "hint") {
         setIgnoreMessage(t("ignoreHint"), "var(--muted)", "hint");
@@ -8888,18 +8979,70 @@
     function getFolderOpts() {
       const maxFiles = Number(document.getElementById("folder-max-files")?.value || 500);
       const maxDepth = Number(document.getElementById("folder-max-depth")?.value || 5);
+      const ageChoice = document.getElementById("folder-file-age")?.value || "all";
+      const customDate = document.getElementById("folder-modified-before")?.value || "";
+      const modifiedBefore = ageChoice === "custom"
+        ? customDate
+        : (["1", "2", "5"].includes(ageChoice) ? _folderYearsAgo(Number(ageChoice)) : "");
       return {
         recursive: document.getElementById("folder-recursive")?.checked === true,
         max_files: Number.isFinite(maxFiles) ? Math.max(1, Math.min(maxFiles, 10000)) : 500,
         max_depth: Number.isFinite(maxDepth) ? Math.max(0, Math.min(maxDepth, 50)) : 5,
+        modified_before: modifiedBefore,
       };
     }
 
+    function _folderIsoDate(date) {
+      return [
+        date.getFullYear(),
+        String(date.getMonth() + 1).padStart(2, "0"),
+        String(date.getDate()).padStart(2, "0"),
+      ].join("-");
+    }
+
+    function _folderToday() {
+      return _folderIsoDate(new Date());
+    }
+
+    function _folderYearsAgo(years) {
+      const today = new Date();
+      const year = today.getFullYear() - years;
+      const month = today.getMonth();
+      const day = Math.min(today.getDate(), new Date(year, month + 1, 0).getDate());
+      return _folderIsoDate(new Date(year, month, day));
+    }
+
+    function _syncFolderAgeControl() {
+      const choice = document.getElementById("folder-file-age")?.value || "all";
+      const wrap = document.getElementById("folder-modified-before-wrap");
+      const input = document.getElementById("folder-modified-before");
+      const cutoffLabel = document.getElementById("folder-age-cutoff");
+      if (wrap) wrap.style.display = choice === "custom" ? "inline-flex" : "none";
+      if (input) {
+        input.max = _folderToday();
+        if (choice === "custom" && !input.value) input.value = _folderYearsAgo(1);
+      }
+      const cutoff = ["1", "2", "5"].includes(choice) ? _folderYearsAgo(Number(choice)) : "";
+      if (cutoffLabel) cutoffLabel.textContent = cutoff ? t("folderAgeCutoff").replace("{date}", cutoff) : "";
+    }
+
+    document.getElementById("folder-file-age")?.addEventListener("change", _syncFolderAgeControl);
+    _syncFolderAgeControl();
+
     function _folderPreviewText(preview) {
       const key = preview.truncated ? "folderPreviewTruncated" : "folderPreview";
-      return t(key)
+      let text = t(key)
         .replace("{files}", preview.file_count)
         .replace("{folders}", preview.folder_count);
+      if (preview.age_excluded_count) {
+        const excludedKey = preview.truncated ? "folderAgeExcludedMinimum" : "folderAgeExcluded";
+        text += " " + t(excludedKey).replace("{n}", preview.age_excluded_count);
+      }
+      if (preview.metadata_error_count) {
+        const errorsKey = preview.truncated ? "folderAgeMetadataErrorsMinimum" : "folderAgeMetadataErrors";
+        text += " " + t(errorsKey).replace("{n}", preview.metadata_error_count);
+      }
+      return text;
     }
 
     let _folderJobId = "";
@@ -9039,7 +9182,12 @@
           fs.style.color = "#f44336"; fs.textContent = `${t("folderError")} ${preview.error || ""}`; return;
         }
         if (!preview.file_count) {
-          fs.style.color = "var(--muted)"; fs.textContent = t("folderNoFiles"); return;
+          const ageFiltered = Boolean(folderOpts.modified_before);
+          fs.style.color = "var(--muted)";
+          fs.textContent = ageFiltered
+            ? _folderPreviewText(preview) + " " + t("folderNoAgeMatches")
+            : t("folderNoFiles");
+          return;
         }
         const opts = getOpts();
         const started = await _folderPost("/scan-folder/start", {

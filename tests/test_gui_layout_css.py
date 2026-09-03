@@ -608,6 +608,19 @@ def test_recursive_folder_scan_controls_are_wired():
         "folderRecursive",
         "folderMaxFiles",
         "folderMaxDepth",
+        "folderFileAge",
+        "folderAgeAll",
+        "folderAgeOneYear",
+        "folderAgeTwoYears",
+        "folderAgeFiveYears",
+        "folderAgeCustom",
+        "folderModifiedBefore",
+        "folderAgeCutoff",
+        "folderAgeExcluded",
+        "folderAgeExcludedMinimum",
+        "folderAgeMetadataErrors",
+        "folderAgeMetadataErrorsMinimum",
+        "folderNoAgeMatches",
         "folderPreview",
         "folderPreviewTruncated",
         "folderTruncated",
@@ -660,6 +673,9 @@ def test_recursive_folder_scan_controls_are_wired():
     assert 'id="folder-recursive"' in html
     assert 'id="folder-max-files"' in html
     assert 'id="folder-max-depth"' in html
+    assert 'id="folder-file-age"' in html
+    assert 'id="folder-modified-before"' in html
+    assert 'id="folder-age-cutoff"' in html
     assert 'id="btn-cancel-folder"' in html
     assert 'id="folder-progress"' in html
     assert 'fetch(`${API}/scan-folder/preview`' in html
@@ -670,6 +686,14 @@ def test_recursive_folder_scan_controls_are_wired():
     assert '_folderPost(`/scan-folder/cancel/${encodeURIComponent(_folderJobId)}`)' in html
     assert "function getFolderOpts()" in html
     assert "recursive: document.getElementById(\"folder-recursive\")?.checked === true" in html
+    assert "modified_before: modifiedBefore" in html
+    assert "function _folderYearsAgo(" in html
+    assert "function _folderToday(" in html
+    assert "function _syncFolderAgeControl()" in html
+    assert "input.max = _folderToday()" in html
+    assert 't("folderAgeCutoff").replace("{date}", cutoff)' in html
+    assert 'preview.truncated ? "folderAgeExcludedMinimum" : "folderAgeExcluded"' in html
+    assert 'preview.truncated ? "folderAgeMetadataErrorsMinimum" : "folderAgeMetadataErrors"' in html
     assert "relative_path || file.file_name" in html
     assert "function _folderTooltipHtml(file)" in html
     assert "findings_summary" in html

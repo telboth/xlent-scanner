@@ -1,6 +1,6 @@
 # XLENT Compliance-scanner
 
-> **v1.9.19** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
+> **v1.9.20** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
 
 Scanning kjøres lokalt som standard. Dokumenttekst sendes bare til en annen maskin
 når brukeren både konfigurerer en ekstern Ollama-adresse og gir eksplisitt tillatelse.
@@ -226,7 +226,15 @@ Finder-hurtighandlingen installeres automatisk av `install_macos.sh`. Hvis den m
 
 Mappe-modus skanner som standard bare filer direkte i valgt mappe. Huk av **Skann også undermapper** for rekursiv skanning.
 
+Filteret **Filalder** kan begrense skanningen til filer som sist ble endret før en
+valgt dato. Hurtigvalg finnes for ett, to og fem år, i tillegg til egendefinert
+dato. **Alle filer** er standard. Filer uten lesbar endringsdato utelates når
+aldersfilteret er aktivt og telles separat i forhåndsvisningen og rapportene.
+Filteret bruker filsystemets «sist endret»-tidspunkt; dette er ikke nødvendigvis
+dokumentets faktiske alder etter kopiering, migrering eller synkronisering.
+
 Sikkerhetsgrenser:
+
 - **Maks filer**: default `500`, hard grense `10000`
 - **Maks dybde**: default `5`, hard grense `50`
 - Før scanning teller appen støttede filer og ber bruker bekrefte
@@ -492,6 +500,12 @@ src/xlent_scanner/
 ---
 
 ## Endringslogg
+
+### v1.9.20
+
+- Legger til aldersfilter i mappeskann for alle filer, faste grenser på 1, 2 eller 5 år og egendefinert dato.
+- Viser beregnet grensedato, avviser fremtidige datoer og oppgir minimumstall når forhåndsvisningen er avkortet.
+- Tar med valgt aldersfilter og antall utelatte filer i status og eksporterte rapporter.
 
 ### v1.9.19
 
