@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from xlent_scanner import app as app_module
@@ -34,3 +35,48 @@ def test_audit_endpoints_list_verify_and_export(monkeypatch, tmp_path: Path) -> 
     assert verification["integrity"]["ok"] is True
     assert exported["ok"] is True
     assert Path(exported["path"]).is_file()
+
+
+def test_audit_events_supports_local_scan_log_filters(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setattr(audit_trail, "app_data_dir", lambda: tmp_path)
+    now = datetime.now(timezone.utc)
+    trail = AuditTrail(tmp_path)
+    trail.record_event(
+        "scan_completed",
+        document_path=tmp_path / "old.docx",
+        scan_mode="standard",
+        outcome="success",
+        risk_level="grønn",
+        occurred_at=(now - timedelta(days=45)).isoformat(),
+    )
+    trail.record_event(
+        "redaction_created",
+        document_path=tmp_path / "recent.docx",
+        scan_mode="standard",
+        outcome="success",
+        risk_level="grønn",
+        occurred_at=now.isoformat(),
+    )
+    trail.record_event(
+        "ai_scan_completed",
+        document_path=tmp_path / "recent.docx",
+        scan_mode="ai_deep",
+        outcome="partial",
+        risk_level="rød",
+        occurred_at=now.isoformat(),
+    )
+    client = app_module.flask_app.test_client()
+
+    response = client.get(
+        "/audit/events?event_scope=scans&days=30&scan_mode=ai_deep"
+        "&risk_level=r%C3%B8d&outcome=partial&path_mode=name&limit=10000"
+    )
+    payload = response.get_json()
+
+    assert response.status_code == 200
+    assert [entry["event_type"] for entry in payload["entries"]] == [
+        "ai_scan_completed"
+    ]
+    assert payload["entries"][0]["document_name"] == "recent.docx"
+    assert client.get("/audit/events?days=31").status_code == 400
+    assert client.get("/audit/events?event_scope=unknown").status_code == 400

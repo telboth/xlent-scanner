@@ -16,7 +16,7 @@ from collections import Counter
 from datetime import datetime, timedelta, timezone
 from html import escape
 from pathlib import Path
-from typing import Any
+from typing import Any, Sequence
 
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
@@ -376,15 +376,40 @@ class AuditTrail:
         *,
         limit: int = 200,
         event_type: str = "",
+        event_types: Sequence[str] = (),
+        since: datetime | None = None,
+        scan_mode: str = "",
+        risk_level: str = "",
+        outcome: str = "",
         path_mode: str = "none",
     ) -> list[dict[str, Any]]:
         if path_mode not in {"none", "name", "full"}:
             raise ValueError("path_mode må være none, name eller full")
         query = "SELECT * FROM audit_events"
         params: list[object] = []
+        conditions: list[str] = []
         if event_type:
-            query += " WHERE event_type = ?"
+            conditions.append("event_type = ?")
             params.append(event_type)
+        elif event_types:
+            normalized_types = tuple(str(value) for value in event_types if value)
+            if normalized_types:
+                placeholders = ", ".join("?" for _ in normalized_types)
+                conditions.append(f"event_type IN ({placeholders})")
+                params.extend(normalized_types)
+        if since is not None:
+            conditions.append("julianday(occurred_at) >= julianday(?)")
+            params.append(since.isoformat())
+        for column, value in (
+            ("scan_mode", scan_mode),
+            ("risk_level", risk_level),
+            ("outcome", outcome),
+        ):
+            if value:
+                conditions.append(f"{column} = ?")
+                params.append(value)
+        if conditions:
+            query += " WHERE " + " AND ".join(conditions)
         query += " ORDER BY sequence DESC LIMIT ?"
         params.append(max(1, min(int(limit), 10_000)))
         with self._connect() as connection:
@@ -518,9 +543,9 @@ class AuditTrail:
         )
         status = "Bestått" if payload["integrity"]["ok"] else "BRUDD OPPDAGET"
         html = f"""<!doctype html><html lang="nb"><meta charset="utf-8">
-<title>XLENT Revisjonsspor</title>
+<title>XLENT Lokal skannelogg</title>
 <style>body{{font:14px system-ui;margin:32px;color:#243230}}table{{border-collapse:collapse;width:100%}}th,td{{padding:8px;border-bottom:1px solid #ccd5d3;text-align:left}}th{{background:#edf1f0}}</style>
-<h1>Revisjonsspor</h1><p>Integritetskontroll: <strong>{status}</strong>. Hendelser: {len(payload['events'])}.</p>
+<h1>Lokal skannelogg</h1><p>Loggkontroll: <strong>{status}</strong>. Hendelser: {len(payload['events'])}.</p>
 <table><thead><tr><th>Tidspunkt</th><th>Hendelse</th><th>Filnavn</th><th>Modus</th><th>Resultat</th><th>Risiko</th><th>Funn</th></tr></thead><tbody>{rows}</tbody></table>
 </html>"""
         with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED) as archive:

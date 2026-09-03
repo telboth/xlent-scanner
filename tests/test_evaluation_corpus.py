@@ -39,7 +39,7 @@ def test_evaluate_corpus_scores_a_real_scanner_finding(tmp_path: Path) -> None:
 
     report = evaluate_corpus(tmp_path)
 
-    assert report["metadata"]["scanner_version"] == "1.9.18"
+    assert report["metadata"]["scanner_version"] == "1.9.19"
     assert report["metadata"]["corpus_versions"] == [1]
     assert report["metadata"]["scan_mode"] == "standard"
     assert report["summary"] == {

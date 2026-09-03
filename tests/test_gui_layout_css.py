@@ -227,15 +227,45 @@ def test_manual_redaction_terms_are_available_in_redaction_payload():
 def test_audit_trail_is_available_from_overflow_menu():
     html = HTML.read_text(encoding="utf-8")
 
+    assert "Lokal skannelogg" in html
     assert 'id="btn-audit-trail"' in html
     assert 'id="panel-audit"' in html
     assert 'id="audit-show-full-path"' in html
+    assert 'id="audit-search"' in html
+    assert 'id="audit-days-filter"' in html
+    assert '<option value="30" data-i18n="auditDays30" selected>' in html
+    assert '<option value="scans" data-i18n="auditScans" selected>' in html
+    assert 'id="audit-mode-filter"' in html
+    assert 'id="audit-risk-filter"' in html
+    assert 'id="audit-outcome-filter"' in html
+    assert 'id="btn-audit-reset"' in html
+    assert 'id="audit-result-count"' in html
     assert 'localStorage.getItem("xlent_audit_show_full_path")' in html
-    assert 'new URLSearchParams({path_mode: showFullPath ? "full" : "name"})' in html
+    assert 'path_mode: showFullPath ? "full" : "name"' in html
+    assert 'days,' in html
+    assert 'limit: "10000"' in html
+    assert 'params.set("event_scope", "scans")' in html
+    assert "function applyAuditSearch()" in html
+    assert "function resetAuditFilters()" in html
     assert 'fetch(`${API}/audit/events' in html
     assert 'fetch(`${API}/audit/verify`)' in html
     assert 'fetch(`${API}/audit/export`' in html
     assert 'id="btn-clear-audit"' not in html
+    for key in [
+        "auditScans",
+        "auditDays7",
+        "auditDays30",
+        "auditDays90",
+        "auditDaysAll",
+        "auditModeAll",
+        "auditRiskAll",
+        "auditOutcomeAll",
+        "auditSearchPlaceholder",
+        "auditReset",
+        "auditShowing",
+        "auditNoMatches",
+    ]:
+        assert html.count(f"{key}:") == 6
 
 
 def test_about_page_links_to_source_code():

@@ -1,7 +1,7 @@
 """Lokale ruter for det personvernminimerte revisjonssporet."""
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from flask import Blueprint, jsonify, request
@@ -21,13 +21,37 @@ def _downloads_dir() -> Path:
 def audit_events():
     limit = request.args.get("limit", 200, type=int) or 200
     event_type = str(request.args.get("event_type") or "")
+    event_scope = str(request.args.get("event_scope") or "")
+    days = str(request.args.get("days") or "")
+    scan_mode = str(request.args.get("scan_mode") or "")
+    risk_level = str(request.args.get("risk_level") or "")
+    outcome = str(request.args.get("outcome") or "")
     path_mode = str(request.args.get("path_mode") or "name")
     if path_mode not in {"none", "name", "full"}:
         return jsonify({"ok": False, "error": "Ugyldig path_mode."}), 400
+    if event_scope not in {"", "scans"}:
+        return jsonify({"ok": False, "error": "Ugyldig event_scope."}), 400
+    if days not in {"", "7", "30", "90", "all"}:
+        return jsonify({"ok": False, "error": "Ugyldig days."}), 400
+    if scan_mode not in {"", "standard", "ai_deep"}:
+        return jsonify({"ok": False, "error": "Ugyldig scan_mode."}), 400
+    if risk_level not in {"", "grønn", "gul", "rød", "svart"}:
+        return jsonify({"ok": False, "error": "Ugyldig risk_level."}), 400
+    if outcome not in {"", "success", "partial", "failed"}:
+        return jsonify({"ok": False, "error": "Ugyldig outcome."}), 400
+    since = None
+    if days and days != "all":
+        since = datetime.now(timezone.utc) - timedelta(days=int(days))
     trail = AuditTrail()
     entries = trail.query_events(
         limit=limit,
         event_type=event_type,
+        event_types=("scan_completed", "ai_scan_completed")
+        if event_scope == "scans" else (),
+        since=since,
+        scan_mode=scan_mode,
+        risk_level=risk_level,
+        outcome=outcome,
         path_mode=path_mode,
     )
     return jsonify({

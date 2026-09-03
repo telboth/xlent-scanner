@@ -52,7 +52,7 @@ def test_ai_evaluation_records_model_repetitions_and_stability(
     )
 
     assert report["metadata"] == {
-        "scanner_version": "1.9.18",
+        "scanner_version": "1.9.19",
         "corpus_versions": [1],
         "scan_mode": "ai_deep",
         "model": "llama3.2:3b",

@@ -1,6 +1,6 @@
 # XLENT Compliance-scanner
 
-> **v1.9.18** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
+> **v1.9.19** — Lokal scanner som oppdager sensitiv kundeinfo i dokumenter _før_ du limer dem inn i ChatGPT, Claude eller Copilot.
 
 Scanning kjøres lokalt som standard. Dokumenttekst sendes bare til en annen maskin
 når brukeren både konfigurerer en ekstern Ollama-adresse og gir eksplisitt tillatelse.
@@ -235,13 +235,15 @@ Sikkerhetsgrenser:
 
 Støttede filtyper: `pdf`, `docx`, `pptx`, `xlsx`, `txt`, `md`, `html`, `csv`, `eml`, `rtf`, `odt`.
 
-### Lokalt revisjonsspor
+### Lokal skannelogg
 
-**⋯ → Revisjonsspor** viser skanning, AI-dybdeskann, anonymisering og kontrollskann
-som separate hendelser. Standard- og AI-skann skilles eksplisitt, og AI-hendelser
-tar med modellnavn og tilgjengelig modelldigest.
+**⋯ → Lokal skannelogg** viser som standard skanninger fra de siste 30 dagene.
+Loggen kan søkes etter filnavn eller filsti og filtreres på tidsrom, skannemodus,
+risikonivå og resultat. Andre lokale hendelser, som anonymisering og kontrollskann,
+kan vises med filteret **Alle hendelser**. Standard- og AI-skann skilles eksplisitt,
+og AI-hendelser tar med modellnavn og tilgjengelig modelldigest.
 
-Revisjonssporet lagres lokalt i `audit.db` under appens brukerdata-mappe
+Skanneloggen lagres lokalt i `audit.db` under appens brukerdata-mappe
 (`%APPDATA%\xlent-scanner` på Windows). Det lagrer ikke dokumenttekst, funntekst
 eller prompt. Full filsti lagres kryptert, vises som standard i appen og kan skjules
 med valget **Vis full filsti**. Dokumentet får i tillegg en nøkkelbasert pseudonym ID.
@@ -490,6 +492,12 @@ src/xlent_scanner/
 ---
 
 ## Endringslogg
+
+### v1.9.19
+
+- Omdøper revisjonssporet til «Lokal skannelogg» og viser skanninger fra de siste 30 dagene som standard.
+- Legger til søk på filnavn og filsti samt filtre for periode, skannemodus, risiko, resultat og hendelsestype.
+- Beholder full filsti i lokal visning som standard, mens eksport fortsatt begrenses til filnavn.
 
 ### v1.9.18
 

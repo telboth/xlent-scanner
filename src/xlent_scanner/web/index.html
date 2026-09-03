@@ -168,7 +168,9 @@
     .audit-page { padding: 22px; gap: 14px; }
     .audit-toolbar { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
     .audit-toolbar select { padding:6px 8px; border:1px solid var(--border); border-radius:6px; background:var(--panel); color:var(--text); }
+    .audit-toolbar input[type="search"] { min-width:220px; flex:1 1 260px; padding:7px 9px; border:1px solid var(--border); border-radius:6px; background:var(--panel); color:var(--text); }
     .audit-path-toggle { display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--muted); }
+    .audit-result-count { font-size:12px; color:var(--muted); }
     .audit-integrity { padding:10px 12px; border:1px solid var(--border); border-radius:8px; background:var(--panel2); }
     .audit-table-wrap { overflow:auto; border:1px solid var(--border); border-radius:8px; }
     .audit-table { width:100%; border-collapse:collapse; font-size:12px; }
@@ -877,7 +879,7 @@
       <div class="top-menu-body">
         <button class="ctrl-btn top-update-btn" id="btn-check-updates-top" data-i18n="updateCheckTop">Se etter oppdateringer</button>
         <button class="ctrl-btn top-browser-btn" id="btn-open-in-browser-top" data-i18n="openInBrowserTop" data-i18n-title="openInBrowserTooltip" title="Åpner en egen nettleserversjon som fortsetter å fungere selv om desktopvinduet lukkes.">Åpne i nettleser</button>
-        <button class="ctrl-btn" id="btn-audit-trail" data-i18n="auditMenu">Revisjonsspor…</button>
+        <button class="ctrl-btn" id="btn-audit-trail" data-i18n="auditMenu">Lokal skannelogg…</button>
         <div class="ui-lang-sel">
           <select id="themeSelect" class="ui-lang-select" data-i18n-title="themeNote" title="Lys modus bruker en grå header slik at XLENT-logoen fortsatt er synlig.">
             <option value="light" data-i18n="themeLight">Lys modus</option>
@@ -1121,15 +1123,16 @@
       </div>
       </div>
 
-    <!-- ── Audit panel ─────────────────────────────────────────────── -->
+    <!-- ── Local scan log panel ───────────────────────────────────── -->
     <div id="panel-audit" class="tab-panel audit-page">
       <div>
-        <h2 data-i18n="auditTitle">Revisjonsspor</h2>
-        <p class="muted" data-i18n="auditSubtitle">Lokale, personvernminimerte hendelser med integritetskontroll.</p>
+        <h2 data-i18n="auditTitle">Lokal skannelogg</h2>
+        <p class="muted" data-i18n="auditSubtitle">Viser hva som er skannet på denne maskinen.</p>
       </div>
       <div id="audit-integrity" class="audit-integrity"></div>
       <div class="audit-toolbar">
         <select id="audit-event-filter" aria-label="Audit event filter">
+          <option value="scans" data-i18n="auditScans" selected>Skanninger</option>
           <option value="" data-i18n="auditAll">Alle hendelser</option>
           <option value="scan_completed">scan_completed</option>
           <option value="ai_scan_completed">ai_scan_completed</option>
@@ -1138,15 +1141,42 @@
           <option value="retention_applied">retention_applied</option>
           <option value="audit_exported">audit_exported</option>
         </select>
+        <select id="audit-days-filter" aria-label="Audit date filter">
+          <option value="7" data-i18n="auditDays7">Siste 7 dager</option>
+          <option value="30" data-i18n="auditDays30" selected>Siste 30 dager</option>
+          <option value="90" data-i18n="auditDays90">Siste 90 dager</option>
+          <option value="all" data-i18n="auditDaysAll">Hele loggen</option>
+        </select>
+        <select id="audit-mode-filter" aria-label="Audit scan mode filter">
+          <option value="" data-i18n="auditModeAll">Alle skannemoduser</option>
+          <option value="standard" data-i18n="auditModeStandard">Standard</option>
+          <option value="ai_deep" data-i18n="auditModeAi">AI-dybdeskann</option>
+        </select>
+        <select id="audit-risk-filter" aria-label="Audit risk filter">
+          <option value="" data-i18n="auditRiskAll">Alle risikonivåer</option>
+          <option value="grønn" data-i18n="auditRiskGreen">Grønn</option>
+          <option value="gul" data-i18n="auditRiskYellow">Gul</option>
+          <option value="rød" data-i18n="auditRiskRed">Rød</option>
+          <option value="svart" data-i18n="auditRiskBlack">Svart</option>
+        </select>
+        <select id="audit-outcome-filter" aria-label="Audit outcome filter">
+          <option value="" data-i18n="auditOutcomeAll">Alle resultater</option>
+          <option value="success" data-i18n="auditOutcomeSuccess">Fullført</option>
+          <option value="partial" data-i18n="auditOutcomePartial">Delvis</option>
+          <option value="failed" data-i18n="auditOutcomeFailed">Feilet</option>
+        </select>
+        <input type="search" id="audit-search" data-i18n-placeholder="auditSearchPlaceholder" placeholder="Søk i filnavn eller filsti">
+        <button class="ctrl-btn" id="btn-audit-reset" data-i18n="auditReset">Nullstill</button>
         <button class="ctrl-btn" id="btn-audit-refresh" data-i18n="auditRefresh">Oppdater</button>
-        <button class="ctrl-btn" id="btn-audit-verify" data-i18n="auditVerify">Kontroller integritet</button>
-        <button class="ctrl-btn ctrl-btn-outline-primary" id="btn-audit-export" data-i18n="auditExport">Eksporter signert pakke</button>
+        <button class="ctrl-btn" id="btn-audit-verify" data-i18n="auditVerify">Kontroller logg</button>
+        <button class="ctrl-btn ctrl-btn-outline-primary" id="btn-audit-export" data-i18n="auditExport">Eksporter logg</button>
         <label class="audit-path-toggle">
           <input type="checkbox" id="audit-show-full-path" checked>
           <span data-i18n="auditShowFullPath">Vis full filsti</span>
         </label>
         <span id="audit-action-msg" class="muted"></span>
       </div>
+      <div id="audit-result-count" class="audit-result-count"></div>
       <div class="audit-table-wrap">
         <table class="audit-table">
           <thead><tr>
@@ -1157,7 +1187,7 @@
           <tbody id="audit-table-body"></tbody>
         </table>
       </div>
-      <p class="settings-note" data-i18n="auditLocalNote">Sporet er manipulasjonspåvisende, men en lokal administrator kan fortsatt slette hele databasen. Eksporter signerte pakker for varig dokumentasjon.</p>
+      <p class="settings-note" data-i18n="auditLocalNote">Loggen lagres bare på denne maskinen. Eksport inkluderer filnavn, men ikke full filsti.</p>
     </div>
 
     <!-- ── About panel ────────────────────────────────────────────── -->
@@ -1936,10 +1966,13 @@
     const I18N = {
       nb: {
         subtitle:     "Sjekker og anonymiserer dokumenter for sensitiv informasjon",
-        auditMenu:"Revisjonsspor…", auditTitle:"Revisjonsspor", auditSubtitle:"Lokale, personvernminimerte hendelser med integritetskontroll.",
-        auditAll:"Alle hendelser", auditRefresh:"Oppdater", auditVerify:"Kontroller integritet", auditExport:"Eksporter signert pakke",
+        auditMenu:"Lokal skannelogg…", auditTitle:"Lokal skannelogg", auditSubtitle:"Viser hva som er skannet på denne maskinen.",
+        auditScans:"Skanninger", auditAll:"Alle hendelser", auditRefresh:"Oppdater", auditVerify:"Kontroller logg", auditExport:"Eksporter logg", auditReset:"Nullstill",
+        auditDays7:"Siste 7 dager", auditDays30:"Siste 30 dager", auditDays90:"Siste 90 dager", auditDaysAll:"Hele loggen",
+        auditModeAll:"Alle skannemoduser", auditModeStandard:"Standard", auditModeAi:"AI-dybdeskann", auditRiskAll:"Alle risikonivåer", auditRiskGreen:"Grønn", auditRiskYellow:"Gul", auditRiskRed:"Rød", auditRiskBlack:"Svart",
+        auditOutcomeAll:"Alle resultater", auditOutcomeSuccess:"Fullført", auditOutcomePartial:"Delvis", auditOutcomeFailed:"Feilet", auditSearchPlaceholder:"Søk i filnavn eller filsti", auditShowing:"Viser", auditOf:"av", auditEvents:"hendelser", auditNoMatches:"Ingen hendelser samsvarer med filtrene.",
         auditTime:"Tidspunkt", auditEvent:"Hendelse", auditDocument:"Dokument", auditMode:"Modus", auditOutcome:"Resultat", auditRisk:"Risiko", auditFindings:"Funn", auditShowFullPath:"Vis full filsti",
-        auditLocalNote:"Sporet er manipulasjonspåvisende, men en lokal administrator kan fortsatt slette hele databasen. Eksporter signerte pakker for varig dokumentasjon.",
+        auditLocalNote:"Loggen lagres bare på denne maskinen. Eksport inkluderer filnavn, men ikke full filsti.",
         auditIntegrityOk:"Integritetskontroll bestått", auditIntegrityBroken:"Integritetsbrudd ved hendelse", auditEmpty:"Ingen audit-hendelser.", auditExported:"Eksportert", auditError:"Audit-feil",
         tabScanner:   "🔍 Scanner",
         tabAbout:     "ℹ Om programmet",
@@ -2421,10 +2454,13 @@
       },
       sv: {
         subtitle:     "Kontrollerar och anonymiserar dokument med känslig information",
-        auditMenu:"Revisionsspår…", auditTitle:"Revisionsspår", auditSubtitle:"Lokala, dataminimerade händelser med integritetskontroll.",
-        auditAll:"Alla händelser", auditRefresh:"Uppdatera", auditVerify:"Kontrollera integritet", auditExport:"Exportera signerat paket",
+        auditMenu:"Lokal skanningslogg…", auditTitle:"Lokal skanningslogg", auditSubtitle:"Visar vad som har skannats på den här datorn.",
+        auditScans:"Skanningar", auditAll:"Alla händelser", auditRefresh:"Uppdatera", auditVerify:"Kontrollera logg", auditExport:"Exportera logg", auditReset:"Återställ",
+        auditDays7:"Senaste 7 dagarna", auditDays30:"Senaste 30 dagarna", auditDays90:"Senaste 90 dagarna", auditDaysAll:"Hela loggen",
+        auditModeAll:"Alla skanningslägen", auditModeStandard:"Standard", auditModeAi:"AI-djupskanning", auditRiskAll:"Alla risknivåer", auditRiskGreen:"Grön", auditRiskYellow:"Gul", auditRiskRed:"Röd", auditRiskBlack:"Svart",
+        auditOutcomeAll:"Alla resultat", auditOutcomeSuccess:"Slutförd", auditOutcomePartial:"Delvis", auditOutcomeFailed:"Misslyckad", auditSearchPlaceholder:"Sök i filnamn eller filsökväg", auditShowing:"Visar", auditOf:"av", auditEvents:"händelser", auditNoMatches:"Inga händelser matchar filtren.",
         auditTime:"Tidpunkt", auditEvent:"Händelse", auditDocument:"Dokument", auditMode:"Läge", auditOutcome:"Resultat", auditRisk:"Risk", auditFindings:"Fynd", auditShowFullPath:"Visa fullständig filsökväg",
-        auditLocalNote:"Spåret upptäcker manipulation, men en lokal administratör kan fortfarande radera hela databasen. Exportera signerade paket för varaktig dokumentation.",
+        auditLocalNote:"Loggen lagras bara på den här datorn. Exporten innehåller filnamn men inte fullständig filsökväg.",
         auditIntegrityOk:"Integritetskontroll godkänd", auditIntegrityBroken:"Integritetsbrott vid händelse", auditEmpty:"Inga revisionshändelser.", auditExported:"Exporterad", auditError:"Revisionsfel",
         tabScanner:   "🔍 Scanner",
         tabAbout:     "ℹ Om programmet",
@@ -2896,10 +2932,13 @@
       },
       en: {
         subtitle:     "Checks and anonymizes documents for sensitive information",
-        auditMenu:"Audit trail…", auditTitle:"Audit trail", auditSubtitle:"Local, privacy-minimized events with integrity verification.",
-        auditAll:"All events", auditRefresh:"Refresh", auditVerify:"Verify integrity", auditExport:"Export signed bundle",
+        auditMenu:"Local scan log…", auditTitle:"Local scan log", auditSubtitle:"Shows what has been scanned on this computer.",
+        auditScans:"Scans", auditAll:"All events", auditRefresh:"Refresh", auditVerify:"Verify log", auditExport:"Export log", auditReset:"Reset",
+        auditDays7:"Last 7 days", auditDays30:"Last 30 days", auditDays90:"Last 90 days", auditDaysAll:"Entire log",
+        auditModeAll:"All scan modes", auditModeStandard:"Standard", auditModeAi:"AI deep scan", auditRiskAll:"All risk levels", auditRiskGreen:"Green", auditRiskYellow:"Yellow", auditRiskRed:"Red", auditRiskBlack:"Black",
+        auditOutcomeAll:"All outcomes", auditOutcomeSuccess:"Completed", auditOutcomePartial:"Partial", auditOutcomeFailed:"Failed", auditSearchPlaceholder:"Search file name or path", auditShowing:"Showing", auditOf:"of", auditEvents:"events", auditNoMatches:"No events match the filters.",
         auditTime:"Time", auditEvent:"Event", auditDocument:"Document", auditMode:"Mode", auditOutcome:"Outcome", auditRisk:"Risk", auditFindings:"Findings", auditShowFullPath:"Show full file path",
-        auditLocalNote:"The trail is tamper-evident, but a local administrator can still delete the entire database. Export signed bundles for durable evidence.",
+        auditLocalNote:"The log is stored only on this computer. Exports include file names, but not full file paths.",
         auditIntegrityOk:"Integrity check passed", auditIntegrityBroken:"Integrity breach at event", auditEmpty:"No audit events.", auditExported:"Exported", auditError:"Audit error",
         tabScanner:   "🔍 Scanner",
         tabAbout:     "ℹ About",
@@ -3378,10 +3417,13 @@
       // ── Deutsch ────────────────────────────────────────────────────────
       de: {
         subtitle:            "Prüft und anonymisiert Dokumente mit sensiblen Informationen",
-        auditMenu:"Audit-Protokoll…", auditTitle:"Audit-Protokoll", auditSubtitle:"Lokale, datensparsame Ereignisse mit Integritätsprüfung.",
-        auditAll:"Alle Ereignisse", auditRefresh:"Aktualisieren", auditVerify:"Integrität prüfen", auditExport:"Signiertes Paket exportieren",
+        auditMenu:"Lokales Scanprotokoll…", auditTitle:"Lokales Scanprotokoll", auditSubtitle:"Zeigt, was auf diesem Computer gescannt wurde.",
+        auditScans:"Scans", auditAll:"Alle Ereignisse", auditRefresh:"Aktualisieren", auditVerify:"Protokoll prüfen", auditExport:"Protokoll exportieren", auditReset:"Zurücksetzen",
+        auditDays7:"Letzte 7 Tage", auditDays30:"Letzte 30 Tage", auditDays90:"Letzte 90 Tage", auditDaysAll:"Gesamtes Protokoll",
+        auditModeAll:"Alle Scanmodi", auditModeStandard:"Standard", auditModeAi:"KI-Tiefenscan", auditRiskAll:"Alle Risikostufen", auditRiskGreen:"Grün", auditRiskYellow:"Gelb", auditRiskRed:"Rot", auditRiskBlack:"Schwarz",
+        auditOutcomeAll:"Alle Ergebnisse", auditOutcomeSuccess:"Abgeschlossen", auditOutcomePartial:"Teilweise", auditOutcomeFailed:"Fehlgeschlagen", auditSearchPlaceholder:"Dateiname oder Pfad suchen", auditShowing:"Zeige", auditOf:"von", auditEvents:"Ereignissen", auditNoMatches:"Keine Ereignisse entsprechen den Filtern.",
         auditTime:"Zeitpunkt", auditEvent:"Ereignis", auditDocument:"Dokument", auditMode:"Modus", auditOutcome:"Ergebnis", auditRisk:"Risiko", auditFindings:"Treffer", auditShowFullPath:"Vollständigen Dateipfad anzeigen",
-        auditLocalNote:"Das Protokoll macht Manipulationen erkennbar, ein lokaler Administrator kann jedoch die gesamte Datenbank löschen. Exportieren Sie signierte Pakete als dauerhaften Nachweis.",
+        auditLocalNote:"Das Protokoll wird nur auf diesem Computer gespeichert. Exporte enthalten Dateinamen, aber keine vollständigen Pfade.",
         auditIntegrityOk:"Integritätsprüfung bestanden", auditIntegrityBroken:"Integritätsbruch bei Ereignis", auditEmpty:"Keine Audit-Ereignisse.", auditExported:"Exportiert", auditError:"Audit-Fehler",
         tabScanner:          "🔍 Scanner",
         tabAbout:            "ℹ Über das Programm",
@@ -3868,10 +3910,13 @@
       // ── Français ───────────────────────────────────────────────────────
       fr: {
         subtitle:            "Vérifie et anonymise les documents contenant des informations sensibles",
-        auditMenu:"Piste d’audit…", auditTitle:"Piste d’audit", auditSubtitle:"Événements locaux minimisés avec contrôle d’intégrité.",
-        auditAll:"Tous les événements", auditRefresh:"Actualiser", auditVerify:"Vérifier l’intégrité", auditExport:"Exporter le paquet signé",
+        auditMenu:"Journal d’analyse local…", auditTitle:"Journal d’analyse local", auditSubtitle:"Affiche ce qui a été analysé sur cet ordinateur.",
+        auditScans:"Analyses", auditAll:"Tous les événements", auditRefresh:"Actualiser", auditVerify:"Vérifier le journal", auditExport:"Exporter le journal", auditReset:"Réinitialiser",
+        auditDays7:"7 derniers jours", auditDays30:"30 derniers jours", auditDays90:"90 derniers jours", auditDaysAll:"Journal complet",
+        auditModeAll:"Tous les modes d’analyse", auditModeStandard:"Standard", auditModeAi:"Analyse approfondie IA", auditRiskAll:"Tous les niveaux de risque", auditRiskGreen:"Vert", auditRiskYellow:"Jaune", auditRiskRed:"Rouge", auditRiskBlack:"Noir",
+        auditOutcomeAll:"Tous les résultats", auditOutcomeSuccess:"Terminée", auditOutcomePartial:"Partielle", auditOutcomeFailed:"Échec", auditSearchPlaceholder:"Rechercher un nom ou chemin de fichier", auditShowing:"Affichage de", auditOf:"sur", auditEvents:"événements", auditNoMatches:"Aucun événement ne correspond aux filtres.",
         auditTime:"Heure", auditEvent:"Événement", auditDocument:"Document", auditMode:"Mode", auditOutcome:"Résultat", auditRisk:"Risque", auditFindings:"Résultats", auditShowFullPath:"Afficher le chemin complet",
-        auditLocalNote:"La piste révèle les manipulations, mais un administrateur local peut encore supprimer toute la base. Exportez des paquets signés pour une preuve durable.",
+        auditLocalNote:"Le journal est stocké uniquement sur cet ordinateur. Les exports contiennent les noms de fichiers, mais pas les chemins complets.",
         auditIntegrityOk:"Contrôle d’intégrité réussi", auditIntegrityBroken:"Rupture d’intégrité à l’événement", auditEmpty:"Aucun événement d’audit.", auditExported:"Exporté", auditError:"Erreur d’audit",
         tabScanner:          "🔍 Scanner",
         tabAbout:            "ℹ À propos",
@@ -4358,10 +4403,13 @@
       // ── Español ────────────────────────────────────────────────────────
       es: {
         subtitle:            "Comprueba y anonimiza documentos con información sensible",
-        auditMenu:"Registro de auditoría…", auditTitle:"Registro de auditoría", auditSubtitle:"Eventos locales minimizados con verificación de integridad.",
-        auditAll:"Todos los eventos", auditRefresh:"Actualizar", auditVerify:"Verificar integridad", auditExport:"Exportar paquete firmado",
+        auditMenu:"Registro local de análisis…", auditTitle:"Registro local de análisis", auditSubtitle:"Muestra lo que se ha analizado en este equipo.",
+        auditScans:"Análisis", auditAll:"Todos los eventos", auditRefresh:"Actualizar", auditVerify:"Verificar registro", auditExport:"Exportar registro", auditReset:"Restablecer",
+        auditDays7:"Últimos 7 días", auditDays30:"Últimos 30 días", auditDays90:"Últimos 90 días", auditDaysAll:"Registro completo",
+        auditModeAll:"Todos los modos", auditModeStandard:"Estándar", auditModeAi:"Análisis profundo con IA", auditRiskAll:"Todos los niveles de riesgo", auditRiskGreen:"Verde", auditRiskYellow:"Amarillo", auditRiskRed:"Rojo", auditRiskBlack:"Negro",
+        auditOutcomeAll:"Todos los resultados", auditOutcomeSuccess:"Completado", auditOutcomePartial:"Parcial", auditOutcomeFailed:"Fallido", auditSearchPlaceholder:"Buscar nombre o ruta de archivo", auditShowing:"Mostrando", auditOf:"de", auditEvents:"eventos", auditNoMatches:"Ningún evento coincide con los filtros.",
         auditTime:"Hora", auditEvent:"Evento", auditDocument:"Documento", auditMode:"Modo", auditOutcome:"Resultado", auditRisk:"Riesgo", auditFindings:"Hallazgos", auditShowFullPath:"Mostrar ruta completa",
-        auditLocalNote:"El registro detecta manipulaciones, pero un administrador local aún puede eliminar toda la base. Exporte paquetes firmados como evidencia duradera.",
+        auditLocalNote:"El registro se almacena solo en este equipo. Las exportaciones incluyen nombres de archivo, pero no rutas completas.",
         auditIntegrityOk:"Verificación de integridad superada", auditIntegrityBroken:"Ruptura de integridad en el evento", auditEmpty:"No hay eventos de auditoría.", auditExported:"Exportado", auditError:"Error de auditoría",
         tabScanner:          "🔍 Escáner",
         tabAbout:            "ℹ Acerca del programa",
@@ -6901,14 +6949,21 @@
     /* ══════════════════════════════════════════════════════════════════
        AUDIT TRAIL
     ══════════════════════════════════════════════════════════════════ */
-    function renderAuditTrail(entries, integrity) {
+    let _auditEntries = [];
+    let _auditIntegrity = {};
+    let _auditTotalEntries = 0;
+
+    function renderAuditTrail(entries, integrity, totalEntries = entries?.length || 0) {
       const status = document.getElementById("audit-integrity");
       status.innerHTML = integrity?.ok
         ? `✅ ${escapeHtml(t("auditIntegrityOk"))} · ${Number(integrity.events || 0)}`
         : `⚠️ ${escapeHtml(t("auditIntegrityBroken"))} ${escapeHtml(String(integrity?.broken_at || ""))}`;
+      document.getElementById("audit-result-count").textContent =
+        `${t("auditShowing")} ${Number(entries?.length || 0)} ${t("auditOf")} ${Number(totalEntries)} ${t("auditEvents")}`;
       const body = document.getElementById("audit-table-body");
       if (!entries?.length) {
-        body.innerHTML = `<tr><td colspan="7" class="muted">${escapeHtml(t("auditEmpty"))}</td></tr>`;
+        const emptyKey = totalEntries ? "auditNoMatches" : "auditEmpty";
+        body.innerHTML = `<tr><td colspan="7" class="muted">${escapeHtml(t(emptyKey))}</td></tr>`;
         return;
       }
       body.innerHTML = entries.map(event => `<tr>
@@ -6922,15 +6977,39 @@
       </tr>`).join("");
     }
 
+    function applyAuditSearch() {
+      const query = (document.getElementById("audit-search")?.value || "").trim().toLocaleLowerCase();
+      const filtered = query ? _auditEntries.filter(event => {
+        const searchable = `${event.document_path || ""}\n${event.document_name || ""}`.toLocaleLowerCase();
+        return searchable.includes(query);
+      }) : _auditEntries;
+      renderAuditTrail(filtered, _auditIntegrity, _auditTotalEntries);
+    }
+
     async function loadAuditTrail() {
       const eventType = document.getElementById("audit-event-filter")?.value || "";
+      const days = document.getElementById("audit-days-filter")?.value || "30";
+      const scanMode = document.getElementById("audit-mode-filter")?.value || "";
+      const riskLevel = document.getElementById("audit-risk-filter")?.value || "";
+      const outcome = document.getElementById("audit-outcome-filter")?.value || "";
       const showFullPath = document.getElementById("audit-show-full-path")?.checked !== false;
-      const params = new URLSearchParams({path_mode: showFullPath ? "full" : "name"});
-      if (eventType) params.set("event_type", eventType);
+      const params = new URLSearchParams({
+        path_mode: showFullPath ? "full" : "name",
+        days,
+        limit: "10000",
+      });
+      if (eventType === "scans") params.set("event_scope", "scans");
+      else if (eventType) params.set("event_type", eventType);
+      if (scanMode) params.set("scan_mode", scanMode);
+      if (riskLevel) params.set("risk_level", riskLevel);
+      if (outcome) params.set("outcome", outcome);
       const query = `?${params.toString()}`;
       try {
         const data = await (await fetch(`${API}/audit/events${query}`)).json();
-        renderAuditTrail(data.entries || [], data.integrity || {});
+        _auditEntries = data.entries || [];
+        _auditIntegrity = data.integrity || {};
+        _auditTotalEntries = Number(data.integrity?.events || 0);
+        applyAuditSearch();
       } catch (error) {
         document.getElementById("audit-action-msg").textContent = `${t("auditError")}: ${error}`;
       }
@@ -6950,10 +7029,26 @@
       await loadAuditTrail();
     }
 
+    function resetAuditFilters() {
+      document.getElementById("audit-event-filter").value = "scans";
+      document.getElementById("audit-days-filter").value = "30";
+      document.getElementById("audit-mode-filter").value = "";
+      document.getElementById("audit-risk-filter").value = "";
+      document.getElementById("audit-outcome-filter").value = "";
+      document.getElementById("audit-search").value = "";
+      loadAuditTrail();
+    }
+
     document.getElementById("btn-audit-refresh").addEventListener("click", loadAuditTrail);
+    document.getElementById("btn-audit-reset").addEventListener("click", resetAuditFilters);
     document.getElementById("btn-audit-verify").addEventListener("click", verifyAuditTrail);
     document.getElementById("btn-audit-export").addEventListener("click", exportAuditTrail);
     document.getElementById("audit-event-filter").addEventListener("change", loadAuditTrail);
+    document.getElementById("audit-days-filter").addEventListener("change", loadAuditTrail);
+    document.getElementById("audit-mode-filter").addEventListener("change", loadAuditTrail);
+    document.getElementById("audit-risk-filter").addEventListener("change", loadAuditTrail);
+    document.getElementById("audit-outcome-filter").addEventListener("change", loadAuditTrail);
+    document.getElementById("audit-search").addEventListener("input", applyAuditSearch);
     const auditPathToggle = document.getElementById("audit-show-full-path");
     try {
       auditPathToggle.checked = localStorage.getItem("xlent_audit_show_full_path") !== "0";

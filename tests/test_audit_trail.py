@@ -5,6 +5,7 @@ import sqlite3
 import sys
 import zipfile
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from xlent_scanner import __version__
@@ -52,6 +53,49 @@ def test_recorded_event_is_retrievable_without_sensitive_content(tmp_path: Path)
     assert full_events[0]["document_path"] == str(secret_path.resolve())
     with sqlite3.connect(tmp_path / "audit.db") as connection:
         assert connection.execute("PRAGMA journal_mode").fetchone()[0] == "wal"
+
+
+def test_query_events_filters_scan_log_without_changing_stored_events(tmp_path: Path) -> None:
+    trail = AuditTrail(tmp_path)
+    now = datetime.now(timezone.utc)
+    trail.record_event(
+        "scan_completed",
+        document_path=tmp_path / "old.docx",
+        scan_mode="standard",
+        outcome="success",
+        risk_level="grønn",
+        occurred_at=(now - timedelta(days=45)).isoformat(),
+    )
+    trail.record_event(
+        "redaction_created",
+        document_path=tmp_path / "recent.docx",
+        scan_mode="standard",
+        outcome="success",
+        risk_level="grønn",
+        occurred_at=now.isoformat(),
+    )
+    trail.record_event(
+        "ai_scan_completed",
+        document_path=tmp_path / "recent.docx",
+        scan_mode="ai_deep",
+        outcome="partial",
+        risk_level="rød",
+        occurred_at=now.isoformat(),
+    )
+
+    entries = trail.query_events(
+        limit=10_000,
+        event_types=("scan_completed", "ai_scan_completed"),
+        since=now - timedelta(days=30),
+        scan_mode="ai_deep",
+        risk_level="rød",
+        outcome="partial",
+        path_mode="name",
+    )
+
+    assert [entry["event_type"] for entry in entries] == ["ai_scan_completed"]
+    assert entries[0]["document_name"] == "recent.docx"
+    assert len(trail.query_events(limit=10_000)) == 3
 
 
 def test_integrity_check_detects_modified_event(tmp_path: Path) -> None:
@@ -115,7 +159,7 @@ def test_export_bundle_contains_signed_json_and_readable_html(tmp_path: Path) ->
     assert str(source.parent) not in json.dumps(payload, ensure_ascii=False)
     assert "lønnsliste.docx" in html
     assert str(source.parent) not in html
-    assert "Revisjonsspor" in html
+    assert "Lokal skannelogg" in html
 
 
 def test_windows_audit_key_is_dpapi_protected(tmp_path: Path) -> None:
